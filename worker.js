@@ -35,7 +35,7 @@ const normUsername=x=>clean(x,32).toLowerCase();
 const validUsername=x=>/^[a-z][a-z0-9_]{3,23}$/.test(x);
 async function passwordHash(password,salt,secret){
  const key=await crypto.subtle.importKey('raw',new TextEncoder().encode(password+'|'+secret),{name:'PBKDF2'},false,['deriveBits']);
- const bits=await crypto.subtle.deriveBits({name:'PBKDF2',hash:'SHA-256',salt:new TextEncoder().encode(salt),iterations:125000},key,256);
+ const bits=await crypto.subtle.deriveBits({name:'PBKDF2',hash:'SHA-256',salt:new TextEncoder().encode(salt),iterations:100000},key,256);
  return b64(new Uint8Array(bits));
 }
 async function checkOwner(request,env){
