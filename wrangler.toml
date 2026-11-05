@@ -6,4 +6,4 @@ workers_dev = true
 [[d1_databases]]
 binding = "DB"
 database_name = "zeno-live-db"
-database_id = "REPLACE_WITH_ACTUAL_D1_DATABASE_ID"
+database_id = "925104d5-15a5-42c5-9b1e-11068b80c122"
