@@ -780,8 +780,8 @@ function zenoHomeBookingPreview(){
  const rawAt=booking.status==='confirmed'&&booking.proposedAt?booking.proposedAt.replace('T',' '):String(booking.date||'')+' '+String(booking.time||'');
  const parts=rawAt.trim().split(' '),date=parts[0]||'',time=parts[1]||'';
  const dateObj=new Date(date+'T00:00:00');
- const next=new Date();next.setDate(next.getDate()+1);
- const tomorrow=next.getFullYear()+'-'+String(next.getMonth()+1).padStart(2,'0')+'-'+String(next.getDate()).padStart(2,'0');
+ const next=new Date(today()+'T00:00:00Z');next.setUTCDate(next.getUTCDate()+1);
+ const tomorrow=next.toISOString().slice(0,10);
  const dateLabel=date===today()?'오늘':date===tomorrow?'내일':Number.isNaN(dateObj.getTime())?date:dateObj.toLocaleDateString('ko-KR',{month:'long',day:'numeric'});
  const tt=time.split(':'),hh=Number(tt[0]),mm=tt[1];
  const timeLabel=Number.isInteger(hh)&&hh>=0&&hh<=23&&mm!==undefined?(hh<12?'오전 ':'오후 ')+(hh%12||12)+':'+mm:time;
