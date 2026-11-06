@@ -677,7 +677,7 @@ function hospitalCard(h){
  +(h.linked?'<button class="btn small" data-action="book" data-id="'+e(h.id)+'">예약 요청</button>':h.phone?'<a class="btn small zeno-contact" href="tel:'+e(h.phone)+'">전화하기</a>':'<a class="btn small zeno-contact" href="https://map.naver.com/p/search/'+encodeURIComponent(h.name+' '+h.address)+'" target="_blank" rel="noopener noreferrer">위치 보기</a>');
  return '<article class="hospital zeno-clinic-card">'
  +(h.photos?.find(p=>p.approved===true)?.url?'<img class="zeno-clinic-cover" src="'+e(h.photos.find(p=>p.approved===true).url)+'" loading="lazy" referrerpolicy="no-referrer" alt="'+e(h.name)+' 병원 실제 사진">':'')
- +'<div class="hospital-header">'<div class="hospital-title"><div class="zeno-clinic-mark" aria-hidden="true">+</div><div class="zeno-clinic-identity"><h3>'+e(h.name)+'</h3><p>'+e(h.region)+'</p></div></div><button class="zeno-favorite" type="button" data-action="favorite" data-id="'+e(h.id)+'" aria-label="'+e(saved?'즐겨찾기 해제':'즐겨찾기 추가')+'" aria-pressed="'+String(saved)+'">'+(saved?'♥':'♡')+'</button></div>'
+ +'<div class="hospital-header"><div class="hospital-title"><div class="zeno-clinic-mark" aria-hidden="true">+</div><div class="zeno-clinic-identity"><h3>'+e(h.name)+'</h3><p>'+e(h.region)+'</p></div></div><button class="zeno-favorite" type="button" data-action="favorite" data-id="'+e(h.id)+'" aria-label="'+e(saved?'즐겨찾기 해제':'즐겨찾기 추가')+'" aria-pressed="'+String(saved)+'">'+(saved?'♥':'♡')+'</button></div>'
  +'<div class="zeno-card-facts">'+zenoCardFlags(h)+'</div>'
  +'<a class="zeno-photo-quick" href="'+zenoNaverPhotoUrl(h)+'" target="_blank" rel="noopener noreferrer">📷 네이버에서 병원 사진 찾기 ↗</a>'
  +(h.linked?'<div class="zeno-clinic-status">'+statusWidget(h)+'<span class="zeno-microcopy">시연 데이터</span></div>':'')
