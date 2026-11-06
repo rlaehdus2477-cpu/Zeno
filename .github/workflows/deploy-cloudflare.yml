@@ -47,3 +47,5 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN || secrets.CF_API_TOKEN || secrets.CLOUDFLARE_TOKEN || secrets.CF_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: "f805a734c87c90e765d7e455a469a730"
+
+# Deploy latest ZENO owner and hospital app revision after Cloudflare secret setup.
