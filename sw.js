@@ -1,4 +1,4 @@
-const CACHE='zeno-pwa-ui-v2';const PAGES=['/owner','/hospital','/icon-192.png','/icon-512.png'];
+const CACHE='zeno-pwa-ui-v3';const PAGES=['/owner','/hospital','/icon-192.png','/icon-512.png'];
 self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(c=>c.addAll(PAGES)).then(()=>self.skipWaiting()))});
 self.addEventListener('activate',event=>{event.waitUntil(caches.keys().then(names=>Promise.all(names.filter(n=>n!==CACHE).map(n=>caches.delete(n)))).then(()=>self.clients.claim()))});
 self.addEventListener('fetch',event=>{
