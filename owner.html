@@ -36,6 +36,23 @@ input,select,textarea,.search{font-size:16px;line-height:1.45}
  .metric small{font-size:12.5px}
  .mobilebar button{font-size:12px}
 }
+</style>
+<style>
+/* ZENO optional hospital photo gallery / Naver photo discovery */
+.zeno-photo-quick{display:inline-flex;align-items:center;gap:5px;align-self:flex-start;max-width:100%;font-size:14px;line-height:1.5;font-weight:750;color:#1269bf;text-decoration:none;padding:5px 0}
+.zeno-photo-quick:hover,.zeno-photo-quick:focus-visible{text-decoration:underline}
+.zeno-photo-gallery{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:8px 0 18px}
+.zeno-photo-gallery figure{margin:0;min-width:0;border:1px solid #dce7f2;border-radius:13px;overflow:hidden;background:#f7fbff}
+.zeno-photo-gallery img{display:block;width:100%;aspect-ratio:4/3;object-fit:cover}
+.zeno-photo-gallery figcaption{font-size:13px;color:#5d7187;padding:8px 10px}
+.zeno-photo-state{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;padding:28px 20px;margin:8px 0 14px;border:1px dashed #bbd6f0;border-radius:14px;background:#f7fbff;text-align:center}
+.zeno-photo-state span{font-size:28px;line-height:1;color:#609bcd}
+.zeno-photo-state strong{color:#244b73;font-size:17px}
+.zeno-photo-state p{font-size:14px;color:#607a93;line-height:1.55;margin:0}
+.zeno-photo-open{display:block;min-height:48px;text-align:center;background:#eef7ff;border:1px solid #b9d9f7;color:#1269bf;border-radius:11px;padding:13px 12px;font-size:16px;font-weight:800;text-decoration:none}
+.zeno-photo-open:hover,.zeno-photo-open:focus-visible{background:#e0f0ff;text-decoration:underline}
+.zeno-photo-note{font-size:13px;line-height:1.5;color:#6c8297;margin:9px 0}
+@media(max-width:500px){.zeno-photo-gallery{grid-template-columns:1fr}.zeno-photo-quick{font-size:15px}}
 </style><link rel="manifest" href="/manifest-owner.webmanifest?v=13"><link rel="icon" type="image/png" href="/icon-owner-192-v3.png?v=6"><link rel="apple-touch-icon" href="/icon-owner-192-v3.png?v=6"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><style>.zeno-auth{min-height:100dvh;background:radial-gradient(circle at 70% 5%,#d0eaff,transparent 40%),linear-gradient(#f7fbff,#edf5ff);display:flex;justify-content:center;align-items:center;padding:28px 15px}.zeno-auth-card{width:min(100%,445px);background:white;border-radius:25px;box-shadow:0 25px 65px #0b39611d;padding:30px 28px;display:flex;flex-direction:column;gap:13px}.zeno-auth-logo{width:78px;height:78px;border-radius:19px;object-fit:cover}.zeno-auth h1{font-size:30px;letter-spacing:-1.3px;line-height:1.25;color:#092744;margin:0}.zeno-auth h1 span{color:#1786ed}.zeno-auth p{margin:0;color:#526b80;line-height:1.7}.zeno-auth small{line-height:1.65;color:#748398}.zeno-auth .auth-tabs{display:flex;gap:5px;border-radius:12px;background:#eaf4ff;padding:5px}.auth-tabs button{flex:1;border:none;background:transparent;padding:11px;border-radius:9px;font-weight:700;color:#65809b}.auth-tabs button.selected{background:white;color:#076ab7;box-shadow:0 2px 8px #275e9512}.zeno-auth form{display:flex;flex-direction:column;gap:13px}.auth-label{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:700;color:#45627b}.auth-label input{border:1px solid #cddfeb;padding:13px;border-radius:11px;font-size:15px;background:#fcfeff}.hosp-switch{text-align:center;color:#127bd6;font-weight:700}@media(max-width:520px){.zeno-auth-card{padding:25px 20px}}</style><style id="zeno-readable-ui">
 :root{--bg:#f7fbff;--text:#142e4c;--sub:#506b86;--navy:#113e70}
 body{font-size:16px;line-height:1.55;background:#f7fbff}
@@ -638,6 +655,20 @@ function zenoCardFlags(h){
  if(h.linked)facts.push('<span class="zeno-fact zeno-fact-blue">예약 시연 가능</span>');
  return facts.slice(0,3).join('');
 }
+
+/* Place photos: only images with a separately granted display right belong in photos[]. */
+function zenoNaverPhotoUrl(h){
+ return 'https://map.naver.com/p/search/'+encodeURIComponent(h.name+' '+h.address);
+}
+function zenoHospitalPhotos(h){
+ const entries=Array.isArray(h.photos)?h.photos:[];
+ const photos=entries.filter(p=>p&&typeof p.url==='string'&&/^https:\/\/[a-z0-9.-]+\//i.test(p.url)&&p.approved===true);
+ const gallery=photos.length
+  ?'<div class="zeno-photo-gallery">'+photos.map(p=>'<figure><img src="'+e(p.url)+'" alt="'+e(h.name+' '+(p.caption||'병원 사진'))+'" loading="lazy" referrerpolicy="no-referrer"><figcaption>'+e(p.caption||'병원 제공 사진')+'</figcaption></figure>').join('')+'</div>'
+  :'<div class="zeno-photo-state"><span aria-hidden="true">▧</span><strong>병원 사진은 아직 등록되지 않았습니다.</strong><p>제노 앱에 직접 게시할 수 있도록 사용 허락이 확인된 사진만 표시합니다.</p></div>';
+ return gallery+'<a class="zeno-photo-open" href="'+zenoNaverPhotoUrl(h)+'" target="_blank" rel="noopener noreferrer">네이버 지도에서 '+e(h.name)+' 사진 찾기 ↗</a><p class="zeno-photo-note">네이버에서 사진을 볼 때는 해당 병원의 검색 결과를 선택한 후 사진 메뉴를 눌러 주세요.</p>';
+}
+
 function hospitalCard(h){
  const saved=state.favorites.includes(h.id),s=hs(h.id);
  const actions='<button class="btn secondary small" data-action="details" data-id="'+e(h.id)+'">진료정보 보기</button>'
@@ -645,6 +676,7 @@ function hospitalCard(h){
  return '<article class="hospital zeno-clinic-card">'
  +'<div class="hospital-header"><div class="hospital-title"><div class="zeno-clinic-mark" aria-hidden="true">+</div><div class="zeno-clinic-identity"><h3>'+e(h.name)+'</h3><p>'+e(h.region)+'</p></div></div><button class="zeno-favorite" type="button" data-action="favorite" data-id="'+e(h.id)+'" aria-label="'+e(saved?'즐겨찾기 해제':'즐겨찾기 추가')+'" aria-pressed="'+String(saved)+'">'+(saved?'♥':'♡')+'</button></div>'
  +'<div class="zeno-card-facts">'+zenoCardFlags(h)+'</div>'
+ +'<a class="zeno-photo-quick" href="'+zenoNaverPhotoUrl(h)+'" target="_blank" rel="noopener noreferrer">📷 네이버에서 병원 사진 찾기 ↗</a>'
  +(h.linked?'<div class="zeno-clinic-status">'+statusWidget(h)+'<span class="zeno-microcopy">시연 데이터</span></div>':'')
  +hospitalHoursBlock(h)
  +(h.linked&&s.emergency?'<p class="zeno-emergency-note">응급은 전화로 문의해 주세요.</p>':'')
@@ -696,8 +728,9 @@ function morePage(){return `${topbar('제노 전체 서비스','보호자용 · 
 function footer(){return '<div class="footer">ZENO · 필요한 순간, 필요한 진료를 찾다.<br>이 앱은 의료기관 공식 서비스가 아닌 제노 창업 시연용 프로토타입입니다. 응급 상황은 병원에 직접 전화하세요.</div>'}
 function renderModal(){let m=state.modal;if(!m)return '';let h=hospitalById(m.id||state.detail),title='',body='',wide=false;
 if(m.type==='details'&&h){let s=hs(h.id);title=h.name;body=`<div class="zeno-detail-tabs" role="tablist" aria-label="동물병원 상세 항목">
- ${[['hours','운영시간'],['intro','병원소개'],['services','진료정보'],['notices','공지사항']].map((t,i)=>`<button type="button" class="zeno-detail-tab ${i===0?'active':''}" data-action="detail-tab" data-value="${t[0]}" role="tab" aria-selected="${i===0}" aria-controls="zeno-detail-${t[0]}">${t[1]}</button>`).join('')}</div>
+ ${[['hours','운영시간'],['intro','병원소개'],['photos','사진'],['services','진료정보'],['notices','공지사항']].map((t,i)=>`<button type="button" class="zeno-detail-tab ${i===0?'active':''}" data-action="detail-tab" data-value="${t[0]}" role="tab" aria-selected="${i===0}" aria-controls="zeno-detail-${t[0]}">${t[1]}</button>`).join('')}</div>
  <section id="zeno-detail-intro" class="zeno-detail-panel" data-detail-panel="intro" role="tabpanel" hidden><div class="tags">${h.tags.map(x=>`<span class="tag">${e(x)}</span>`).join('')}</div><p class="desc" style="margin-top:14px">📍 ${e(h.address)}</p><p class="desc">☎ ${e(h.phone||'공개 전화번호 확인 필요')}</p>${h.catWaiting?.verified?`<div class="banner" style="margin-top:12px"><strong>🐱 고양이 전용 대기실 · 공식 확인</strong><div>병원 공식 홈페이지 안내를 확인했습니다. 방문 전 운영 여부를 전화로 확인하세요.</div><a href="${e(h.catWaiting.sourceUrl)}" target="_blank" rel="noopener noreferrer" style="text-decoration:underline">공식 시설 안내 보기</a></div>`:h.catWaiting?.reported?`<div class="banner warning" style="margin-top:12px"><strong>🐱 고양이 대기실 · 보호자 제보</strong><div>보호자가 알려준 정보입니다. 병원 공식 시설 안내는 확인되지 않았으며, 실제 고양이 전용 대기실 유무와 이용 가능 여부는 전화로 확인해 주세요.</div></div>`:``}<p class="desc">📋 병원명·주소 공개 목록 확인: ${e(h.checkedAt||'미확인')} / 현재 운영·진료과목·시간은 별도 확인 필요</p><p class="desc">🔗 <a href="${e(h.sourceUrl||'#')}" target="_blank" rel="noopener noreferrer" style="text-decoration:underline">원본 확인 출처</a></p></section>
+ <section id="zeno-detail-photos" class="zeno-detail-panel" data-detail-panel="photos" role="tabpanel" hidden>${zenoHospitalPhotos(h)}</section>
  <section id="zeno-detail-notices" class="zeno-detail-panel" data-detail-panel="notices" role="tabpanel" hidden><h3>공지사항</h3>${s.emergency?'<p class="zeno-emergency-note">응급은 전화로 문의해 주세요.</p>':''}${s.notice?`<div class="banner">${e(s.notice)}<br><small>병원용 데모 계정 입력</small></div>`:'<div class="banner">등록된 공지사항이 없습니다.</div>'}</section>
  <section id="zeno-detail-hours" class="zeno-detail-panel" data-detail-panel="hours" role="tabpanel">${zenoWeeklyHours(h)}</section>
  <section id="zeno-detail-services" class="zeno-detail-panel" data-detail-panel="services" role="tabpanel" hidden><div class="row-line"><div><strong>진료 수용 상태</strong><div class="sub">${e(updateText(s.updatedAt))}</div></div>${statusWidget(h)}</div><div class="section"><h3>진료 과목 시연 설정</h3><div class="tags">${(s.services||[]).length?(s.services||[]).map(x=>`<span class="tag blue">${e(x)} (시연)</span>`).join(''):'<span class="tag">병원에서 추가로 등록한 시연 정보 없음</span>'}</div></div><div class="section"><h3>진료 항목 / 가격</h3>${s.prices?.length?(s.prices.map(x=>`<div class="row-line"><strong>${e(x.label)}</strong><span>${Number(x.amount).toLocaleString('ko-KR')}원 <small class="tiny">(예시)</small></span></div>`).join('')):'<div class="banner">공식 가격 정보 미등록 · 병원에 확인해 주세요.</div>'}</div><div class="banner warning">병원 정보는 참고용입니다. 상태와 가격이 실제 운영을 보장하지 않습니다.</div></section><div class="buttons" style="display:flex;gap:7px;margin-top:14px;flex-wrap:wrap"><a class="btn secondary" href="https://map.naver.com/p/search/${encodeURIComponent(h.name+' '+h.address)}" target="_blank" rel="noopener">지도 길찾기 ↗</a>${h.phone?`<a class="btn teal" href="tel:${e(h.phone)}">전화 연결</a>`:''}${h.linked?`<button class="btn" data-action="book" data-id="${h.id}">데모 예약 요청</button>`:''}</div>`;wide=true}
