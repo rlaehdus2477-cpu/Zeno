@@ -69,3 +69,14 @@ CREATE TABLE IF NOT EXISTS login_limits (
   attempts INTEGER NOT NULL DEFAULT 0,
   expires_at INTEGER NOT NULL
 );
+
+-- Optional guardian/patient details. Existing bookings are preserved.
+CREATE TABLE IF NOT EXISTS booking_details (
+ booking_id TEXT PRIMARY KEY,
+ owner_phone TEXT NOT NULL DEFAULT '',
+ breed TEXT NOT NULL DEFAULT '',
+ age TEXT NOT NULL DEFAULT '',
+ weight TEXT NOT NULL DEFAULT '',
+ visit_type TEXT NOT NULL DEFAULT '',
+ created_at TEXT NOT NULL
+);

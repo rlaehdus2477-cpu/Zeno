@@ -32,7 +32,22 @@ class HttpError extends Error{constructor(message,status=400){super(message);thi
 const assert=(cond,message,status=400)=>{if(!cond)throw new HttpError(message,status)};
 function savedSettings(row){if(!row)return DEFAULT();return {status:row.status||'check',updatedAt:row.updated_at,notice:row.notice||'',emergency:!!row.emergency,prices:parseJSON(row.prices),services:parseJSON(row.services)}}
 function parseJSON(value){try{return JSON.parse(value||'[]')}catch{return []}}
-function booking(row){return row&&{id:row.id,ownerId:row.owner_id,hospitalId:row.hospital_id,petName:row.pet_name,species:row.species,date:row.date,time:row.time,service:row.service,note:row.note,status:row.status,proposedAt:row.proposed_at,hospitalNote:row.hospital_note,createdAt:row.created_at,updatedAt:row.updated_at}}
+function booking(row){
+ if(!row)return null;
+ let age=row.age||'',weight=row.weight||'';
+ if((!age||!weight)&&row.owner_profile_json){
+  try{
+   const p=JSON.parse(row.owner_profile_json);
+   const pet=Array.isArray(p.pets)?p.pets.find(x=>String(x.name||'').trim()===String(row.pet_name||'').trim()):null;
+   if(pet){age=age||pet.age||'';weight=weight||pet.weight||'';}
+  }catch{}
+ }
+ return {id:row.id,ownerId:row.owner_id,hospitalId:row.hospital_id,petName:row.pet_name,species:row.species,date:row.date,time:row.time,service:row.service,note:row.note,status:row.status,proposedAt:row.proposed_at,hospitalNote:row.hospital_note,createdAt:row.created_at,updatedAt:row.updated_at,
+  ownerName:row.owner_name||'',ownerPhone:row.owner_phone||'',breed:row.breed||'',age,weight,visitType:row.visit_type||''};
+}
+async function ensureBookingDetails(db){
+ await db.prepare("CREATE TABLE IF NOT EXISTS booking_details (booking_id TEXT PRIMARY KEY, owner_phone TEXT NOT NULL DEFAULT '', breed TEXT NOT NULL DEFAULT '', age TEXT NOT NULL DEFAULT '', weight TEXT NOT NULL DEFAULT '', visit_type TEXT NOT NULL DEFAULT '', created_at TEXT NOT NULL)").run();
+}
 function question(row){return row&&{id:row.id,ownerId:row.owner_id,hospitalId:row.hospital_id,petName:row.pet_name,text:row.text,answer:row.answer,status:row.status,createdAt:row.created_at,updatedAt:row.updated_at}}
 function review(row){return row&&{id:row.id,ownerId:row.owner_id,bookingId:row.booking_id,hospitalId:row.hospital_id,stars:row.stars,text:row.text,points:row.points,createdAt:row.created_at}}
 async function getSettings(DB,id){const x=await DB.prepare('SELECT * FROM hospital_settings WHERE hospital_id=?').bind(id).first();return savedSettings(x)}
@@ -153,8 +168,31 @@ if(path==='/api/admin/login'&&method==='POST'){
  return json({token:await sign({role:'admin',exp:Date.now()+4*3600*1000},env.SESSION_SECRET)})
 }
 if(path==='/api/admin/stats'&&method==='GET'){await checkAdmin(request,env);let [b,q,c]=await Promise.all([db.prepare('SELECT COUNT(*) n FROM bookings').first(),db.prepare('SELECT COUNT(*) n FROM questions').first(),db.prepare("SELECT COUNT(*) n FROM bookings WHERE status IN ('confirmed','in_progress','done')").first()]);return json({bookings:b.n,questions:q.n,confirmed:c.n,hospitals:3})}
-if(path==='/api/dashboard'&&method==='GET'){let id=url.searchParams.get('hospitalId');validateHospital(id);await checkHospital(request,env,id);let [s,b,q]=await Promise.all([getSettings(db,id),db.prepare('SELECT * FROM bookings WHERE hospital_id=? ORDER BY created_at DESC LIMIT 200').bind(id).all(),db.prepare('SELECT * FROM questions WHERE hospital_id=? ORDER BY created_at DESC LIMIT 200').bind(id).all()]);return json({settings:s,bookings:(b.results||[]).map(booking),questions:(q.results||[]).map(question)})}
-if(path==='/api/bookings'&&method==='POST'){const sess=await checkOwner(request,env);let ownerId=sess.ownerId;let id=clean(data.hospitalId,20);validateHospital(id);let p=clean(data.petName,30),dt=clean(data.date,10),tm=clean(data.time,5),sp=clean(data.species,25),svc=clean(data.service,70),note=clean(data.note,500);assert(p&&/^\d{4}-\d{2}-\d{2}$/.test(dt)&&/^\d{2}:\d{2}$/.test(tm),'반려동물 이름·날짜·시간을 입력해 주세요.');assert(!Number.isNaN(Date.parse(dt+'T'+tm+':00')),'올바르지 않은 날짜입니다.');assert(new Date(dt+'T'+tm+':00+09:00').getTime()>Date.now()-60000,'과거 시각으로 예약할 수 없습니다.');let row={id:crypto.randomUUID(),ownerId,hospitalId:id,petName:p,species:sp,service:svc,date:dt,time:tm,note,status:'pending',hospitalNote:'',proposedAt:'',createdAt:now(),updatedAt:now()};await db.prepare('INSERT INTO bookings(id,owner_id,hospital_id,pet_name,species,date,time,service,note,status,proposed_at,hospital_note,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)').bind(row.id,row.ownerId,row.hospitalId,row.petName,row.species,row.date,row.time,row.service,row.note,row.status,'','',row.createdAt,row.updatedAt).run();return json(row,201)}
+if(path==='/api/dashboard'&&method==='GET'){
+ let id=url.searchParams.get('hospitalId');validateHospital(id);await checkHospital(request,env,id);
+ await ensureBookingDetails(db);
+ const [s,b,q]=await Promise.all([getSettings(db,id),
+ db.prepare("SELECT b.*, o.display_name AS owner_name,o.profile_json AS owner_profile_json,d.owner_phone,d.breed,d.age,d.weight,d.visit_type FROM bookings b LEFT JOIN owners o ON o.id=b.owner_id LEFT JOIN booking_details d ON d.booking_id=b.id WHERE b.hospital_id=? ORDER BY b.created_at DESC LIMIT 200").bind(id).all(),
+ db.prepare('SELECT * FROM questions WHERE hospital_id=? ORDER BY created_at DESC LIMIT 200').bind(id).all()]);
+ return json({settings:s,bookings:(b.results||[]).map(booking),questions:(q.results||[]).map(question)})
+}
+if(path==='/api/bookings'&&method==='POST'){
+ const sess=await checkOwner(request,env);let ownerId=sess.ownerId,id=clean(data.hospitalId,20);validateHospital(id);
+ let p=clean(data.petName,30),dt=clean(data.date,10),tm=clean(data.time,5),sp=clean(data.species,25),svc=clean(data.service,70),note=clean(data.note,500);
+ assert(p&&/^\d{4}-\d{2}-\d{2}$/.test(dt)&&/^\d{2}:\d{2}$/.test(tm),'반려동물 이름·날짜·시간을 입력해 주세요.');
+ assert(!Number.isNaN(Date.parse(dt+'T'+tm+':00')),'올바르지 않은 날짜입니다.');
+ assert(new Date(dt+'T'+tm+':00+09:00').getTime()>Date.now()-60000,'과거 시각으로 예약할 수 없습니다.');
+ const phone=clean(data.ownerPhone,20).replace(/[^0-9]/g,''),breed=clean(data.breed,35),age=clean(data.age,20),weight=clean(data.weight,20),visitType=clean(data.visitType,12);
+ assert(/^[0-9]{10,11}$/.test(phone),'보호자 연락처를 정확히 입력해 주세요.');
+ assert(['첫 방문','재방문'].includes(visitType),'방문 구분을 선택해 주세요.');
+ const row={id:crypto.randomUUID(),ownerId,hospitalId:id,petName:p,species:sp,service:svc,date:dt,time:tm,note,status:'pending',hospitalNote:'',proposedAt:'',createdAt:now(),updatedAt:now()};
+ await ensureBookingDetails(db);
+ await db.batch([
+ db.prepare('INSERT INTO bookings(id,owner_id,hospital_id,pet_name,species,date,time,service,note,status,proposed_at,hospital_note,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)').bind(row.id,row.ownerId,row.hospitalId,row.petName,row.species,row.date,row.time,row.service,row.note,row.status,'','',row.createdAt,row.updatedAt),
+ db.prepare('INSERT INTO booking_details(booking_id,owner_phone,breed,age,weight,visit_type,created_at) VALUES(?,?,?,?,?,?,?)').bind(row.id,phone,breed,age,weight,visitType,row.createdAt)
+ ]);
+ return json(row,201)
+}
 if(/^\/api\/bookings\/[^/]+$/.test(path)&&method==='PATCH'){let id=decodeURIComponent(path.split('/')[3]);assert(BOOKING_STATES.has(data.status),'지원하지 않는 예약 상태입니다.');const r=await db.prepare('SELECT * FROM bookings WHERE id=?').bind(id).first();assert(r,'예약을 찾을 수 없습니다.',404);const side=data.side==='owner'?'owner':'hospital';const prev=r.status,next=data.status,allowed={pending:['accepted','suggested','rejected'],accepted:['confirmed','suggested','rejected'],suggested:['suggested','rejected'],confirmed:['in_progress','done'],in_progress:['done'],done:[],rejected:[],cancelled:[]};
 if(side==='owner'){const own=await checkOwner(request,env);assert(own.ownerId===r.owner_id,'예약 소유자만 변경할 수 있습니다.',403);assert(['suggested','pending','accepted'].includes(prev),'이미 처리된 예약입니다.');if(next==='confirmed')assert(prev==='suggested','시간 제안이 있을 때만 확정할 수 있습니다.');else assert(next==='cancelled','허용되지 않은 변경입니다.');}
 else{await checkHospital(request,env,r.hospital_id);assert(allowed[prev]?.includes(next),'현재 예약 단계에서는 변경할 수 없습니다.');}
