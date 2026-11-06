@@ -272,6 +272,19 @@ label:has(input[type="checkbox"]){min-height:44px;align-items:center!important}
 .hi-row-name{min-width:0;flex-wrap:wrap}
 .hi-row-name small{overflow:hidden;text-overflow:ellipsis;max-width:90px}
 @media(max-width:390px){.hi-inbox-row{grid-template-columns:minmax(0,1fr) 101px;gap:6px;padding:12px}.hi-row-open{min-height:88px}.hi-inline-action{min-width:0;padding:8px;font-size:14px}.hi-row-side{gap:6px}}
+</style><style id="zeno-hospital-360-readability">/* 360px check: keep summary, inline actions and long badges within screen */
+.hi-row-side{min-width:0;max-width:100%}
+.hi-row-side .hi-status-badge{display:block;max-width:100%;white-space:normal;overflow-wrap:normal;word-break:keep-all;text-align:center;font-size:13px;line-height:1.4}
+.hi-row-side .hi-inline-action{width:100%;max-width:100%}
+.hi-row-open .hi-row-date{font-size:14px}
+.hi-row-open .hi-row-note{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media(max-width:360px){
+ .hi-inbox-row{grid-template-columns:minmax(0,1fr) 98px;gap:6px;padding:12px}
+ .hi-row-side .hi-inline-action{font-size:14px}
+ .hi-summary{gap:6px}
+ .hi-summary i{height:10px}
+ .hi-row-open .hi-row-date{font-size:13px}
+}
 </style></head><body><div id="app" class="app"></div><script>
 'use strict';
 const APP_MODE='hospital';
