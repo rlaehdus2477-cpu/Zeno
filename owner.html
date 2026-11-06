@@ -609,7 +609,27 @@ body{background:#f7f9fc;color:#20364f;font-family:Pretendard,-apple-system,Blink
 .zeno-price-section .row-line{min-height:60px}
 .zeno-price-section .row-line strong{font-size:15px}
 .zeno-price-section .row-line strong small{font-size:12px;color:#6e8398}
-</style><style>.zeno-detail-swipe-hint{font-size:13px;color:#536e87;margin:-6px 0 12px}.zeno-account-section{background:#fff;padding:18px;border:1px solid #dce8f2;border-radius:12px;margin:23px 0}.zeno-account-section h2{font-size:18px;margin:0 0 11px}.zeno-account-section .btn{min-height:48px;font-size:16px}.zeno-detail-tabs{scroll-padding-left:10px}</style></head><body><div id="app" class="app"></div><script>
+</style><style>.zeno-detail-swipe-hint{font-size:13px;color:#536e87;margin:-6px 0 12px}.zeno-account-section{background:#fff;padding:18px;border:1px solid #dce8f2;border-radius:12px;margin:23px 0}.zeno-account-section h2{font-size:18px;margin:0 0 11px}.zeno-account-section .btn{min-height:48px;font-size:16px}.zeno-detail-tabs{scroll-padding-left:10px}</style><style>
+/* Final mobile consistency and keyboard accessibility */
+.mobilebar button{font-size:12px!important;min-height:62px!important;gap:5px}
+.mobilebar button b{font-size:12px!important;line-height:1.25;white-space:nowrap}
+.mobilebar button .ico{min-height:24px}
+.navlink{min-height:44px}
+.btn.small:not(.zeno-list-action){font-size:14px;min-height:42px}
+.zeno-booking-proposal .btn{min-height:48px;font-size:16px}
+.zeno-detail-tabs:focus-within{outline-offset:2px}
+.zeno-week-cell strong small{font-size:14px!important;font-weight:850;color:#156cc4}
+.zeno-home-shortcuts button,.zeno-specialty-chips button{min-height:48px}
+button:focus-visible,a:focus-visible,[tabindex]:focus-visible{outline:3px solid #6daaff;outline-offset:2px}
+@media(max-width:750px){
+ .modalbg{align-items:flex-end!important;padding:6px!important}
+ .modal{max-height:calc(100dvh - 12px)!important;overscroll-behavior:contain;border-radius:17px 17px 8px 8px;padding:20px 16px calc(20px + env(safe-area-inset-bottom))!important}
+ .modal.wide{width:100%!important}
+ .zeno-detail-tabs{margin-left:0;margin-right:0}
+ .zeno-auth .auth-label{font-size:15px!important}
+ .zeno-list-item .zeno-list-conditions{max-width:100%;overflow-wrap:anywhere}
+}
+</style></head><body><div id="app" class="app"></div><script>
 'use strict';
 const APP_MODE='owner';
 
