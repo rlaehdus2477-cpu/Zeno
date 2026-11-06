@@ -907,7 +907,7 @@ if(a==='answer'){let answer=document.getElementById('answer-'+id)?.value.trim();
 if(a==='price-remove'){let s=hs(state.activeHospital),prices=[...(s.prices||[])];prices.splice(Number(id),1);await mutate('PATCH','/api/settings',{prices},'가격 예시 항목을 삭제했습니다.');return}
 if(a==='service-remove'){let services=(hs(state.activeHospital).services||[]).filter(x=>x!==val);await mutate('PATCH','/api/settings',{services},'진료 과목 시연 항목을 삭제했습니다.');return}
 });
-document.addEventListener('keydown',ev=>{if(ev.key==='Escape'&&state.modal)zenoCloseModal()if(ev.key==='Enter'&&document.activeElement?.id==='hospital-search'){state.query=document.activeElement.value.trim();render()}});
+document.addEventListener('keydown',ev=>{if(ev.key==='Escape'&&state.modal)zenoCloseModal();if(ev.key==='Enter'&&document.activeElement?.id==='hospital-search'){state.query=document.activeElement.value.trim();render()}});
 document.addEventListener('submit',async ev=>{let f=ev.target,id=f.id;if(!id)return;ev.preventDefault();let d=Object.fromEntries(new FormData(f).entries());const val=s=>String(s||'').trim();
 if(id==='home-search-form'){state.query=val(d.homeQuery);state.specialty='';state.exoticSpecies='';state.filter='전체';zenoNewSearch=true;navTo('search');return}
 if(id==='owner-auth'){
