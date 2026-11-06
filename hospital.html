@@ -285,6 +285,10 @@ label:has(input[type="checkbox"]){min-height:44px;align-items:center!important}
  .hi-summary i{height:10px}
  .hi-row-open .hi-row-date{font-size:13px}
 }
+</style><style id="zeno-cancelled-booking-delete">
+/* Cancelled bookings can be permanently removed by authorized clinic staff. */
+.hi-delete-booking{background:#fff!important;border:1px solid #CDD2D8!important;color:#344054!important;border-radius:8px!important;min-height:44px!important;font-size:14px!important;font-weight:700!important;padding:8px 12px!important;cursor:pointer}
+.hi-row-side .hi-delete-booking{width:100%;margin-top:4px}
 </style></head><body><div id="app" class="app"></div><script>
 'use strict';
 const APP_MODE='hospital';
@@ -518,6 +522,7 @@ function hiInboxRow(b){
  +'<span class="hi-row-date">'+hsIcon('calendar',14)+e(hsSlot(b.date,b.time))+'</span></span></button>'
  +'<div class="hi-row-side"><span class="hi-status-badge">'+e(hiStatus(b))+'</span>'+(risk.note&&hiActive(b)?'<small>'+e(risk.note)+'</small>':'')
  +(action?'<button type="button" class="hi-inline-action" data-action="hospital-update" data-status="'+action.status+'" data-id="'+e(b.id)+'">'+action.label+'</button>':'')
+ +(['cancelled','rejected'].includes(b.status)?'<button type="button" class="hi-delete-booking" data-action="hospital-delete" data-id="'+e(b.id)+'">삭제</button>':'')
  +'</div></div>';
 }
 function hiInboxGroups(rows){
@@ -562,6 +567,7 @@ function hospitalBookingButtons(b){
   secondary='<button class="hi-action hi-outline" data-action="propose" data-id="'+id+'">시간 제안</button>';
   refuse='<button class="hi-action hi-text" data-action="hospital-update" data-status="rejected" data-id="'+id+'">거절</button><button class="hi-action hi-text" data-action="hospital-update" data-status="cancelled" data-id="'+id+'">취소</button>';
  }else if(s==='confirmed')refuse='<button class="hi-action hi-text" data-action="hospital-update" data-status="cancelled" data-id="'+id+'">취소</button>';
+ if(['cancelled','rejected'].includes(s))return '<button class="hi-action hi-outline hi-delete-booking" data-action="hospital-delete" data-id="'+id+'">예약 삭제</button>';
  return primary+secondary+refuse||'<span class="hi-done-note">처리된 예약입니다.</span>';
 }
 function bookingsPage(){let b=state.bookings.filter(x=>state.bookingTab==='전체'||x.status===state.bookingTab).sort((a,b)=>b.createdAt.localeCompare(a.createdAt));return `${topbar('나의 예약 · 진행 상태','병원에 예약을 요청하고 응답을 확인할 수 있습니다.')}<div class="banner">이 화면의 예약은 실제 병원 예약이 아닌 <strong>제노 데모 예약</strong>입니다. 실제 진료를 예약하려면 병원에 직접 전화해 주세요.</div><div class="tabs">${[['전체','전체'],['pending','확인 대기'],['suggested','시간 제안'],['confirmed','확정'],['done','진료 완료']].map(x=>`<button data-action="booking-tab" data-value="${x[0]}" class="${state.bookingTab===x[0]?'active':''}">${x[1]}</button>`).join('')}</div><div class="section"><div class="grid two">${b.map(x=>bookingCard(x)).join('')||'<div class="empty"><span class="big">📆</span>아직 해당 예약이 없습니다.<p>병원을 선택하고 예약을 요청해 보세요.</p><button class="btn small" data-nav="search">병원 찾기</button></div>'}</div></div>`}
@@ -645,6 +651,20 @@ if(a==='change-status'){
   state.settings[state.activeHospital]=result;
   render();toast('진료 수용 상태를 저장했습니다.');
  }catch(err){toast(err.message)}
+ return;
+}
+if(a==='hospital-delete'){
+ const existing=(state.hospitalBookings||[]).find(x=>x.id===id);
+ if(!existing||!['cancelled','rejected'].includes(existing.status)){
+  toast('삭제할 수 있는 취소·거절 예약이 아닙니다.');return;
+ }
+ if(!confirm('‘'+(existing.petName||'이 예약')+'’ 예약을 완전히 삭제할까요?'))return;
+ try{
+  await api('DELETE','/api/bookings/'+encodeURIComponent(id));
+  state.hDetailBookingId=null;
+  await refresh(true);
+  toast('선택한 예약을 삭제했습니다.');
+ }catch(error){toast(error.message)}
  return;
 }
 if(a==='hospital-update'&&el.dataset.status==='cancelled'&&!confirm('정말 취소할까요?'))return;
