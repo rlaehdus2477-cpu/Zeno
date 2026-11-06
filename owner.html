@@ -1175,6 +1175,10 @@ window.addEventListener('popstate',()=>{
  if(state.modal){state.modal=null;render();if(zenoDetailScrollY>0)window.scrollTo({left:0,top:zenoDetailScrollY,behavior:'instant'});return}
  if(APP_MODE==='owner'){
   const p=history.state?.zenoPage||'home';
+  if(p===state.page){
+   if(p==='search'&&zenoDetailScrollY>0)window.scrollTo({left:0,top:zenoDetailScrollY,behavior:'instant'});
+   return;
+  }
   navTo(p,true);
  }
 });
