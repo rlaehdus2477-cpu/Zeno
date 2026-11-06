@@ -430,7 +430,7 @@ body{background:#f7f9fc;color:#20364f;font-family:Pretendard,-apple-system,Blink
  .zeno-clinic-card .hfooter .btn{font-size:14px}.zeno-partner-space{margin-top:21px}
 }
 @media(max-width:375px){.zeno-facts-strip>div{padding:12px 8px}.zeno-facts-strip strong{font-size:16px}.zeno-facts-strip span{font-size:11px}.zeno-inline-shortcut{flex-wrap:wrap}}
-</style></head><body><div id="app" class="app"></div><script>
+</style><style>.content>.banner[style*="margin-bottom:16px"]{border:0;border-bottom:1px solid #e8edf3;background:transparent;padding:0 2px 12px;color:#8495a7;font-size:12px;box-shadow:none}.content>.banner.warning[style*="margin-bottom:16px"]{color:#946a36;border-bottom-color:#eecda8}.top-right .pill{background:#edf3f9;color:#617c93;font-weight:650;box-shadow:none}.zeno-clinic-card:hover{border-color:#cbdbe8}.zeno-hours-more:focus-visible{outline:2px solid #86b8ea;outline-offset:2px}</style></head><body><div id="app" class="app"></div><script>
 'use strict';
 const APP_MODE='owner';
 
@@ -568,7 +568,7 @@ const item=(m,mobile=false)=>APP_MODE==='hospital'?
  `<button class="${mobile?'':'navlink '}${state.hTab===m[0]?'active':''}" data-action="h-tab" data-value="${m[0]}"><span class="ico">${m[1]}</span><b>${m[2]}</b></button>`:
  `<button class="${mobile?'':'navlink '}${state.page===m[0]?'active':''}" data-nav="${m[0]}"><span class="ico">${m[1]}</span><b>${m[2]}</b></button>`;
 return `<aside class="sidebar"><div class="brand"><img class="original-logo" alt="ZENO" src="/brand-wordmark-v3.webp"></div>
- <p class="side-caption">${APP_MODE==='hospital'?'HOSPITAL / MANAGEMENT':'GUARDIAN / SERVICE'}</p>
+ <p class="side-caption">${APP_MODE==='hospital'?'HOSPITAL / MANAGEMENT':'보호자 서비스'}</p>
  <nav>${menu.map(m=>item(m)).join('')}</nav>
  <div class="sidelow"><strong>${APP_MODE==='hospital'?'제노 동물병원용':'제노 보호자용'}</strong><p>${APP_MODE==='hospital'?'예약 요청과 진료 수용 상태를 관리하는 시연 화면입니다.':'청주 동물병원 정보와 예약 기능을 시연합니다.'}</p><span class="pill ${state.local?'warn':'online'}">${state.local?'기기 내 체험':'서버 연결됨'}</span>${APP_MODE==='owner'?'<button class="btn secondary small full" style="margin-top:12px" data-action="owner-logout">로그아웃</button>':''}</div></aside>
  <div class="mobilebar">${(APP_MODE==='hospital'?menu:menu.filter(m=>['home','search','emergency','bookings','more'].includes(m[0]))).map(m=>item(m,true)).join('')}</div>`;
@@ -705,7 +705,7 @@ function authScreen(){
  <small>현재는 창업 시범서비스입니다. 실제 진료 예약이 접수되지 않으며, 민감한 개인정보와 실제 진료 기록을 입력하지 마세요.</small>
  <a class="hosp-switch" href="/hospital">병원 담당자이신가요? 병원용 열기 →</a></div></div>`;
 }
-function render(){if(APP_MODE==='owner'&&!state.ownerToken){document.getElementById('app').innerHTML=authScreen();return;}if(APP_MODE==='hospital')state.page='hospital';else if(state.page==='hospital'||state.page==='admin')state.page='home';const body=state.page==='home'?home():state.page==='search'?searchPage():state.page==='emergency'?emergency():state.page==='pets'?petsPage():state.page==='bookings'?bookingsPage():state.page==='qa'?qaPage():state.page==='membership'?membership():state.page==='prices'?pricesPage():state.page==='hospital'?hospitalPage():state.page==='more'?morePage():adminPage();document.getElementById('app').innerHTML=`${nav()}<main class="content">${state.appError?`<div class="banner warning">서버 오류: ${e(state.appError)}</div>`:''}<div class="banner ${state.local?'warning':''}" style="margin-bottom:16px"><strong>${state.local?'서버 설정 필요':'공유 서버 연결 모드'}</strong> · ${state.local?'현재 서버가 연결되지 않았습니다. 이 앱은 서버 배포 후 사용할 수 있습니다.':'보호자와 병원 앱이 같은 데이터베이스를 이용합니다. 12초 간격 자동 갱신 · 실제 병원 공식 접수와는 별개입니다.'}</div>${body}${footer()}</main>${renderModal()}`;}
+function render(){if(APP_MODE==='owner'&&!state.ownerToken){document.getElementById('app').innerHTML=authScreen();return;}if(APP_MODE==='hospital')state.page='hospital';else if(state.page==='hospital'||state.page==='admin')state.page='home';const body=state.page==='home'?home():state.page==='search'?searchPage():state.page==='emergency'?emergency():state.page==='pets'?petsPage():state.page==='bookings'?bookingsPage():state.page==='qa'?qaPage():state.page==='membership'?membership():state.page==='prices'?pricesPage():state.page==='hospital'?hospitalPage():state.page==='more'?morePage():adminPage();document.getElementById('app').innerHTML=`${nav()}<main class="content">${state.appError?`<div class="banner warning">서버 오류: ${e(state.appError)}</div>`:''}<div class="banner ${state.local?'warning':''}" style="margin-bottom:16px"><strong>${state.local?'서버 설정 필요':'공유 서버 연결 모드'}</strong> · ${state.local?'현재 서버가 연결되지 않았습니다. 이 앱은 서버 배포 후 사용할 수 있습니다.':'시연 서비스 · 실제 병원에 진료 예약이 접수되지 않습니다.'}</div>${body}${footer()}</main>${renderModal()}`;}
 function openModal(type,id){state.modal={type,id};render()}
 async function afterMutation(p=''){try{await refresh(true);if(p)toast(p)}catch(err){toast(err.message)}}
 async function mutate(method,path,data,message){try{await api(method,path,data);state.modal=null;await afterMutation(message||'저장되었습니다.')}catch(err){toast(err.message)}}
