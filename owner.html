@@ -796,7 +796,7 @@ function home(){
  +'<div class="zeno-home-specialties"><h2>어떤 진료를 찾으세요?</h2><div class="zeno-specialty-chips">'+choices.map(x=>'<button type="button" data-action="specialty" data-value="'+e(x[0])+'">'+e(x[0])+'</button>').join('')+'</div></div>'
  +'<div class="zeno-home-shortcuts"><button type="button" class="zeno-emergency-shortcut" data-nav="emergency">야간·응급 병원</button><button type="button" class="zeno-cat-shortcut" data-action="cat-waiting-shortcut">고양이 전용 대기실</button></div>'
  +'</section>'+zenoHomeBookingPreview()
- +'<div class="zeno-home-bottom"><button class="link" type="button" data-nav="search">청주 전체 병원 보기</button><div class="zeno-home-simple-links"><button type="button" data-nav="pets">내 아이 기록</button><button type="button" data-nav="qa">수의사 질문·답변</button></div></div>'
+ +'<div class="zeno-home-bottom"><button class="link" type="button" data-action="show-all-hospitals">청주 전체 병원 보기</button><div class="zeno-home-simple-links"><button type="button" data-nav="pets">내 아이 기록</button><button type="button" data-nav="qa">수의사 질문·답변</button></div></div>'
  +'<div class="zeno-partner-space">'+ad()+'</div>';
 }
 
@@ -885,6 +885,7 @@ if(a==='auth-mode'){state.authMode=val;render();return}
 if(a==='owner-logout'){clearTimeout(profileSaveTimer);state.ownerToken='';state.owner=null;ownerId='';state.pets=[];state.records=[];state.favorites=[];state.bookings=[];state.questions=[];state.reviews=[];state.authMode='login';localStorage.removeItem('zeno-owner-auth');render();return}
 if(a==='refresh'){await refresh(true);toast('최신 정보를 불러왔습니다.');return}
 if(a==='details'||a==='book'){openModal(a==='details'?'details':'book',id);return}
+if(a==='show-all-hospitals'){state.query='';state.specialty='';state.exoticSpecies='';state.filter='전체';zenoNewSearch=true;navTo('search');return}
 if(a==='cat-waiting-shortcut'){state.query='';state.specialty='';state.exoticSpecies='';state.filter='고양이 대기실';zenoNewSearch=true;navTo('search');return}if(a==='filter'){state.filter=val;render();return}if(a==='booking-tab'){state.bookingTab=val;render();return}
 if(a==='search-apply'){state.query=document.getElementById('hospital-search')?.value.trim()||'';render();return}
 if(a==='specialty'){state.query='';state.specialty=val;state.exoticSpecies='';state.filter='전체';zenoNewSearch=true;navTo('search');return}
