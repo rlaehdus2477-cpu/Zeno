@@ -384,21 +384,46 @@ if(id==='review-form'){if(val(d.text).length<10){toast('후기를 10자 이상 �
 });
 window.addEventListener('storage',ev=>{if([STOREKEY,'zeno-pets-v2','zeno-records-v2','zeno-favorites-v2'].includes(ev.key)){state.pets=JSON.parse(localStorage.getItem('zeno-pets-v2')||'[]');state.records=JSON.parse(localStorage.getItem('zeno-records-v2')||'[]');state.favorites=JSON.parse(localStorage.getItem('zeno-favorites-v2')||'[]');refresh()}});
 window.addEventListener('zeno-refresh',()=>{});
+let zenoStarted=false,zenoStartPending=false,zenoStartRetry=null,zenoStartFailures=0,zenoPollTimer=null;
+function zenoCanPoll(){return !document.hidden&&navigator.onLine!==false&&state.serverReady&&!!(APP_MODE==='hospital'?state.hospitalToken:state.ownerToken)}
+function zenoPoll(){
+ if(!zenoCanPoll())return;
+ refresh().catch(err=>console.warn('ZENO background sync:',err));
+}
 async function start(){
+ if(zenoStarted||zenoStartPending)return;
+ zenoStartPending=true;
  try{
-  const r=await fetch('/api/ping',{cache:'no-store'});const x=await r.json();
-  state.local=!x.connected;state.serverReady=!!x.connected;
- }catch{state.local=true;state.serverReady=false}
- if(!state.serverReady){state.appError='서버 연결을 재시도 중입니다.';render();setTimeout(start,10000);return}
- if(APP_MODE==='owner'&&state.ownerToken){
-  try{const x=await api('GET','/api/auth/me');state.owner=x.owner;ownerId=x.owner.id}
-  catch{state.ownerToken='';state.owner=null;localStorage.removeItem('zeno-owner-auth')}
- }
- await refresh();
- setInterval(()=>{if(!document.hidden&&navigator.onLine!==false&&state.serverReady&&(APP_MODE==='hospital'?state.hospitalToken:state.ownerToken))refresh()},12000);
- document.addEventListener('visibilitychange',()=>{if(!document.hidden&&state.serverReady)refresh()});
- window.addEventListener('online',()=>{if(state.serverReady)refresh(true)});
- if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost'||location.hostname==='127.0.0.1'))navigator.serviceWorker.register('/sw.js').catch(()=>{});
+  const controller=new AbortController();
+  const timeout=setTimeout(()=>controller.abort(),8000);
+  let ready=false;
+  try{
+   const r=await fetch('/api/ping',{cache:'no-store',signal:controller.signal});
+   if(r.ok){const x=await r.json();ready=!!x.connected}
+  }catch(err){console.warn('ZENO connectivity:',err)}
+  finally{clearTimeout(timeout)}
+  state.local=!ready;state.serverReady=ready;
+  if(!ready){
+   state.appError='서버 연결을 재시도 중입니다.';
+   render();
+   zenoStartFailures++;
+   const delay=Math.min(30000,5000*Math.pow(2,Math.min(zenoStartFailures-1,3)));
+   if(!zenoStartRetry)zenoStartRetry=setTimeout(()=>{zenoStartRetry=null;start()},delay);
+   return;
+  }
+  zenoStartFailures=0;
+  state.appError='';
+  if(APP_MODE==='owner'&&state.ownerToken){
+   try{const x=await api('GET','/api/auth/me');state.owner=x.owner;ownerId=x.owner.id}
+   catch(err){if(/인증|401|로그인/.test(err.message)){state.ownerToken='';state.owner=null;localStorage.removeItem('zeno-owner-auth')}}
+  }
+  await refresh();
+  zenoStarted=true;
+  if(!zenoPollTimer)zenoPollTimer=setInterval(zenoPoll,25000);
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)zenoPoll()});
+  window.addEventListener('online',()=>{if(!state.serverReady){start()}else zenoPoll()});
+  if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost'||location.hostname==='127.0.0.1'))navigator.serviceWorker.register('/sw.js').catch(()=>{});
+ }finally{zenoStartPending=false}
 }
 render();start();
 </script><style>#memopen{position:fixed;bottom:16px;right:16px;z-index:100;border:0;border-radius:25px;background:#1979e6;color:white;padding:14px;font-weight:bold}#membg{display:none;position:fixed;inset:0;background:#091b32b8;z-index:110;overflow:auto;padding:20px}#membg.show{display:block}#memcard{background:white;color:#173452;max-width:560px;margin:4vh auto;border-radius:20px;padding:24px}#memcard input:not([type=checkbox]),#memcard textarea,#memcard select{display:block;width:100%;box-sizing:border-box;margin:9px 0;padding:12px;border:1px solid #ccc;border-radius:8px}#memcard button{padding:10px 14px;background:#1979e6;color:white;border:0;border-radius:9px;margin:5px}@media(max-width:750px){#memopen{bottom:calc(88px + env(safe-area-inset-bottom));right:13px;padding:9px 15px;font-size:13px;box-shadow:0 7px 20px #1861bb38}}</style>
