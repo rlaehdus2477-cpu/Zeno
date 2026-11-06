@@ -558,14 +558,28 @@ const state={ownerToken:localStorage.getItem('zeno-owner-auth')||'',owner:null,a
 let toastTimer;
 function toast(message){let o=document.querySelector('.toast');if(o)o.remove();o=document.createElement('div');o.className='toast';o.textContent=message;document.body.appendChild(o);clearTimeout(toastTimer);toastTimer=setTimeout(()=>o.remove(),3200)}
 let profileSaveTimer;
+let zenoProfileRevision=0;
 function savePersonal(){
-  if(APP_MODE!=='owner'||!state.ownerToken)return;
-  state.profileSaving=true;
-  clearTimeout(profileSaveTimer);
-  profileSaveTimer=setTimeout(async()=>{
-    try{await api('PUT','/api/profile',{pets:state.pets,records:state.records,favorites:state.favorites});state.profileSaving=false}
-    catch(err){state.profileSaving=false;toast('서버에 건강 기록을 저장하지 못했습니다: '+err.message)}
-  },250);
+ if(APP_MODE!=='owner'||!state.ownerToken)return;
+ state.profileSaving=true;state.profileSaveError='';
+ const revision=++zenoProfileRevision;
+ clearTimeout(profileSaveTimer);
+ profileSaveTimer=setTimeout(async()=>{
+  const payload={pets:state.pets,records:state.records,favorites:state.favorites};
+  try{
+   await api('PUT','/api/profile',payload);
+   if(revision!==zenoProfileRevision){savePersonal();return}
+   state.profileSaving=false;state.profileSaveError='';
+   toast('저장됨');
+   if(state.page==='pets')render();
+  }catch(err){
+   if(revision!==zenoProfileRevision)return;
+   state.profileSaveError='저장하지 못했어요. 다시 저장해 주세요.';
+   /* Keep unsaved profile data locally and prevent background refresh from overwriting it. */
+   toast(state.profileSaveError);
+   if(state.page==='pets')render();
+  }
+ },250);
 }
 function localApi(method,path,data){let d=localGet(),parts=path.split('?')[0].split('/').filter(Boolean),id=parts[2],now=new Date().toISOString(),item;
 if(path.startsWith('/api/bootstrap'))return {settings:d.settings,bookings:d.bookings.filter(b=>b.ownerId===ownerId),questions:d.questions.filter(q=>q.ownerId===ownerId),reviews:d.reviews.filter(r=>r.ownerId===ownerId)};
@@ -937,7 +951,7 @@ document.addEventListener('click',async ev=>{let n=ev.target.closest('[data-nav]
 if(a==='detail-tab'){const dialog=el.closest('.modal'),selected=el.dataset.value;if(dialog){dialog.querySelectorAll('[data-detail-panel]').forEach(p=>{p.hidden=p.dataset.detailPanel!==selected});dialog.querySelectorAll('[data-action="detail-tab"]').forEach(b=>{const active=b.dataset.value===selected;b.classList.toggle('active',active);b.setAttribute('aria-selected',String(active))});dialog.scrollTop=0;}return}
 if(a==='close-modal'){zenoCloseModal();return}if(a==='modal-backdrop'){if(ev.target===el)zenoCloseModal();return}
 if(a==='auth-mode'){state.authMode=val;render();return}
-if(a==='owner-logout'){clearTimeout(profileSaveTimer);state.ownerToken='';state.owner=null;ownerId='';state.pets=[];state.records=[];state.favorites=[];state.bookings=[];state.questions=[];state.reviews=[];state.authMode='login';localStorage.removeItem('zeno-owner-auth');render();return}
+if(a==='owner-logout'){clearTimeout(profileSaveTimer);state.profileSaving=false;state.profileSaveError='';state.ownerToken='';state.owner=null;ownerId='';state.pets=[];state.records=[];state.favorites=[];state.bookings=[];state.questions=[];state.reviews=[];state.authMode='login';localStorage.removeItem('zeno-owner-auth');render();return}
 if(a==='refresh'){await refresh(true);toast('최신 정보를 불러왔습니다.');return}
 if(a==='details'||a==='book'){openModal(a==='details'?'details':'book',id);return}
 if(a==='book-pet'){
@@ -961,6 +975,7 @@ if(a==='specialty'){state.query='';state.specialty=val;state.exoticSpecies='';st
 if(a==='clear-specialty'){state.specialty='';state.exoticSpecies='';render();return}if(a==='clear-search'){state.query='';state.specialty='';state.exoticSpecies='';state.filter='전체';state.activeFilters=[];render();return}
 if(a==='exotic'){state.specialty='특수동물';state.exoticSpecies=val;render();toast('진료 가능 여부는 병원에 확인해 주세요.');return}
 if(a==='favorite'){state.favorites=state.favorites.includes(id)?state.favorites.filter(x=>x!==id):[...state.favorites,id];savePersonal();render();return}
+if(a==='retry-profile'){savePersonal();render();return}
 if(a==='add-pet'){openModal('pet');return}if(a==='record'){openModal('record',id);return}
 if(a==='delete-pet'){if(confirm('아이 정보를 삭제하시겠습니까?')){state.pets=state.pets.filter(x=>x.id!==id);state.records=state.records.filter(x=>x.petId!==id);savePersonal();render()}return}
 if(a==='delete-record'){if(confirm('이 기록을 삭제하시겠습니까?')){state.records=state.records.filter(x=>x.id!==id);savePersonal();render()}return}
