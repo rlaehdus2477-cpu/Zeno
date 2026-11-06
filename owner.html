@@ -36,7 +36,7 @@ input,select,textarea,.search{font-size:16px;line-height:1.45}
  .metric small{font-size:12.5px}
  .mobilebar button{font-size:12px}
 }
-</style><link rel="manifest" href="/manifest-owner.webmanifest?v=6"><link rel="icon" type="image/png" href="/icon-owner-192-v3.png?v=6"><link rel="apple-touch-icon" href="/icon-owner-192-v3.png?v=6"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><style>.zeno-auth{min-height:100dvh;background:radial-gradient(circle at 70% 5%,#d0eaff,transparent 40%),linear-gradient(#f7fbff,#edf5ff);display:flex;justify-content:center;align-items:center;padding:28px 15px}.zeno-auth-card{width:min(100%,445px);background:white;border-radius:25px;box-shadow:0 25px 65px #0b39611d;padding:30px 28px;display:flex;flex-direction:column;gap:13px}.zeno-auth-logo{width:78px;height:78px;border-radius:19px;object-fit:cover}.zeno-auth h1{font-size:30px;letter-spacing:-1.3px;line-height:1.25;color:#092744;margin:0}.zeno-auth h1 span{color:#1786ed}.zeno-auth p{margin:0;color:#526b80;line-height:1.7}.zeno-auth small{line-height:1.65;color:#748398}.zeno-auth .auth-tabs{display:flex;gap:5px;border-radius:12px;background:#eaf4ff;padding:5px}.auth-tabs button{flex:1;border:none;background:transparent;padding:11px;border-radius:9px;font-weight:700;color:#65809b}.auth-tabs button.selected{background:white;color:#076ab7;box-shadow:0 2px 8px #275e9512}.zeno-auth form{display:flex;flex-direction:column;gap:13px}.auth-label{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:700;color:#45627b}.auth-label input{border:1px solid #cddfeb;padding:13px;border-radius:11px;font-size:15px;background:#fcfeff}.hosp-switch{text-align:center;color:#127bd6;font-weight:700}@media(max-width:520px){.zeno-auth-card{padding:25px 20px}}</style><style id="zeno-readable-ui">
+</style><link rel="manifest" href="/manifest-owner.webmanifest?v=12"><link rel="icon" type="image/png" href="/icon-owner-192-v3.png?v=6"><link rel="apple-touch-icon" href="/icon-owner-192-v3.png?v=6"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><style>.zeno-auth{min-height:100dvh;background:radial-gradient(circle at 70% 5%,#d0eaff,transparent 40%),linear-gradient(#f7fbff,#edf5ff);display:flex;justify-content:center;align-items:center;padding:28px 15px}.zeno-auth-card{width:min(100%,445px);background:white;border-radius:25px;box-shadow:0 25px 65px #0b39611d;padding:30px 28px;display:flex;flex-direction:column;gap:13px}.zeno-auth-logo{width:78px;height:78px;border-radius:19px;object-fit:cover}.zeno-auth h1{font-size:30px;letter-spacing:-1.3px;line-height:1.25;color:#092744;margin:0}.zeno-auth h1 span{color:#1786ed}.zeno-auth p{margin:0;color:#526b80;line-height:1.7}.zeno-auth small{line-height:1.65;color:#748398}.zeno-auth .auth-tabs{display:flex;gap:5px;border-radius:12px;background:#eaf4ff;padding:5px}.auth-tabs button{flex:1;border:none;background:transparent;padding:11px;border-radius:9px;font-weight:700;color:#65809b}.auth-tabs button.selected{background:white;color:#076ab7;box-shadow:0 2px 8px #275e9512}.zeno-auth form{display:flex;flex-direction:column;gap:13px}.auth-label{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:700;color:#45627b}.auth-label input{border:1px solid #cddfeb;padding:13px;border-radius:11px;font-size:15px;background:#fcfeff}.hosp-switch{text-align:center;color:#127bd6;font-weight:700}@media(max-width:520px){.zeno-auth-card{padding:25px 20px}}</style><style id="zeno-readable-ui">
 :root{--bg:#f7fbff;--text:#142e4c;--sub:#506b86;--navy:#113e70}
 body{font-size:16px;line-height:1.55;background:#f7fbff}
 .top h1{font-size:clamp(25px,5vw,34px)}.top p,.hero p,.banner,.panel .desc,.choice p,.metric small{font-size:15px;line-height:1.65}
@@ -209,6 +209,30 @@ input,select,textarea,.search{font-size:16px;line-height:1.45}
 /* Owner PWA: keep the Android safe area blue, including standalone launch. */
 :root{color-scheme:light}
 @media(display-mode:standalone){html{background:#1689fa}body{background:#1689fa}#app{background:#f4f8fc;min-height:100dvh}.mobilebar{background:#fff}}
+</style><style>
+/* Owner-only ZENO blue identity and legibility patch */
+:root{--teal:#1689fa;--mint:#1689fa;--green:#1689fa}
+html{background-color:#1689fa}
+body{background-color:#f4f8fc;color:#173452;font-size:17px}
+#app{background-color:#f4f8fc;min-height:100dvh}
+.pill.online,.pill.online *{background-color:#e7f2ff!important;color:#086bcb!important}
+.tag.teal,.status.teal,.online,.badge.online,.banner.success{background-color:#e7f2ff;color:#086bcb}
+.metric small,.choice p,.hospital p,.booking-card p,.panel .desc,.notice,.footer,.tiny,.product p{font-size:15px;line-height:1.6}
+@media(max-width:750px){
+ body{font-size:17px}
+ .mobilebar button{font-size:14px;line-height:1.25}
+ .mobilebar button .ico{font-size:25px}
+ .booking-card p,.booking-card .tiny,.hospital p,.hospital .tiny,.choice p,.panel .desc{font-size:16px}
+ .filter,.tag,.pill,.status,.section-title span{font-size:14px}
+ .btn,.btn.small{font-size:15px;min-height:46px}
+ .metric small{font-size:14px}
+ .mobilebar{background:#fff}
+}
+@media(display-mode:standalone){
+ html{background-color:#1689fa!important}
+ body{background-color:#f4f8fc!important}
+ #app{background-color:#f4f8fc}
+}
 </style></head><body><div id="app" class="app"></div><script>
 'use strict';
 const APP_MODE='owner';
