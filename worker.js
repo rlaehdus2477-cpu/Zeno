@@ -17,7 +17,7 @@ const HOSPITAL_HTML = "<!doctype html><html lang=\"ko\"><head><meta charset=\"ut
 const IDS = new Set(['soo','naeum','tnd']);
 const STATUSES = new Set(['available','busy','check']);
 const BOOKING_STATES = new Set(['pending','accepted','suggested','confirmed','rejected','cancelled','in_progress','done']);
-const DEFAULT = () => ({status:'check',updatedAt:null,notice:'',emergency:false,prices:[],services:[]});
+const DEFAULT = () => ({status:'available',updatedAt:null,notice:'',emergency:false,prices:[],services:[]});
 const now=()=>new Date().toISOString();
 const clean=(x,n=500)=>String(x??'').trim().slice(0,n);
 const validOwner=x=>typeof x==='string'&&/^[a-zA-Z0-9\-]{12,90}$/.test(x);
@@ -193,7 +193,7 @@ if(path==='/api/bookings'&&method==='POST'){
  ]);
  return json(row,201)
 }
-if(/^\/api\/bookings\/[^/]+$/.test(path)&&method==='PATCH'){let id=decodeURIComponent(path.split('/')[3]);assert(BOOKING_STATES.has(data.status),'지원하지 않는 예약 상태입니다.');const r=await db.prepare('SELECT * FROM bookings WHERE id=?').bind(id).first();assert(r,'예약을 찾을 수 없습니다.',404);const side=data.side==='owner'?'owner':'hospital';const prev=r.status,next=data.status,allowed={pending:['accepted','suggested','rejected'],accepted:['confirmed','suggested','rejected'],suggested:['suggested','rejected'],confirmed:['in_progress','done'],in_progress:['done'],done:[],rejected:[],cancelled:[]};
+if(/^\/api\/bookings\/[^/]+$/.test(path)&&method==='PATCH'){let id=decodeURIComponent(path.split('/')[3]);assert(BOOKING_STATES.has(data.status),'지원하지 않는 예약 상태입니다.');const r=await db.prepare('SELECT * FROM bookings WHERE id=?').bind(id).first();assert(r,'예약을 찾을 수 없습니다.',404);const side=data.side==='owner'?'owner':'hospital';const prev=r.status,next=data.status,allowed={pending:['accepted','confirmed','suggested','rejected','cancelled'],accepted:['confirmed','suggested','rejected','cancelled'],suggested:['confirmed','suggested','rejected','cancelled'],confirmed:['in_progress','done','cancelled'],in_progress:['done'],done:[],rejected:[],cancelled:[]};
 if(side==='owner'){const own=await checkOwner(request,env);assert(own.ownerId===r.owner_id,'예약 소유자만 변경할 수 있습니다.',403);assert(['suggested','pending','accepted'].includes(prev),'이미 처리된 예약입니다.');if(next==='confirmed')assert(prev==='suggested','시간 제안이 있을 때만 확정할 수 있습니다.');else assert(next==='cancelled','허용되지 않은 변경입니다.');}
 else{await checkHospital(request,env,r.hospital_id);assert(allowed[prev]?.includes(next),'현재 예약 단계에서는 변경할 수 없습니다.');}
 let newProp=clean(data.proposedAt||r.proposed_at,30),newNote=clean(data.hospitalNote??r.hospital_note,300);if(next==='suggested'){assert(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(newProp),'제안 시간을 입력해 주세요.');assert(new Date(newProp+':00+09:00').getTime()>Date.now(),'과거 시각을 제안할 수 없습니다.')}const t=now();const result=await db.prepare('UPDATE bookings SET status=?,proposed_at=?,hospital_note=?,updated_at=? WHERE id=? AND status=?').bind(next,newProp,newNote,t,id,prev).run();assert((result.meta?.changes||0)===1,'다른 화면에서 먼저 변경되었습니다. 새로고침 후 다시 시도하세요.',409);const updated=await db.prepare('SELECT * FROM bookings WHERE id=?').bind(id).first();return json(booking(updated))}
