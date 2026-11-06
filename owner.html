@@ -205,6 +205,10 @@ input,select,textarea,.search{font-size:16px;line-height:1.45}
  .metric small{font-size:12.5px}
  .mobilebar button{font-size:12px}
 }
+</style><style>
+/* Owner PWA: keep the Android safe area blue, including standalone launch. */
+:root{color-scheme:light}
+@media(display-mode:standalone){html{background:#1689fa}body{background:#1689fa}#app{background:#f4f8fc;min-height:100dvh}.mobilebar{background:#fff}}
 </style></head><body><div id="app" class="app"></div><script>
 'use strict';
 const APP_MODE='owner';
