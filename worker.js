@@ -193,6 +193,19 @@ if(path==='/api/bookings'&&method==='POST'){
  ]);
  return json(row,201)
 }
+if(/^\/api\/bookings\/[^/]+$/.test(path)&&method==='DELETE'){
+ const id=decodeURIComponent(path.split('/')[3]);
+ const row=await db.prepare('SELECT id,hospital_id,status FROM bookings WHERE id=?').bind(id).first();
+ assert(row,'삭제할 예약을 찾을 수 없습니다.',404);
+ await checkHospital(request,env,row.hospital_id);
+ assert(['cancelled','rejected'].includes(row.status),'취소·거절된 예약만 삭제할 수 있습니다.',409);
+ await ensureBookingDetails(db);
+ await db.batch([
+  db.prepare('DELETE FROM booking_details WHERE booking_id=?').bind(id),
+  db.prepare("DELETE FROM bookings WHERE id=? AND hospital_id=? AND status IN ('cancelled','rejected')").bind(id,row.hospital_id)
+ ]);
+ return json({ok:true,deletedId:id});
+}
 if(/^\/api\/bookings\/[^/]+$/.test(path)&&method==='PATCH'){let id=decodeURIComponent(path.split('/')[3]);assert(BOOKING_STATES.has(data.status),'지원하지 않는 예약 상태입니다.');const r=await db.prepare('SELECT * FROM bookings WHERE id=?').bind(id).first();assert(r,'예약을 찾을 수 없습니다.',404);const side=data.side==='owner'?'owner':'hospital';const prev=r.status,next=data.status,allowed={pending:['accepted','confirmed','suggested','rejected','cancelled'],accepted:['confirmed','suggested','rejected','cancelled'],suggested:['confirmed','suggested','rejected','cancelled'],confirmed:['in_progress','done','cancelled'],in_progress:['done'],done:[],rejected:[],cancelled:[]};
 if(side==='owner'){const own=await checkOwner(request,env);assert(own.ownerId===r.owner_id,'예약 소유자만 변경할 수 있습니다.',403);assert(['suggested','pending','accepted'].includes(prev),'이미 처리된 예약입니다.');if(next==='confirmed')assert(prev==='suggested','시간 제안이 있을 때만 확정할 수 있습니다.');else assert(next==='cancelled','허용되지 않은 변경입니다.');}
 else{await checkHospital(request,env,r.hospital_id);assert(allowed[prev]?.includes(next),'현재 예약 단계에서는 변경할 수 없습니다.');}
