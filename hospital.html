@@ -138,7 +138,7 @@ async function api(method,path,data,admin=false){
  if(!r.ok){if(r.status===401&&APP_MODE==='owner'&&!['/api/auth/login','/api/auth/register'].includes(path)){state.ownerToken='';state.owner=null;localStorage.removeItem('zeno-owner-auth')}throw Error(result.error||'서버 요청 실패 ('+r.status+')')}
  return result;
 }
-async function refresh(){try{
+function zenoRefreshStamp(){return JSON.stringify([state.ownerToken,state.hospitalToken,state.local,state.serverReady,state.settings,state.bookings,state.questions,state.reviews,state.owner,state.pets,state.records,state.favorites,state.hospitalBookings,state.hospitalQuestions,state.appError,state.profileLoaded])}function zenoRefreshPaint(before,page){if(zenoRefreshStamp()===before)return;const y=window.scrollY;render();if(state.page===page)window.scrollTo(0,y)}async function refresh(){const __zenoBefore=zenoRefreshStamp(),__zenoPage=state.page;try{
 if(APP_MODE==='hospital'){
  if(state.hospitalToken)await loadHospital(false);
 }else{
@@ -150,8 +150,8 @@ if(APP_MODE==='hospital'){
  if(!state.profileSaving){state.pets=v.profile?.pets||[];state.records=v.profile?.records||[];state.favorites=v.profile?.favorites||[];}
  state.profileLoaded=true;
 }
-state.appError='';render();
-}catch(err){console.error(err);state.appError=err.message;render()}}
+state.appError='';zenoRefreshPaint(__zenoBefore,__zenoPage);
+}catch(err){console.error(err);state.appError=err.message;zenoRefreshPaint(__zenoBefore,__zenoPage)}}
 async function loadHospital(draw=true){if(!state.hospitalToken)return;try{const x=await api('GET','/api/dashboard?hospitalId='+encodeURIComponent(state.activeHospital));state.hospitalBookings=x.bookings||[];state.hospitalQuestions=x.questions||[];state.settings[state.activeHospital]=x.settings||state.settings[state.activeHospital];if(draw)render()}catch(err){if(err.message.includes('401')||err.message.includes('권한')||err.message.includes('인증')){state.hospitalToken='';sessionStorage.removeItem('zeno-h-token')}toast(err.message);if(draw)render()}}
 async function loadAdmin(draw=true){if(!state.adminToken)return;try{state.adminStats=await api('GET','/api/admin/stats',null,true);if(draw)render()}catch(err){toast(err.message);state.adminToken='';sessionStorage.removeItem('zeno-admin-token');if(draw)render()}}
 function navTo(p){if(APP_MODE==='hospital'&&p!=='hospital')return;if(APP_MODE==='owner'&&(p==='hospital'||p==='admin'))return;state.page=p;state.modal=null;window.scrollTo({top:0,behavior:'smooth'});if(p==='hospital')loadHospital();else if(p==='admin')loadAdmin();render()}
