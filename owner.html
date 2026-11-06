@@ -58,7 +58,7 @@ body{font-size:16px;line-height:1.6}
 </style><style id="zeno-brand-ui-v3">
 /* ZENO brand UI v3 — preserve service/booking logic */
 :root{--navy:#173960;--navy2:#245886;--blue:#177ef0;--blue2:#48acff;--pale:#edf7ff;--bg:#f7faff;--line:#e0e9f2;--text:#172f4d;--sub:#60758c;--shadow:0 9px 27px rgba(30,75,120,.075)}
-html{scroll-behavior:auto}body{font-size:16px;line-height:1.58;-webkit-font-smoothing:antialiased}
+html{scroll-behavior:smooth}body{font-size:16px;line-height:1.58;-webkit-font-smoothing:antialiased}
 .sidebar{background:#fff;color:var(--text);border-right:1px solid #dfe9f4;box-shadow:3px 0 20px rgba(15,54,90,.04)}
 .brand{margin:5px 6px 26px;padding:9px;border-radius:14px;background:#fff}.original-logo{width:204px;max-width:100%;height:auto}
 .side-caption{color:#63809b;font-size:12px}.navlink{color:#4c6984;font-size:15px;font-weight:700;min-height:48px}.navlink.active,.navlink:hover{background:#eaf4ff;color:#086ad1}
@@ -187,26 +187,84 @@ else if(path==='/api/reviews'&&method==='POST'){let b=d.bookings.find(x=>x.id===
 else throw Error('지원되지 않는 요청입니다.');localSet(d);return item||{ok:true}}
 async function api(method,path,data,admin=false){
  const token=admin?state.adminToken:(APP_MODE==='hospital'?state.hospitalToken:state.ownerToken);
- const r=await fetch(path,{method,credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json',...(token?{'Authorization':'Bearer '+token}:{})},body:method==='GET'?undefined:JSON.stringify(data||{})});
+ const controller=new AbortController();
+ const timeout=setTimeout(()=>controller.abort(),15000);
+ let r;
+ try{
+  r=await fetch(path,{method,credentials:'same-origin',cache:'no-store',signal:controller.signal,headers:{'Content-Type':'application/json',...(token?{'Authorization':'Bearer '+token}:{})},body:method==='GET'?undefined:JSON.stringify(data||{})});
+ }catch(err){
+  throw Error(err&&err.name==='AbortError'?'서버 응답이 지연되고 있습니다. 다시 시도해 주세요.':'네트워크 연결을 확인한 뒤 다시 시도해 주세요.');
+ }finally{clearTimeout(timeout)}
  const result=await r.json().catch(()=>({}));
  if(!r.ok){if(r.status===401&&APP_MODE==='owner'&&!['/api/auth/login','/api/auth/register'].includes(path)){state.ownerToken='';state.owner=null;localStorage.removeItem('zeno-owner-auth')}throw Error(result.error||'서버 요청 실패 ('+r.status+')')}
  return result;
 }
-function zenoRefreshStamp(){return JSON.stringify([state.ownerToken,state.hospitalToken,state.local,state.serverReady,state.settings,state.bookings,state.questions,state.reviews,state.owner,state.pets,state.records,state.favorites,state.hospitalBookings,state.hospitalQuestions,state.appError,state.profileLoaded])}function zenoRefreshPaint(before,page){if(zenoRefreshStamp()===before)return;const y=window.scrollY;const root=document.getElementById('app');const previousMinHeight=root?root.style.minHeight:'';if(root&&y>0)root.style.minHeight=Math.max(root.offsetHeight,document.documentElement.clientHeight)+'px';render();window.scrollTo({left:0,top:y,behavior:'instant'});if(root)requestAnimationFrame(()=>{root.style.minHeight=previousMinHeight})}async function refresh(){const __zenoBefore=zenoRefreshStamp(),__zenoPage=state.page;try{
-if(APP_MODE==='hospital'){
- if(state.hospitalToken)await loadHospital(false);
-}else{
- if(!state.ownerToken){render();return;}
- const v=await api('GET','/api/bootstrap');
- state.settings=v.settings||{};state.bookings=v.bookings||[];state.questions=v.questions||[];state.reviews=v.reviews||[];
- state.owner=v.owner||state.owner;
- ownerId=state.owner?.id||'';
- if(!state.profileSaving){state.pets=v.profile?.pets||[];state.records=v.profile?.records||[];state.favorites=v.profile?.favorites||[];}
- state.profileLoaded=true;
+
+let zenoRefreshTask=null,zenoRefreshFailures=0,zenoDeferredPaint=false;
+function zenoRefreshStamp(){
+ return JSON.stringify([state.ownerToken,state.hospitalToken,state.local,state.serverReady,state.settings,state.bookings,state.questions,state.reviews,state.owner,state.pets,state.records,state.favorites,state.hospitalBookings,state.hospitalQuestions,state.appError,state.profileLoaded]);
 }
-state.appError='';zenoRefreshPaint(__zenoBefore,__zenoPage);
-}catch(err){console.error(err);state.appError=err.message;zenoRefreshPaint(__zenoBefore,__zenoPage)}}
-async function loadHospital(draw=true){if(!state.hospitalToken)return;try{const x=await api('GET','/api/dashboard?hospitalId='+encodeURIComponent(state.activeHospital));state.hospitalBookings=x.bookings||[];state.hospitalQuestions=x.questions||[];state.settings[state.activeHospital]=x.settings||state.settings[state.activeHospital];if(draw)render()}catch(err){if(err.message.includes('401')||err.message.includes('권한')||err.message.includes('인증')){state.hospitalToken='';sessionStorage.removeItem('zeno-h-token')}toast(err.message);if(draw)render()}}
+function zenoRefreshPaint(before,page){
+ if(!zenoDeferredPaint&&zenoRefreshStamp()===before)return;
+ const active=document.activeElement;
+ if(active&&active.closest&&active.closest('#app')&&/^(INPUT|TEXTAREA|SELECT)$/.test(active.tagName)){zenoDeferredPaint=true;return;}
+ const y=window.scrollY;
+ const root=document.getElementById('app');
+ const previousMinHeight=root?root.style.minHeight:'';
+ if(root&&y>0)root.style.minHeight=Math.max(root.offsetHeight,document.documentElement.clientHeight)+'px';
+ render();
+ zenoDeferredPaint=false;
+ if(state.page===page)window.scrollTo({left:0,top:y,behavior:'instant'});
+ if(root)requestAnimationFrame(()=>{root.style.minHeight=previousMinHeight});
+}
+document.addEventListener('focusout',()=>{if(zenoDeferredPaint)setTimeout(()=>zenoRefreshPaint('',state.page),0)});
+async function refresh(force=false){
+ if(zenoRefreshTask){
+  if(force){await zenoRefreshTask;return refresh(false)}
+  return zenoRefreshTask;
+ }
+ const task=(async()=>{
+  const before=zenoRefreshStamp(),page=state.page;
+  const token=APP_MODE==='hospital'?state.hospitalToken:state.ownerToken;
+  try{
+   if(APP_MODE==='hospital'){
+    if(!state.hospitalToken){render();return}
+    await loadHospital(false);
+   }else{
+    if(!state.ownerToken){render();return}
+    const v=await api('GET','/api/bootstrap');
+    if(state.ownerToken!==token)return;
+    state.settings=v.settings||{};
+    state.bookings=v.bookings||[];
+    state.questions=v.questions||[];
+    state.reviews=v.reviews||[];
+    state.owner=v.owner||state.owner;
+    ownerId=state.owner?.id||'';
+    if(!state.profileSaving){
+     state.pets=v.profile?.pets||[];
+     state.records=v.profile?.records||[];
+     state.favorites=v.profile?.favorites||[];
+    }
+    state.profileLoaded=true;
+   }
+   if((APP_MODE==='hospital'?state.hospitalToken:state.ownerToken)!==token)return;
+   zenoRefreshFailures=0;
+   state.appError='';
+   zenoRefreshPaint(before,page);
+  }catch(err){
+   console.error('ZENO refresh:',err);
+   zenoRefreshFailures++;
+   const signedOut=(APP_MODE==='hospital'?state.hospitalToken:state.ownerToken)!==token;
+   if(zenoRefreshFailures>=2||signedOut){
+    state.appError=err.message;
+    zenoRefreshPaint(before,page);
+   }
+  }
+ })();
+ zenoRefreshTask=task;
+ try{return await task}finally{if(zenoRefreshTask===task)zenoRefreshTask=null}
+}
+async function loadHospital(draw=true){if(!state.hospitalToken)return;try{const x=await api('GET','/api/dashboard?hospitalId='+encodeURIComponent(state.activeHospital));state.hospitalBookings=x.bookings||[];state.hospitalQuestions=x.questions||[];state.settings[state.activeHospital]=x.settings||state.settings[state.activeHospital];if(draw)render()}catch(err){if(err.message.includes('401')||err.message.includes('권한')||err.message.includes('인증')){state.hospitalToken='';sessionStorage.removeItem('zeno-h-token')}if(draw){toast(err.message);render()}else throw err}}
 async function loadAdmin(draw=true){if(!state.adminToken)return;try{state.adminStats=await api('GET','/api/admin/stats',null,true);if(draw)render()}catch(err){toast(err.message);state.adminToken='';sessionStorage.removeItem('zeno-admin-token');if(draw)render()}}
 function navTo(p){if(APP_MODE==='hospital'&&p!=='hospital')return;if(APP_MODE==='owner'&&(p==='hospital'||p==='admin'))return;state.page=p;state.modal=null;window.scrollTo({top:0,behavior:'instant'});if(p==='hospital')loadHospital();else if(p==='admin')loadAdmin();render()}
 function topbar(title,sub){return `<div class="top"><div><div class="mobile-logo"><img src="/brand-wordmark-v3.webp" alt="ZENO 원본 로고"></div><h1>${e(title)}</h1><p>${e(sub)}</p></div><div class="top-right"><span class="pill ${state.local?'warn':'online'}">● ${state.local?'로컬 체험':'공유 서버 연결'}</span><button class="btn secondary small" data-action="refresh">↻ 새로고침</button></div></div>`}
@@ -273,13 +331,13 @@ function authScreen(){
 }
 function render(){if(APP_MODE==='owner'&&!state.ownerToken){document.getElementById('app').innerHTML=authScreen();return;}if(APP_MODE==='hospital')state.page='hospital';else if(state.page==='hospital'||state.page==='admin')state.page='home';const body=state.page==='home'?home():state.page==='search'?searchPage():state.page==='emergency'?emergency():state.page==='pets'?petsPage():state.page==='bookings'?bookingsPage():state.page==='qa'?qaPage():state.page==='membership'?membership():state.page==='prices'?pricesPage():state.page==='hospital'?hospitalPage():state.page==='more'?morePage():adminPage();document.getElementById('app').innerHTML=`${nav()}<main class="content">${state.appError?`<div class="banner warning">서버 오류: ${e(state.appError)}</div>`:''}<div class="banner ${state.local?'warning':''}" style="margin-bottom:16px"><strong>${state.local?'서버 설정 필요':'공유 서버 연결 모드'}</strong> · ${state.local?'현재 서버가 연결되지 않았습니다. 이 앱은 서버 배포 후 사용할 수 있습니다.':'보호자와 병원 앱이 같은 데이터베이스를 이용합니다. 12초 간격 자동 갱신 · 실제 병원 공식 접수와는 별개입니다.'}</div>${body}${footer()}</main>${renderModal()}`;}
 function openModal(type,id){state.modal={type,id};render()}
-async function afterMutation(p=''){try{await refresh();if(p)toast(p)}catch(err){toast(err.message)}}
+async function afterMutation(p=''){try{await refresh(true);if(p)toast(p)}catch(err){toast(err.message)}}
 async function mutate(method,path,data,message){try{await api(method,path,data);state.modal=null;await afterMutation(message||'저장되었습니다.')}catch(err){toast(err.message)}}
 document.addEventListener('click',async ev=>{let n=ev.target.closest('[data-nav]');if(n){navTo(n.dataset.nav);return}let el=ev.target.closest('[data-action]');if(!el)return;const a=el.dataset.action,id=el.dataset.id,val=el.dataset.value;
 if(a==='close-modal'){state.modal=null;render();return}if(a==='modal-backdrop'){if(ev.target===el){state.modal=null;render()}return}
 if(a==='auth-mode'){state.authMode=val;render();return}
 if(a==='owner-logout'){clearTimeout(profileSaveTimer);state.ownerToken='';state.owner=null;ownerId='';state.pets=[];state.records=[];state.favorites=[];state.bookings=[];state.questions=[];state.reviews=[];state.authMode='login';localStorage.removeItem('zeno-owner-auth');render();return}
-if(a==='refresh'){await refresh();toast('최신 정보를 불러왔습니다.');return}
+if(a==='refresh'){await refresh(true);toast('최신 정보를 불러왔습니다.');return}
 if(a==='details'||a==='book'){openModal(a==='details'?'details':'book',id);return}
 if(a==='cat-waiting-shortcut'){state.query='';state.specialty='';state.exoticSpecies='';state.filter='고양이 대기실';navTo('search');return}if(a==='filter'){state.filter=val;render();return}if(a==='booking-tab'){state.bookingTab=val;render();return}
 if(a==='search-apply'){state.query=document.getElementById('hospital-search')?.value.trim()||'';render();return}
@@ -331,13 +389,15 @@ async function start(){
   const r=await fetch('/api/ping',{cache:'no-store'});const x=await r.json();
   state.local=!x.connected;state.serverReady=!!x.connected;
  }catch{state.local=true;state.serverReady=false}
- if(!state.serverReady){state.appError='서버와 데이터베이스 연결을 먼저 완료해야 합니다.';state.ownerToken='';render();return}
+ if(!state.serverReady){state.appError='서버 연결을 재시도 중입니다.';render();setTimeout(start,10000);return}
  if(APP_MODE==='owner'&&state.ownerToken){
   try{const x=await api('GET','/api/auth/me');state.owner=x.owner;ownerId=x.owner.id}
   catch{state.ownerToken='';state.owner=null;localStorage.removeItem('zeno-owner-auth')}
  }
  await refresh();
- setInterval(()=>{if(!document.hidden&&state.serverReady&&(APP_MODE==='hospital'||state.ownerToken))refresh()},12000);
+ setInterval(()=>{if(!document.hidden&&navigator.onLine!==false&&state.serverReady&&(APP_MODE==='hospital'?state.hospitalToken:state.ownerToken))refresh()},12000);
+ document.addEventListener('visibilitychange',()=>{if(!document.hidden&&state.serverReady)refresh()});
+ window.addEventListener('online',()=>{if(state.serverReady)refresh(true)});
  if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost'||location.hostname==='127.0.0.1'))navigator.serviceWorker.register('/sw.js').catch(()=>{});
 }
 render();start();
