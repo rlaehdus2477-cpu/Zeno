@@ -296,6 +296,78 @@ body{background-color:#f4f8fc;color:#173452;font-size:17px}
 .zeno-naver-hours-btn:focus-visible{outline:3px solid #f5c847;outline-offset:2px}
 .zeno-hours-tophelp{font-size:14px;line-height:1.55;color:#476b91;background:#eaf4ff;padding:10px 12px;border-radius:10px;margin-bottom:13px}
 @media(max-width:750px){.zeno-naver-hours-btn{font-size:17px;min-height:48px;padding:13px 10px}}
+</style><style>
+/* ZENO owner / clinic directory readability update – 2026-11-06 */
+.hospital-list{gap:16px}
+.hospital{gap:14px;border-radius:20px;border:1px solid #d7e6f3;padding:21px;box-shadow:0 7px 22px rgba(23,72,121,.055)}
+.hospital-header{align-items:flex-start}
+.hospital .hospital-title{min-width:0;flex:1;align-items:center}
+.hospital .hlogo{background:#e8f3ff;color:#137bdb}
+.hospital h3{font-size:20px!important;line-height:1.3;letter-spacing:-.6px;word-break:keep-all}
+.hospital .hospital-title p{font-size:15px;line-height:1.4;color:#6b8098;margin:5px 0 0}
+.hospital .tags{gap:6px}
+.hospital .tag{font-size:13px;line-height:1.35;padding:6px 9px;border-radius:8px}
+.hospital .status{font-size:13px}
+.hospital .hfooter{margin-top:auto;padding-top:14px}
+.hospital .hfooter .actions{display:grid;grid-template-columns:1fr 1fr;width:100%;gap:9px}
+.hospital .hfooter .btn{min-width:0;min-height:48px;font-size:16px;border-radius:12px}
+.hospital .hfooter .btn.secondary{background:#eef6ff;color:#1267b2;border-color:#caddf0}
+.zeno-hours.zeno-hours-card{background:#f0f7ff;border:1px solid #cfe2f4;border-radius:15px;padding:15px 16px;margin:3px 0 0}
+.zeno-hours-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.zeno-hours-head>span:first-child{font-size:15px;font-weight:850;color:#1669b1}
+.zeno-hours-card .zeno-hours-value{font-size:22px!important;line-height:1.35;color:#143e67;font-weight:850;letter-spacing:-.4px;margin-top:10px;word-break:keep-all}
+.zeno-hour-caution{font-size:12px;font-weight:650;color:#667d95}
+.zeno-hours-summary{font-size:14px!important;line-height:1.55!important;color:#4d6a86!important;margin:8px 0 0!important;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
+.zeno-hours-more{border:0;border-top:1px solid #d2e4f6;background:transparent;display:flex;justify-content:space-between;align-items:center;width:100%;font-size:15px;font-weight:800;color:#116ac5;text-align:left;padding:12px 0 0;margin-top:12px;min-height:40px;cursor:pointer}
+.zeno-hours-more span{font-size:23px;line-height:1}
+.zeno-detail-tabs{margin:0 0 20px;gap:4px;border-bottom:1px solid #dce8f5}
+.zeno-detail-tab{font-size:16px;min-width:95px;border-radius:11px 11px 0 0}
+.zeno-detail-tab.active{background:#eaf4ff;color:#086fc9;border-bottom-color:#1689fa}
+.zeno-schedule-header{align-items:center;gap:5px;margin:7px 0 13px}
+.zeno-schedule-header h3{font-size:22px;color:#10365c}
+.zeno-schedule-header small{font-size:13px;color:#6d8499}
+.zeno-today-hero{border:1px solid #c1ddf8;background:linear-gradient(115deg,#eaf5ff,#f8fbff);padding:19px;border-radius:17px;margin-bottom:12px}
+.zeno-today-kicker{font-size:15px;font-weight:850;color:#1473c8;margin-bottom:5px}
+.zeno-today-hero strong{display:block;font-size:25px;font-weight:900;color:#0e3964;line-height:1.35}
+.zeno-today-hero p{font-size:14px;color:#547390;line-height:1.5;margin:9px 0 0}
+.zeno-hour-actions{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.zeno-hour-actions .btn{flex:1;min-height:48px;font-size:16px}
+.zeno-hour-actions .zeno-call{background:#13834e;color:white}
+.zeno-week-grid{display:flex;flex-direction:column;gap:0;border:1px solid #d9e6f2;border-radius:15px;overflow:hidden;background:white}
+.zeno-week-cell{min-height:56px;display:flex;flex-direction:row;justify-content:space-between;align-items:center;gap:12px;background:white;border:0;border-bottom:1px solid #edf2f7;border-radius:0;padding:12px 15px}
+.zeno-week-cell:last-child{border-bottom:0}
+.zeno-week-cell strong{display:flex;align-items:center;gap:7px;min-width:65px;font-size:16px;color:#324f6d}
+.zeno-week-cell strong small{font-size:11px;background:#197bdb;color:white;padding:3px 7px;border-radius:9px}
+.zeno-week-cell span{text-align:right;font-size:17px;line-height:1.35;font-weight:750;color:#183e64;overflow-wrap:anywhere}
+.zeno-week-cell.zeno-hours-today{background:#eaf5ff;box-shadow:inset 3px 0 #1689fa}
+.zeno-week-cell.closed{background:#fff7f9}
+.zeno-week-cell.closed span{color:#ad4260}
+.zeno-week-cell.zeno-hours-today.closed{background:#fef0f5}
+.zeno-week-extra{background:#f7faff}
+.zeno-schedule-summary{margin:15px 0 10px;padding:14px 16px;font-size:15px}
+.zeno-schedule-summary p{line-height:1.6;color:#375b7c}
+.zeno-schedule-source{font-size:13px;line-height:1.65;color:#617990;margin:12px 0 4px}
+.zeno-hours-link{display:inline-block;font-size:14px;margin-top:9px}
+@media(max-width:750px){
+ .hospital{padding:17px;gap:12px}
+ .hospital h3{font-size:20px!important}
+ .hospital .hospital-title p{font-size:15px}
+ .hospital .tag{font-size:12px}
+ .hospital .hfooter .btn{font-size:15px}
+ .zeno-hours.zeno-hours-card{padding:15px}
+ .zeno-hours-card .zeno-hours-value{font-size:22px!important}
+ .zeno-hours-summary{font-size:14px!important}
+ .zeno-week-cell{padding:13px 14px;min-height:56px}
+ .zeno-week-cell span{font-size:16px}
+ .zeno-detail-tab{font-size:15px;min-width:87px}
+ .zeno-today-hero strong{font-size:23px}
+ .zeno-hour-actions .btn{font-size:15px}
+}
+@media(max-width:380px){
+ .hospital .hfooter .btn{font-size:14px}
+ .zeno-hour-caution{font-size:11px}
+ .zeno-week-cell span{font-size:15px}
+}
 </style></head><body><div id="app" class="app"></div><script>
 'use strict';
 const APP_MODE='owner';
@@ -445,36 +517,37 @@ function statusWidget(h){const s=hs(h.id);return `<span class="status ${h.linked
 /* Show verified hours prominently, avoid making up schedules for other hospitals. */
 
 /* Weekly clinic hours for owner-facing hospital details. All unknown entries stay unknown. */
+function zenoWeeklyData(h){
+ let week=h.weeklySchedule||null;
+ if(!week&&h.id==='pub006')week={'월':'10:00~20:00','화':'10:00~20:00','수':'10:00~20:00','목':'10:00~20:00','금':'10:00~20:00','토':'10:00~18:00','일':'휴진','공휴일':'10:00~18:00'};
+ if(!week&&h.id==='pub027')week={'월':'09:00~18:00','화':'09:00~18:00','수':'09:00~18:00','목':'09:00~18:00','금':'09:00~18:00','토':'09:00~13:00'};
+ if(!week&&['naeum','pub007','pub016'].includes(h.id))week=Object.fromEntries(['월','화','수','목','금','토','일','공휴일'].map(d=>[d,'24시간 진료 안내']));
+ return week||{};
+}
+function zenoTodayName(){return new Date().toLocaleDateString('ko-KR',{timeZone:'Asia/Seoul',weekday:'short'}).slice(0,1);}
 function zenoWeeklyHours(h){
-  const days=['월','화','수','목','금','토','일','공휴일'];
-  let week=h.weeklySchedule||null;
-  if(!week&&h.id==='pub006'){week={'월':'10:00~20:00','화':'10:00~20:00','수':'10:00~20:00','목':'10:00~20:00','금':'10:00~20:00','토':'10:00~18:00','일':'휴진','공휴일':'10:00~18:00'};}
-  if(!week&&h.id==='pub027'){week={'월':'09:00~18:00','화':'09:00~18:00','수':'09:00~18:00','목':'09:00~18:00','금':'09:00~18:00','토':'09:00~13:00'};}
-  if(!week&&['naeum','pub007','pub016'].includes(h.id)){week=Object.fromEntries(days.map(day=>[day,'24시간 진료 안내']));}
-  const label=day=>week?.[day]||'정보 미제공';
-  const lookup='https://map.naver.com/p/search/'+encodeURIComponent(h.name+' '+h.address);
-  const hasSource=!!h.hours&&!/진료시간 확인 필요/.test(h.hours);
-  const safeNote=h.hoursSource||((h.id==='pub006'||h.id==='pub027'||['naeum','pub007','pub016'].includes(h.id))?'병원 공식 안내 기준':'확인 가능한 안내 기준');
-  return `<div class="zeno-schedule-header"><h3>🕒 운영시간</h3><small>요일별 진료·휴진 정보를 한눈에 확인하세요</small></div>
-  <div class="zeno-hours-tophelp">ZENO가 수집한 병원별 운영시간입니다. 출처·확인일을 함께 표시하며 운영시간은 변경될 수 있습니다.</div>
-  <div class="zeno-week-grid">${days.map(day=>`<div class="zeno-week-cell ${label(day)==='휴진'?'closed':''}"><strong>${day}</strong><span>${e(label(day))}</span></div>`).join('')}
-    <div class="zeno-week-cell"><strong>점심시간</strong><span>${e(week?.['점심시간']||'정보 미제공')}</span></div>
-    <div class="zeno-week-cell"><strong>저녁시간</strong><span>${e(week?.['저녁시간']||'정보 미제공')}</span></div>
-  </div>
-  ${hasSource?`<div class="zeno-schedule-summary"><b>병원 진료 안내</b><p>${e(h.hours)}</p></div>`:'<p class="zeno-schedule-summary">확인된 진료시간이 아직 없습니다.</p>'}
-  <p class="zeno-schedule-source">${e(safeNote)} · 실제 접수 마감, 휴게시간, 응급 수용은 방문 전 확인하세요.</p>
-  ${h.hoursSourceUrl?`<a class="zeno-hours-link" href="${e(h.hoursSourceUrl)}" target="_blank" rel="noopener noreferrer">게시된 운영시간 출처 보기 ↗</a>`:""}
-  <a class="zeno-naver-hours-btn" href="${lookup}" target="_blank" rel="noopener noreferrer">추가 확인용 외부 운영시간 보기</a>
-  ${h.phone?`<a class="zeno-hours-link" style="margin-left:12px" href="tel:${e(h.phone)}">병원에 전화하기</a>`:''}`;
+ const week=zenoWeeklyData(h),today=zenoTodayName(),days=['월','화','수','목','금','토','일'];
+ const hasSource=!!h.hours&&!/진료시간 확인 필요/.test(h.hours);
+ const dayText=week[today]||'요일별 시간 미등록';
+ const source=h.hoursSource||'공개 운영시간 자료 · 방문 전 병원 확인';
+ const date=h.hoursCheckedAt||'';
+ const dayRows=days.map(day=>'<div class="zeno-week-cell'+(day===today?' zeno-hours-today':'')+(week[day]==='휴진'?' closed':'')+'"><strong>'+day+(day===today?'<small>오늘</small>':'')+'</strong><span>'+e(week[day]||'별도 확인')+'</span></div>').join('');
+ const extras=['공휴일','점심시간','저녁시간'].filter(day=>week[day]).map(day=>'<div class="zeno-week-cell zeno-week-extra"><strong>'+day+'</strong><span>'+e(week[day])+'</span></div>').join('');
+ const quick='<div class="zeno-hour-actions">'+(h.phone?'<a class="btn zeno-call" href="tel:'+e(h.phone)+'">☎ 병원 전화하기</a>':'')+(h.linked?'<button class="btn" data-action="book" data-id="'+e(h.id)+'">예약 요청 · 시연</button>':'')+'</div>';
+ return '<div class="zeno-schedule-header"><h3>요일별 진료시간</h3><small>병원 공개 안내 기준</small></div>'
+ +'<div class="zeno-today-hero"><div class="zeno-today-kicker">오늘 · '+e(today)+'요일</div><strong>'+e(dayText)+'</strong><p>실시간 진료 가능 상태가 아닙니다. 방문 전 전화로 확인해 주세요.</p></div>'
+ +quick+'<div class="zeno-week-grid" role="list" aria-label="요일별 진료시간">'+dayRows+extras+'</div>'
+ +(hasSource?'<div class="zeno-schedule-summary"><b>진료시간 추가 안내</b><p>'+e(h.hours)+'</p></div>':'<div class="zeno-schedule-summary">확인 가능한 진료시간이 아직 없습니다. 병원에 직접 문의해 주세요.</div>')
+ +'<div class="zeno-schedule-source"><strong>정보 출처</strong> · '+e(source)+(date?' · 자료 확인일 '+e(date):'')+'</div>'
+ +(h.hoursSourceUrl?'<a class="zeno-hours-link" href="'+e(h.hoursSourceUrl)+'" target="_blank" rel="noopener noreferrer">운영시간 출처 확인</a>':'');
 }
 
 function hospitalHoursBlock(h,detail=false){
- const known=!!h.hours&&!/진료시간 확인 필요/.test(h.hours);
- const kday=new Date().toLocaleDateString('ko-KR',{timeZone:'Asia/Seoul',weekday:'short'}).slice(0,1);
- const dayvalue=h.weeklySchedule&&h.weeklySchedule[kday];
- const value=known?(dayvalue?`오늘(${kday}) ${dayvalue} · ${h.hours}`:h.hours):'요일별 운영시간 조사 중 · 전화 문의 권장';
- const note=h.hoursSource||'병원 제공 일정이 아닐 수 있어 방문 전 전화 확인';
- return `<div class="zeno-hours" role="group" aria-label="진료시간 안내"><div class="zeno-hours-label">🕒 진료시간</div><div class="zeno-hours-value">${e(value)}</div><div class="zeno-hours-note">${e(note)}</div></div>`;
+ const week=zenoWeeklyData(h),day=zenoTodayName(),today=week[day],known=!!h.hours&&!/진료시간 확인 필요/.test(h.hours);
+ const headline=today|| (known?'운영시간 안내 확인':'진료시간 확인 중');
+ const summary=today?(known?h.hours:'공개된 시간 안내를 확인해 주세요.'):known?h.hours:'요일별 운영시간은 확인되지 않았습니다. 병원에 문의해 주세요.';
+ const caution=h.hoursSource&&/2025|상충|미검증|미확인|차이|확인 전/.test(h.hoursSource)?'과거 자료 또는 출처 차이 · 방문 전 확인':'공개 안내 기준 · 방문 전 확인';
+ return '<div class="zeno-hours zeno-hours-card" role="group" aria-label="진료시간 안내"><div class="zeno-hours-head"><span>🕒 오늘 · '+e(day)+'요일</span><span class="zeno-hour-caution">'+e(caution)+'</span></div><div class="zeno-hours-value">'+e(headline)+'</div><p class="zeno-hours-summary">'+e(summary)+'</p><button class="zeno-hours-more" data-action="details" data-id="'+e(h.id)+'">요일별 진료시간 자세히 보기 <span aria-hidden="true">›</span></button></div>';
 }
 function hospitalCard(h){const s=hs(h.id);return `<article class="hospital"><div class="hospital-header"><div class="hospital-title"><div class="hlogo">✚</div><div><h3>${e(h.name)}</h3><p>📍 ${e(h.region)}</p></div></div><button class="btn ghost small" data-action="favorite" data-id="${h.id}" title="즐겨찾기">${state.favorites.includes(h.id)?'♥':'♡'}</button></div><div class="tags">${h.catWaiting?.verified?'<span class="tag teal">🐱 고양이 전용 대기실 · 공식 확인</span>':h.catWaiting?.reported?'<span class="tag">🐱 고양이 대기실 제보 · 확인 중</span>':''}${h.is24?'<span class="tag blue">24시간 운영 안내</span>':''}${h.linked?'<span class="tag teal">제노 연결 체험</span>':'<span class="tag">정보 조회</span>'}${h.tags.slice(0,3).map(x=>`<span class="tag">${e(x)}</span>`).join('')}${(s.services||[]).slice(0,2).map(x=>`<span class="tag blue">시연: ${e(x)}</span>`).join('')}</div><div>${statusWidget(h)} <span class="tiny">${h.linked?e(updateText(s.updatedAt)):'진료 가능 여부는 전화 확인'}</span></div><p style="min-height:30px">${e(h.desc)}</p>${hospitalHoursBlock(h)}<div class="hfooter"><div class="actions"><button class="btn secondary small" data-action="details" data-id="${h.id}">상세 보기</button>${h.linked?`<button class="btn small" data-action="book" data-id="${h.id}">예약 요청</button>`:h.phone?`<a class="btn small" href="tel:${e(h.phone)}">전화</a>`:`<a class="btn secondary small" href="https://map.naver.com/p/search/${encodeURIComponent(h.name+' '+h.address)}" target="_blank" rel="noopener noreferrer">지도·전화 확인</a>`}</div></div></article>`}
 function hospitalResults(items){return items.length?`<div class="hospital-list">${items.map(hospitalCard).join('')}</div>`:`<div class="empty"><span class="big">🔎</span><strong>조건에 맞는 등록 병원이 없습니다.</strong><p>특수동물·전문과 진료 여부는 확인되지 않은 병원을 추천하지 않습니다.</p><button class="btn secondary small" data-action="clear-search">전체 병원 보기</button></div>`}
@@ -498,10 +571,10 @@ function morePage(){return `${topbar('제노 전체 서비스','보호자용 · 
 function footer(){return '<div class="footer">ZENO · 필요한 순간, 필요한 진료를 찾다.<br>이 앱은 의료기관 공식 서비스가 아닌 제노 창업 시연용 프로토타입입니다. 응급 상황은 병원에 직접 전화하세요.</div>'}
 function renderModal(){let m=state.modal;if(!m)return '';let h=hospitalById(m.id||state.detail),title='',body='',wide=false;
 if(m.type==='details'&&h){let s=hs(h.id);title=h.name;body=`<div class="zeno-detail-tabs" role="tablist" aria-label="동물병원 상세 항목">
- ${[['intro','병원소개'],['notices','공지사항'],['hours','운영시간'],['services','진료정보']].map((t,i)=>`<button type="button" class="zeno-detail-tab ${i===0?'active':''}" data-action="detail-tab" data-value="${t[0]}" role="tab" aria-selected="${i===0}" aria-controls="zeno-detail-${t[0]}">${t[1]}</button>`).join('')}</div>
- <section id="zeno-detail-intro" class="zeno-detail-panel" data-detail-panel="intro" role="tabpanel"><div class="tags">${h.tags.map(x=>`<span class="tag">${e(x)}</span>`).join('')}</div><p class="desc" style="margin-top:14px">📍 ${e(h.address)}</p><p class="desc">☎ ${e(h.phone||'공개 전화번호 확인 필요')}</p>${h.catWaiting?.verified?`<div class="banner" style="margin-top:12px"><strong>🐱 고양이 전용 대기실 · 공식 확인</strong><div>병원 공식 홈페이지 안내를 확인했습니다. 방문 전 운영 여부를 전화로 확인하세요.</div><a href="${e(h.catWaiting.sourceUrl)}" target="_blank" rel="noopener noreferrer" style="text-decoration:underline">공식 시설 안내 보기</a></div>`:h.catWaiting?.reported?`<div class="banner warning" style="margin-top:12px"><strong>🐱 고양이 대기실 · 보호자 제보</strong><div>보호자가 알려준 정보입니다. 병원 공식 시설 안내는 확인되지 않았으며, 실제 고양이 전용 대기실 유무와 이용 가능 여부는 전화로 확인해 주세요.</div></div>`:``}<p class="desc">📋 병원명·주소 공개 목록 확인: ${e(h.checkedAt||'미확인')} / 현재 운영·진료과목·시간은 별도 확인 필요</p><p class="desc">🔗 <a href="${e(h.sourceUrl||'#')}" target="_blank" rel="noopener noreferrer" style="text-decoration:underline">원본 확인 출처</a></p></section>
+ ${[['hours','운영시간'],['intro','병원소개'],['services','진료정보'],['notices','공지사항']].map((t,i)=>`<button type="button" class="zeno-detail-tab ${i===0?'active':''}" data-action="detail-tab" data-value="${t[0]}" role="tab" aria-selected="${i===0}" aria-controls="zeno-detail-${t[0]}">${t[1]}</button>`).join('')}</div>
+ <section id="zeno-detail-intro" class="zeno-detail-panel" data-detail-panel="intro" role="tabpanel" hidden><div class="tags">${h.tags.map(x=>`<span class="tag">${e(x)}</span>`).join('')}</div><p class="desc" style="margin-top:14px">📍 ${e(h.address)}</p><p class="desc">☎ ${e(h.phone||'공개 전화번호 확인 필요')}</p>${h.catWaiting?.verified?`<div class="banner" style="margin-top:12px"><strong>🐱 고양이 전용 대기실 · 공식 확인</strong><div>병원 공식 홈페이지 안내를 확인했습니다. 방문 전 운영 여부를 전화로 확인하세요.</div><a href="${e(h.catWaiting.sourceUrl)}" target="_blank" rel="noopener noreferrer" style="text-decoration:underline">공식 시설 안내 보기</a></div>`:h.catWaiting?.reported?`<div class="banner warning" style="margin-top:12px"><strong>🐱 고양이 대기실 · 보호자 제보</strong><div>보호자가 알려준 정보입니다. 병원 공식 시설 안내는 확인되지 않았으며, 실제 고양이 전용 대기실 유무와 이용 가능 여부는 전화로 확인해 주세요.</div></div>`:``}<p class="desc">📋 병원명·주소 공개 목록 확인: ${e(h.checkedAt||'미확인')} / 현재 운영·진료과목·시간은 별도 확인 필요</p><p class="desc">🔗 <a href="${e(h.sourceUrl||'#')}" target="_blank" rel="noopener noreferrer" style="text-decoration:underline">원본 확인 출처</a></p></section>
  <section id="zeno-detail-notices" class="zeno-detail-panel" data-detail-panel="notices" role="tabpanel" hidden><h3>공지사항</h3>${s.notice?`<div class="banner">${e(s.notice)}<br><small>병원용 데모 계정 입력</small></div>`:'<div class="banner">등록된 공지사항이 없습니다.</div>'}</section>
- <section id="zeno-detail-hours" class="zeno-detail-panel" data-detail-panel="hours" role="tabpanel" hidden>${zenoWeeklyHours(h)}</section>
+ <section id="zeno-detail-hours" class="zeno-detail-panel" data-detail-panel="hours" role="tabpanel">${zenoWeeklyHours(h)}</section>
  <section id="zeno-detail-services" class="zeno-detail-panel" data-detail-panel="services" role="tabpanel" hidden><div class="row-line"><div><strong>진료 수용 상태</strong><div class="sub">${e(updateText(s.updatedAt))}</div></div>${statusWidget(h)}</div><div class="section"><h3>진료 과목 시연 설정</h3><div class="tags">${(s.services||[]).length?(s.services||[]).map(x=>`<span class="tag blue">${e(x)} (시연)</span>`).join(''):'<span class="tag">병원에서 추가로 등록한 시연 정보 없음</span>'}</div></div><div class="section"><h3>진료 항목 / 가격</h3>${s.prices?.length?(s.prices.map(x=>`<div class="row-line"><strong>${e(x.label)}</strong><span>${Number(x.amount).toLocaleString('ko-KR')}원 <small class="tiny">(예시)</small></span></div>`).join('')):'<div class="banner">공식 가격 정보 미등록 · 병원에 확인해 주세요.</div>'}</div><div class="banner warning">병원 정보는 참고용입니다. 상태와 가격이 실제 운영을 보장하지 않습니다.</div></section><div class="buttons" style="display:flex;gap:7px;margin-top:14px;flex-wrap:wrap"><a class="btn secondary" href="https://map.naver.com/p/search/${encodeURIComponent(h.name+' '+h.address)}" target="_blank" rel="noopener">지도 길찾기 ↗</a>${h.phone?`<a class="btn teal" href="tel:${e(h.phone)}">전화 연결</a>`:''}${h.linked?`<button class="btn" data-action="book" data-id="${h.id}">데모 예약 요청</button>`:''}</div>`;wide=true}
 if(m.type==='book'&&h){title='예약 요청 · '+h.name;body=`<div class="banner warning" style="margin-bottom:14px">이 예약은 병원에 전달되는 실제 진료 예약이 아닙니다. 제노 연결 기능을 시험하기 위한 예약입니다.</div><form id="booking-form"><input type="hidden" name="hospitalId" value="${h.id}"><div class="formgrid"><div class="field"><label>반려동물 이름</label><input name="petName" required maxlength="30" placeholder="예: 노아" value="${e(state.pets[0]?.name||'')}"></div><div class="field"><label>반려동물 종류</label><select name="species"><option>고양이</option><option>강아지</option><option>토끼</option><option>햄스터</option><option>조류</option><option>파충류</option><option>기타</option></select></div><div class="field"><label>희망 날짜</label><input name="date" type="date" min="${today()}" value="${defaultBookingDate()}" required></div><div class="field"><label>희망 시간</label><input name="time" type="time" value="11:00" required></div><div class="field wide"><label>희망 진료 분야</label><select name="service"><option>일반 진료</option><option>건강검진</option><option>예방접종</option><option>내과 상담</option><option>안과 상담</option><option>외과 상담</option><option>피부과 상담</option><option>특수동물 상담 (진료 가능 여부 별도 확인)</option></select></div><div class="field wide"><label>증상 및 참고 사항 (선택)</label><textarea maxlength="500" name="note" placeholder="예: 식욕 저하가 있어 상담 받고 싶습니다."></textarea></div></div><button class="btn full" type="submit">병원용 데모 화면에 예약 요청 보내기</button></form>`}
 if(m.type==='pet'){title='우리 아이 등록';body=`<form id="pet-form"><div class="field"><label>이름</label><input name="name" maxlength="30" required placeholder="반려동물 이름"></div><div class="field"><label>종류</label><select name="species"><option>고양이</option><option>강아지</option><option>토끼</option><option>햄스터</option><option>조류</option><option>파충류</option><option>기타</option></select></div><div class="formgrid"><div class="field"><label>나이 (선택)</label><input name="age" maxlength="22" placeholder="예: 4살"></div><div class="field"><label>체중 (선택)</label><input name="weight" maxlength="16" placeholder="예: 3.2kg"></div></div><button class="btn full" type="submit">저장하기</button></form>`}
