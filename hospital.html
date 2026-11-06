@@ -259,6 +259,19 @@ label:has(input[type="checkbox"]){min-height:44px;align-items:center!important}
  .panel{padding:16px!important}
  .radio-row{flex-wrap:wrap}
 }
+</style><style id="zeno-hospital-row-actions">
+/* Inbox row: separate detail target and stage action; no nested buttons */
+.hi-inbox-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(104px,112px);align-items:center;gap:8px;min-height:120px}
+.hi-row-open{border:0;background:transparent;color:#202833;display:flex;align-items:center;text-align:left;padding:0;margin:0;width:100%;min-width:0;min-height:88px;cursor:pointer}
+.hi-row-open .hi-row-main{min-width:0;width:100%}
+.hi-row-side{display:flex;align-items:stretch;gap:8px;text-align:right}
+.hi-status-badge{align-self:flex-end}
+.hi-row-side small{font-size:14px;color:#7A3617}
+.hi-inline-action{border:1px solid #2567A9;background:#2567A9;color:#fff;border-radius:8px;min-height:44px;min-width:88px;width:100%;padding:9px 12px;font-size:15px;font-weight:700;cursor:pointer}
+.hi-inline-action:focus-visible,.hi-row-open:focus-visible{outline:3px solid #2567A9;outline-offset:2px}
+.hi-row-name{min-width:0;flex-wrap:wrap}
+.hi-row-name small{overflow:hidden;text-overflow:ellipsis;max-width:90px}
+@media(max-width:390px){.hi-inbox-row{grid-template-columns:minmax(0,1fr) 101px;gap:6px;padding:12px}.hi-row-open{min-height:88px}.hi-inline-action{min-width:0;padding:8px;font-size:14px}.hi-row-side{gap:6px}}
 </style></head><body><div id="app" class="app"></div><script>
 'use strict';
 const APP_MODE='hospital';
@@ -483,12 +496,16 @@ function hiMaskName(value){const s=String(value||'').trim();return !s?'':/[○*]
 function hiMaskPhone(value){const s=String(value||'').replace(/[^0-9]/g,'');return s.length>=10?s.slice(0,3)+'-****-'+s.slice(-4):''}
 function hiKind(b){return [b.species,b.breed].filter(Boolean).join(' · ')}
 function hiInboxRow(b){
- const r=hsRisk(b),name=hiMaskName(b.ownerName||b.guardianName||''),meta=hiKind(b),note=b.note||b.service||'';
- return '<button type="button" class="hi-inbox-row" data-action="hi-open" data-id="'+e(b.id)+'" aria-label="'+e(b.petName||'환자')+' 예약 상세">'
- +'<span class="hi-row-main"><span class="hi-row-name"><i class="hi-risk-dot hi-risk-'+r.level+'"></i><strong>'+e(b.petName||'환자')+'</strong>'+(name?'<small>'+e(name)+'</small>':'')+'</span>'
+ const risk=hsRisk(b),name=hiMaskName(b.ownerName||b.guardianName||''),meta=hiKind(b),note=b.note||b.service||'';
+ const action=hiCanConfirm(b)?{label:'확정',status:'confirmed'}:b.status==='confirmed'?{label:'진료 시작',status:'in_progress'}:b.status==='in_progress'?{label:'진료 완료',status:'done'}:null;
+ return '<div class="hi-inbox-row" role="group" aria-label="'+e(b.petName||'환자')+' 예약">'
+ +'<button type="button" class="hi-row-open" data-action="hi-open" data-id="'+e(b.id)+'" aria-label="'+e(b.petName||'환자')+' 예약 상세">'
+ +'<span class="hi-row-main"><span class="hi-row-name"><i class="hi-risk-dot hi-risk-'+risk.level+'"></i><strong>'+e(b.petName||'환자')+'</strong>'+(name?'<small>'+e(name)+'</small>':'')+'</span>'
  +(meta?'<span class="hi-row-meta">'+e(meta)+'</span>':'')+(note?'<span class="hi-row-note">'+e(note)+'</span>':'')
- +'<span class="hi-row-date">'+hsIcon('calendar',14)+e(hsSlot(b.date,b.time))+'</span></span>'
- +'<span class="hi-row-side"><span class="hi-status-badge">'+e(hiStatus(b))+'</span>'+(r.note&&hiActive(b)?'<small>'+e(r.note)+'</small>':'')+hsIcon('chevron',16)+'</span></button>';
+ +'<span class="hi-row-date">'+hsIcon('calendar',14)+e(hsSlot(b.date,b.time))+'</span></span></button>'
+ +'<div class="hi-row-side"><span class="hi-status-badge">'+e(hiStatus(b))+'</span>'+(risk.note&&hiActive(b)?'<small>'+e(risk.note)+'</small>':'')
+ +(action?'<button type="button" class="hi-inline-action" data-action="hospital-update" data-status="'+action.status+'" data-id="'+e(b.id)+'">'+action.label+'</button>':'')
+ +'</div></div>';
 }
 function hiInboxGroups(rows){
  const buckets={urgent:[],today:[],soon:[],later:[],past:[]},today=hiToday();
