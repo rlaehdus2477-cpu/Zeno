@@ -26,11 +26,11 @@ jobs:
 
       - name: Check Cloudflare connection
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN || secrets.CF_API_TOKEN || secrets.CLOUDFLARE_TOKEN || secrets.CF_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: "f805a734c87c90e765d7e455a469a730"
         run: |
           if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
-            echo "::error::Cloudflare API token is not connected. Add GitHub Actions repository secret CLOUDFLARE_API_TOKEN."
+            echo "::error::Cloudflare token was not found under CLOUDFLARE_API_TOKEN, CF_API_TOKEN, CLOUDFLARE_TOKEN, or CF_TOKEN. Connect a Cloudflare API token as repository secret CLOUDFLARE_API_TOKEN."
             exit 1
           fi
 
@@ -45,5 +45,5 @@ jobs:
       - name: Deploy existing Worker and D1 binding
         run: npx wrangler deploy --config wrangler.toml
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN || secrets.CF_API_TOKEN || secrets.CLOUDFLARE_TOKEN || secrets.CF_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: "f805a734c87c90e765d7e455a469a730"
