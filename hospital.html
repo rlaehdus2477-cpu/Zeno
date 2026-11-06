@@ -419,34 +419,56 @@ function hsSteps(b){
  const step={pending:0,accepted:1,suggested:1,confirmed:2,in_progress:2,done:3,rejected:0,cancelled:0}[b.status]??0;
  return '<ol class="h-steps" aria-label="예약 진행 단계">'+['접수','확인','확정','완료'].map((name,i)=>'<li class="'+(i===step?'current':i<step?'done':'')+'"'+(i===step?' aria-current="step"':'')+'><span class="h-step-num">'+(i<step?hsIcon('check',12):i+1)+'</span><span>'+name+'</span></li>').join('')+'</ol>';
 }
+function hiStatus(b){return ({pending:'확인 대기',accepted:'확인 중',suggested:'시간 조율',confirmed:'확정',in_progress:'진료 중',done:'완료',cancelled:'취소',rejected:'거절'})[b.status]||'확인 대기'}
+function hiActive(b){return !['done','cancelled','rejected'].includes(b.status)}
+function hiToday(offset=0){const parts=new Intl.DateTimeFormat('en-US',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date(Date.now()+offset*86400000));const v=k=>parts.find(x=>x.type===k)?.value||'';return v('year')+'-'+v('month')+'-'+v('day')}
 function hsDemoBookings(){
- if(!state.hDemoBookings)state.hDemoBookings=[
-  {id:'zeno-demo-001',hospitalId:state.activeHospital,ownerName:'박서연',ownerPhone:'010-0000-0000',petName:'노아',species:'고양이',breed:'코리안숏헤어',age:'4세',weight:'4.6kg',visitType:'재방문',service:'일반 진료',status:'pending',date:'2026-11-07',time:'11:00',note:'갑작스러운 구토 증세가 있습니다. 오늘 아침부터 두 차례 토했습니다.',urgency:'normal',urgencyNote:'당일 확인 권장',createdAt:'2026-11-06T09:18:00+09:00',updatedAt:'2026-11-06T09:18:00+09:00',demo:true},
-  {id:'zeno-demo-002',hospitalId:state.activeHospital,ownerName:'이현우',ownerPhone:'010-0000-0000',petName:'두부',species:'강아지',breed:'말티즈',age:'6세',weight:'3.8kg',visitType:'첫 방문',service:'예방접종 상담',status:'accepted',date:'2026-11-08',time:'14:30',note:'정기 예방접종 일정과 건강검진에 관해 상담하고 싶습니다.',urgency:'low',createdAt:'2026-11-06T10:04:00+09:00',updatedAt:'2026-11-06T10:26:00+09:00',demo:true}
- ];return state.hDemoBookings;
+ if(!state.hDemoBookings||state.hDemoHospital!==state.activeHospital){
+  state.hDemoHospital=state.activeHospital;const t=Date.now();
+  state.hDemoBookings=[
+   {id:'zeno-demo-001',hospitalId:state.activeHospital,ownerName:'김민서',ownerPhone:'010-0000-1234',petName:'노아',species:'고양이',breed:'코리안숏헤어',age:'3살',weight:'4.2kg',visitType:'첫 방문',service:'내과 진료',status:'pending',date:hiToday(),time:'11:00',note:'아침부터 갑작스러운 구토가 반복됩니다.',urgency:'high',urgencyNote:'당일 확인 권장',createdAt:new Date(t-7200000).toISOString(),updatedAt:new Date(t-7200000).toISOString(),demo:true},
+   {id:'zeno-demo-002',hospitalId:state.activeHospital,ownerName:'박지훈',ownerPhone:'010-0000-5678',petName:'보리',species:'강아지',breed:'말티즈',age:'2살',weight:'3.8kg',visitType:'첫 방문',service:'일반 진료 · 예방접종',status:'accepted',date:hiToday(1),time:'10:30',note:'정기 예방접종 일정을 확인하고 싶습니다.',urgency:'low',createdAt:new Date(t-5000000).toISOString(),updatedAt:new Date(t-4500000).toISOString(),demo:true},
+   {id:'zeno-demo-003',hospitalId:state.activeHospital,ownerName:'이하은',ownerPhone:'010-0000-3091',petName:'초코',species:'강아지',breed:'푸들',age:'5살',weight:'5.1kg',visitType:'재방문',service:'피부과 진료',status:'confirmed',date:hiToday(),time:'16:30',note:'피부 가려움이 심해져 재진을 원합니다.',urgency:'normal',createdAt:new Date(t-6000000).toISOString(),updatedAt:new Date(t-2000000).toISOString(),demo:true}
+  ];
+ }return state.hDemoBookings;
 }
-function hsBookingCard(b){
- const r=hsRisk(b);
- const row=(title,value)=>'<div class="h-person-detail"><span>'+title+'</span><strong>'+e(value||'미제공')+'</strong></div>';
- const owner=b.ownerName||b.guardianName||'',phone=b.ownerPhone||b.guardianPhone||'';
- const changed=b.updatedAt&&b.createdAt&&Math.abs(new Date(b.updatedAt)-new Date(b.createdAt))>60000;
- return '<article class="h-booking"><header class="h-booking-head"><div><span class="h-card-label">예약 요청'+(b.demo?' · 샘플':'')+'</span><h3>'+e(b.petName||'이름 미제공')+'</h3><p>'+e(b.species||'종 미제공')+' · '+e(b.breed||'품종 미제공')+' / '+e(b.service||'일반 진료')+'</p></div><span class="h-status">'+e(STATUS[b.status]||b.status)+'</span></header>'
- +hsSteps(b)
- +'<div class="h-person-grid">'+row('보호자 이름',owner)+row('연락처',phone)+row('나이 · 체중',(b.age||'미제공')+' · '+(b.weight||'미제공'))+row('내원 구분',b.visitType||'미제공')+'</div>'
- +'<section class="h-visit-time"><span class="h-field-title">'+hsIcon('calendar',16)+'희망 진료일</span><strong>'+e(hsSlot(b.date,b.time))+'</strong>'+(b.proposedAt?'<p>병원 제안 · '+e(hsTimestamp(b.proposedAt))+'</p>':'')+'</section>'
- +'<section class="h-symptoms"><div class="h-symptom-head"><span class="h-field-title">증상 및 요청</span><div class="h-tags"><span class="h-risk h-risk-'+r.level+'">'+e(r.label)+'</span>'+(r.note?'<span class="h-risk-note">'+e(r.note)+'</span>':'')+'</div></div><p>'+e(b.note||'요청 사항 없음')+'</p></section>'
- +(b.hospitalNote?'<p class="h-hospital-note">병원 메모 · '+e(b.hospitalNote)+'</p>':'')
- +'<div class="h-booking-buttons">'+hospitalBookingButtons(b)+'</div>'
- +'<footer class="h-booking-dates">접수 '+e(hsTimestamp(b.createdAt))+(changed?' · 마지막 변경 '+e(hsTimestamp(b.updatedAt)):'')+'</footer></article>';
+function hiMaskName(value){const s=String(value||'').trim();return !s?'':/[○*]/.test(s)?s:s[0]+'○'.repeat(Math.max(1,s.length-1))}
+function hiMaskPhone(value){const s=String(value||'').replace(/[^0-9]/g,'');return s.length>=10?s.slice(0,3)+'-****-'+s.slice(-4):''}
+function hiKind(b){return [b.species,b.breed].filter(Boolean).join(' · ')}
+function hiInboxRow(b){
+ const r=hsRisk(b),name=hiMaskName(b.ownerName||b.guardianName||''),meta=hiKind(b),note=b.note||b.service||'';
+ return '<button type="button" class="hi-inbox-row" data-action="hi-open" data-id="'+e(b.id)+'" aria-label="'+e(b.petName||'환자')+' 예약 상세">'
+ +'<span class="hi-row-main"><span class="hi-row-name"><i class="hi-risk-dot hi-risk-'+r.level+'"></i><strong>'+e(b.petName||'환자')+'</strong>'+(name?'<small>'+e(name)+'</small>':'')+'</span>'
+ +(meta?'<span class="hi-row-meta">'+e(meta)+'</span>':'')+(note?'<span class="hi-row-note">'+e(note)+'</span>':'')
+ +'<span class="hi-row-date">'+hsIcon('calendar',14)+e(hsSlot(b.date,b.time))+'</span></span>'
+ +'<span class="hi-row-side"><span class="hi-status-badge">'+e(hiStatus(b))+'</span>'+(r.note&&hiActive(b)?'<small>'+e(r.note)+'</small>':'')+'<span class="hi-chevron">›</span></span></button>';
 }
+function hiInboxGroups(rows){
+ const buckets={urgent:[],today:[],later:[]},today=hiToday();
+ for(const b of rows){const urgent=hiActive(b)&&(hsRisk(b).level==='high'||/구토|혈변|혈뇨/.test(String(b.note||''))||(b.date&&b.date<today));buckets[urgent?'urgent':b.date===today?'today':'later'].push(b)}
+ return [['urgent','당일 확인 필요'],['today','오늘 예정'],['later','이후 예정']].map(([key,label])=>buckets[key].length?'<section class="hi-group"><h3>'+label+' <span>'+buckets[key].length+'</span></h3><div class="hi-row-group">'+buckets[key].map(hiInboxRow).join('')+'</div></section>':'').join('')||'<p class="hi-empty">해당 조건의 예약이 없습니다.</p>';
+}
+function hiDetailSheet(b){
+ if(!b)return '';const r=hsRisk(b);
+ const attrs=[['보호자',hiMaskName(b.ownerName||b.guardianName||'')],['연락처',hiMaskPhone(b.ownerPhone||b.guardianPhone||'')],['환자 이름',b.petName],['종 · 품종',hiKind(b)],['나이',b.age],['체중',b.weight],['방문 구분',b.visitType]];
+ const info=attrs.filter(x=>String(x[1]||'').trim()).map(x=>'<div class="hi-detail-cell"><dt>'+x[0]+'</dt><dd>'+e(x[1])+'</dd></div>').join('');
+ const changed=b.createdAt&&b.updatedAt&&Number.isFinite(new Date(b.createdAt).getTime())&&Number.isFinite(new Date(b.updatedAt).getTime())&&Math.abs(new Date(b.updatedAt)-new Date(b.createdAt))>60000;
+ return '<div class="hi-sheet-root"><div class="hi-sheet-backdrop" data-action="hi-close"></div><section class="hi-sheet" role="dialog" aria-modal="true" aria-labelledby="hi-sheet-title">'
+ +'<header class="hi-sheet-head"><div><span>예약 상세</span><h2 id="hi-sheet-title">'+e(b.petName||'환자')+'</h2></div><button id="hi-close" class="hi-close" data-action="hi-close" aria-label="닫기">×</button></header>'
+ +'<div class="hi-sheet-scroll"><div class="hi-sheet-state"><span class="hi-status-badge">'+e(hiStatus(b))+'</span><span class="hi-triage-label">'+e(r.label)+'</span>'+(r.note?'<span>'+e(r.note)+'</span>':'')+'</div>'+hsSteps(b)
+ +'<section class="hi-sheet-section"><h3>보호자 · 환자 정보</h3><dl class="hi-detail-grid">'+info+'</dl></section>'
+ +'<section class="hi-sheet-section"><h3>희망 진료일</h3><strong class="hi-time-large">'+e(hsSlot(b.date,b.time))+'</strong>'+(b.proposedAt?'<p>병원 제안 · '+e(hsTimestamp(b.proposedAt))+'</p>':'')+'</section>'
+ +(b.note?'<section class="hi-sheet-section"><h3>증상 및 요청</h3><p>'+e(b.note)+'</p></section>':'')
+ +'<p class="hi-history">접수 '+e(hsTimestamp(b.createdAt))+(changed?' · 마지막 변경 '+e(hsTimestamp(b.updatedAt)):'')+'</p></div>'
+ +'<footer class="hi-sheet-buttons">'+hospitalBookingButtons(b)+'</footer></section></div>';
+}
+function hsBookingCard(b){return hiInboxRow(b)}
 function hsFilterBookings(all){
- const filter=state.hBookingFilter||'all';
- let list=all.filter(b=>filter==='all'||(filter==='waiting'&&['pending','accepted','suggested'].includes(b.status))||(filter==='confirmed'&&['confirmed','in_progress'].includes(b.status))||(filter==='closed'&&['done','cancelled','rejected'].includes(b.status)));
+ const f=state.hBookingFilter||'all';
+ const rows=all.filter(b=>f==='all'||(f==='waiting'&&['pending','accepted','suggested'].includes(b.status))||(f==='confirmed'&&['confirmed','in_progress'].includes(b.status))||(f==='closed'&&['done','cancelled','rejected'].includes(b.status)));
  const rank={high:0,normal:1,low:2};
- list.sort((a,b)=>state.hSort==='urgency'?(rank[hsRisk(a).level]-rank[hsRisk(b).level]||String(b.createdAt||'').localeCompare(String(a.createdAt||''))):String(b.createdAt||'').localeCompare(String(a.createdAt||'')));
- return list;
+ return rows.sort((a,b)=>state.hSort==='urgency'?(rank[hsRisk(a).level]-rank[hsRisk(b).level]||String(b.createdAt||'').localeCompare(String(a.createdAt||''))):String(b.createdAt||'').localeCompare(String(a.createdAt||'')));
 }
-
 function bookingCard(b,hospital=false){if(hospital)return hsBookingCard(b);let h=hospitalById(b.hospitalId),step={pending:1,accepted:2,suggested:2,confirmed:3,in_progress:3,done:4,cancelled:1,rejected:1}[b.status]||1;return `<article class="booking-card"><div class="head"><div><h3>${hospital?e(b.petName):e(h?.name||'병원 정보 없음')}</h3><p>${hospital?e(b.petName)+' · '+e(b.species):e(b.petName)+' · '+e(b.species)} / ${e(b.service)}</p></div><span class="status ${b.status==='confirmed'?'available':b.status==='pending'?'busy':''}">${e(STATUS[b.status]||b.status)}</span></div><div class="booking-steps">${[1,2,3,4].map(n=>`<div class="${n<=step?'done':''}"></div>`).join('')}</div><p><strong>희망일:</strong> ${e(b.date)} ${e(b.time)} ${b.proposedAt?`<br><strong>병원 제안:</strong> ${e(b.proposedAt.replace('T',' '))}`:''}</p>${b.note?`<p>증상·요청: ${e(b.note)}</p>`:''}${b.hospitalNote?`<p style="background:#edf7ff;border-radius:8px;padding:9px"><strong>병원 메모:</strong> ${e(b.hospitalNote)}</p>`:''}<div class="buttons">${hospital?hospitalBookingButtons(b):ownerBookingButtons(b)}</div><p class="tiny">접수 ${dateTime(b.createdAt)} · 마지막 변경 ${dateTime(b.updatedAt)}</p></article>`}
 function ownerBookingButtons(b){let s=b.status;return `${s==='suggested'?`<button class="btn small teal" data-action="owner-confirm" data-id="${e(b.id)}">제안 시간 확정</button>`:''}${['pending','accepted','suggested'].includes(s)?`<button class="btn secondary small" data-action="owner-cancel" data-id="${e(b.id)}">요청 취소</button>`:''}${s==='done'&&!state.reviews.some(x=>x.bookingId===b.id)?`<button class="btn small" data-action="review" data-id="${e(b.id)}">방문 인증 후기 작성</button>`:''}${s==='done'&&state.reviews.some(x=>x.bookingId===b.id)?'<span class="tag teal">후기 작성 완료 · 100P 적립</span>':''}${s==='confirmed'?'<span class="tag teal">병원 데모 예약 확정</span>':''}`}
 function hospitalBookingButtons(b){
