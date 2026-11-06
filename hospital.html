@@ -362,7 +362,8 @@ activity:'<path d="M3 12h4l3-7 4 14 3-7h4"/>',
 building:'<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M9 21v-5h6v5M8 8h1M15 8h1M8 12h1M15 12h1"/>',
 check:'<path d="m5 12 4 4L19 6"/>',
 refresh:'<path d="M20 11a8 8 0 0 0-14-5L4 8"/><path d="M4 4v4h4M4 13a8 8 0 0 0 14 5l2-2"/><path d="M20 20v-4h-4"/>',
-filter:'<path d="M4 7h16M4 17h16M9 4v6M15 14v6"/>'
+filter:'<path d="M4 7h16M4 17h16M9 4v6M15 14v6"/>',
+close:'<path d="M18 6 6 18M6 6l12 12"/>',chevron:'<path d="m9 18 6-6-6-6"/>'
 };
 function hsIcon(name,size=20){return '<svg width="'+size+'" height="'+size+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" focusable="false" aria-hidden="true">'+(HOSPITAL_SVG[name]||HOSPITAL_SVG.calendar)+'</svg>'}
 function topbar(title,sub){
@@ -432,7 +433,7 @@ function hiInboxRow(b){
  +'<span class="hi-row-main"><span class="hi-row-name"><i class="hi-risk-dot hi-risk-'+r.level+'"></i><strong>'+e(b.petName||'환자')+'</strong>'+(name?'<small>'+e(name)+'</small>':'')+'</span>'
  +(meta?'<span class="hi-row-meta">'+e(meta)+'</span>':'')+(note?'<span class="hi-row-note">'+e(note)+'</span>':'')
  +'<span class="hi-row-date">'+hsIcon('calendar',14)+e(hsSlot(b.date,b.time))+'</span></span>'
- +'<span class="hi-row-side"><span class="hi-status-badge">'+e(hiStatus(b))+'</span>'+(r.note&&hiActive(b)?'<small>'+e(r.note)+'</small>':'')+'<span class="hi-chevron">›</span></span></button>';
+ +'<span class="hi-row-side"><span class="hi-status-badge">'+e(hiStatus(b))+'</span>'+(r.note&&hiActive(b)?'<small>'+e(r.note)+'</small>':'')+hsIcon('chevron',16)+'</span></button>';
 }
 function hiInboxGroups(rows){
  const buckets={urgent:[],today:[],later:[]},today=hiToday();
@@ -445,7 +446,7 @@ function hiDetailSheet(b){
  const info=attrs.filter(x=>String(x[1]||'').trim()).map(x=>'<div class="hi-detail-cell"><dt>'+x[0]+'</dt><dd>'+e(x[1])+'</dd></div>').join('');
  const changed=b.createdAt&&b.updatedAt&&Number.isFinite(new Date(b.createdAt).getTime())&&Number.isFinite(new Date(b.updatedAt).getTime())&&Math.abs(new Date(b.updatedAt)-new Date(b.createdAt))>60000;
  return '<div class="hi-sheet-root"><div class="hi-sheet-backdrop" data-action="hi-close"></div><section class="hi-sheet" role="dialog" aria-modal="true" aria-labelledby="hi-sheet-title">'
- +'<header class="hi-sheet-head"><div><span>예약 상세</span><h2 id="hi-sheet-title">'+e(b.petName||'환자')+'</h2></div><button id="hi-close" class="hi-close" data-action="hi-close" aria-label="닫기">×</button></header>'
+ +'<header class="hi-sheet-head"><div><span>예약 상세</span><h2 id="hi-sheet-title">'+e(b.petName||'환자')+'</h2></div><button id="hi-close" class="hi-close" data-action="hi-close" aria-label="닫기">'+hsIcon('close',20)+'</button></header>'
  +'<div class="hi-sheet-scroll"><div class="hi-sheet-state"><span class="hi-status-badge">'+e(hiStatus(b))+'</span><span class="hi-triage-label">'+e(r.label)+'</span>'+(r.note?'<span>'+e(r.note)+'</span>':'')+'</div>'+hsSteps(b)
  +'<section class="hi-sheet-section"><h3>보호자 · 환자 정보</h3><dl class="hi-detail-grid">'+info+'</dl></section>'
  +'<section class="hi-sheet-section"><h3>희망 진료일</h3><strong class="hi-time-large">'+e(hsSlot(b.date,b.time))+'</strong>'+(b.proposedAt?'<p>병원 제안 · '+e(hsTimestamp(b.proposedAt))+'</p>':'')+'</section>'
