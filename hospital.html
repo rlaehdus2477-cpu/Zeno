@@ -146,6 +146,45 @@ input,textarea,select,.field input,.field select,.field textarea{background:var(
 .modal h2,.modal h3{color:var(--h-text)!important}.close{background:var(--h-raised)!important;color:var(--h-text)!important}
 button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:3px solid var(--h-link);outline-offset:2px}
 @media(min-width:880px){.h-bottom-nav{max-width:880px;margin:auto}}
+</style><style id="zeno-hospital-bookings">
+.h-booking-list{display:grid;grid-template-columns:1fr;gap:16px}
+.h-booking{border:1px solid var(--h-border);background:var(--h-surface);padding:18px;border-radius:11px}
+.h-booking-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.h-card-label{color:var(--h-sub);font-size:12px;font-weight:700}
+.h-booking-head h3{font-size:23px;font-weight:800;margin:4px 0;color:var(--h-text);line-height:1.3}
+.h-booking-head p{font-size:14px;color:var(--h-sub);line-height:1.5;margin:0}
+.h-status{padding:7px 8px;font-size:12px;color:var(--h-link);border:1px solid #647C97;background:#27394D;border-radius:5px;font-weight:750;white-space:nowrap}
+.h-steps{padding:0;margin:24px 0 18px;list-style:none;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}
+.h-steps li{position:relative;display:flex;align-items:center;flex-direction:column;gap:5px;text-align:center;font-size:12px;font-weight:750;color:var(--h-sub)}
+.h-step-num{z-index:1;width:28px;height:28px;display:grid;place-items:center;border:1px solid #71859B;border-radius:50%;background:#334456;color:var(--h-text);font-size:12px}
+.h-steps li:not(:last-child):after{content:"";position:absolute;left:calc(50% + 16px);width:calc(100% - 27px);height:2px;top:13px;background:#667A91}
+.h-steps li.current{color:var(--h-text)}.h-steps li.done{color:#DAE6F5}
+.h-steps li.current .h-step-num,.h-steps li.done .h-step-num{background:var(--h-accent);border-color:var(--h-accent);color:#fff}
+.h-person-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 10px;border-top:1px solid var(--h-border);padding:16px 0}
+.h-person-detail{display:flex;flex-direction:column;gap:4px;min-width:0}
+.h-person-detail span{font-size:12px;color:var(--h-sub)}
+.h-person-detail strong{font-size:15px;color:var(--h-text);overflow-wrap:anywhere}
+.h-visit-time{border-top:1px solid var(--h-border);padding:16px 0;display:flex;flex-direction:column;gap:8px}
+.h-field-title{font-size:13px;font-weight:700;color:var(--h-sub);display:inline-flex;gap:8px;align-items:center}
+.h-visit-time strong{font-size:18px;color:var(--h-text);line-height:1.4}
+.h-visit-time p{color:var(--h-link);font-size:13px;margin:0}
+.h-symptoms{padding-top:16px;border-top:1px solid var(--h-border)}
+.h-symptom-head{display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap}
+.h-tags{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.h-risk{font-size:12px;font-weight:750;color:#fff;padding:4px 8px;border-radius:5px}
+.h-risk-high{background:#8C3C4E}.h-risk-normal{background:#755A33}.h-risk-low{background:#356151}
+.h-risk-note{font-size:12px;color:var(--h-sub)}
+.h-symptoms>p{font-size:15px;color:var(--h-text);line-height:1.6;margin:10px 0 0}
+.h-hospital-note{font-size:13px;color:var(--h-sub);border-left:2px solid var(--h-link);padding-left:10px}
+.h-booking-buttons{display:flex;align-items:center;gap:8px;margin:20px 0 16px;flex-wrap:wrap}
+.h-action{min-height:44px;padding:10px 12px;border-radius:8px;font-size:14px;font-weight:800;display:inline-flex;justify-content:center;align-items:center;gap:6px;cursor:pointer}
+.h-action.h-primary{background:var(--h-accent);color:#fff;border:1px solid var(--h-accent);flex:1 1 105px}
+.h-action.h-secondary{background:transparent;color:var(--h-text);border:1px solid #7C91A9;flex:1 1 105px}
+.h-action.h-plain{background:transparent;color:var(--h-sub);border:0;padding:10px 6px}
+.h-finished{font-size:13px;color:var(--h-sub)}
+.h-booking-dates{border-top:1px solid var(--h-border);padding-top:12px;font-size:12px;color:var(--h-sub);line-height:1.55}
+@media(min-width:700px){.h-booking-list{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:390px){.h-booking{padding:16px}.h-booking-head h3{font-size:21px}.h-status{font-size:11px}.h-person-detail strong{font-size:14px}.h-action{font-size:13px;padding:10px}}
 </style></head><body><div id="app" class="app"></div><script>
 'use strict';
 const APP_MODE='hospital';
@@ -305,9 +344,69 @@ function home(){let cnt=state.bookings.filter(b=>!['done','cancelled','rejected'
 function searchPage(){return `${topbar('내게 맞는 병원 찾기','청주 지역 등록 병원 · 진료 상태는 실제 수용 보장이 아닙니다.')}<div class="banner">병원명·주소·연락처는 공개 자료로 확인한 정보입니다. <strong>실시간 상태·예약 기능은 3개 병원의 시연 데이터</strong>이며 실제 진료 접수와 연결되지 않습니다.</div><div class="searchrow"><input class="search" id="hospital-search" placeholder="병원명, 지역, 진료과 검색" value="${e(state.query)}"><button class="btn" data-action="search-apply">검색</button></div><div class="filters">${['전체','24시','고양이 대기실','연결 병원','즐겨찾기'].map(x=>`<button class="filter ${state.filter===x?'active':''}" data-action="filter" data-value="${x}">${x}</button>`).join('')}</div>${state.specialty?`<div class="banner" style="margin:12px 0">선택된 분야: <strong>${e(state.exoticSpecies||state.specialty)}</strong> <button class="link" data-action="clear-specialty">필터 해제 ×</button></div>`:''}<div class="section-title"><h2>등록 병원 <span class="countdot">${filteredHospitals().length}곳</span></h2><span>마지막 갱신 표시</span></div>${hospitalResults(filteredHospitals())}<div class="section"><h2 class="sectionhead">특수동물 진료 병원 찾기</h2><div class="grid four">${EXOTIC.map(x=>`<button class="choice" data-action="exotic" data-value="${x[0]}"><div class="circle">${x[1]}</div><strong>${x[0]}</strong><p>진료 가능 병원 확인</p></button>`).join('')}</div><p class="notice">햄스터·기니피그 진료 경험이 있는 병원은 표시합니다. 실제 진료 가능 여부는 병원에 전화로 확인하세요.</p></div>`}
 function emergency(){let list=HOSPITALS.filter(h=>h.is24);return `${topbar('24시간 · 응급 진료 찾기','진료 필요 시 병원에 전화해 수용 여부를 최종 확인하세요.')}<div class="hero" style="min-height:185px;padding:30px"><div><div class="eyebrow">URGENT CARE</div><h2 style="font-size:27px">응급일수록,<br><em>먼저 전화로 확인하세요.</em></h2><p>24시간 운영 안내와 실제 응급 수용 가능 여부는 다를 수 있습니다.</p></div><div class="hero-graphic" style="font-size:55px">📞</div></div><div class="section"><div class="section-title"><h2>24시간 운영 안내 병원</h2><span>${list.length}곳</span></div>${hospitalResults(list)}</div><div class="banner warning">주의: 아래 상태 표시의 '수용 가능'은 <strong>시연용 병원 관리자가 입력한 값</strong>입니다. 실제 동물병원의 진료 가능 여부를 나타내지 않습니다. 병원 방문 전 반드시 실제 전화로 확인하세요.</div><div class="section"><button class="btn secondary full" data-nav="search">청주 전체 병원 보기</button></div>`}
 function petsPage(){let cards=state.pets.map(p=>`<div class="panel pet-card"><div class="petavatar">${p.species==='고양이'?'🐱':p.species==='강아지'?'🐶':'🐾'}</div><div class="details"><h3>${e(p.name)}</h3><p>${e(p.species)} · ${e(p.age||'나이 미입력')} · ${e(p.weight||'체중 미입력')}</p></div><button class="btn secondary small" data-action="record" data-id="${e(p.id)}">기록 추가</button><button class="btn ghost small" data-action="delete-pet" data-id="${e(p.id)}">×</button></div>`).join('');return `${topbar('내 아이 건강 기록','예방접종부터 검진 결과, 단골병원까지 한눈에')}<div class="banner">기록은 이 기기의 브라우저에만 저장됩니다. 병원 진료기록과 자동 연동되거나 의료기관에 공유되지 않습니다.</div><div class="section"><div class="section-title"><h2>등록한 아이 <span class="countdot">${state.pets.length}</span></h2><button class="btn small" data-action="add-pet">+ 아이 등록</button></div><div class="grid two">${cards||'<div class="empty"><span class="big">🐾</span>아이를 먼저 등록해 주세요.</div>'}</div></div><div class="section"><div class="section-title"><h2>예방접종 · 건강검진 기록</h2></div><div class="panel">${state.records.length?state.records.slice().reverse().map(r=>{let p=state.pets.find(x=>x.id===r.petId);return `<div class="row-line"><div><strong>${e(r.kind)} · ${e(p?.name||'삭제된 아이')}</strong><div class="sub">${e(r.date)} · ${e(r.memo||'메모 없음')}</div></div><button class="btn ghost small" data-action="delete-record" data-id="${e(r.id)}">삭제</button></div>`}).join(''):'<div class="empty">등록된 건강 기록이 없습니다.</div>'}</div></div><div class="section"><div class="section-title"><h2>단골 병원</h2></div>${hospitalResults(HOSPITALS.filter(x=>state.favorites.includes(x.id)))}</div>`}
-function bookingCard(b,hospital=false){let h=hospitalById(b.hospitalId),step={pending:1,accepted:2,suggested:2,confirmed:3,in_progress:3,done:4,cancelled:1,rejected:1}[b.status]||1;return `<article class="booking-card"><div class="head"><div><h3>${hospital?e(b.petName):e(h?.name||'병원 정보 없음')}</h3><p>${hospital?e(b.petName)+' · '+e(b.species):e(b.petName)+' · '+e(b.species)} / ${e(b.service)}</p></div><span class="status ${b.status==='confirmed'?'available':b.status==='pending'?'busy':''}">${e(STATUS[b.status]||b.status)}</span></div><div class="booking-steps">${[1,2,3,4].map(n=>`<div class="${n<=step?'done':''}"></div>`).join('')}</div><p><strong>희망일:</strong> ${e(b.date)} ${e(b.time)} ${b.proposedAt?`<br><strong>병원 제안:</strong> ${e(b.proposedAt.replace('T',' '))}`:''}</p>${b.note?`<p>증상·요청: ${e(b.note)}</p>`:''}${b.hospitalNote?`<p style="background:#edf7ff;border-radius:8px;padding:9px"><strong>병원 메모:</strong> ${e(b.hospitalNote)}</p>`:''}<div class="buttons">${hospital?hospitalBookingButtons(b):ownerBookingButtons(b)}</div><p class="tiny">접수 ${dateTime(b.createdAt)} · 마지막 변경 ${dateTime(b.updatedAt)}</p></article>`}
+function hsSlot(date,time){
+ const m=String(date||'').match(/^([0-9]{4})-([0-9]{2})-([0-9]{2})/);
+ if(!m)return '일정 미입력';
+ const day=['일','월','화','수','목','금','토'][new Date(Date.UTC(+m[1],+m[2]-1,+m[3])).getUTCDay()];
+ const t=String(time||'').match(/([0-9]{1,2}):([0-9]{2})/);
+ if(!t)return (+m[2])+'월 '+(+m[3])+'일('+day+')';
+ return (+m[2])+'월 '+(+m[3])+'일('+day+') '+(+t[1]<12?'오전':'오후')+' '+String(+t[1]%12||12).padStart(2,'0')+':'+t[2];
+}
+function hsTimestamp(t){
+ if(!t)return '미입력';
+ const d=new Date(t);if(!Number.isFinite(d.getTime()))return String(t);
+ const p=new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',month:'numeric',day:'numeric',weekday:'short',hour:'2-digit',minute:'2-digit',hour12:true}).formatToParts(d);
+ const get=x=>p.find(v=>v.type===x)?.value||'';
+ return get('month')+'월 '+get('day')+'일('+get('weekday')+') '+get('dayPeriod')+' '+get('hour')+':'+get('minute');
+}
+function hsRisk(b){
+ if(['high','normal','low'].includes(b.urgency))return {level:b.urgency,label:{high:'긴급',normal:'보통',low:'낮음'}[b.urgency],note:b.urgencyNote||''};
+ const s=String(b.note||'');
+ if(/호흡곤란|숨을 못|경련|의식 없|쓰러짐|심한 출혈|중독/.test(s))return {level:'high',label:'긴급',note:'즉시 전화 확인 권장'};
+ if(/구토|설사|혈변|혈뇨|통증|식욕 부진/.test(s))return {level:'normal',label:'보통',note:'당일 확인 권장'};
+ return {level:'low',label:'낮음',note:'일정 확인'};
+}
+function hsSteps(b){
+ const step={pending:0,accepted:1,suggested:1,confirmed:2,in_progress:2,done:3,rejected:0,cancelled:0}[b.status]??0;
+ return '<ol class="h-steps" aria-label="예약 진행 단계">'+['접수','확인','확정','완료'].map((name,i)=>'<li class="'+(i===step?'current':i<step?'done':'')+'"'+(i===step?' aria-current="step"':'')+'><span class="h-step-num">'+(i<step?hsIcon('check',12):i+1)+'</span><span>'+name+'</span></li>').join('')+'</ol>';
+}
+function hsDemoBookings(){
+ if(!state.hDemoBookings)state.hDemoBookings=[
+  {id:'zeno-demo-001',hospitalId:state.activeHospital,ownerName:'박서연',ownerPhone:'010-0000-0000',petName:'노아',species:'고양이',breed:'코리안숏헤어',age:'4세',weight:'4.6kg',visitType:'재방문',service:'일반 진료',status:'pending',date:'2026-11-07',time:'11:00',note:'갑작스러운 구토 증세가 있습니다. 오늘 아침부터 두 차례 토했습니다.',urgency:'normal',urgencyNote:'당일 확인 권장',createdAt:'2026-11-06T09:18:00+09:00',updatedAt:'2026-11-06T09:18:00+09:00',demo:true},
+  {id:'zeno-demo-002',hospitalId:state.activeHospital,ownerName:'이현우',ownerPhone:'010-0000-0000',petName:'두부',species:'강아지',breed:'말티즈',age:'6세',weight:'3.8kg',visitType:'첫 방문',service:'예방접종 상담',status:'accepted',date:'2026-11-08',time:'14:30',note:'정기 예방접종 일정과 건강검진에 관해 상담하고 싶습니다.',urgency:'low',createdAt:'2026-11-06T10:04:00+09:00',updatedAt:'2026-11-06T10:26:00+09:00',demo:true}
+ ];return state.hDemoBookings;
+}
+function hsBookingCard(b){
+ const r=hsRisk(b);
+ const row=(title,value)=>'<div class="h-person-detail"><span>'+title+'</span><strong>'+e(value||'미제공')+'</strong></div>';
+ const owner=b.ownerName||b.guardianName||'',phone=b.ownerPhone||b.guardianPhone||'';
+ const changed=b.updatedAt&&b.createdAt&&Math.abs(new Date(b.updatedAt)-new Date(b.createdAt))>60000;
+ return '<article class="h-booking"><header class="h-booking-head"><div><span class="h-card-label">예약 요청'+(b.demo?' · 샘플':'')+'</span><h3>'+e(b.petName||'이름 미제공')+'</h3><p>'+e(b.species||'종 미제공')+' · '+e(b.breed||'품종 미제공')+' / '+e(b.service||'일반 진료')+'</p></div><span class="h-status">'+e(STATUS[b.status]||b.status)+'</span></header>'
+ +hsSteps(b)
+ +'<div class="h-person-grid">'+row('보호자 이름',owner)+row('연락처',phone)+row('나이 · 체중',(b.age||'미제공')+' · '+(b.weight||'미제공'))+row('내원 구분',b.visitType||'미제공')+'</div>'
+ +'<section class="h-visit-time"><span class="h-field-title">'+hsIcon('calendar',16)+'희망 진료일</span><strong>'+e(hsSlot(b.date,b.time))+'</strong>'+(b.proposedAt?'<p>병원 제안 · '+e(hsTimestamp(b.proposedAt))+'</p>':'')+'</section>'
+ +'<section class="h-symptoms"><div class="h-symptom-head"><span class="h-field-title">증상 및 요청</span><div class="h-tags"><span class="h-risk h-risk-'+r.level+'">'+e(r.label)+'</span>'+(r.note?'<span class="h-risk-note">'+e(r.note)+'</span>':'')+'</div></div><p>'+e(b.note||'요청 사항 없음')+'</p></section>'
+ +(b.hospitalNote?'<p class="h-hospital-note">병원 메모 · '+e(b.hospitalNote)+'</p>':'')
+ +'<div class="h-booking-buttons">'+hospitalBookingButtons(b)+'</div>'
+ +'<footer class="h-booking-dates">접수 '+e(hsTimestamp(b.createdAt))+(changed?' · 마지막 변경 '+e(hsTimestamp(b.updatedAt)):'')+'</footer></article>';
+}
+function hsFilterBookings(all){
+ const filter=state.hBookingFilter||'all';
+ let list=all.filter(b=>filter==='all'||(filter==='waiting'&&['pending','accepted','suggested'].includes(b.status))||(filter==='confirmed'&&['confirmed','in_progress'].includes(b.status))||(filter==='closed'&&['done','cancelled','rejected'].includes(b.status)));
+ const rank={high:0,normal:1,low:2};
+ list.sort((a,b)=>state.hSort==='urgency'?(rank[hsRisk(a).level]-rank[hsRisk(b).level]||String(b.createdAt||'').localeCompare(String(a.createdAt||''))):String(b.createdAt||'').localeCompare(String(a.createdAt||'')));
+ return list;
+}
+
+function bookingCard(b,hospital=false){if(hospital)return hsBookingCard(b);let h=hospitalById(b.hospitalId),step={pending:1,accepted:2,suggested:2,confirmed:3,in_progress:3,done:4,cancelled:1,rejected:1}[b.status]||1;return `<article class="booking-card"><div class="head"><div><h3>${hospital?e(b.petName):e(h?.name||'병원 정보 없음')}</h3><p>${hospital?e(b.petName)+' · '+e(b.species):e(b.petName)+' · '+e(b.species)} / ${e(b.service)}</p></div><span class="status ${b.status==='confirmed'?'available':b.status==='pending'?'busy':''}">${e(STATUS[b.status]||b.status)}</span></div><div class="booking-steps">${[1,2,3,4].map(n=>`<div class="${n<=step?'done':''}"></div>`).join('')}</div><p><strong>희망일:</strong> ${e(b.date)} ${e(b.time)} ${b.proposedAt?`<br><strong>병원 제안:</strong> ${e(b.proposedAt.replace('T',' '))}`:''}</p>${b.note?`<p>증상·요청: ${e(b.note)}</p>`:''}${b.hospitalNote?`<p style="background:#edf7ff;border-radius:8px;padding:9px"><strong>병원 메모:</strong> ${e(b.hospitalNote)}</p>`:''}<div class="buttons">${hospital?hospitalBookingButtons(b):ownerBookingButtons(b)}</div><p class="tiny">접수 ${dateTime(b.createdAt)} · 마지막 변경 ${dateTime(b.updatedAt)}</p></article>`}
 function ownerBookingButtons(b){let s=b.status;return `${s==='suggested'?`<button class="btn small teal" data-action="owner-confirm" data-id="${e(b.id)}">제안 시간 확정</button>`:''}${['pending','accepted','suggested'].includes(s)?`<button class="btn secondary small" data-action="owner-cancel" data-id="${e(b.id)}">요청 취소</button>`:''}${s==='done'&&!state.reviews.some(x=>x.bookingId===b.id)?`<button class="btn small" data-action="review" data-id="${e(b.id)}">방문 인증 후기 작성</button>`:''}${s==='done'&&state.reviews.some(x=>x.bookingId===b.id)?'<span class="tag teal">후기 작성 완료 · 100P 적립</span>':''}${s==='confirmed'?'<span class="tag teal">병원 데모 예약 확정</span>':''}`}
-function hospitalBookingButtons(b){let s=b.status;return `${['pending','accepted'].includes(s)?`<button class="btn small teal" data-action="hospital-update" data-status="${s==='pending'?'accepted':'confirmed'}" data-id="${e(b.id)}">${s==='pending'?'예약 수락':'예약 확정'}</button>`:''}${['pending','accepted','suggested'].includes(s)?`<button class="btn small secondary" data-action="propose" data-id="${e(b.id)}">시간 제안</button><button class="btn small red" data-action="hospital-update" data-status="rejected" data-id="${e(b.id)}">거절</button>`:''}${s==='confirmed'?`<button class="btn small teal" data-action="hospital-update" data-status="in_progress" data-id="${e(b.id)}">진료 시작</button><button class="btn small secondary" data-action="hospital-update" data-status="done" data-id="${e(b.id)}">진료 완료</button>`:''}${s==='in_progress'?`<button class="btn small teal" data-action="hospital-update" data-status="done" data-id="${e(b.id)}">진료 완료</button>`:''}`}
+function hospitalBookingButtons(b){
+ const s=b.status,id=e(b.id);
+ const primary=['pending','accepted'].includes(s)?'<button class="h-action h-primary" data-action="hospital-update" data-status="'+(s==='pending'?'accepted':'confirmed')+'" data-id="'+id+'">'+hsIcon('check',17)+(s==='pending'?'예약 수락':'예약 확정')+'</button>':s==='confirmed'?'<button class="h-action h-primary" data-action="hospital-update" data-status="in_progress" data-id="'+id+'">진료 시작</button>':s==='in_progress'?'<button class="h-action h-primary" data-action="hospital-update" data-status="done" data-id="'+id+'">진료 완료</button>':'';
+ const secondary=['pending','accepted','suggested'].includes(s)?'<button class="h-action h-secondary" data-action="propose" data-id="'+id+'">'+hsIcon('clock',16)+'시간 제안</button>':s==='confirmed'?'<button class="h-action h-secondary" data-action="hospital-update" data-status="done" data-id="'+id+'">진료 완료</button>':'';
+ const reject=['pending','accepted','suggested'].includes(s)?'<button class="h-action h-plain" data-action="hospital-update" data-status="rejected" data-id="'+id+'">거절</button>':'';
+ return primary+secondary+reject||'<span class="h-finished">처리된 예약</span>';
+}
 function bookingsPage(){let b=state.bookings.filter(x=>state.bookingTab==='전체'||x.status===state.bookingTab).sort((a,b)=>b.createdAt.localeCompare(a.createdAt));return `${topbar('나의 예약 · 진행 상태','병원에 예약을 요청하고 응답을 확인할 수 있습니다.')}<div class="banner">이 화면의 예약은 실제 병원 예약이 아닌 <strong>제노 데모 예약</strong>입니다. 실제 진료를 예약하려면 병원에 직접 전화해 주세요.</div><div class="tabs">${[['전체','전체'],['pending','확인 대기'],['suggested','시간 제안'],['confirmed','확정'],['done','진료 완료']].map(x=>`<button data-action="booking-tab" data-value="${x[0]}" class="${state.bookingTab===x[0]?'active':''}">${x[1]}</button>`).join('')}</div><div class="section"><div class="grid two">${b.map(x=>bookingCard(x)).join('')||'<div class="empty"><span class="big">📆</span>아직 해당 예약이 없습니다.<p>병원을 선택하고 예약을 요청해 보세요.</p><button class="btn small" data-nav="search">병원 찾기</button></div>'}</div></div>`}
 function qaPage(){return `${topbar('동물병원 질문 · 답변','증상 사진 대신 질문 내용을 입력하고 병원 데모 답변을 받아보세요.')}<div class="banner warning">PPT의 ‘자격 확인된 수의사’ 기능을 목표로 합니다. <strong>현재 의료진 자격 검증·실제 의료 상담·사진 첨부는 연결되지 않았습니다.</strong> 답변은 데모 병원용 계정에서 입력한 시연 내용입니다. 응급 증상은 즉시 병원에 전화하세요.</div><div class="section"><div class="section-title"><h2>질문 보내기</h2><button class="btn small" data-action="ask">+ 새 질문</button></div><div class="grid two">${state.questions.map(q=>`<div class="panel"><span class="status ${q.status==='answered'?'available':'busy'}">${q.status==='answered'?'답변 등록':'답변 대기'}</span><h3 style="margin-top:10px">${e(hospitalById(q.hospitalId)?.name||'')}</h3><p class="desc">${e(q.petName||'반려동물')} · ${dateTime(q.createdAt)}</p><p class="preline">${e(q.text)}</p><div class="divider"></div><strong>병원 데모 답변</strong><p class="desc preline">${e(q.answer||'아직 답변이 등록되지 않았습니다.')}</p></div>`).join('')||'<div class="empty"><span class="big">💬</span>아직 질문이 없습니다.</div>'}</div></div>`}
 function membership(){const points=state.reviews.reduce((a,x)=>a+(x.points||0),0);return `${topbar('제노 멤버십 · 포인트','이용자는 모으고, 수익은 다각화합니다.')}<div class="grid two"><div class="panel" style="background:linear-gradient(120deg,#0a2342,#154b83);color:white"><span class="pill">B2C · 보호자</span><p style="margin:22px 0 3px;color:#b9d7ee">프리미엄 멤버십 · 기획 요금</p><div class="price-line"><strong>월 1,800원</strong></div><p style="color:#b9d7ee">정식 결제 전, 할인 계산만 체험 가능합니다.</p><button class="btn" data-action="point-calc">포인트 적용 계산</button></div><div class="panel"><span class="pill">ZENO POINTS</span><div class="large-num" style="margin-top:24px">${points.toLocaleString()} P</div><p class="desc">데모 예약을 병원 측에서 '진료 완료' 처리한 후 후기를 작성하면 100P를 적립하는 시연 규칙입니다.</p><button class="btn secondary small" data-nav="bookings">완료된 예약 확인</button></div></div><div class="section"><div class="section-title"><h2>사업 확장 시연</h2></div><div class="grid three">${[['🏷️','광고·제휴','사료사, 브랜드, 병원 홍보'],['🛍️','펫 이커머스','병원 외 일상에서도 재방문'],['🏥','병원 운영 도구','예약·문의·상태관리 고도화']].map(x=>`<div class="panel"><div class="product-icon">${x[0]}</div><h3 style="margin-top:14px">${x[1]}</h3><p class="desc">${x[2]}</p><span class="tag">향후 계획 · 비활성</span></div>`).join('')}</div></div><div class="section">${ad()}</div>`}
