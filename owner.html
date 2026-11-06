@@ -546,7 +546,7 @@ async function start(){
   if(!zenoPollTimer)zenoPollTimer=setInterval(zenoPoll,25000);
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)zenoPoll()});
   window.addEventListener('online',()=>{if(!state.serverReady){start()}else zenoPoll()});
-  if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost'||location.hostname==='127.0.0.1'))navigator.serviceWorker.register('/sw.js').catch(()=>{});
+  if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost'||location.hostname==='127.0.0.1'))navigator.serviceWorker.register('/sw.js',{updateViaCache:'none'}).then(r=>r.update()).catch(()=>{});
  }finally{zenoStartPending=false}
 }
 render();start();
