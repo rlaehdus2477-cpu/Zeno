@@ -289,6 +289,42 @@ label:has(input[type="checkbox"]){min-height:44px;align-items:center!important}
 /* Cancelled bookings can be permanently removed by authorized clinic staff. */
 .hi-delete-booking{background:#fff!important;border:1px solid #CDD2D8!important;color:#344054!important;border-radius:8px!important;min-height:44px!important;font-size:14px!important;font-weight:700!important;padding:8px 12px!important;cursor:pointer}
 .hi-row-side .hi-delete-booking{width:100%;margin-top:4px}
+</style><style id="zeno-hospital-booking-font-v2">
+/* Reservation type scale — keeps the existing ZENO light inbox layout */
+.hi-inbox .hi-row-name{display:flex;flex-wrap:wrap;white-space:normal;align-items:center;row-gap:4px}
+.hi-inbox .hi-row-name strong{font-size:20px;font-weight:800;line-height:1.35;white-space:normal;overflow:visible;text-overflow:clip;word-break:keep-all}
+.hi-inbox .hi-row-name small{font-size:15px;font-weight:600;line-height:1.4;color:#465464;white-space:normal;max-width:none;overflow:visible;text-overflow:clip;word-break:keep-all}
+.hi-inbox .hi-row-meta,.hi-inbox .hi-row-note{font-size:16px;line-height:1.5;color:#344054;white-space:normal!important;overflow:visible!important;text-overflow:clip!important;word-break:keep-all;overflow-wrap:anywhere}
+.hi-inbox .hi-row-date{font-size:17px!important;line-height:1.5;font-weight:700;color:#344054;display:flex;align-items:flex-start;flex-wrap:wrap;white-space:normal!important;overflow:visible!important;text-overflow:clip!important;word-break:keep-all;overflow-wrap:anywhere}
+.hi-inbox .hi-row-date svg{flex:0 0 15px;margin-top:5px}
+.hi-inbox .hi-row-main{min-width:0;gap:5px}
+.hi-inbox .hi-row-open{min-width:0;min-height:100px}
+.hi-inbox .hi-inbox-row{min-height:132px;height:auto;align-items:center}
+.hi-inbox .hi-row-side{min-width:0;gap:8px;align-items:stretch}
+.hi-inbox .hi-row-side small{font-size:14px!important;line-height:1.45;color:#81391E;text-align:right;white-space:normal;word-break:keep-all;overflow-wrap:anywhere}
+.hi-inbox .hi-status-badge{font-size:14px!important;line-height:1.4;white-space:normal;word-break:keep-all;text-align:center}
+.hi-inbox .hi-inline-action,.hi-inbox .hi-delete-booking{min-height:48px!important;height:auto;font-size:16px!important;line-height:1.35;font-weight:750;padding:10px 8px!important;white-space:normal;word-break:keep-all;overflow-wrap:anywhere}
+.hi-sheet-buttons .hi-action,.hi-sheet-buttons .hi-delete-booking{min-height:48px!important;font-size:16px!important;line-height:1.4;white-space:normal;word-break:keep-all}
+.hi-inbox .hi-filter-chips button{font-size:15px!important;min-height:44px;line-height:1.35}
+.hi-inbox .hi-sort-button{font-size:15px!important;min-height:44px;line-height:1.35}
+.hi-bottom-nav button{font-size:13px!important;line-height:1.35;word-break:keep-all}
+.content>.footer{font-size:13px!important;line-height:1.6;word-break:keep-all}
+@media(max-width:390px){
+ .hi-inbox .hi-filter-bar{display:flex;flex-wrap:wrap;gap:8px}
+ .hi-inbox .hi-filter-chips{flex:1 1 100%;width:100%;max-width:100%;overflow-x:auto}
+ .hi-inbox .hi-sort-button{margin-left:auto;justify-content:flex-end}
+ .hi-inbox .hi-inbox-row{grid-template-columns:minmax(0,1fr) 102px;gap:8px;padding:12px}
+ .hi-inbox .hi-row-name{gap:5px}
+ .hi-inbox .hi-row-date{font-size:17px!important}
+ .hi-inbox .hi-inline-action,.hi-inbox .hi-delete-booking{font-size:16px!important;min-height:48px!important}
+}
+@media(max-width:360px){
+ .hi-inbox .hi-inbox-row{grid-template-columns:minmax(0,1fr) 100px;gap:6px;padding:12px}
+ .hi-inbox .hi-row-side{gap:6px}
+ .hi-inbox .hi-row-name strong{font-size:20px}
+ .hi-inbox .hi-row-meta,.hi-inbox .hi-row-note{font-size:16px}
+ .hi-inbox .hi-row-date{font-size:17px!important}
+}
 </style></head><body><div id="app" class="app"></div><script>
 'use strict';
 const APP_MODE='hospital';
