@@ -534,7 +534,58 @@ body{background:#f7f9fc;color:#20364f;font-family:Pretendard,-apple-system,Blink
  .zeno-list-action{min-width:58px}
 }
 </style>
-<style>.zeno-question-card h3{font-size:18px;line-height:1.4;margin:0 0 10px;overflow-wrap:anywhere}.zeno-question-hospital{font-size:13px;color:#7a8a99}.zeno-question-card details{margin-top:10px;padding-top:12px;border-top:1px solid #e4edf4}.zeno-question-card summary{color:#1d6ebd;font-weight:750;cursor:pointer}.zeno-question-card details small,.zeno-disclaimer{color:#6d8196;font-size:13px;line-height:1.6}.zeno-point-card{display:flex;flex-direction:column;gap:9px;background:#fff;border:1px solid #dfebf5;border-radius:14px;padding:25px 22px}.zeno-point-card span{font-size:14px;color:#68809a}.zeno-point-card strong{font-size:38px;color:#116cce}.zeno-point-card small{font-size:13px;color:#728397}</style><style>.zeno-book-picker{padding:14px 15px;background:#f5f9ff;border:1px solid #dce8f4;border-radius:12px;margin-bottom:13px}.zeno-book-picker h3{margin:0 0 5px;font-size:19px;color:#1e456b}.zeno-book-picker p{margin:0 0 12px;font-size:14px;color:#70829b}.zeno-book-pets{display:flex;flex-wrap:wrap;gap:7px}.zeno-book-pet{border:1px solid #cfddea;border-radius:10px;padding:11px 14px;font-weight:700;background:white;color:#31526d;min-height:43px}.zeno-book-pet.selected{border-color:#1689fa;background:#eaf5ff;color:#126bc7}.zeno-book-warning{font-size:14px;color:#856127;background:#fff8e8;border:1px solid #f3dfbb;border-radius:9px;padding:10px 12px;margin:0 0 12px}</style><style>.zeno-exotic-top,.zeno-emergency-info{padding:16px;background:#f2f8ff;border:1px solid #d8e7f5;border-radius:12px;margin:10px 0 16px}.zeno-exotic-top h3{margin:0 0 12px}.zeno-exotic-chips,.zeno-remove-filters{display:flex;flex-wrap:wrap;gap:8px}.zeno-remove-filters{padding:12px 0;align-items:center}.zeno-remove-filters button{border:1px solid #c8dced;background:white;color:#2762a2;border-radius:8px;padding:8px 12px}.zeno-search-emergency{margin:12px 0}.zeno-search-emergency button{background:#e8f3ff;color:#1269c3;border-color:#bfdbf4}.zeno-emergency-info strong{font-size:17px}.zeno-emergency-info p{color:#52708b;margin:7px 0 0;font-size:14px}</style><style>.zeno-pet-save-note{font-size:14px;color:#536f89;background:#eff7ff;padding:12px 14px;border-radius:10px;line-height:1.5}.zeno-pet-tabs{display:flex;gap:7px;flex-wrap:wrap;margin:12px 0}.zeno-pet-tabs button{background:#fff;border:1px solid #d3e1ed;border-radius:9px;padding:10px 13px;color:#40617e}.zeno-pet-tabs button.active{background:#1689fa;border-color:#1689fa;color:white}.zeno-save-status{color:#356fb0;font-size:13px;margin:12px 0}</style><style>#memopen,#membg{display:none!important}</style><style>.zeno-owner-booking{box-shadow:none;border:1px solid #dce7f2;padding:18px}.zeno-booking-final{display:flex;flex-direction:column;gap:8px;margin:12px 0 15px}.zeno-booking-final small,.zeno-booking-times small{font-size:13px;color:#6e839b}.zeno-booking-final strong{font-size:20px;color:#1d4164}.zeno-booking-proposal{padding:13px;background:#eff7ff;border:1px solid #d5e7f8;border-radius:10px;margin:13px 0}.zeno-booking-proposal>strong{font-size:15px;color:#1b5f9c}.zeno-booking-times{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.zeno-booking-times>div{display:flex;flex-direction:column;gap:7px}.zeno-booking-times b{font-size:14px}.zeno-booking-details{border-top:1px solid #e6ecf3;margin-top:12px;padding-top:10px;color:#6b8196;font-size:13px}.zeno-booking-details summary{cursor:pointer;font-weight:700;color:#52789c}</style><style>.zeno-pet-home-hospital{margin-top:18px;padding:15px;background:#f6f9fc;border-radius:12px}.zeno-pet-home-hospital select{display:block;width:100%;margin:8px 0 10px;padding:10px;border:1px solid #cfdeea;border-radius:9px}.zeno-pet-hospital{display:block;font-size:12px;color:#126bb9;margin-top:6px}</style></head><body><div id="app" class="app"></div><script>
+<style>.zeno-question-card h3{font-size:18px;line-height:1.4;margin:0 0 10px;overflow-wrap:anywhere}.zeno-question-hospital{font-size:13px;color:#7a8a99}.zeno-question-card details{margin-top:10px;padding-top:12px;border-top:1px solid #e4edf4}.zeno-question-card summary{color:#1d6ebd;font-weight:750;cursor:pointer}.zeno-question-card details small,.zeno-disclaimer{color:#6d8196;font-size:13px;line-height:1.6}.zeno-point-card{display:flex;flex-direction:column;gap:9px;background:#fff;border:1px solid #dfebf5;border-radius:14px;padding:25px 22px}.zeno-point-card span{font-size:14px;color:#68809a}.zeno-point-card strong{font-size:38px;color:#116cce}.zeno-point-card small{font-size:13px;color:#728397}</style><style>.zeno-book-picker{padding:14px 15px;background:#f5f9ff;border:1px solid #dce8f4;border-radius:12px;margin-bottom:13px}.zeno-book-picker h3{margin:0 0 5px;font-size:19px;color:#1e456b}.zeno-book-picker p{margin:0 0 12px;font-size:14px;color:#70829b}.zeno-book-pets{display:flex;flex-wrap:wrap;gap:7px}.zeno-book-pet{border:1px solid #cfddea;border-radius:10px;padding:11px 14px;font-weight:700;background:white;color:#31526d;min-height:43px}.zeno-book-pet.selected{border-color:#1689fa;background:#eaf5ff;color:#126bc7}.zeno-book-warning{font-size:14px;color:#856127;background:#fff8e8;border:1px solid #f3dfbb;border-radius:9px;padding:10px 12px;margin:0 0 12px}</style><style>.zeno-exotic-top,.zeno-emergency-info{padding:16px;background:#f2f8ff;border:1px solid #d8e7f5;border-radius:12px;margin:10px 0 16px}.zeno-exotic-top h3{margin:0 0 12px}.zeno-exotic-chips,.zeno-remove-filters{display:flex;flex-wrap:wrap;gap:8px}.zeno-remove-filters{padding:12px 0;align-items:center}.zeno-remove-filters button{border:1px solid #c8dced;background:white;color:#2762a2;border-radius:8px;padding:8px 12px}.zeno-search-emergency{margin:12px 0}.zeno-search-emergency button{background:#e8f3ff;color:#1269c3;border-color:#bfdbf4}.zeno-emergency-info strong{font-size:17px}.zeno-emergency-info p{color:#52708b;margin:7px 0 0;font-size:14px}</style><style>.zeno-pet-save-note{font-size:14px;color:#536f89;background:#eff7ff;padding:12px 14px;border-radius:10px;line-height:1.5}.zeno-pet-tabs{display:flex;gap:7px;flex-wrap:wrap;margin:12px 0}.zeno-pet-tabs button{background:#fff;border:1px solid #d3e1ed;border-radius:9px;padding:10px 13px;color:#40617e}.zeno-pet-tabs button.active{background:#1689fa;border-color:#1689fa;color:white}.zeno-save-status{color:#356fb0;font-size:13px;margin:12px 0}</style><style>#memopen,#membg{display:none!important}</style><style>.zeno-owner-booking{box-shadow:none;border:1px solid #dce7f2;padding:18px}.zeno-booking-final{display:flex;flex-direction:column;gap:8px;margin:12px 0 15px}.zeno-booking-final small,.zeno-booking-times small{font-size:13px;color:#6e839b}.zeno-booking-final strong{font-size:20px;color:#1d4164}.zeno-booking-proposal{padding:13px;background:#eff7ff;border:1px solid #d5e7f8;border-radius:10px;margin:13px 0}.zeno-booking-proposal>strong{font-size:15px;color:#1b5f9c}.zeno-booking-times{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.zeno-booking-times>div{display:flex;flex-direction:column;gap:7px}.zeno-booking-times b{font-size:14px}.zeno-booking-details{border-top:1px solid #e6ecf3;margin-top:12px;padding-top:10px;color:#6b8196;font-size:13px}.zeno-booking-details summary{cursor:pointer;font-weight:700;color:#52789c}</style><style>.zeno-pet-home-hospital{margin-top:18px;padding:15px;background:#f6f9fc;border-radius:12px}.zeno-pet-home-hospital select{display:block;width:100%;margin:8px 0 10px;padding:10px;border:1px solid #cfdeea;border-radius:9px}.zeno-pet-hospital{display:block;font-size:12px;color:#126bb9;margin-top:6px}</style><style>
+/* ZENO owner mobile legibility pass. Consistent 16px information / 48px targets. */
+.zeno-owner-top h1{font-size:24px}
+.hospital-list.zeno-compact-results{border-color:#d7e2ec;overflow:visible}
+.zeno-list-item{display:grid!important;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;align-items:start;padding:16px!important;min-height:114px;border-bottom:1px solid #e4eaf0}
+.zeno-list-main{grid-column:1/-1;grid-row:1;align-items:flex-start;min-width:0;gap:14px!important}
+.zeno-list-photo{display:block;flex:0 0 82px;width:82px!important;min-width:82px!important;height:78px!important;border-radius:9px}
+.zeno-list-placeholder{background:#f7fafc;border:1px solid #edf1f5}
+.zeno-list-text{flex:1;min-width:0;gap:6px!important}
+.zeno-list-text strong{font-size:18px!important;line-height:1.4!important;overflow-wrap:anywhere;white-space:normal}
+.zeno-list-region{font-size:14px;color:#4f6377;line-height:1.45}
+.zeno-list-hours{display:flex;flex-wrap:wrap;gap:6px;align-items:baseline;font-size:15px;line-height:1.4;color:#263e58}
+.zeno-list-hours-label{color:#52687e;font-size:14px}
+.zeno-list-hours b{font-size:16px;font-weight:800;color:#244764}
+.zeno-list-conditions{display:flex;flex-wrap:wrap;gap:5px;margin:4px 0 2px}
+.zeno-list-condition{white-space:normal;max-width:100%;font-size:14px!important;line-height:1.45;padding:5px 8px;overflow-wrap:anywhere;border-radius:8px}
+.zeno-list-condition:not(.zeno-list-primary){background:#f4f6f8;color:#4d6379}
+.zeno-list-action{grid-column:2;grid-row:2;justify-self:end;min-width:108px!important;min-height:48px!important;font-size:16px!important;padding:11px 15px!important;line-height:1.3}
+.zeno-list-item:last-child{border-bottom:0}
+.close{width:48px!important;height:48px!important;min-width:48px!important;min-height:48px!important;font-size:25px!important;display:grid;place-items:center}
+.modal-head{align-items:center}
+.zeno-detail-tabs{scrollbar-width:auto!important;scroll-behavior:smooth;padding-right:32px;position:relative}
+.zeno-detail-tabs::-webkit-scrollbar{display:block;height:4px}
+.zeno-detail-tabs::-webkit-scrollbar-thumb{background:#b9cbdb;border-radius:10px}
+.zeno-detail-tab{min-height:48px;min-width:100px;font-size:16px!important;flex:0 0 auto}
+.zeno-schedule-header small{font-size:14px!important;color:#3d5770;line-height:1.4}
+.zeno-week-cell small{font-size:14px!important;color:#1769b8}
+.zeno-schedule-source{font-size:14px!important;color:#52697d}
+.zeno-booking-times{grid-template-columns:repeat(2,minmax(0,1fr))}
+.zeno-booking-times small{font-size:14px!important}
+.zeno-booking-times b{font-size:17px!important;line-height:1.55;overflow-wrap:anywhere}
+.zeno-booking-proposal>strong{font-size:17px!important}
+.footer{font-size:12px!important;line-height:1.55!important;color:#62768a!important;margin-top:35px}
+.zeno-disclaimer{font-size:13px;color:#58728b}
+.zeno-booking-final strong{font-size:22px}
+@media(max-width:750px){
+ .zeno-list-photo{width:72px!important;min-width:72px!important;flex-basis:72px;height:70px!important}
+ .zeno-list-item{padding:14px 12px!important;gap:7px!important}
+ .zeno-list-main{gap:11px!important}
+ .zeno-list-text strong{font-size:18px!important}
+ .zeno-list-action{font-size:16px!important;min-height:48px!important}
+ .zeno-list-region{font-size:14px}
+ .zeno-list-hours b{font-size:16px}
+ .zeno-booking-times{grid-template-columns:minmax(0,1fr)}
+ .zeno-detail-tab{min-width:95px}
+}
+@media(max-width:390px){
+ .zeno-list-photo{width:60px!important;min-width:60px!important;flex-basis:60px;height:62px!important}
+ .zeno-list-main{gap:10px!important}
+ .zeno-list-text strong{font-size:17px!important}
+}
+</style></head><body><div id="app" class="app"></div><script>
 'use strict';
 const APP_MODE='owner';
 
@@ -727,9 +778,9 @@ function zenoWeeklyHours(h){
  const dayRows=days.map(day=>'<div class="zeno-week-cell'+(day===today?' zeno-hours-today':'')+(week[day]==='휴진'?' closed':'')+'"><strong>'+day+(day===today?'<small>오늘</small>':'')+'</strong><span>'+e(week[day]||'별도 확인')+'</span></div>').join('');
  const extras=['공휴일','점심시간','저녁시간'].filter(day=>week[day]).map(day=>'<div class="zeno-week-cell zeno-week-extra"><strong>'+day+'</strong><span>'+e(week[day])+'</span></div>').join('');
  const quick='<div class="zeno-hour-actions">'+(h.phone?'<a class="btn zeno-call" href="tel:'+e(h.phone)+'">☎ 병원 전화하기</a>':'')+(h.linked?'<button class="btn" data-action="book" data-id="'+e(h.id)+'">예약 요청 · 시연</button>':'')+'</div>';
- return '<div class="zeno-schedule-header"><h3>요일별 진료시간</h3><small>병원 공개 안내 기준</small></div>'
+ return '<div class="zeno-schedule-header"><h3>요일별 진료시간</h3><small>자료 확인일 '+e(date||'미확인')+' · 운영 여부는 병원 확인</small></div>'
  +'<div class="zeno-today-hero"><div class="zeno-today-kicker">오늘 · '+e(today)+'요일</div><strong>'+e(dayText)+'</strong><p>실시간 진료 가능 상태가 아닙니다. 방문 전 전화로 확인해 주세요.</p></div>'
- +quick+'<div class="zeno-week-grid" role="list" aria-label="요일별 진료시간">'+dayRows+extras+'</div>'
+ + '<div class="zeno-week-grid" role="list" aria-label="요일별 진료시간">'+dayRows+extras+'</div>'
  +(hasSource?'<div class="zeno-schedule-summary"><b>진료시간 추가 안내</b><p>'+e(h.hours)+'</p></div>':'<div class="zeno-schedule-summary">확인 가능한 진료시간이 아직 없습니다. 병원에 직접 문의해 주세요.</div>')
  +'<div class="zeno-schedule-source"><strong>정보 출처</strong> · '+e(source)+(date?' · 자료 확인일 '+e(date):'')+'</div>'
  +(h.hoursSourceUrl?'<a class="zeno-hours-link" href="'+e(h.hoursSourceUrl)+'" target="_blank" rel="noopener noreferrer">운영시간 출처 확인</a>':'');
@@ -779,23 +830,36 @@ function zenoCatWaitingLabel(h){
 }
 function zenoActiveFilters(){return [...new Set([...(state.activeFilters||[]),...(state.filter!=='전체'?[state.filter]:[])])];}
 function zenoHasFilter(v){return zenoActiveFilters().includes(v);}
-function zenoListMatchedCondition(h){
- if(zenoHasFilter('고양이 대기실')&&h.catWaiting)return zenoCatWaitingLabel(h);
- if(zenoHasFilter('24시'))return '24시간 운영 안내 · 응급 수용은 전화 확인';
- if(state.specialty)return '선택 진료 · '+(state.exoticSpecies||state.specialty);
- if(zenoHasFilter('즐겨찾기'))return '저장한 병원';
- if(zenoHasFilter('연결 병원'))return '예약 요청 가능 · 시연';
- if(h.id==='pub028')return zenoCatWaitingLabel(h);
- return '';
+
+function zenoListMatchedConditions(h){
+ const result=[];
+ const fs=zenoActiveFilters();
+ if(state.specialty)result.push('진료 · '+(state.exoticSpecies||state.specialty));
+ if(fs.includes('24시')&&h.is24)result.push('24시간 운영 안내');
+ if(fs.includes('고양이 대기실')&&h.catWaiting){
+  const cat=zenoCatWaitingLabel(h);
+  if(cat){const parts=cat.split(' · ');result.push(parts[0]);if(parts[1])result.push(parts[1]);}
+ }
+ if(fs.includes('연결 병원')&&h.linked)result.push('예약 요청 가능');
+ if(fs.includes('즐겨찾기'))result.push('저장한 병원');
+ if(!fs.length&&!state.specialty&&h.catWaiting?.separate)result.push('별도 고양이 전용 대기실');
+ return [...new Set(result)];
 }
 function hospitalCard(h){
  const photo=Array.isArray(h.photos)?h.photos.find(p=>p&&p.approved===true&&p.url):null;
- const photoHtml=photo?'<img class="zeno-list-photo'+(photo.isLogo||photo.fit==='contain'?' zeno-list-logo':'')+'" loading="lazy" referrerpolicy="no-referrer" src="'+e(photo.url)+'" alt="'+e(h.name)+' 사진" onerror="this.style.display=\'none\'">':'';
- const action=state.page==='emergency'?(h.phone?'<a class="btn small zeno-list-action" href="tel:'+e(h.phone)+'">병원에 전화</a>':'<button type="button" class="btn secondary small zeno-list-action" data-action="details" data-id="'+e(h.id)+'">연락처 확인</button>'):h.linked?'<button type="button" class="btn small zeno-list-action" data-action="book" data-id="'+e(h.id)+'">예약 요청</button>':h.phone?'<a class="btn secondary small zeno-list-action" href="tel:'+e(h.phone)+'">전화</a>':'<button type="button" class="btn secondary small zeno-list-action" data-action="details" data-id="'+e(h.id)+'">상세</button>';
- const condition=zenoListMatchedCondition(h);
- return '<article class="zeno-list-item"><button type="button" class="zeno-list-main" data-action="details" data-id="'+e(h.id)+'" aria-label="'+e(h.name)+' 상세정보 보기">'+photoHtml+'<span class="zeno-list-text"><strong>'+e(h.name)+'</strong><span class="zeno-list-meta">'+e(h.region)+' · 오늘 '+e(zenoListTodayHours(h))+'</span>'+(condition?'<span class="zeno-list-condition">'+e(condition)+'</span>':'')+'</span></button>'+action+'</article>';
+ const photoHtml=photo?'<img class="zeno-list-photo'+(photo.isLogo||photo.fit==='contain'?' zeno-list-logo':'')+'" loading="lazy" referrerpolicy="no-referrer" src="'+e(photo.url)+'" alt="'+e(h.name)+' 사진" onerror="this.style.visibility=\'hidden\'">':'<span class="zeno-list-photo zeno-list-placeholder" aria-hidden="true"></span>';
+ const action=state.page==='emergency'?(h.phone?'<a class="btn small zeno-list-action" href="tel:'+e(h.phone)+'">병원에 전화</a>':'<a class="btn secondary small zeno-list-action" href="'+zenoNaverPhotoUrl(h)+'" target="_blank" rel="noopener noreferrer">지도에서 보기</a>'):
+  h.linked?'<button type="button" class="btn small zeno-list-action" data-action="book" data-id="'+e(h.id)+'">예약 요청</button>':
+  h.phone?'<a class="btn secondary small zeno-list-action" href="tel:'+e(h.phone)+'">전화</a>':
+  '<a class="btn secondary small zeno-list-action" href="'+zenoNaverPhotoUrl(h)+'" target="_blank" rel="noopener noreferrer">지도에서 보기</a>';
+ const conditions=zenoListMatchedConditions(h);
+ const conditionHtml=conditions.length?'<span class="zeno-list-conditions">'+conditions.map((c,i)=>'<span class="zeno-list-condition'+(i===0?' zeno-list-primary':'')+'">'+e(c)+'</span>').join('')+'</span>':'';
+ return '<article class="zeno-list-item"><button type="button" class="zeno-list-main" data-action="details" data-id="'+e(h.id)+'" aria-label="'+e(h.name)+' 상세정보 보기">'+photoHtml+
+ '<span class="zeno-list-text"><strong>'+e(h.name)+'</strong><span class="zeno-list-region">'+e(h.region)+'</span>'+
+ '<span class="zeno-list-hours"><span class="zeno-list-hours-label">오늘</span><b>'+e(zenoListTodayHours(h))+'</b></span>'+conditionHtml+'</span></button>'+
+ action+'</article>';
 }
-function hospitalResults(items){return items.length?'<div class="hospital-list zeno-compact-results">'+items.map(hospitalCard).join('')+'</div>':'<div class="empty"><strong>조건에 맞는 병원이 없습니다.</strong><p>진료 여부를 확인할 수 있는 병원만 표시합니다. 다른 조건으로 다시 찾아보세요.</p><button class="btn secondary small" data-action="clear-search">전체 병원 보기</button></div>';}
+function hospitalResults(items){return items.length?'<div class="hospital-list zeno-compact-results">'+items.map(hospitalCard).join('')+'</div>':'<div class="empty"><strong>조건에 맞는 병원이 없어요.</strong><p>검색 조건을 하나씩 해제해 다시 찾아보세요.</p><button class="btn secondary small" data-action="clear-search">조건 초기화</button></div>';}
 
 function filteredHospitals(){
  let list=HOSPITALS.filter(h=>!state.query||(h.name+' '+(h.aliases||[]).join(' ')+' '+h.address+' '+h.tags.join(' ')).toLowerCase().includes(state.query.toLowerCase()));
