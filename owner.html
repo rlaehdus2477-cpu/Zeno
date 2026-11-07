@@ -1221,7 +1221,7 @@ function authScreen(){
   +'<p class="zeno-recovery-guide">가입할 때 받았거나 계정에서 재발급한 복구 코드가 필요합니다. 복구 코드가 없으면 계정을 임의로 초기화할 수 없습니다.</p>'
   +(state.authError?'<div id="zeno-auth-error" class="zeno-auth-error" role="alert">'+e(state.authError)+'</div>':'')
   +'<form id="owner-recovery-reset"><label class="auth-label" for="zeno-reset-user">아이디</label><input id="zeno-reset-user" name="username" required maxlength="24" autocomplete="username" placeholder="가입한 아이디">'
-  +'<label class="auth-label" for="zeno-reset-code">복구 코드</label><input id="zeno-reset-code" name="recoveryCode" required maxlength="100" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="ZENO-...">'
+  +'<label class="auth-label" for="zeno-reset-code">복구 코드</label><input id="zeno-reset-code" name="recoveryCode" type="password" required maxlength="100" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="ZENO-...">'
   +'<label class="auth-label" for="zeno-reset-password">새 비밀번호</label><input id="zeno-reset-password" name="newPassword" type="password" minlength="10" maxlength="100" required autocomplete="new-password" placeholder="10자 이상">'
   +'<label class="auth-label" for="zeno-reset-confirm">새 비밀번호 확인</label><input id="zeno-reset-confirm" name="confirmPassword" type="password" minlength="10" maxlength="100" required autocomplete="new-password" placeholder="다시 입력">'
   +'<button class="btn full" type="submit">비밀번호 변경</button></form>'
@@ -1283,7 +1283,7 @@ async function mutate(method,path,data,message){try{await api(method,path,data);
 document.addEventListener('click',async ev=>{let n=ev.target.closest('[data-nav]');if(n){navTo(n.dataset.nav);return}let el=ev.target.closest('[data-action]');if(!el)return;const a=el.dataset.action,id=el.dataset.id,val=el.dataset.value;
 if(a==='detail-tab'){const dialog=el.closest('.modal'),selected=el.dataset.value;if(dialog){dialog.querySelectorAll('[data-detail-panel]').forEach(p=>{p.hidden=p.dataset.detailPanel!==selected});dialog.querySelectorAll('[data-action="detail-tab"]').forEach(b=>{const active=b.dataset.value===selected;b.classList.toggle('active',active);b.setAttribute('aria-selected',String(active))});dialog.scrollTop=0;}return}
 if(a==='close-modal'){zenoCloseModal();return}if(a==='modal-backdrop'){if(ev.target===el)zenoCloseModal();return}
-if(a==='auth-mode'){state.authMode=val;state.authError='';state.authNotice='';render();return}
+if(a==='auth-mode'){state.authMode=val;state.authError='';if(val!=='login')state.authNotice='';render();return}
 if(a==='recovery-setup'){if(!state.ownerToken){navTo('login');return}openModal('recovery-setup');return}
 if(a==='copy-recovery-code'){const code=state.recoveryCode;if(!code)return;try{await navigator.clipboard.writeText(code);toast('복구 코드를 복사했어요. 안전하게 보관해 주세요.')}catch(err){const input=document.getElementById('zeno-recovery-code-value');if(input){input.focus();input.select();toast('복구 코드를 선택했습니다. 길게 눌러 복사해 주세요.')}}return}
 if(a==='owner-logout'){clearTimeout(profileSaveTimer);state.recoveryCode='';state.afterRecoveryAction=null;state.profileSaving=false;state.profileSaveError='';state.ownerToken='';state.page='home';state.owner=null;ownerId='';state.pets=[];state.records=[];state.favorites=[];state.bookings=[];state.questions=[];state.reviews=[];state.authMode='login';localStorage.removeItem('zeno-owner-auth');render();return}
