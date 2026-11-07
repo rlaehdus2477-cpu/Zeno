@@ -721,6 +721,37 @@ button:focus-visible,a:focus-visible,[tabindex]:focus-visible{outline:3px solid 
 .zeno-giving-message{font-size:19px;line-height:1.6;letter-spacing:-.35px;color:#173452;font-weight:750;max-width:460px;margin:0 auto 12px;overflow-wrap:break-word}
 .zeno-giving-detail{font-size:14px;line-height:1.65;color:#60768c;max-width:470px;margin:0 auto;overflow-wrap:break-word}
 @media(max-width:390px){.zeno-giving-card{padding:22px 15px}.zeno-giving-message{font-size:18px}}
+</style><style id="zeno-more-clean-20261108">
+/* UX 2026-11-08 [1]: prevent splitting Korean words when space is available. */
+body{word-break:keep-all;overflow-wrap:break-word}
+/* UX 2026-11-08 [2]: prevent logo clipping under mobile safe area. */
+@media(max-width:750px){
+ .top.zeno-owner-top{padding-top:env(safe-area-inset-top,0px);min-height:92px;align-items:flex-start;overflow:visible}
+ .top.zeno-owner-top>div{min-width:0;width:100%}
+ .top.zeno-owner-top .mobile-logo{box-sizing:border-box;display:inline-flex;align-items:center;justify-content:flex-start;max-width:100%;min-height:52px;height:auto!important;padding:8px 12px!important;margin-top:0!important;margin-bottom:12px!important;overflow:visible;line-height:normal;vertical-align:middle;border-radius:12px}
+ .top.zeno-owner-top .mobile-logo img{display:block;width:145px;max-width:100%;height:auto!important;max-height:52px;object-fit:contain;object-position:center;overflow:visible}
+}
+/* UX 2026-11-08 [3][4]: simple 56px rows with subtle dividers and thin chevron. */
+.zeno-more-list{display:flex;flex-direction:column;width:100%;background:#fff;border:1px solid #e7ebf0;border-radius:12px;overflow:hidden;box-shadow:none}
+.zeno-more-item{display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:56px;width:100%;padding:12px 16px;border:0;border-bottom:1px solid #e9edf2;background:#fff;color:#243c54;font-size:16px;font-weight:600;line-height:1.45;text-align:left;cursor:pointer}
+.zeno-more-item:last-child{border-bottom:0}
+.zeno-more-item:hover{background:#f8fafc}
+.zeno-more-item:focus-visible{outline:2px solid #1689fa;outline-offset:-2px}
+.zeno-more-chevron{flex:0 0 18px;color:#9ca9b7;stroke-width:1.5}
+.zeno-more-account{margin:24px 0 0!important;padding:0!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important}
+.zeno-more-account h2,.zeno-giving-section h2{margin:0 0 12px!important;font-size:18px!important;line-height:1.45;font-weight:750;color:#173452}
+.zeno-more-account .btn{min-height:44px;border-radius:10px;box-shadow:none}
+/* UX 2026-11-08 [5]: compact recovery explanation. */
+.zeno-more-recovery{display:flex;flex-direction:column;align-items:flex-start;gap:4px}
+.zeno-recovery-helper{margin:0;color:#687b8c;font-size:13px;line-height:1.55}
+.zeno-more-logout{margin-top:12px}
+/* UX 2026-11-08 [6]: independent About, symmetric internal padding. */
+.zeno-giving-section{margin:24px 0 12px!important}
+.zeno-giving-card{background:#fff;border:1px solid #e7ebf0;border-radius:12px;padding:20px!important;text-align:left;box-shadow:none}
+.zeno-giving-mark{display:none!important}
+.zeno-giving-message{font-size:18px!important;line-height:1.5;font-weight:700;letter-spacing:-.3px;margin:0 0 12px!important;color:#173452;text-align:left;word-break:keep-all;overflow-wrap:break-word;max-width:none}
+.zeno-giving-detail{font-size:14px!important;line-height:1.65;margin:0!important;color:#637789;text-align:left;word-break:keep-all;overflow-wrap:break-word;max-width:none}
+@media(max-width:390px){.zeno-more-item{padding:12px 14px}.zeno-giving-card{padding:20px 16px!important}.zeno-giving-message{font-size:18px!important}}
 </style></head><body><div id="app" class="app"></div><script>
 'use strict';
 const APP_MODE='owner';
@@ -1228,17 +1259,33 @@ function pricesPage(){
  }).join('')+'</div>':'<div class="empty"><strong>아직 비교할 가격 정보가 없어요.</strong><p>검증된 병원 가격이 등록되면 같은 항목끼리 비교해 보여드릴게요.</p></div>');
 }
 
+// UX 2026-11-08 [3][4]: remove duplicate bottom-tab entries, retain memorial destination, use line-list navigation.
 function morePage(){
- const items=[['emergency','야간·24시간 병원'],['qa','내 질문'],['membership','내 포인트'],['prices','진료비 비교'],['search','병원 찾기'],['pets','내 아이 · 추모관']];
- return topbar('더 보기','')+'<div class="grid two">'+items.map(x=>'<button class="choice" data-nav="'+x[0]+'"><strong>'+x[1]+'</strong></button>').join('')+'</div>'
- +'<div class="zeno-account-section"><h2>계정</h2>'+(state.ownerToken?'<div class="zeno-account-actions"><button class="btn secondary" data-action="recovery-setup">복구 코드 발급</button><button class="btn secondary" data-action="owner-logout">로그아웃</button></div>':'<button class="btn" data-nav="login">로그인 · 회원가입</button>')
- +'<section class="zeno-giving-section" aria-labelledby="zeno-about-title"><h2 id="zeno-about-title">ZENO 소개</h2><div class="zeno-giving-card">'
- +'<div class="zeno-giving-mark" aria-hidden="true">♡</div>'
- +'<p class="zeno-giving-message">ZENO의 성장이 보호소 아이들의 건강한 내일로 이어집니다.</p>'
- +'<p class="zeno-giving-detail">유료 서비스 시작 후 매출의 5%를 보호소 동물 건강검진에 지원할 계획입니다.</p>'
- +'</div></section>'+'</div>';
+ const items=[
+  ['emergency','야간·24시간 병원'],
+  ['qa','내 질문'],
+  ['membership','내 포인트'],
+  ['prices','진료비 비교'],
+  ['pets','추모관'] // Existing pets route contains memorial functionality.
+ ];
+ const chevron='<svg class="zeno-more-chevron" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>';
+ const menu='<nav class="zeno-more-list" aria-label="더 보기 메뉴">'+items.map(([route,label])=>'<button type="button" class="zeno-more-item" data-nav="'+route+'"><span>'+e(label)+'</span>'+chevron+'</button>').join('')+'</nav>';
+ // UX 2026-11-08 [5]: recovery helper text is beneath the original recovery action.
+ const account='<section class="zeno-account-section zeno-more-account"><h2>계정</h2>'+
+  (state.ownerToken?
+   '<div class="zeno-more-recovery"><button class="btn secondary" data-action="recovery-setup">복구 코드 발급</button><p class="zeno-recovery-helper">다른 기기에서 계정을 되찾을 때 쓰는 코드예요</p></div><button class="btn secondary zeno-more-logout" data-action="owner-logout">로그아웃</button>':
+   '<button class="btn secondary" data-nav="login">로그인 · 회원가입</button>')+'</section>';
+ // UX 2026-11-08 [6]: separate About from account; no nested cards.
+ const about='<section class="zeno-giving-section" aria-labelledby="zeno-about-title">'+
+  '<h2 id="zeno-about-title">ZENO 소개</h2>'+
+  '<div class="zeno-giving-card">'+
+  '<p class="zeno-giving-message">ZENO의 성장이 보호소 아이들의 건강한 내일로 이어집니다.</p>'+
+  '<p class="zeno-giving-detail">유료 서비스 시작 후 매출의 5%를 보호소 동물 건강검진에 지원할 계획입니다.</p>'+
+  '</div></section>';
+ return topbar('더 보기','')+menu+account+about;
 }
-function footer(){return '<div class="footer">ZENO · 필요한 순간, 필요한 진료를 찾다.<br>이 앱은 의료기관 공식 서비스가 아닌 제노 창업 시연용 프로토타입입니다. 응급 상황은 병원에 직접 전화하세요.</div>'}
+// UX 2026-11-08 [7]: unified footer copy.
+function footer(){return '<div class="footer">ZENO · 필요한 순간, 필요한 진료를 찾아드립니다.<br>이 앱은 의료기관 공식 서비스가 아닌 제노 창업 시연용 프로토타입입니다. 응급 상황은 병원에 직접 전화하세요.</div>'}
 function renderModal(){let m=state.modal;if(!m)return '';let h=hospitalById(m.id||state.detail),title='',body='',wide=false;
 if(m.type==='details'&&h){let s=hs(h.id);const first=['hours','intro','photos','services','notices'].includes(state.detailTab)?state.detailTab:'hours';title=h.name;body=`<div class="zeno-detail-fav"><button type="button" data-action="favorite" data-id="${e(h.id)}">${state.favorites.includes(h.id)?"♥ 저장한 병원":"♡ 병원 저장"}</button></div>${zenoDetailQuick(h)}${zenoDetailSource(h)}<div class="zeno-detail-tabs" role="tablist" aria-label="동물병원 상세 항목">
  ${[['hours','운영시간'],['intro','병원소개'],['photos','사진'],['services','진료정보'],['notices','공지사항']].map((t,i)=>`<button type="button" class="zeno-detail-tab ${t[0]===first?'active':''}" data-action="detail-tab" data-value="${t[0]}" role="tab" aria-selected="${t[0]===first}" aria-controls="zeno-detail-${t[0]}">${t[1]}</button>`).join('')}</div><p class="zeno-detail-swipe-hint" hidden>다른 정보는 탭을 좌우로 밀어 확인하세요.</p>
