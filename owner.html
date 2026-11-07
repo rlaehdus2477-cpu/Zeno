@@ -667,7 +667,7 @@ const hospitalById=id=>HOSPITALS.find(x=>x.id===id);
 function defaultStore(){return {settings:Object.fromEntries(['soo','naeum','tnd'].map(id=>[id,{status:'check',updatedAt:null,notice:'',services:[],prices:[],emergency:false}])),bookings:[],questions:[],reviews:[]}}
 function localGet(){try{return {...defaultStore(),...JSON.parse(localStorage.getItem(STOREKEY)||'{}')}}catch{return defaultStore()}}
 function localSet(x){localStorage.setItem(STOREKEY,JSON.stringify(x));window.dispatchEvent(new Event('zeno-refresh'))}
-const state={ownerToken:localStorage.getItem('zeno-owner-auth')||'',owner:null,authMode:'login',serverReady:false,profileLoaded:false,profileSaving:false,page:APP_MODE==='hospital'?'hospital':'home',filter:'전체',query:'',specialty:'',exoticSpecies:'',detail:null,modal:null,local:true,settings:{},bookings:[],questions:[],reviews:[],hospitalBookings:[],hospitalQuestions:[],activeHospital:sessionStorage.getItem('zeno-h-hospital')||'soo',hospitalToken:sessionStorage.getItem('zeno-h-token')||'',adminToken:sessionStorage.getItem('zeno-admin-token')||'',pets:JSON.parse(localStorage.getItem('zeno-pets-v2')||'[]'),records:JSON.parse(localStorage.getItem('zeno-records-v2')||'[]'),favorites:JSON.parse(localStorage.getItem('zeno-favorites-v2')||'[]'),viewH:'soo',hTab:'bookings',appError:'',loading:false,adminStats:null,bookingTab:'전체',activeFilters:[],petTab:'전체',profileSaveError:'',authError:'',pendingAction:null,pendingPage:'',recoveryCode:'',authNotice:'',priceCategory:'전체',detailTab:''};
+const state={ownerToken:localStorage.getItem('zeno-owner-auth')||'',owner:null,authMode:'login',serverReady:false,profileLoaded:false,profileSaving:false,page:APP_MODE==='hospital'?'hospital':'home',filter:'전체',query:'',specialty:'',exoticSpecies:'',detail:null,modal:null,local:true,settings:{},bookings:[],questions:[],reviews:[],hospitalBookings:[],hospitalQuestions:[],activeHospital:sessionStorage.getItem('zeno-h-hospital')||'soo',hospitalToken:sessionStorage.getItem('zeno-h-token')||'',adminToken:sessionStorage.getItem('zeno-admin-token')||'',pets:JSON.parse(localStorage.getItem('zeno-pets-v2')||'[]'),records:JSON.parse(localStorage.getItem('zeno-records-v2')||'[]'),favorites:JSON.parse(localStorage.getItem('zeno-favorites-v2')||'[]'),viewH:'soo',hTab:'bookings',appError:'',loading:false,adminStats:null,bookingTab:'전체',activeFilters:[],petTab:'전체',profileSaveError:'',authError:'',pendingAction:null,pendingPage:'',recoveryCode:'',afterRecoveryAction:null,authNotice:'',priceCategory:'전체',detailTab:''};
 let toastTimer;
 function toast(message){let o=document.querySelector('.toast');if(o)o.remove();o=document.createElement('div');o.className='toast';o.textContent=message;o.setAttribute('role','status');o.setAttribute('aria-live','polite');o.setAttribute('aria-atomic','true');document.body.appendChild(o);clearTimeout(toastTimer);toastTimer=setTimeout(()=>o.remove(),4500)}
 let profileSaveTimer;
@@ -1259,8 +1259,10 @@ function openModal(type,id){
 }
 function zenoCloseModal(){
  const details=state.modal?.type==='details';
- if(state.modal?.type==='recovery-code')state.recoveryCode='';
+ const next=state.modal?.type==='recovery-code'?state.afterRecoveryAction:null;
+ if(state.modal?.type==='recovery-code'){state.recoveryCode='';state.afterRecoveryAction=null}
  state.modal=null;render();
+ if(next?.type==='book'){openModal('book',next.id);return}
  if(zenoDetailScrollY>0)window.scrollTo({left:0,top:zenoDetailScrollY,behavior:'instant'});
  if(details&&history.state?.zenoDetailModal)history.back();
 }
@@ -1284,7 +1286,7 @@ if(a==='close-modal'){zenoCloseModal();return}if(a==='modal-backdrop'){if(ev.tar
 if(a==='auth-mode'){state.authMode=val;state.authError='';state.authNotice='';render();return}
 if(a==='recovery-setup'){if(!state.ownerToken){navTo('login');return}openModal('recovery-setup');return}
 if(a==='copy-recovery-code'){const code=state.recoveryCode;if(!code)return;try{await navigator.clipboard.writeText(code);toast('복구 코드를 복사했어요. 안전하게 보관해 주세요.')}catch(err){const input=document.getElementById('zeno-recovery-code-value');if(input){input.focus();input.select();toast('복구 코드를 선택했습니다. 길게 눌러 복사해 주세요.')}}return}
-if(a==='owner-logout'){clearTimeout(profileSaveTimer);state.recoveryCode='';state.profileSaving=false;state.profileSaveError='';state.ownerToken='';state.page='home';state.owner=null;ownerId='';state.pets=[];state.records=[];state.favorites=[];state.bookings=[];state.questions=[];state.reviews=[];state.authMode='login';localStorage.removeItem('zeno-owner-auth');render();return}
+if(a==='owner-logout'){clearTimeout(profileSaveTimer);state.recoveryCode='';state.afterRecoveryAction=null;state.profileSaving=false;state.profileSaveError='';state.ownerToken='';state.page='home';state.owner=null;ownerId='';state.pets=[];state.records=[];state.favorites=[];state.bookings=[];state.questions=[];state.reviews=[];state.authMode='login';localStorage.removeItem('zeno-owner-auth');render();return}
 if(a==='refresh'){await refresh(true);toast('최신 정보를 불러왔습니다.');return}
 if(a==='details'||a==='book'){if(a==='book'&&!state.ownerToken){state.pendingAction={type:'book',id};navTo('login');return}if(a==='details')state.detailTab=ev.target.closest('img.zeno-list-photo')?'photos':(ev.target.closest('.zeno-hours-card')?'hours':(zenoHasFilter('고양이 대기실')?'intro':state.specialty?'services':'hours'));openModal(a==='details'?'details':'book',id);return}
 if(a==='book-pet'){
@@ -1378,8 +1380,8 @@ if(id==='owner-auth'){
   state.page=next?.type==='book'?'search':(state.pendingPage||(!zenoCanViewPage(state.page)&&state.page!=='login'?state.page:'home'));
   state.pendingPage='';
   await refresh();
-  if(next?.type==='book')openModal('book',next.id);else render();
-  if(mode==='register'&&out.recoveryCode){state.recoveryCode=out.recoveryCode;openModal('recovery-code')}
+  if(mode!=='register'||!out.recoveryCode){if(next?.type==='book')openModal('book',next.id);else render()}
+  if(mode==='register'&&out.recoveryCode){state.afterRecoveryAction=next;state.recoveryCode=out.recoveryCode;openModal('recovery-code')}
   toast(mode==='register'?'회원가입했어요. 복구 코드를 안전하게 보관해 주세요.':'로그인했어요.');
  }catch(err){
   state.authError=err.message||'로그인에 실패했어요. 입력 내용을 확인해 주세요.';
