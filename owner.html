@@ -892,13 +892,48 @@ function zenoHospitalPhotos(h){
  return gallery+'<a class="zeno-photo-open" href="'+zenoNaverPhotoUrl(h)+'" target="_blank" rel="noopener noreferrer">네이버 지도에서 '+e(h.name)+' 사진 찾기 ↗</a><p class="zeno-photo-note">네이버에서 사진을 볼 때는 해당 병원의 검색 결과를 선택한 후 사진 메뉴를 눌러 주세요.</p>';
 }
 
-function zenoNightHours(h){
- if(h.is24)return true;
- const schedule=zenoWeeklyData(h)[zenoTodayName()]||'';
- if(!schedule||/휴진|미등록|미확인/.test(schedule))return false;
- const hours=[...schedule.matchAll(/([01]?\d|2[0-3]):([0-5]\d)/g)];
- return hours.some(m=>Number(m[1])>=20);
+/* Korea-local schedule; information is NOT a live emergency acceptance signal. */
+function zenoSeoulClock(date=new Date()){
+ const d=new Intl.DateTimeFormat('en-US',{timeZone:'Asia/Seoul',weekday:'short',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(date);
+ const p=Object.fromEntries(d.map(x=>[x.type,x.value]));
+ return {weekday:{Mon:'월',Tue:'화',Wed:'수',Thu:'목',Fri:'금',Sat:'토',Sun:'일'}[p.weekday],now:Number(p.hour)*60+Number(p.minute)};
 }
+function zenoScheduleSpan(raw){
+ const text=String(raw||'');
+ if(!text||/휴진|미등록|미확인|별도 확인|휴무/.test(text))return null;
+ if(/24시간/.test(text))return {start:0,end:1440,overnight:false};
+ const m=text.match(/([01]?\d|2[0-3]):([0-5]\d)\s*(?:~|–|—|-)\s*([01]?\d|2[0-4]):([0-5]\d)/);
+ if(!m)return null;
+ const from=Number(m[1])*60+Number(m[2]),to=Number(m[3])*60+Number(m[4]);
+ if(from>=1440||to>1440||from===to||(Number(m[3])===24&&Number(m[4])!==0))return null;
+ return {start:from,end:to,overnight:to<from};
+}
+function zenoNightSchedule(h,date=new Date()){
+ if(h.is24)return {listed:true,within:true,always:true};
+ const clock=zenoSeoulClock(date),week=zenoWeeklyData(h),span=zenoScheduleSpan(week[clock.weekday]),minutes=clock.now;
+ const late=span&&(span.end>20*60||span.overnight);
+ if(minutes>=20*60){
+  const within=!!late&&minutes>=span.start&&(span.overnight||minutes<span.end);
+  return {listed:within,within,always:false};
+ }
+ if(minutes<6*60){
+  const days=['일','월','화','수','목','금','토'],i=days.indexOf(clock.weekday),previous=zenoScheduleSpan(week[days[(i+6)%7]]);
+  const within=!!previous?.overnight&&previous.start>=20*60&&minutes<previous.end;
+  return {listed:within,within,always:false};
+ }
+ if(late){
+  const within=minutes>=span.start&&(span.overnight||minutes<span.end);
+  return {listed:true,within,always:false};
+ }
+ return {listed:false,within:false,always:false};
+}
+function zenoNightHours(h,date=new Date()){return zenoNightSchedule(h,date).listed;}
+function zenoNightStatus(h,date=new Date()){
+ const state=zenoNightSchedule(h,date);
+ if(h.is24)return '24시간 운영 안내 · 응급 수용은 전화 확인';
+ return state.within?'공개 시간표상 현재 시간대 · 방문 전 전화 확인':'오늘 야간 시간표 안내 · 전화 확인';
+}
+
 function zenoListTodayHours(h){
  const day=zenoTodayName(),hours=zenoWeeklyData(h)[day];
  return hours||((h.is24)?'24시간 운영 안내':'시간 확인 필요');
@@ -918,8 +953,8 @@ function zenoListMatchedConditions(h){
  const fs=zenoActiveFilters();
  if(state.specialty)result.push('진료 · '+(state.exoticSpecies||state.specialty));
  if(fs.includes('24시')&&h.is24)result.push('24시간 운영 안내');
- if(fs.includes('야간'))result.push(h.is24?'24시간 운영 안내':'공개 야간 진료시간 안내');
- if(state.page==='emergency'){result.push(h.is24?'24시간 운영 안내':'공개 야간 진료시간 안내');result.push('응급 수용은 전화 확인');}
+ if(fs.includes('야간'))result.push(zenoNightStatus(h));
+ if(state.page==='emergency'){result.push(zenoNightStatus(h));result.push('응급 수용은 전화 확인');}
  if(fs.includes('고양이 대기실')&&h.catWaiting){
   const cat=zenoCatWaitingLabel(h);
   if(cat){const parts=cat.split(' · ');result.push(parts[0]);if(parts[1])result.push(parts[1]);}
@@ -1002,8 +1037,8 @@ function searchPage(){
  +remove+hospitalResults(results);
 }
 function emergency(){
- const list=HOSPITALS.filter(h=>h.is24||zenoNightHours(h));
- return topbar('야간·24시간 병원','')+'<div class="zeno-emergency-info"><strong>응급 진료는 먼저 전화로 확인하세요.</strong><p>공개된 운영시간을 바탕으로 표시합니다. 야간 진료시간과 실제 응급 수용 가능 여부는 다르며, 출발 전에 반드시 전화해 주세요.</p></div><div class="section-title zeno-results-title"><h2>야간·24시간 진료시간 안내 '+list.length+'곳</h2></div>'+hospitalResults(list);
+ const list=HOSPITALS.filter(h=>zenoNightHours(h));
+ return topbar('야간·24시간 병원','')+'<div class="zeno-emergency-info"><strong>현재 시간 기준, 공개 운영시간을 확인하세요.</strong><p>20시 이후에는 공개 시간표상 마감한 병원을 제외합니다. 24시간 운영 안내와 실제 응급 수용은 다르니 출발 전 병원에 전화해 주세요.</p></div><div class="section-title zeno-results-title"><h2>야간·24시간 운영 안내 '+list.length+'곳</h2></div>'+hospitalResults(list);
 }
 function zenoMemorialKey(){return 'zeno-memorial-owner-'+(state.owner?.id||'signed-out');}
 function zenoMemorialGet(){
@@ -1370,6 +1405,8 @@ async function start(){
  }finally{zenoStartPending=false}
 }
 render();start();
+/* Guests and logged-in users see changed evening hours without a reload. */
+setInterval(()=>{if(document.hidden)return;if(state.page==='emergency'||(state.page==='search'&&zenoHasFilter('야간')))render();},60000);
 </script><style>#memopen{position:fixed;bottom:16px;right:16px;z-index:100;border:0;border-radius:25px;background:#1979e6;color:white;padding:14px;font-weight:bold}#membg{display:none;position:fixed;inset:0;background:#091b32b8;z-index:110;overflow:auto;padding:20px}#membg.show{display:block}#memcard{background:white;color:#173452;max-width:560px;margin:4vh auto;border-radius:20px;padding:24px}#memcard input:not([type=checkbox]),#memcard textarea,#memcard select{display:block;width:100%;box-sizing:border-box;margin:9px 0;padding:12px;border:1px solid #ccc;border-radius:8px}#memcard button{padding:10px 14px;background:#1979e6;color:white;border:0;border-radius:9px;margin:5px}@media(max-width:750px){#memopen{bottom:calc(88px + env(safe-area-inset-bottom));right:13px;padding:9px 15px;font-size:13px;box-shadow:0 7px 20px #1861bb38}}</style>
 <button id="memopen" type="button">추모관</button><div id="membg" role="dialog" aria-modal="true"><div id="memcard"><button id="memclose" type="button">닫기</button><h2>우리 아이 추모관</h2><p>보호자가 원할 때만 추모 기록을 만듭니다. 기존 진료 기록과 병원 정보는 변경하지 않습니다.</p><select id="mempet"><option value="">반려동물 선택</option></select><input id="memtitle" maxlength="100" placeholder="추억의 제목"><textarea id="memtext" maxlength="3000" rows="5" placeholder="우리 아이에게 남기는 편지"></textarea><label><input id="memagree" type="checkbox"> 추모 기록 만들기에 동의합니다</label><div><button id="memsave" type="button">추억 저장</button></div><p style="font-size:12px">현재 브라우저에만 저장됩니다. 브라우저 데이터를 삭제하면 사라질 수 있습니다.</p><h3>저장한 추억</h3><div id="memlist"></div></div></div>
 <script>(()=>{const $=x=>document.getElementById(x),key='zeno-memorial-v1',read=k=>{try{let a=JSON.parse(localStorage.getItem(k)||'[]');return Array.isArray(a)?a:[]}catch{return []}},esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));function renderMem(){let pets=read('zeno-pets-v2');$('mempet').innerHTML='<option value="">반려동물 선택</option>'+pets.map((p,i)=>'<option value="'+i+'">'+esc(p.name||p.petName||'이름 미등록')+'</option>').join('');$('memlist').innerHTML=read(key).map(m=>'<div style="border-top:1px solid #ddd;padding:12px 0"><b>'+esc(m.pet)+' · '+esc(m.title)+'</b><p style="white-space:pre-wrap">'+esc(m.text)+'</p><button data-del="'+esc(m.id)+'">삭제</button></div>').join('')||'저장된 추억이 없습니다.'}$('memopen').onclick=()=>{$('membg').classList.add('show');renderMem()};$('memclose').onclick=()=>$('membg').classList.remove('show');$('memsave').onclick=()=>{let i=$('mempet').value,p=read('zeno-pets-v2')[Number(i)],title=$('memtitle').value.trim(),text=$('memtext').value.trim();if(i===''||!p)return alert('반려동물을 먼저 등록하고 선택해 주세요.');if(!$('memagree').checked)return alert('보호자 동의가 필요합니다.');if(!title||!text)return alert('제목과 추억을 입력해 주세요.');let a=read(key);a.push({id:String(Date.now()),pet:p.name||p.petName||'이름 미등록',title,text});try{localStorage.setItem(key,JSON.stringify(a));$('memtitle').value='';$('memtext').value='';$('memagree').checked=false;renderMem();alert('추모 기록이 저장되었습니다.')}catch{alert('브라우저 저장에 실패했습니다.')}};$('memlist').onclick=e=>{let b=e.target.closest('[data-del]');if(b&&confirm('이 추모 기록을 삭제할까요?')){localStorage.setItem(key,JSON.stringify(read(key).filter(x=>x.id!==b.dataset.del)));renderMem()}}})();</script></body></html>
