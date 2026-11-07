@@ -712,6 +712,15 @@ button:focus-visible,a:focus-visible,[tabindex]:focus-visible{outline:3px solid 
  .zeno-search-module .searchrow .btn{padding-left:12px;padding-right:12px}
  .zeno-detail-today strong{font-size:19px}
 }
+</style><style id="zeno-giving-about-20261107">
+/* ZENO about / planned animal shelter health-screening contribution */
+.zeno-giving-section{margin:18px 0 28px}
+.zeno-giving-section h2{font-size:19px;font-weight:750;color:#173452;margin:0 0 12px}
+.zeno-giving-card{background:#fff;border:1px solid #dce7f2;border-radius:16px;padding:27px 21px;text-align:center}
+.zeno-giving-mark{display:grid;place-items:center;margin:0 auto 14px;width:48px;height:48px;background:#eef7ff;color:#1689fa;border-radius:50%;font-size:34px;line-height:1}
+.zeno-giving-message{font-size:19px;line-height:1.6;letter-spacing:-.35px;color:#173452;font-weight:750;max-width:460px;margin:0 auto 12px;overflow-wrap:break-word}
+.zeno-giving-detail{font-size:14px;line-height:1.65;color:#60768c;max-width:470px;margin:0 auto;overflow-wrap:break-word}
+@media(max-width:390px){.zeno-giving-card{padding:22px 15px}.zeno-giving-message{font-size:18px}}
 </style></head><body><div id="app" class="app"></div><script>
 'use strict';
 const APP_MODE='owner';
@@ -1222,7 +1231,12 @@ function pricesPage(){
 function morePage(){
  const items=[['emergency','야간·24시간 병원'],['qa','내 질문'],['membership','내 포인트'],['prices','진료비 비교'],['search','병원 찾기'],['pets','내 아이 · 추모관']];
  return topbar('더 보기','')+'<div class="grid two">'+items.map(x=>'<button class="choice" data-nav="'+x[0]+'"><strong>'+x[1]+'</strong></button>').join('')+'</div>'
- +'<div class="zeno-account-section"><h2>계정</h2>'+(state.ownerToken?'<div class="zeno-account-actions"><button class="btn secondary" data-action="recovery-setup">복구 코드 발급</button><button class="btn secondary" data-action="owner-logout">로그아웃</button></div>':'<button class="btn" data-nav="login">로그인 · 회원가입</button>')+'</div>';
+ +'<div class="zeno-account-section"><h2>계정</h2>'+(state.ownerToken?'<div class="zeno-account-actions"><button class="btn secondary" data-action="recovery-setup">복구 코드 발급</button><button class="btn secondary" data-action="owner-logout">로그아웃</button></div>':'<button class="btn" data-nav="login">로그인 · 회원가입</button>')
+ +'<section class="zeno-giving-section" aria-labelledby="zeno-about-title"><h2 id="zeno-about-title">ZENO 소개</h2><div class="zeno-giving-card">'
+ +'<div class="zeno-giving-mark" aria-hidden="true">♡</div>'
+ +'<p class="zeno-giving-message">ZENO의 성장이 보호소 아이들의 건강한 내일로 이어집니다.</p>'
+ +'<p class="zeno-giving-detail">유료 서비스 시작 후 매출의 5%를 보호소 동물 건강검진에 지원할 계획입니다.</p>'
+ +'</div></section>'+'</div>';
 }
 function footer(){return '<div class="footer">ZENO · 필요한 순간, 필요한 진료를 찾다.<br>이 앱은 의료기관 공식 서비스가 아닌 제노 창업 시연용 프로토타입입니다. 응급 상황은 병원에 직접 전화하세요.</div>'}
 function renderModal(){let m=state.modal;if(!m)return '';let h=hospitalById(m.id||state.detail),title='',body='',wide=false;
