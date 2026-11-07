@@ -807,6 +807,20 @@ body{word-break:keep-all;overflow-wrap:break-word}
  .zeno-pet-card .details .zeno-pet-meta,.zeno-pet-card .details .zeno-pet-weight{font-size:14px}
  .zeno-record-card{padding:16px}
 }
+</style><style id="zeno-pet-photo-upload-20261108">
+/* New photo upload is additive: retains ZENO's clean navy/blue-neutral UI. */
+.zeno-pet-photo-field{margin:0 0 20px;gap:10px}
+.zeno-pet-photo-picker{display:flex;gap:16px;align-items:center;min-width:0;padding:16px;border:1px solid #e4e8ee;border-radius:12px;background:#fff;box-shadow:none}
+.zeno-pet-photo-preview{width:88px;height:88px;min-width:88px;border-radius:50%;overflow:hidden;display:grid;place-items:center;background:#eaf3ff;color:#1a7cff;font-size:32px;font-weight:700;position:relative}
+.zeno-pet-photo-preview img:not([hidden]){width:100%;height:100%;object-fit:cover;position:absolute;inset:0}
+.zeno-pet-photo-preview img[hidden],.zeno-pet-photo-preview span[hidden]{display:none}
+.zeno-pet-photo-input{min-width:0;flex:1}
+.zeno-pet-photo-input input[type=file]{display:block;width:100%;max-width:100%;min-height:44px;color:#41576c;font-size:13px;border-radius:8px}
+.zeno-pet-photo-input input[type=file]::file-selector-button{border:1px solid #d9e4ed;color:#294a69;background:#f7fafc;border-radius:8px;padding:10px;margin-right:10px;font-weight:600;cursor:pointer}
+.zeno-pet-photo-input small{display:block;font-size:12px;color:#748395;line-height:1.5;margin-top:4px;word-break:keep-all}
+.zeno-pet-photo-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.zeno-pet-photo-actions .btn{min-height:40px;border-radius:8px;box-shadow:none}
+@media(max-width:390px){.zeno-pet-photo-picker{gap:12px;padding:12px}.zeno-pet-photo-preview{width:72px;height:72px;min-width:72px}}
 </style></head><body><div id="app" class="app"></div><script>
 'use strict';
 const APP_MODE='owner';
@@ -827,7 +841,7 @@ const hospitalById=id=>HOSPITALS.find(x=>x.id===id);
 function defaultStore(){return {settings:Object.fromEntries(['soo','naeum','tnd'].map(id=>[id,{status:'check',updatedAt:null,notice:'',services:[],prices:[],emergency:false}])),bookings:[],questions:[],reviews:[]}}
 function localGet(){try{return {...defaultStore(),...JSON.parse(localStorage.getItem(STOREKEY)||'{}')}}catch{return defaultStore()}}
 function localSet(x){localStorage.setItem(STOREKEY,JSON.stringify(x));window.dispatchEvent(new Event('zeno-refresh'))}
-const state={ownerToken:localStorage.getItem('zeno-owner-auth')||'',owner:null,authMode:'login',serverReady:false,profileLoaded:false,profileSaving:false,page:APP_MODE==='hospital'?'hospital':'home',filter:'전체',query:'',specialty:'',exoticSpecies:'',detail:null,modal:null,local:true,settings:{},bookings:[],questions:[],reviews:[],hospitalBookings:[],hospitalQuestions:[],activeHospital:sessionStorage.getItem('zeno-h-hospital')||'soo',hospitalToken:sessionStorage.getItem('zeno-h-token')||'',adminToken:sessionStorage.getItem('zeno-admin-token')||'',pets:JSON.parse(localStorage.getItem('zeno-pets-v2')||'[]'),records:JSON.parse(localStorage.getItem('zeno-records-v2')||'[]'),favorites:JSON.parse(localStorage.getItem('zeno-favorites-v2')||'[]'),viewH:'soo',hTab:'bookings',appError:'',loading:false,adminStats:null,bookingTab:'전체',activeFilters:[],petTab:'전체',profileSaveError:'',authError:'',pendingAction:null,pendingPage:'',recoveryCode:'',afterRecoveryAction:null,authNotice:'',priceCategory:'전체',detailTab:''};
+const state={ownerToken:localStorage.getItem('zeno-owner-auth')||'',owner:null,authMode:'login',serverReady:false,profileLoaded:false,profileSaving:false,page:APP_MODE==='hospital'?'hospital':'home',filter:'전체',query:'',specialty:'',exoticSpecies:'',detail:null,modal:null,local:true,settings:{},bookings:[],questions:[],reviews:[],hospitalBookings:[],hospitalQuestions:[],activeHospital:sessionStorage.getItem('zeno-h-hospital')||'soo',hospitalToken:sessionStorage.getItem('zeno-h-token')||'',adminToken:sessionStorage.getItem('zeno-admin-token')||'',pets:JSON.parse(localStorage.getItem('zeno-pets-v2')||'[]'),petPhotos:{},records:JSON.parse(localStorage.getItem('zeno-records-v2')||'[]'),favorites:JSON.parse(localStorage.getItem('zeno-favorites-v2')||'[]'),viewH:'soo',hTab:'bookings',appError:'',loading:false,adminStats:null,bookingTab:'전체',activeFilters:[],petTab:'전체',profileSaveError:'',authError:'',pendingAction:null,pendingPage:'',recoveryCode:'',afterRecoveryAction:null,authNotice:'',priceCategory:'전체',detailTab:''};
 let toastTimer;
 function toast(message){let o=document.querySelector('.toast');if(o)o.remove();o=document.createElement('div');o.className='toast';o.textContent=message;o.setAttribute('role','status');o.setAttribute('aria-live','polite');o.setAttribute('aria-atomic','true');document.body.appendChild(o);clearTimeout(toastTimer);toastTimer=setTimeout(()=>o.remove(),4500)}
 let profileSaveTimer;
@@ -885,7 +899,7 @@ async function api(method,path,data,admin=false){
 
 let zenoRefreshTask=null,zenoRefreshFailures=0,zenoDeferredPaint=false;
 function zenoRefreshStamp(){
- return JSON.stringify([state.ownerToken,state.hospitalToken,state.local,state.serverReady,state.settings,state.bookings,state.questions,state.reviews,state.owner,state.pets,state.records,state.favorites,state.hospitalBookings,state.hospitalQuestions,state.appError,state.profileLoaded]);
+ return JSON.stringify([state.ownerToken,state.hospitalToken,state.local,state.serverReady,state.settings,state.bookings,state.questions,state.reviews,state.owner,state.pets,state.petPhotos,state.records,state.favorites,state.hospitalBookings,state.hospitalQuestions,state.appError,state.profileLoaded]);
 }
 function zenoRefreshPaint(before,page){
  if(!zenoDeferredPaint&&zenoRefreshStamp()===before)return;
@@ -921,6 +935,8 @@ async function refresh(force=false){
     state.bookings=v.bookings||[];
     state.questions=v.questions||[];
     state.reviews=v.reviews||[];
+    // Pet photo profiles are stored separately from text health records.
+    state.petPhotos=v.petPhotos||{};
     state.owner=v.owner||state.owner;
     ownerId=state.owner?.id||'';
     if(!state.profileSaving){
@@ -1232,12 +1248,73 @@ function zenoMemorialSet(d){
  if(!state.owner?.id)throw Error('로그인이 필요합니다.');
  localStorage.setItem(zenoMemorialKey(),JSON.stringify(d));
 }
+/* ZENO pet portrait upload (2026-11-08): local preview, downscale and EXIF-free encoded thumbnail.
+   Portraits live in an owner-private D1 table, not in the 55 KB health-profile payload. */
+function zenoPetPhotoSource(value){
+ const s=typeof value==='string'?value:'';
+ if(s.length>80000)return '';
+ if(/^data:image\/(?:webp|jpeg|png);base64,[A-Za-z0-9+/]+={0,2}$/.test(s))return s;
+ return /^https:\/\/[a-z0-9.-]+\//i.test(s)?s:'';
+}
+async function zenoCompressPetPhoto(file){
+ if(!(file instanceof File))throw Error('사진을 먼저 선택해 주세요.');
+ if(file.size>10*1024*1024)throw Error('10MB 이하 사진을 선택해 주세요.');
+ if(!/^image\/(?:jpeg|png|webp|heic|heif)$/.test(file.type)&&!(!file.type&&/\.(?:jpe?g|png|webp|heic|heif)$/i.test(file.name)))throw Error('JPG, PNG, WebP 또는 HEIC 사진을 선택해 주세요.');
+ let source=null,objectUrl=null;
+ try{
+  if(typeof createImageBitmap==='function'){try{source=await createImageBitmap(file)}catch{}}
+  if(!source){
+   objectUrl=URL.createObjectURL(file);
+   source=await new Promise((resolve,reject)=>{
+    const img=new Image();
+    img.onload=()=>resolve(img);
+    img.onerror=()=>reject(Error('이 사진을 읽을 수 없어요. JPG나 PNG로 다시 선택해 주세요.'));
+    img.src=objectUrl;
+   });
+  }
+  const iw=source.width||source.naturalWidth,ih=source.height||source.naturalHeight;
+  if(!iw||!ih)throw Error('사진 크기를 읽지 못했어요.');
+  const side=Math.min(iw,ih);
+  const sx=(iw-side)/2,sy=(ih-side)/2;
+  const canvas=document.createElement('canvas'),ctx=canvas.getContext('2d');
+  if(!ctx)throw Error('이 기기에서 사진을 처리하지 못했어요.');
+  for(const dimension of [320,256,192,144]){
+   canvas.width=dimension;canvas.height=dimension;
+   ctx.clearRect(0,0,dimension,dimension);
+   ctx.drawImage(source,sx,sy,side,side,0,0,dimension,dimension);
+   for(const type of ['image/webp','image/jpeg']){
+    for(const quality of [.8,.64,.48]){
+     const data=canvas.toDataURL(type,quality);
+     if(zenoPetPhotoSource(data)&&data.startsWith('data:image/')&&data.length<=75000)return data;
+    }
+   }
+  }
+  throw Error('사진 크기를 줄일 수 없어요. 다른 사진으로 시도해 주세요.');
+ }finally{
+  if(source&&typeof source.close==='function')source.close();
+  if(objectUrl)URL.revokeObjectURL(objectUrl);
+ }
+}
+function zenoPetPhotoPickerMarkup(pet){
+ const editing=!!pet,photo=editing?zenoPetPhotoSource(state.petPhotos[pet.id]||pet.photoUrl):'';
+ const id=editing?'zeno-edit-pet-photo':'zeno-new-pet-photo';
+ const letter=editing?(Array.from(String(pet.name||'?'))[0]||'?'):'+';
+ return '<div class="field zeno-pet-photo-field"><label for="'+id+'">프로필 사진 (선택)</label>'+
+  '<div class="zeno-pet-photo-picker">'+
+  '<div class="zeno-pet-photo-preview"><span'+(photo?' hidden':'')+'>'+e(letter)+'</span><img'+(photo?' src="'+e(photo)+'"':'')+' alt="프로필 사진 미리보기"'+(photo?'':' hidden')+'></div>'+
+  '<div class="zeno-pet-photo-input"><input id="'+id+'" type="file" name="petPhoto" accept="image/jpeg,image/png,image/webp,image/heic,image/heif" aria-label="반려동물 프로필 사진 선택">'+
+  '<small>사진을 선택하면 자동으로 정사각형 프로필 사진을 만들어요.</small>'+
+  (editing?'<div class="zeno-pet-photo-actions"><button type="button" class="btn secondary small" data-action="save-pet-photo" data-id="'+e(pet.id)+'">사진 저장</button>'+
+    (photo?'<button type="button" class="btn ghost small" data-action="remove-pet-photo" data-id="'+e(pet.id)+'">사진 삭제</button>':'')+
+   '</div>':'')+
+  '</div></div></div>';
+}
 /* UX 2026-11-08 [2][3][4][6][7][8]: tap-anywhere pet cards, letter avatar, compact separate records. */
 function petsPage(){
  const selected=state.pets.some(p=>p.id===state.petTab)?state.petTab:'전체';
  const cards=state.pets.map(p=>{
   const initial=Array.from(String(p.name||'?'))[0]||'?';
-  const photoUrl=typeof p.photoUrl==='string'&&/^https:\/\//i.test(p.photoUrl)?p.photoUrl:'';
+  const photoUrl=zenoPetPhotoSource(state.petPhotos[p.id]||p.photoUrl);
   const avatarPhoto='<img class="zeno-pet-avatar-img"'+(photoUrl?' src="'+e(photoUrl)+'" alt="'+e(p.name)+' 사진"':' alt="" hidden')+'>';
   const age=String(p.age||'나이 미입력').trim();
   const weight=String(p.weight||'체중 미입력').trim();
@@ -1422,7 +1499,7 @@ if(m.type==='pet-settings'){
  if(pet){
   title=pet.name+' · 아이 정보';
   const inMemorial=mem.petIds.includes(pet.id);
-  body='<p class="desc">아이 정보와 생전 건강 기록은 그대로 유지됩니다.</p><button class="btn secondary" data-action="record" data-id="'+e(pet.id)+'">건강 기록 추가</button><div class="field zeno-pet-home-hospital"><label for="zeno-pet-hospital">단골병원</label><select id="zeno-pet-hospital"><option value="">설정하지 않음</option>'+HOSPITALS.map(h=>'<option value="'+e(h.id)+'"'+(pet.homeHospitalId===h.id?' selected':'')+'>'+e(h.name)+'</option>').join('')+'</select><button type="button" class="btn secondary small" data-action="pet-hospital-save" data-id="'+e(pet.id)+'">단골병원 저장</button></div>'
+  body=zenoPetPhotoPickerMarkup(pet)+'<p class="desc">아이 정보와 생전 건강 기록은 그대로 유지됩니다.</p><button class="btn secondary" data-action="record" data-id="'+e(pet.id)+'">건강 기록 추가</button><div class="field zeno-pet-home-hospital"><label for="zeno-pet-hospital">단골병원</label><select id="zeno-pet-hospital"><option value="">설정하지 않음</option>'+HOSPITALS.map(h=>'<option value="'+e(h.id)+'"'+(pet.homeHospitalId===h.id?' selected':'')+'>'+e(h.name)+'</option>').join('')+'</select><button type="button" class="btn secondary small" data-action="pet-hospital-save" data-id="'+e(pet.id)+'">단골병원 저장</button></div>'
   +(inMemorial?'<div class="panel" style="margin-top:16px"><h3>추모 공간</h3><p class="desc">기억하고 싶은 순간을 남길 수 있어요. 이 기기에만 저장됩니다.</p><button class="btn" data-action="memorial-note" data-id="'+e(pet.id)+'">추억 남기기</button>'+mem.notes.filter(x=>x.petId===pet.id).map(x=>'<div class="row-line"><div><strong>'+e(x.title)+'</strong><p class="preline">'+e(x.text)+'</p></div></div>').join('')+'</div>':'<div class="panel" style="margin-top:16px"><h3>추모관으로 전환</h3><p class="desc">보호자가 직접 선택할 때만 열립니다.</p><button class="btn secondary" data-action="activate-memorial" data-id="'+e(pet.id)+'">추모관으로 전환</button></div>')
   +'<div class="section"><button class="btn ghost small" data-action="delete-pet" data-id="'+e(pet.id)+'">아이 정보 삭제</button></div>';
  }
@@ -1444,7 +1521,7 @@ if(m.type==='recovery-setup'){
  +'<form id="recovery-issue-form"><label class="auth-label" for="zeno-current-password">현재 비밀번호</label><input id="zeno-current-password" name="currentPassword" type="password" minlength="10" required autocomplete="current-password">'
  +'<button class="btn full" type="submit">새 복구 코드 발급</button></form>';
 }
-if(m.type==='pet'){title='우리 아이 등록';body=`<form id="pet-form"><div class="field"><label>이름</label><input name="name" maxlength="30" required placeholder="반려동물 이름"></div><div class="field"><label>종류</label><select name="species"><option>고양이</option><option>강아지</option><option>토끼</option><option>햄스터</option><option>조류</option><option>파충류</option><option>기타</option></select></div><div class="formgrid"><div class="field"><label>나이 (선택)</label><input name="age" maxlength="22" placeholder="예: 4살"></div><div class="field"><label>체중 (선택)</label><input name="weight" maxlength="16" placeholder="예: 3.2kg"></div></div><button class="btn full" type="submit">저장하기</button></form>`}
+if(m.type==='pet'){title='우리 아이 등록';body=`<form id="pet-form">${zenoPetPhotoPickerMarkup(null)}<div class="field"><label>이름</label><input name="name" maxlength="30" required placeholder="반려동물 이름"></div><div class="field"><label>종류</label><select name="species"><option>고양이</option><option>강아지</option><option>토끼</option><option>햄스터</option><option>조류</option><option>파충류</option><option>기타</option></select></div><div class="formgrid"><div class="field"><label>나이 (선택)</label><input name="age" maxlength="22" placeholder="예: 4살"></div><div class="field"><label>체중 (선택)</label><input name="weight" maxlength="16" placeholder="예: 3.2kg"></div></div><button class="btn full" type="submit">저장하기</button></form>`}
 if(m.type==='record'){title='건강 기록 추가';let p=state.pets.find(x=>x.id===m.id);body=`<p class="desc">${e(p?.name)}의 건강 기록</p><form id="record-form"><input type="hidden" name="petId" value="${e(m.id)}"><div class="field"><label>기록 종류</label><select name="kind"><option>예방접종</option><option>건강검진</option><option>진료 기록</option><option>체중 변화</option><option>투약 기록</option><option>건강 메모</option></select></div><div class="field"><label>날짜</label><input type="date" name="date" value="${today()}" required></div><div class="field"><label>상세 내용</label><textarea name="memo" required maxlength="500" placeholder="검진 항목, 예방접종 종류 등"></textarea></div><button class="btn full" type="submit">기록 저장</button></form>`}
 if(m.type==='ask'){title='병원에 질문 보내기';body=`<div class="banner warning" style="margin-bottom:14px">의료진 자격과 응답 시간이 검증되지 않은 질문·답변 시연 기능입니다.</div><form id="question-form"><div class="field"><label>답변을 요청할 병원</label><select name="hospitalId">${HOSPITALS.filter(x=>x.linked).map(x=>`<option value="${x.id}">${e(x.name)}</option>`).join('')}</select></div><div class="field"><label>반려동물 이름</label><input name="petName" maxlength="30" placeholder="예: 조림이"></div><div class="field"><label>궁금한 내용</label><textarea name="text" required maxlength="1200" placeholder="예: 예방접종 일정을 어떤 기준으로 잡는지 궁금합니다."></textarea></div><button class="btn full" type="submit">질문 등록</button></form>`}
 if(m.type==='propose'){title='예약 시간 다시 제안';body=`<form id="propose-form"><input type="hidden" name="bookingId" value="${e(m.id)}"><div class="field"><label>새로 제안할 날짜 및 시간</label><input name="proposedAt" type="datetime-local" required min="${today()}T00:00"></div><div class="field"><label>병원 안내 문구</label><textarea name="hospitalNote" maxlength="300" placeholder="제안 이유 또는 내원 안내"></textarea></div><button class="btn full" type="submit">보호자에게 시간 제안</button></form>`}
@@ -1527,7 +1604,7 @@ if(a==='close-modal'){zenoCloseModal();return}if(a==='modal-backdrop'){if(ev.tar
 if(a==='auth-mode'){state.authMode=val;state.authError='';if(val!=='login')state.authNotice='';render();return}
 if(a==='recovery-setup'){if(!state.ownerToken){navTo('login');return}openModal('recovery-setup');return}
 if(a==='copy-recovery-code'){const code=state.recoveryCode;if(!code)return;try{await navigator.clipboard.writeText(code);toast('복구 코드를 복사했어요. 안전하게 보관해 주세요.')}catch(err){const input=document.getElementById('zeno-recovery-code-value');if(input){input.focus();input.select();toast('복구 코드를 선택했습니다. 길게 눌러 복사해 주세요.')}}return}
-if(a==='owner-logout'){clearTimeout(profileSaveTimer);state.recoveryCode='';state.afterRecoveryAction=null;state.profileSaving=false;state.profileSaveError='';state.ownerToken='';state.page='home';state.owner=null;ownerId='';state.pets=[];state.records=[];state.favorites=[];state.bookings=[];state.questions=[];state.reviews=[];state.authMode='login';localStorage.removeItem('zeno-owner-auth');render();return}
+if(a==='owner-logout'){clearTimeout(profileSaveTimer);state.recoveryCode='';state.afterRecoveryAction=null;state.profileSaving=false;state.profileSaveError='';state.ownerToken='';state.page='home';state.owner=null;ownerId='';state.pets=[];state.petPhotos={};state.records=[];state.favorites=[];state.bookings=[];state.questions=[];state.reviews=[];state.authMode='login';localStorage.removeItem('zeno-owner-auth');render();return}
 if(a==='refresh'){await refresh(true);toast('최신 정보를 불러왔습니다.');return}
 if(a==='details'||a==='book'){if(a==='book'&&!state.ownerToken){state.pendingAction={type:'book',id};navTo('login');return}if(a==='details')state.detailTab=ev.target.closest('img.zeno-list-photo')?'photos':(ev.target.closest('.zeno-hours-card')?'hours':(zenoHasFilter('고양이 대기실')?'intro':state.specialty?'services':'hours'));openModal(a==='details'?'details':'book',id);return}
 if(a==='book-pet'){
@@ -1555,6 +1632,32 @@ if(a==='favorite'){if(!state.favorites.includes(id)&&state.favorites.length>=30)
 if(a==='retry-profile'){savePersonal();render();return}
 if(a==='pet-tab'){state.petTab=val;render();return}
 if(a==='pet-settings'){openModal('pet-settings',id);return}
+/* Photo updates are owner-authenticated; keep a separate D1 row per pet. */
+if(a==='save-pet-photo'){
+ const pet=state.pets.find(p=>p.id===id),file=document.getElementById('zeno-edit-pet-photo')?.files?.[0];
+ if(!pet||!file){toast('등록할 사진을 선택해 주세요.');return}
+ const button=el;button.disabled=true;
+ try{
+  const image=await zenoCompressPetPhoto(file);
+  await api('PUT','/api/pet-photos/'+encodeURIComponent(pet.id),{image});
+  state.petPhotos[pet.id]=image;
+  state.modal=null;render();toast('아이 사진을 변경했어요.');
+ }catch(err){toast('사진 저장 실패: '+err.message)}
+ finally{button.disabled=false}
+ return;
+}
+if(a==='remove-pet-photo'){
+ if(!state.pets.some(p=>p.id===id))return;
+ const button=el;button.disabled=true;
+ try{
+  await api('DELETE','/api/pet-photos/'+encodeURIComponent(id));
+  delete state.petPhotos[id];
+  const pet=state.pets.find(p=>p.id===id);if(pet&&pet.photoUrl)delete pet.photoUrl;
+  state.modal=null;render();toast('프로필 사진을 삭제했어요.');
+ }catch(err){toast('사진 삭제 실패: '+err.message)}
+ finally{button.disabled=false}
+ return;
+}
 if(a==='pet-hospital-save'){const pet=state.pets.find(p=>p.id===id),selected=document.getElementById('zeno-pet-hospital')?.value||'';if(!pet)return;if(selected&&!hospitalById(selected)){toast('병원을 다시 선택해 주세요.');return}pet.homeHospitalId=selected;savePersonal();state.modal=null;render();return}
 if(a==='activate-memorial'){
  const pet=state.pets.find(p=>p.id===id);
@@ -1568,7 +1671,19 @@ if(a==='memorial-note'){
  return;
 }
 if(a==='add-pet'){openModal('pet');return}if(a==='record'){openModal('record',id);return}
-if(a==='delete-pet'){if(confirm('아이 정보를 삭제하시겠습니까?')){state.pets=state.pets.filter(x=>x.id!==id);state.records=state.records.filter(x=>x.petId!==id);savePersonal();render()}return}
+if(a==='delete-pet'){
+ if(confirm('아이 정보를 삭제하시겠습니까?')){
+  if(state.petPhotos[id]){
+   try{await api('DELETE','/api/pet-photos/'+encodeURIComponent(id))}
+   catch(err){toast('아이 삭제 후 사진 정리가 필요할 수 있어요.')}
+  }
+  delete state.petPhotos[id];
+  state.pets=state.pets.filter(x=>x.id!==id);
+  state.records=state.records.filter(x=>x.petId!==id);
+  savePersonal();render();
+ }
+ return;
+}
 /* UX 2026-11-08 [5]: separate confirmation from deletion and guard by modal record id. */
 if(a==='delete-record'){
  if(!state.records.some(r=>r.id===id)){toast('기록을 찾을 수 없어요.');return}
@@ -1596,6 +1711,21 @@ if(a==='price-remove'){let s=hs(state.activeHospital),prices=[...(s.prices||[])]
 if(a==='service-remove'){let services=(hs(state.activeHospital).services||[]).filter(x=>x!==val);await mutate('PATCH','/api/settings',{services},'진료 과목 시연 항목을 삭제했습니다.');return}
 });
 document.addEventListener('keydown',ev=>{if(ev.key==='Escape'&&state.modal)zenoCloseModal();if(ev.key==='Enter'&&document.activeElement?.id==='hospital-search'){state.query=document.activeElement.value.trim();render()}});
+/* ZENO pet photos: preview selected image without changing any saved data yet. */
+document.addEventListener('change',ev=>{
+ const input=ev.target;
+ if(!input||!['zeno-new-pet-photo','zeno-edit-pet-photo'].includes(input.id))return;
+ const file=input.files?.[0],container=input.closest('.zeno-pet-photo-picker');
+ if(!container)return;
+ const img=container.querySelector('.zeno-pet-photo-preview img');
+ const letter=container.querySelector('.zeno-pet-photo-preview span');
+ if(!file)return;
+ if(!file.type.startsWith('image/')&&!/\.(?:jpe?g|png|webp|heic|heif)$/i.test(file.name)){toast('이미지 파일을 선택해 주세요.');input.value='';return;}
+ const url=URL.createObjectURL(file);
+ img.onload=()=>URL.revokeObjectURL(url);
+ img.onerror=()=>{URL.revokeObjectURL(url);img.hidden=true;if(letter)letter.hidden=false;toast('사진 미리보기를 표시할 수 없어요.');};
+ img.src=url;img.hidden=false;if(letter)letter.hidden=true;
+});
 document.addEventListener('submit',async ev=>{let f=ev.target,id=f.id;if(!id)return;ev.preventDefault();let d=Object.fromEntries(new FormData(f).entries());const val=s=>String(s||'').trim();
 if(id==='home-search-form'){state.query=val(d.homeQuery);state.specialty='';state.exoticSpecies='';state.filter='전체';state.activeFilters=[];zenoNewSearch=true;navTo('search');return}
 if(id==='owner-recovery-reset'){
@@ -1668,7 +1798,40 @@ if(id==='memorial-note-form'){
  try{mem.notes.push({id:uid(),petId:pet.id,title:val(d.title),text:val(d.text),createdAt:new Date().toISOString()});zenoMemorialSet(mem);state.modal=null;render();toast('추억을 저장했어요.')}catch(err){toast(err.message)}
  return;
 }
-if(id==='pet-form'){state.pets.push({id:uid(),name:val(d.name),species:d.species,age:val(d.age),weight:val(d.weight)});savePersonal();state.modal=null;render();toast('우리 아이를 등록했습니다.');return}
+/* Photo added to the existing registration flow; health data schema unchanged. */
+if(id==='pet-form'){
+ const submit=f.querySelector('button[type="submit"]');
+ if(submit?.disabled)return;
+ if(submit)submit.disabled=true;
+ try{
+  const file=f.querySelector('#zeno-new-pet-photo')?.files?.[0];
+  const photo=file?await zenoCompressPetPhoto(file):'';
+  const pet={id:uid(),name:val(d.name),species:d.species,age:val(d.age),weight:val(d.weight)};
+  state.pets.push(pet);
+  if(photo){
+   state.profileSaving=true;
+   try{
+    await api('PUT','/api/profile',{pets:state.pets,records:state.records,favorites:state.favorites});
+    state.profileSaving=false;state.profileSaveError='';
+    try{
+     await api('PUT','/api/pet-photos/'+encodeURIComponent(pet.id),{image:photo});
+     state.petPhotos[pet.id]=photo;
+     toast('아이와 프로필 사진을 등록했어요.');
+    }catch(err){toast('아이는 등록됐지만 사진은 저장되지 않았어요. 아이 정보에서 다시 등록해 주세요.');}
+   }catch(err){
+    state.profileSaving=false;
+    savePersonal();
+    toast('등록 정보 저장이 지연되고 있어요. 연결을 확인해 주세요.');
+   }
+  }else{
+   savePersonal();
+   toast('우리 아이를 등록했습니다.');
+  }
+  state.modal=null;render();
+ }catch(err){toast(err.message)}
+ finally{if(submit)submit.disabled=false}
+ return;
+}
 if(id==='record-form'){state.records.push({id:uid(),petId:d.petId,kind:d.kind,date:d.date,memo:val(d.memo)});savePersonal();state.modal=null;render();toast('건강 기록을 저장했습니다.');return}
 if(id==='propose-form'){if(d.proposedAt.slice(0,10)<today()){toast('지난 날짜를 제안할 수 없습니다.');return}await mutate('PATCH','/api/bookings/'+d.bookingId,{status:'suggested',side:'hospital',proposedAt:d.proposedAt,hospitalNote:val(d.hospitalNote)},'보호자에게 시간 변경을 제안했습니다.');return}
 if(id==='status-settings'){await mutate('PATCH','/api/settings',{notice:val(d.notice),emergency:!!f.querySelector('[name=emergency]').checked},'병원 운영 안내를 저장했습니다.');return}
