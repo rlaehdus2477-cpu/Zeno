@@ -1146,7 +1146,8 @@ function zenoNightSchedule(h,date=new Date()){
  const withinToday=!!span&&minutes>=span.start&&(span.overnight||minutes<span.end);
  const within=fromYesterday||withinToday;
  const nightOption=!!span&&(span.overnight||span.end>20*60);
- return {listed:fromYesterday||(minutes>=20*60?within:nightOption),within,always:false};
+ /* After overnight closing time in the early morning, exclude the closed hospital; do not show tonight's later session yet. */
+ return {listed:fromYesterday||(minutes<6*60?false:minutes>=20*60?within:nightOption),within,always:false};
 }
 function zenoNightHours(h,date=new Date()){return zenoNightSchedule(h,date).listed;}
 function zenoNightStatus(h,date=new Date()){
