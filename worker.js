@@ -60,9 +60,27 @@ async function passwordHash(password,salt,secret){
  const bits=await crypto.subtle.deriveBits({name:'PBKDF2',hash:'SHA-256',salt:new TextEncoder().encode(salt),iterations:100000},key,256);
  return b64(new Uint8Array(bits));
 }
+let zenoOwnerRecoveryInit=null;
+async function zenoEnsureRecoveryTable(db){
+ if(!zenoOwnerRecoveryInit){
+  zenoOwnerRecoveryInit=db.prepare("CREATE TABLE IF NOT EXISTS owner_recovery (owner_id TEXT PRIMARY KEY, code_hash TEXT NOT NULL DEFAULT '', token_not_before INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL, used_at TEXT)").run().catch(err=>{zenoOwnerRecoveryInit=null;throw err});
+ }
+ return zenoOwnerRecoveryInit;
+}
+function zenoCreateRecoveryCode(){return 'ZENO-'+b64(crypto.getRandomValues(new Uint8Array(24)));}
+async function zenoRecoveryHash(code,ownerId,secret){
+ const material=new TextEncoder().encode('zeno-recovery-v1|'+ownerId+'|'+code);
+ const key=await crypto.subtle.importKey('raw',new TextEncoder().encode(secret),{name:'HMAC',hash:'SHA-256'},false,['sign']);
+ return b64(new Uint8Array(await crypto.subtle.sign('HMAC',key,material)));
+}
 async function checkOwner(request,env){
  const session=await verify(request.headers.get('Authorization'),env.SESSION_SECRET);
  assert(session?.role==='owner'&&typeof session.ownerId==='string','보호자 로그인이 필요합니다.',401);
+ await zenoEnsureRecoveryTable(env.DB);
+ const recovery=await env.DB.prepare('SELECT token_not_before FROM owner_recovery WHERE owner_id=?').bind(session.ownerId).first();
+ if(recovery?.token_not_before&&(!session.iat||session.iat<recovery.token_not_before)){
+  throw new HttpError('비밀번호가 변경되었습니다. 다시 로그인해 주세요.',401);
+ }
  return session;
 }
 function profileParse(s){try{let d=JSON.parse(s||'{}');return {pets:Array.isArray(d.pets)?d.pets:[],records:Array.isArray(d.records)?d.records:[],favorites:Array.isArray(d.favorites)?d.favorites:[]}}catch{return {pets:[],records:[],favorites:[]}}}
@@ -135,9 +153,14 @@ if(path==='/api/auth/register'&&method==='POST'){
  const found=await db.prepare('SELECT id FROM owners WHERE username=?').bind(username).first();
  if(found){await recordBadLogin(db,limit);throw new HttpError('이미 사용 중인 아이디입니다.',409)}
  const id=crypto.randomUUID(),salt=b64(crypto.getRandomValues(new Uint8Array(18))),hash=await passwordHash(password,salt,env.SESSION_SECRET),t=now();
- await db.prepare('INSERT INTO owners(id,username,display_name,password_hash,salt,profile_json,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?)').bind(id,username,name,hash,salt,'{"pets":[],"records":[],"favorites":[]}',t,t).run();
+ await zenoEnsureRecoveryTable(db);
+ const recoveryCode=zenoCreateRecoveryCode(),recoveryHash=await zenoRecoveryHash(recoveryCode,id,env.SESSION_SECRET);
+ await db.batch([
+  db.prepare('INSERT INTO owners(id,username,display_name,password_hash,salt,profile_json,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?)').bind(id,username,name,hash,salt,'{"pets":[],"records":[],"favorites":[]}',t,t),
+  db.prepare('INSERT INTO owner_recovery(owner_id,code_hash,token_not_before,created_at,used_at) VALUES(?,?,0,?,NULL)').bind(id,recoveryHash,t)
+ ]);
  await recordBadLogin(db,limit); // 신규 가입도 IP별 생성 횟수 제한에 포함
- return json({token:await sign({role:'owner',ownerId:id,exp:Date.now()+7*24*3600*1000},env.SESSION_SECRET),owner:{id,username,displayName:name}},201);
+ return json({token:await sign({role:'owner',ownerId:id,iat:Date.now(),exp:Date.now()+7*24*3600*1000},env.SESSION_SECRET),owner:{id,username,displayName:name},recoveryCode},201);
 }
 if(path==='/api/auth/login'&&method==='POST'){
  assert(env.SESSION_SECRET,'서버 비밀키가 아직 설정되지 않았습니다.',503);
@@ -147,7 +170,43 @@ if(path==='/api/auth/login'&&method==='POST'){
  const hash=row?await passwordHash(password,row.salt,env.SESSION_SECRET):'';
  if(!row||hash!==row.password_hash){await recordBadLogin(db,limit);throw new HttpError('아이디 또는 비밀번호를 확인해 주세요.',401)}
  await clearLoginLimit(db,limit);
- return json({token:await sign({role:'owner',ownerId:row.id,exp:Date.now()+7*24*3600*1000},env.SESSION_SECRET),owner:{id:row.id,username,displayName:row.display_name}});
+ return json({token:await sign({role:'owner',ownerId:row.id,iat:Date.now(),exp:Date.now()+7*24*3600*1000},env.SESSION_SECRET),owner:{id:row.id,username,displayName:row.display_name}});
+}
+if(path==='/api/auth/recovery/issue'&&method==='POST'){
+ assert(env.SESSION_SECRET,'계정 인증 설정이 필요합니다.',503);
+ const sess=await checkOwner(request,env);
+ const password=String(data.currentPassword||''),owner=await db.prepare('SELECT id,username,salt,password_hash FROM owners WHERE id=?').bind(sess.ownerId).first();
+ assert(owner&&password.length>=10,'현재 비밀번호를 입력해 주세요.',400);
+ const attempt=await checkLoginLimit(request,env,'recovery-issue:'+sess.ownerId);
+ const digest=await passwordHash(password,owner.salt,env.SESSION_SECRET);
+ if(digest!==owner.password_hash){await recordBadLogin(db,attempt);throw new HttpError('현재 비밀번호가 일치하지 않습니다.',403);}
+ const recoveryCode=zenoCreateRecoveryCode(),codeHash=await zenoRecoveryHash(recoveryCode,sess.ownerId,env.SESSION_SECRET);
+ await db.prepare("INSERT INTO owner_recovery(owner_id,code_hash,token_not_before,created_at,used_at) VALUES(?,?,0,?,NULL) ON CONFLICT(owner_id) DO UPDATE SET code_hash=excluded.code_hash,created_at=excluded.created_at,used_at=NULL").bind(sess.ownerId,codeHash,now()).run();
+ await clearLoginLimit(db,attempt);
+ return json({recoveryCode});
+}
+if(path==='/api/auth/recovery/reset'&&method==='POST'){
+ assert(env.SESSION_SECRET,'계정 인증 설정이 필요합니다.',503);
+ const username=normUsername(data.username),recoveryCode=clean(data.recoveryCode,100),password=String(data.newPassword||'');
+ assert(validUsername(username),'아이디를 확인해 주세요.');
+ assert(password.length>=10&&password.length<=100,'새 비밀번호는 10~100자로 입력해 주세요.');
+ const attempt=await checkLoginLimit(request,env,'recovery-reset:'+username);
+ await zenoEnsureRecoveryTable(db);
+ const owner=await db.prepare('SELECT id FROM owners WHERE username=?').bind(username).first();
+ const recovery=owner?await db.prepare('SELECT code_hash FROM owner_recovery WHERE owner_id=?').bind(owner.id).first():null;
+ const hash=owner&&/^ZENO-[A-Za-z0-9_-]{32}$/.test(recoveryCode)?await zenoRecoveryHash(recoveryCode,owner.id,env.SESSION_SECRET):'';
+ if(!owner||!recovery?.code_hash||hash!==recovery.code_hash){
+  await recordBadLogin(db,attempt);
+  throw new HttpError('아이디 또는 복구 코드를 확인해 주세요.',400);
+ }
+ const salt=b64(crypto.getRandomValues(new Uint8Array(18))),passwordHashValue=await passwordHash(password,salt,env.SESSION_SECRET),stamp=Date.now();
+ const results=await db.batch([
+  db.prepare("UPDATE owners SET password_hash=?,salt=?,updated_at=? WHERE id=? AND EXISTS (SELECT 1 FROM owner_recovery WHERE owner_id=? AND code_hash=?)").bind(passwordHashValue,salt,now(),owner.id,owner.id,hash),
+  db.prepare("UPDATE owner_recovery SET code_hash='',token_not_before=?,used_at=? WHERE owner_id=? AND code_hash=?").bind(stamp,now(),owner.id,hash)
+ ]);
+ if(results?.[0]?.meta?.changes!==1||results?.[1]?.meta?.changes!==1)throw new HttpError('복구 코드가 이미 사용되었습니다. 다시 확인해 주세요.',409);
+ await clearLoginLimit(db,attempt);
+ return json({reset:true,message:'비밀번호를 변경했습니다. 새 비밀번호로 로그인해 주세요.'});
 }
 if(path==='/api/auth/me'&&method==='GET'){
  const sess=await checkOwner(request,env);const row=await db.prepare('SELECT id,username,display_name FROM owners WHERE id=?').bind(sess.ownerId).first();
