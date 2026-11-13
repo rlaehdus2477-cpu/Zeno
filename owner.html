@@ -2180,35 +2180,21 @@ function zenoPublishedStatusMarkup(h){
  +(intake.message?'<span class="zeno-acceptance-indicator">'+e(intake.message)+'</span>':'');
 }
 
+/* CHANGED: only registered medical specialties are available in booking. */
 function zenoBookingAnimals(h){
- return [...new Set([...(h.officialCompanionSpecies||['고양이','강아지']),...(h.officialExoticSpecies||[]),...(h.reportedExoticSpecies||[])])];
+ const services=hs(h.id).services||[];
+ return [...new Set([...(h.officialCompanionSpecies||['고양이','강아지']),...(h.officialExoticSpecies||[]),...services.filter(x=>['토끼','햄스터','기니피그','조류','파충류'].includes(x))])];
+}
+function zenoBookingServices(h,species){
+ const registered=[...(h.officialSpecialties||[]),...(hs(h.id).services||[]),...(h.cats||[]).map(x=>x==='일반'?'일반 진료':x)];
+ const options=[['일반 진료','가벼운 증상 · 정기검진'],['내과','구토 · 설사 · 식욕저하'],['피부·귀','피부 · 귀'],['안과','눈곱 · 충혈'],['치과·구강','입 냄새 · 치석'],['정형외과','다리 · 관절'],['외과','상처 · 수술'],['중성화수술','중성화 상담'],['심장·호흡기','기침 · 호흡'],['비뇨기','소변 이상'],['건강검진·접종','건강검진 · 접종']];
+ if(species==='고양이'||species==='강아지')return options.filter(([name])=>zenoCareAliases(name).some(alias=>registered.includes(alias)));
+ return zenoBookingAnimals(h).includes(species)?[['특수동물','진료 동물 종류 및 방문 일정 문의']]:[];
 }
 
-function zenoBookingServices(h,species){
- if(species==='고양이'||species==='강아지')return [
-  ['일반 진료','증상을 잘 모르거나 기본 상담'],
-  ['내과 상담','구토·설사·식욕·활동 변화'],
-  ['피부·귀 증상 상담','가려움·탈모·귀 염증 등'],
-  ['안과 상담','눈곱·충혈·눈 통증 등'],
-  ['치과·구강 상담','입 냄새·치석·잇몸 문제'],
-  ['정형외과 상담','절뚝거림·관절·뼈 문제'],
-  ['외과·수술 상담','일반 수술 가능 여부 문의'],
-  ['중성화수술 상담·예약 문의','수술 가능 여부·비용·검사·일정 확인'],
-  ['심장·호흡기 상담','기침·호흡·심장 관련 증상'],
-  ['비뇨기 상담','소변·방광·신장 관련 증상'],
-  ['건강검진·접종 상담','건강검진·예방접종 가능 여부'],
-  ['증상 상담 (분야 미정)','어느 진료 분야인지 잘 모르겠어요'],
-  ['재진·경과 확인','이전 진료 후 상태 점검']
- ];
- if([...(h.officialExoticSpecies||[]),...(h.reportedExoticSpecies||[])].includes(species))return [
-  ['특수동물 일반 진료 문의','진료 가능 동물종과 진료일 확인'],
-  ['건강 이상 상담','식욕·배설·활동 변화'],
-  ['재진·경과 확인','기존 진료 관련 문의']
- ];
- return [];
-}
 function zenoBookingFlow(h){
  const chosenKind=state.modal.kind||'',selected=state.modal.service||'';
+ const defaultPet=state.pets.find(p=>p.species===chosenKind)||null;
  const animals=zenoBookingAnimals(h),chosenService=zenoBookingServices(h,chosenKind);
  if(state.modal.step!=='details'){
   const animalButtons=animals.map(kind=>'<button type="button" class="zeno-book-option '+(chosenKind===kind?'selected':'')+'" data-action="zeno-book-kind" data-value="'+e(kind)+'" aria-pressed="'+(chosenKind===kind)+'">'+e(kind)+'</button>').join('');
@@ -2352,14 +2338,14 @@ function hospitalResults(items){
  Public catalogue categories, hospital demo entries, and hospital-name matches are separate. */
 function zenoSpecialtyOrigin(h){
  const s=state.specialty;if(!s)return '';
- if(s==='특수동물')return (h.officialExoticSpecies||[]).length?'official':(h.reportedExoticSpecies||[]).length?'report':'';
+ if(s==='특수동물')return (h.officialExoticSpecies||[]).length?'official':(hs(h.id).services||[]).some(x=>['토끼','햄스터','기니피그','조류','파충류'].includes(x))?'demo':'';
  const aliases=zenoCareAliases(s);
  if((h.officialSpecialties||[]).some(x=>aliases.includes(x)))return 'official';
  const services=hs(h.id).services||[];
  if(services.some(x=>aliases.includes(x)))return 'demo';
  if((h.cats||[]).some(x=>aliases.includes(x)))return 'public';
- if(aliases.some(x=>x.length>1&&h.name.includes(x)))return 'name';
- return SPECIALTIES.some(x=>x[0]===s)&&s!=='잘 모르겠어요'?'inquiry':'';
+ /* CHANGED: name matching does not confirm a department. */
+ return ''; /* CHANGED: no unverified general search results. */
 }
 function zenoSpecialtyNameOnly(h){return zenoSpecialtyOrigin(h)==='name';}
 function filteredHospitals(){
@@ -2377,7 +2363,7 @@ function filteredHospitals(){
  if(catFriendly||dogStress)list=list.filter(h=>(catFriendly&&Boolean(zenoCfc(h)))||(dogStress&&Boolean(zenoFearFree(h))));
  if(fs.includes('연결 병원'))list=list.filter(h=>h.linked);
  if(fs.includes('즐겨찾기'))list=list.filter(h=>state.favorites.includes(h.id));
- if(state.specialty)list=list.filter(h=>state.specialty==='특수동물'?(state.exoticSpecies?[...(h.officialExoticSpecies||[]),...(h.reportedExoticSpecies||[])].includes(state.exoticSpecies):Boolean((h.officialExoticSpecies||[]).length||(h.reportedExoticSpecies||[]).length)):Boolean(zenoSpecialtyOrigin(h)));
+ if(state.specialty)list=list.filter(h=>state.specialty==='특수동물'?(state.exoticSpecies?zenoBookingAnimals(h).includes(state.exoticSpecies):Boolean((h.officialExoticSpecies||[]).length||(hs(h.id).services||[]).some(x=>['토끼','햄스터','기니피그','조류','파충류'].includes(x)))):Boolean(zenoSpecialtyOrigin(h)));
  if(state.specialty){const rank={official:0,report:1,demo:2,public:3,name:4,inquiry:5};list.sort((a,b)=>(rank[zenoSpecialtyOrigin(a)]??4)-(rank[zenoSpecialtyOrigin(b)]??4));}
  if(catFriendly||dogStress)list.sort((a,b)=>{
   const aBoth=Number(Boolean(zenoCfc(a))&&Boolean(zenoFearFree(a))),bBoth=Number(Boolean(zenoCfc(b))&&Boolean(zenoFearFree(b)));
@@ -2867,7 +2853,16 @@ function openModal(type,id){
   zenoSearchScrollY=zenoDetailScrollY;
   history.pushState({zenoDetailModal:true},'',location.href);
  }
- state.modal={type,id};render();
+ /* CHANGED: preserve chosen department, animal kind and symptom. */
+ if(type==='book'){
+  const h=hospitalById(id);
+  const pet=state.pets.find(p=>p.species===state.exoticSpecies)||state.pets[0];
+  const kind=state.exoticSpecies||pet?.species||'고양이';
+  const choices=h?zenoBookingServices(h,kind):[];
+  const chosen=choices.find(x=>zenoCareAliases(state.specialty).includes(x[0])||x[0]===state.specialty);
+  state.modal={type,id,kind,service:chosen?.[0]||(!state.specialty?choices[0]?.[0]:'')||'',step:'choose'};
+ }else state.modal={type,id};
+ render();
  if(zenoDetailScrollY>0)window.scrollTo({left:0,top:zenoDetailScrollY,behavior:'instant'});
 }
 function zenoCloseModal(){
