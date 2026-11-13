@@ -2387,6 +2387,28 @@ function filteredHospitals(){
 /* CHANGED: placeholder advertising removed until real contract. */
 function ad(){return ''}
 
+function zenoVisitAt(b){
+ return b.proposedAt&&['accepted','confirmed','in_progress','done','suggested'].includes(b.status)?String(b.proposedAt).replace('T',' '):String(b.date||'')+' '+String(b.time||'');
+}
+function zenoHomeBookingPreview(){
+ if(!state.ownerToken)return '';
+ const active=state.bookings.filter(b=>['pending','accepted','suggested','confirmed','in_progress'].includes(b.status));
+ const priority=b=>b.status==='suggested'?0:1;
+ const upcoming=active.filter(b=>b.status==='suggested'||b.status==='in_progress'||zenoVisitAt(b).slice(0,10)>=today())
+  .sort((a,b)=>priority(a)-priority(b)||zenoVisitAt(a).localeCompare(zenoVisitAt(b)));
+ const booking=upcoming[0];
+ if(!booking)return '';
+ const raw=zenoVisitAt(booking),[date,time='']=raw.trim().split(' ');
+ const dateObj=new Date(date+'T00:00:00');
+ const next=new Date(today()+'T00:00:00Z');next.setUTCDate(next.getUTCDate()+1);
+ const tomorrow=next.toISOString().slice(0,10);
+ const dateLabel=date===today()?'오늘':date===tomorrow?'내일':Number.isNaN(dateObj.getTime())?date:dateObj.toLocaleDateString('ko-KR',{month:'long',day:'numeric'});
+ const [hhText,mm='00']=time.split(':'),hh=Number(hhText);
+ const timeLabel=Number.isInteger(hh)&&hh>=0&&hh<=23?(hh<12?'오전 ':'오후 ')+(hh%12||12)+':'+mm:time;
+ const h=hospitalById(booking.hospitalId);
+ return '<section class="zeno-home-booking"><span class="zeno-mini-label">내 예약</span><button type="button" data-nav="bookings"><strong>'+e(booking.petName||'반려동물')+' · '+e(dateLabel)+' '+e(timeLabel)+' · '+e(STATUS[booking.status]||booking.status)+'</strong><small>'+e(h?.name||'예약 병원 확인')+'</small></button></section>';
+}
+
 function zenoHomeSmallIcon(name){
  const paths={
   'pin':'<path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/>',
