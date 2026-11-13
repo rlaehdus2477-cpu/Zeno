@@ -96,15 +96,28 @@ jobs:
             if(!response.ok)throw Error(path+' returned HTTP '+response.status);
             return response;
           }
-          const owner=await (await get('/owner?release=clinical-20261114')).text();
-          for(const expected of ['ZENO','진료 분야로 찾기','진료 과목','예약 요청','24시 청주이음동물의료센터','종양 수술','영상의학','수술 후 재활']){if(!owner.includes(expected))throw Error('Production owner UI missing: '+expected);}
-          const hospital=await (await get('/hospital?release=clinical-20261114')).text();
-          for(const expected of ['예약','24시 청주이음동물의료센터','영상의학','종양 수술']){if(!hospital.includes(expected))throw Error('Production hospital UI missing: '+expected);}
-          const revision=await (await get('/api/ui-version')).json();
-          if(revision?.owner!==expectedOwnerRevision)throw Error('Owner UI version not deployed: '+JSON.stringify(revision)+' expected '+expectedOwnerRevision);
-          if(!owner.includes("const ZENO_OWNER_UI_REVISION='"+expectedOwnerRevision+"'"))throw Error('Owner page revision not synchronized with Worker: '+expectedOwnerRevision);
-          const json=await (await get('/api/public/hospital-status')).json();
-          if(!json||typeof json.settings!=='object')throw Error('Public hospital status response invalid');
+          // Wait for the new Worker to reach the public edge. Never accept stale HTML.
+          let checked=false, lastError;
+          for(let attempt=1;attempt<=10;attempt++){
+            try{
+              const nonce=encodeURIComponent(expectedOwnerRevision)+'-'+attempt;
+              const owner=await (await get('/owner?ui='+nonce)).text();
+              for(const expected of ['ZENO','진료 분야로 찾기','진료 과목','예약 요청','24시 청주이음동물의료센터','종양 수술','영상의학','수술 후 재활']){if(!owner.includes(expected))throw Error('Production owner UI missing: '+expected);}
+              const hospital=await (await get('/hospital?ui='+nonce)).text();
+              for(const expected of ['예약','24시 청주이음동물의료센터','영상의학','종양 수술']){if(!hospital.includes(expected))throw Error('Production hospital UI missing: '+expected);}
+              const revision=await (await get('/api/ui-version?ui='+nonce)).json();
+              if(revision?.owner!==expectedOwnerRevision)throw Error('Owner UI version not deployed: '+JSON.stringify(revision)+' expected '+expectedOwnerRevision);
+              if(!owner.includes("const ZENO_OWNER_UI_REVISION='"+expectedOwnerRevision+"'"))throw Error('Owner page revision not synchronized with Worker: '+expectedOwnerRevision);
+              const json=await (await get('/api/public/hospital-status?ui='+nonce)).json();
+              if(!json||typeof json.settings!=='object')throw Error('Public hospital status response invalid');
+              checked=true;break;
+            }catch(error){
+              lastError=error;
+              console.warn('Production verification attempt '+attempt+': '+error.message);
+              if(attempt<10)await new Promise(resolve=>setTimeout(resolve,4000));
+            }
+          }
+          if(!checked)throw lastError;
           console.log('ZENO production owner/hospital/public API smoke test PASS');
           NODE
 
