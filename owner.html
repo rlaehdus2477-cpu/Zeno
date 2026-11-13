@@ -1620,6 +1620,52 @@ body,#app,.app{max-width:100%;overflow-x:clip}
  .zeno-home-v10 .zeno-v10-care-card small{font-size:10.5px!important}
 }
 @media(hover:hover) and (pointer:fine){.zeno-home-v10 .zeno-v10-care-card:hover{border-color:#bfdbfe!important;background:#f8fbff!important}}
+</style><style id="zeno-more-refresh-20261113-v11">
+/* Scoped to More page: consistent spacing, robust Korean wrapping, no nested panels. */
+.zeno-more-page{min-width:0;max-width:640px;margin:0 auto;color:#1e293b;word-break:keep-all;overflow-wrap:break-word}
+.zeno-more-page>.top.zeno-owner-top{margin-bottom:12px!important;border-bottom:1px solid #e5e7eb!important;box-shadow:none!important}
+.zeno-more-page .zeno-more-list{margin:0!important;border:1px solid #e2e8f0!important;border-radius:14px!important;box-shadow:0 1px 3px rgba(15,23,42,.035)!important}
+.zeno-more-page .zeno-more-item{min-height:52px!important;padding:12px 16px!important;color:#334155!important;font-size:14px!important}
+.zeno-more-page .zeno-more-item:last-child{border-bottom:0!important}
+.zeno-more-page .zeno-more-account,
+.zeno-more-page .zeno-more-about{margin:23px 0 0!important;padding:0!important;background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important}
+.zeno-more-page .zeno-more-account h2,
+.zeno-more-page .zeno-more-about h2{font-size:16px!important;font-weight:760!important;line-height:1.4!important;letter-spacing:-.3px!important;color:#1e293b!important;margin:0 0 10px!important}
+.zeno-more-page .zeno-more-account-card,
+.zeno-more-page .zeno-more-about .zeno-giving-card{
+ background:#fff!important;border:1px solid #e2e8f0!important;border-radius:14px!important;
+ padding:16px!important;box-shadow:0 1px 3px rgba(15,23,42,.035)!important
+}
+.zeno-more-page .zeno-more-account-primary{display:flex;align-items:center;justify-content:space-between;gap:12px;min-width:0}
+.zeno-more-page .zeno-more-account-copy{flex:1 1 auto;min-width:0}
+.zeno-more-page .zeno-more-account-copy strong{display:block;color:#334155;font-size:14px;font-weight:730;line-height:1.4}
+.zeno-more-page .zeno-more-account-copy p{margin:4px 0 0;color:#64748b;font-size:12px;line-height:1.5;word-break:keep-all}
+.zeno-more-page .zeno-more-recovery-btn{
+ flex:0 0 auto;min-width:112px;min-height:42px;padding:10px 12px;
+ background:#2563eb;color:#fff;border:1px solid #2563eb;border-radius:10px;
+ font-size:12.5px;font-weight:750;line-height:1.35;text-align:center;white-space:nowrap
+}
+.zeno-more-page .zeno-more-account-footer{display:flex;justify-content:flex-end;align-items:center;margin-top:13px;padding-top:8px;border-top:1px solid #f1f5f9}
+.zeno-more-page .zeno-more-logout-link{
+ border:0;background:transparent;color:#64748b;min-height:36px;padding:7px 2px;
+ font-size:12.5px;font-weight:560;line-height:1.4
+}
+.zeno-more-page .zeno-giving-message{font-size:15px!important;line-height:1.6!important;color:#1e293b!important;font-weight:710!important;letter-spacing:-.25px!important;margin:0 0 9px!important;word-break:keep-all!important;overflow-wrap:break-word!important}
+.zeno-more-page .zeno-giving-detail{font-size:12.5px!important;line-height:1.65!important;color:#64748b!important;word-break:keep-all!important;overflow-wrap:break-word!important;margin:0!important}
+.zeno-more-page button:focus-visible{outline:2px solid #2563eb;outline-offset:2px}
+@media(max-width:750px){
+ .zeno-more-page>.top.zeno-owner-top{
+  min-height:52px!important;padding: max(6px, env(safe-area-inset-top)) 0 9px!important;
+  margin:0 0 11px!important;align-items:center!important
+ }
+ .zeno-more-page .zeno-more-list{border-radius:12px!important}
+ .zeno-more-page .zeno-more-account-card,
+ .zeno-more-page .zeno-more-about .zeno-giving-card{padding:15px!important;border-radius:12px!important}
+}
+@media(max-width:350px){
+ .zeno-more-page .zeno-more-account-primary{flex-wrap:wrap}
+ .zeno-more-page .zeno-more-recovery-btn{width:100%}
+}
 </style></head><body><div id="app" class="app"></div><script>
 'use strict';
 const APP_MODE='owner';
@@ -2647,28 +2693,34 @@ function pricesPage(){
  +'<div class="zeno-fee-disclaimer"><strong>가격 확인 전 알아두세요</strong><p>동물 종류·체중·성별·진료 시간, 마취·사전검사·약값 포함 여부에 따라 총비용이 달라집니다. 중성화는 병원에서 최종 수술 견적을 확인해 주세요.</p><a href="https://animalclinicfee.or.kr/" target="_blank" rel="noopener noreferrer">정부 지역별 진료비 통계 보기</a></div>';
 }
 // UX 2026-11-08 [3][4]: remove duplicate bottom-tab entries, retain memorial destination, use line-list navigation.
+/* ZENO More: user-facing copy remains one UTF-8 source of truth. */
+const ZENO_MORE_COPY=Object.freeze({
+ title:'ZENO 소개',
+ headline:'ZENO의 성장이 보호소 아이들의 건강한 내일로 이어집니다.',
+ description:'유료 서비스 시작 후 매출의 5%를 보호소 동물 건강검진에 지원할 계획입니다.'
+});
 function morePage(){
  const items=[
   ['emergency','야간·24시간 병원'],
   ['qa','내 질문'],
   ['membership','내 포인트'],
-  ['pets','추모관'] // Existing pets route contains memorial functionality.
+  ['pets','추모관']
  ];
  const chevron='<svg class="zeno-more-chevron" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>';
  const menu='<nav class="zeno-more-list" aria-label="더 보기 메뉴">'+items.map(([route,label])=>'<button type="button" class="zeno-more-item" data-nav="'+route+'"><span>'+e(label)+'</span>'+chevron+'</button>').join('')+'</nav>';
- // UX 2026-11-08 [5]: recovery helper text is beneath the original recovery action.
- const account='<section class="zeno-account-section zeno-more-account"><h2>계정</h2>'+
-  (state.ownerToken?
-   '<div class="zeno-more-recovery"><button class="btn secondary" data-action="recovery-setup">복구 코드 발급</button><p class="zeno-recovery-helper">다른 기기에서 계정을 되찾을 때 쓰는 코드예요</p></div><button class="btn secondary zeno-more-logout" data-action="owner-logout">로그아웃</button>':
-   '<button class="btn secondary" data-nav="login">로그인 · 회원가입</button>')+'</section>';
- // UX 2026-11-08 [6]: separate About from account; no nested cards.
- const about='<section class="zeno-giving-section" aria-labelledby="zeno-about-title">'+
-  '<h2 id="zeno-about-title">ZENO 소개</h2>'+
-  '<div class="zeno-giving-card">'+
-  '<p class="zeno-giving-message">ZENO의 성장이 보호소 아이들의 건강한 내일로 이어집니다.</p>'+
-  '<p class="zeno-giving-detail">유료 서비스 시작 후 매출의 5%를 보호소 동물 건강검진에 지원할 계획입니다.</p>'+
-  '</div></section>';
- return topbar('더 보기','')+menu+account+about;
+ const account='<section class="zeno-account-section zeno-more-account" aria-labelledby="zeno-more-account-title"><h2 id="zeno-more-account-title">계정</h2>'
+  +'<div class="zeno-more-account-card">'
+  +(state.ownerToken?
+   '<div class="zeno-more-account-primary"><div class="zeno-more-account-copy"><strong>복구 코드</strong><p>다른 기기에서 계정을 되찾을 때 사용해요.</p></div><button type="button" class="zeno-more-recovery-btn" data-action="recovery-setup">복구 코드 발급</button></div>'
+   +'<div class="zeno-more-account-footer"><button type="button" class="zeno-more-logout-link" data-action="owner-logout">로그아웃</button></div>'
+   :'<div class="zeno-more-account-primary"><div class="zeno-more-account-copy"><strong>계정에 로그인하세요</strong><p>내 아이 기록과 예약 내역을 확인할 수 있어요.</p></div><button type="button" class="zeno-more-recovery-btn" data-nav="login">로그인</button></div>')
+  +'</div></section>';
+ const about='<section class="zeno-giving-section zeno-more-about" aria-labelledby="zeno-about-title">'
+  +'<h2 id="zeno-about-title">'+e(ZENO_MORE_COPY.title)+'</h2>'
+  +'<div class="zeno-giving-card"><p class="zeno-giving-message" data-zeno-copy="headline">'+e(ZENO_MORE_COPY.headline)+'</p>'
+  +'<p class="zeno-giving-detail" data-zeno-copy="description">'+e(ZENO_MORE_COPY.description)+'</p>'
+  +'</div></section>';
+ return '<div class="zeno-more-page">'+topbar('더 보기','')+menu+account+about+'</div>';
 }
 // UX 2026-11-08 [7]: unified footer copy.
 function footer(){return '<div class="footer">ZENO · 필요한 순간, 필요한 진료를 찾아드립니다.<br>이 앱은 의료기관 공식 서비스가 아닌 제노 창업 시연용 프로토타입입니다. 응급 상황은 병원에 직접 전화하세요.</div>'}
@@ -3123,7 +3175,7 @@ async function start(){
  }finally{zenoStartPending=false}
 }
 render();start();
-const ZENO_OWNER_UI_REVISION='20261113-react-inspired-home-v10';
+const ZENO_OWNER_UI_REVISION='20261113-more-settings-v11';
 let zenoLastUIVersionCheck=0;
 let zenoUIVersionChecking=false;
 async function zenoCheckOwnerUIRevision(force=false){
