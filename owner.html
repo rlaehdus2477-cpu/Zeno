@@ -1539,87 +1539,107 @@ body,#app,.app{max-width:100%;overflow-x:clip}
  .zeno-wellbeing-badges .zeno-ff-badge small{font-size:8.5px}
 }
 </style><style id="zeno-commercial-home-v10">
-/* Scoped to owner home; preserves existing search, booking and hospital screens. */
-.zeno-home-v10{color:#1e293b;min-width:0;padding:0 0 20px}
-.zeno-home-v10 button{font-family:inherit;box-shadow:none;max-width:100%}
-.zeno-home-v10 .zeno-v10-header{position:relative;z-index:18;display:flex;align-items:center;justify-content:space-between;min-height:57px;gap:12px;border-bottom:1px solid #e2e8f0;background:#fff;padding:9px 3px 11px;margin:0 0 0}
+/* CHANGED */
+/* ZENO v10: one navy, grey surfaces, accessible light/dark tokens, 4px spacing rhythm. */
+.zeno-home-v10{--zh-bg:#f7f8fa;--zh-surface:#fff;--zh-surface-alt:#f0f2f5;--zh-line:#cbd3dc;--zh-text:#182b40;--zh-muted:#465b72;--zh-accent:#102f50;--zh-danger:#aa2337;--zh-danger-soft:#fff0f2;background:var(--zh-bg);color:var(--zh-text);min-width:0;padding:0 0 24px;font-size:14px;word-break:keep-all}
+@media(prefers-color-scheme:dark){.zeno-home-v10{--zh-bg:#111923;--zh-surface:#1d2937;--zh-surface-alt:#293747;--zh-line:#627185;--zh-text:#f4f7fb;--zh-muted:#d0dce9;--zh-accent:#e6f0ff;--zh-danger:#ffd4dc;--zh-danger-soft:#462732}}
+html.dark .zeno-home-v10,html[data-theme="dark"] .zeno-home-v10{--zh-bg:#111923;--zh-surface:#1d2937;--zh-surface-alt:#293747;--zh-line:#627185;--zh-text:#f4f7fb;--zh-muted:#d0dce9;--zh-accent:#e6f0ff;--zh-danger:#ffd4dc;--zh-danger-soft:#462732}
+html.light .zeno-home-v10,html[data-theme="light"] .zeno-home-v10{--zh-bg:#f7f8fa;--zh-surface:#fff;--zh-surface-alt:#f0f2f5;--zh-line:#cbd3dc;--zh-text:#182b40;--zh-muted:#465b72;--zh-accent:#102f50;--zh-danger:#aa2337;--zh-danger-soft:#fff0f2}
+.zeno-home-v10 *{box-sizing:border-box}
+.zeno-home-v10 button,.zeno-home-v10 input{font:inherit}
+.zeno-home-v10 button{max-width:100%;box-shadow:none;transition:background-color .18s,border-color .18s,opacity .18s}
+.zeno-home-v10 button:active{opacity:.76}
+.zeno-home-v10 button:focus-visible{outline:2px solid var(--zh-accent);outline-offset:2px}
+.zeno-home-v10 .zeno-v10-header{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:56px;padding:8px 4px;border-bottom:1px solid var(--zh-line);background:var(--zh-surface);color:var(--zh-text)}
 .zeno-home-v10 .zeno-v10-header-left{display:flex;align-items:center;gap:12px;min-width:0}
-.zeno-home-v10 .zeno-v10-brand{font-size:24px;font-weight:900;letter-spacing:-1.4px;line-height:1;white-space:nowrap;color:#1e293b}
-.zeno-home-v10 .zeno-v10-brand i{font-style:normal;color:#2563eb}
-.zeno-home-v10 .zeno-v10-separator{width:1px;height:20px;flex:0 0 1px;background:#e2e8f0}
+.zeno-home-v10 .zeno-v10-brand-logo{max-width:96px;max-height:32px;object-fit:contain;mix-blend-mode:multiply;display:block}
+@media(prefers-color-scheme:dark){.zeno-home-v10 .zeno-v10-brand-logo{mix-blend-mode:normal;background:#fff;padding:6px 10px;border-radius:10px;max-height:44px}}
+html.dark .zeno-home-v10 .zeno-v10-brand-logo,html[data-theme="dark"] .zeno-home-v10 .zeno-v10-brand-logo{mix-blend-mode:normal;background:#fff;padding:6px 10px;border-radius:10px;max-height:44px}
+.zeno-home-v10 .zeno-v10-separator{width:1px;height:20px;flex:none;background:var(--zh-line)}
 .zeno-home-v10 .zeno-v10-region-wrap{position:relative;min-width:0}
-.zeno-home-v10 .zeno-v10-region-button{display:flex;align-items:center;gap:3px;max-width:185px;border:0;padding:8px 2px;border-radius:8px;background:transparent;color:#475569;font-size:12.5px;font-weight:650;white-space:nowrap}
-.zeno-home-v10 .zeno-v10-region-button svg:first-child{height:15px;width:15px;color:#2563eb;flex-shrink:0}
-.zeno-home-v10 .zeno-v10-region-button svg:last-child{height:14px;width:14px;flex-shrink:0}
-.zeno-home-v10 .zeno-v10-region-button span{overflow:hidden;text-overflow:ellipsis}
-.zeno-home-v10 .zeno-v10-bell{width:40px;height:40px;flex:0 0 40px;display:grid;place-items:center;border-radius:12px;border:0;background:#fff;color:#475569}
-.zeno-home-v10 .zeno-v10-area-menu{position:absolute;left:0;top:calc(100% + 6px);z-index:25;min-width:176px;padding:6px;background:#fff;border:1px solid #e2e8f0;box-shadow:0 10px 30px #0f172a22;border-radius:12px}
-.zeno-home-v10 .zeno-v10-area-menu button{display:block;text-align:left;width:100%;font-size:13px;font-weight:550;color:#475569;border:0;background:#fff;padding:10px 12px;border-radius:8px}
-.zeno-home-v10 .zeno-v10-area-menu button.selected{background:#eff6ff;color:#2563eb;font-weight:750}
-.zeno-home-v10 .zeno-v10-intro{padding:27px 1px 21px}
-.zeno-home-v10 .zeno-v10-eyebrow{font-size:12px;color:#2563eb;font-weight:650;margin:0 0 6px}
-.zeno-home-v10 .zeno-v10-intro h1{margin:0;color:#1e293b;font-size:25px;line-height:1.28;font-weight:800;letter-spacing:-.85px;word-break:keep-all}
-.zeno-home-v10 .zeno-v10-subtitle{font-size:13px;color:#64748b;margin:7px 0 0;line-height:1.5}
-.zeno-home-v10 .zeno-v10-search{margin:21px 0 0;display:flex;align-items:center;gap:11px;width:100%;height:54px;border:1px solid #e2e8f0;border-radius:15px;background:#fff;box-shadow:0 1px 3px #0f172a08,0 4px 14px #0f172a06;padding:0 10px 0 14px}
-.zeno-home-v10 .zeno-v10-search>svg{flex-shrink:0;height:20px;width:20px;color:#94a3b8}
-.zeno-home-v10 .zeno-v10-search input{flex:1 1 auto;min-width:0;max-width:100%;height:50px;min-height:0!important;border:0!important;box-shadow:none!important;outline:0!important;background:transparent!important;padding:0!important;color:#1e293b;font-size:13.5px!important}
-.zeno-home-v10 .zeno-v10-search input::placeholder{color:#94a3b8}
-.zeno-home-v10 .zeno-v10-search:focus-within{border-color:#60a5fa;box-shadow:0 0 0 3px #dbeafe}
-.zeno-home-v10 .zeno-v10-search button{flex-shrink:0;min-height:33px;border:0;border-radius:9px;background:#2563eb;color:#fff;padding:7px 12px;font-size:12px;font-weight:750}
-.zeno-home-v10 .zeno-v10-section-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:8px;margin:0 0 12px}
-.zeno-home-v10 .zeno-v10-section-heading h2,.zeno-home-v10 .zeno-v10-quick h2{font-size:17px!important;font-weight:800;letter-spacing:-.45px;line-height:1.35;color:#1e293b;margin:0}
-.zeno-home-v10 .zeno-v10-section-heading p{color:#64748b;font-size:12px;margin:3px 0 0}
-.zeno-home-v10 .zeno-v10-section-heading button{font-size:11.5px;color:#2563eb;border:0;background:transparent;padding:6px 0;font-weight:650;white-space:nowrap}
-.zeno-home-v10 .zeno-v10-grid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important}
-.zeno-home-v10 .zeno-v10-care-card{display:flex!important;flex-direction:column!important;align-items:flex-start!important;justify-content:flex-start!important;min-width:0!important;height:120px!important;min-height:120px!important;max-height:120px!important;text-align:left!important;background:#fff!important;border:1px solid #e2e8f0!important;border-radius:16px!important;box-shadow:0 1px 3px #0f172a08,0 4px 14px #0f172a05!important;padding:14px!important;gap:0!important;color:#1e293b!important}
-.zeno-home-v10 .zeno-v10-care-icon{width:40px;height:40px;display:grid;place-items:center;border-radius:13px;flex-shrink:0}
-.zeno-home-v10 .zeno-v10-care-icon svg{width:22px;height:22px}
-.zeno-home-v10 .tone-blue{background:#eff6ff;color:#2563eb}.zeno-home-v10 .tone-rose{background:#fff1f2;color:#f43f5e}
-.zeno-home-v10 .tone-amber{background:#fffbeb;color:#d97706}.zeno-home-v10 .tone-cyan{background:#ecfeff;color:#0891b2}
-.zeno-home-v10 .tone-violet{background:#f5f3ff;color:#7c3aed}.zeno-home-v10 .tone-teal{background:#f0fdfa;color:#0d9488}
-.zeno-home-v10 .tone-indigo{background:#eef2ff;color:#4f46e5}.zeno-home-v10 .tone-sky{background:#f0f9ff;color:#0284c7}
-.zeno-home-v10 .tone-pink{background:#fdf2f8;color:#db2777}.zeno-home-v10 .tone-emerald{background:#ecfdf5;color:#059669}
-.zeno-home-v10 .tone-orange{background:#fff7ed;color:#ea580c}
-.zeno-home-v10 .zeno-v10-care-card strong{display:block!important;max-width:100%;margin-top:8px!important;font-size:14px!important;font-weight:750!important;line-height:20px!important;letter-spacing:-.3px!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;color:#1e293b!important}
-.zeno-home-v10 .zeno-v10-care-card small{display:block!important;width:100%;min-height:0!important;max-width:100%;margin-top:3px!important;font-size:11.5px!important;font-weight:450!important;line-height:16px!important;color:#64748b!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
-.zeno-home-v10 .zeno-v10-care-card:focus-visible,.zeno-home-v10 button:focus-visible{outline:2px solid #2563eb!important;outline-offset:2px}
-.zeno-home-v10 .zeno-v10-symptom-btn{display:flex;align-items:center;gap:12px;width:100%;min-height:62px;text-align:left;margin:11px 0 0;padding:11px 14px;border:1px solid #dbeafe;border-radius:16px;background:#eff6ff;color:#1e293b}
-.zeno-home-v10 .zeno-v10-help-icon{display:grid;place-items:center;width:37px;height:37px;flex:0 0 37px;border-radius:11px;background:#fff;color:#2563eb}
+.zeno-home-v10 .zeno-v10-region-button{display:flex;align-items:center;gap:4px;border:0;border-radius:8px;background:transparent;color:var(--zh-text);font-size:12px;font-weight:650;max-width:160px;padding:8px 4px}
+.zeno-home-v10 .zeno-v10-region-button span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.zeno-home-v10 .zeno-v10-region-button svg{width:16px;height:16px;flex:none;color:var(--zh-accent)}
+.zeno-home-v10 .zeno-v10-area-menu{position:absolute;top:calc(100% + 8px);left:0;z-index:25;min-width:180px;padding:4px;border:1px solid var(--zh-line);border-radius:12px;background:var(--zh-surface);box-shadow:none}
+.zeno-home-v10 .zeno-v10-area-menu button{display:block;width:100%;text-align:left;border:0;border-radius:8px;background:transparent;padding:12px 8px;color:var(--zh-text);font-size:14px}
+.zeno-home-v10 .zeno-v10-area-menu button.selected{background:var(--zh-surface-alt);font-weight:800}
+.zeno-home-v10 .zeno-v10-intro{display:grid;grid-template-columns:minmax(0,1fr) 64px;gap:12px;padding:20px 4px 16px}
+.zeno-home-v10 .zeno-v10-eyebrow{font-size:12px;color:var(--zh-muted);margin:0 0 4px}
+.zeno-home-v10 .zeno-v10-intro h1{font-size:20px;color:var(--zh-text);font-weight:800;line-height:1.35;letter-spacing:-.5px;margin:0}
+.zeno-home-v10 .zeno-v10-subtitle{font-size:12px;color:var(--zh-muted);line-height:1.5;margin:4px 0 0}
+.zeno-home-v10 .zeno-v10-art{min-height:64px;border:1px dashed var(--zh-line);border-radius:12px;background:var(--zh-surface-alt)}
+.zeno-home-v10 .zeno-v10-search{grid-column:1/-1;display:flex;align-items:center;gap:8px;min-height:48px;padding:4px 8px 4px 12px;background:var(--zh-surface);border:1px solid var(--zh-line);border-radius:10px;box-shadow:none}
+.zeno-home-v10 .zeno-v10-search>svg{width:20px;height:20px;flex:none;color:var(--zh-muted)}
+.zeno-home-v10 .zeno-v10-search input{min-width:0;flex:1;min-height:36px;border:0;outline:0;box-shadow:none;background:transparent;padding:4px 0;color:var(--zh-text);font-size:14px}
+.zeno-home-v10 .zeno-v10-search input::placeholder{color:var(--zh-muted)}
+.zeno-home-v10 .zeno-v10-search:focus-within{border-color:var(--zh-accent)}
+.zeno-home-v10 .zeno-v10-search button{padding:8px 12px;min-height:36px;border:1px solid #102f50;border-radius:8px;background:#102f50;color:#fff;font-size:12px;font-weight:750}
+.zeno-home-v10 .zeno-v10-section-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px}
+.zeno-home-v10 .zeno-v10-section-heading h2,.zeno-home-v10 .zeno-v10-quick h2,.zeno-home-v10 .zeno-v10-open-section h2{margin:0;color:var(--zh-text);font-size:16px;font-weight:800;line-height:1.4}
+.zeno-home-v10 .zeno-v10-section-heading button{border:0;background:transparent;padding:8px;color:var(--zh-accent);font-size:12px;font-weight:700}
+.zeno-home-v10 .zeno-v10-open-section{padding:4px 0 16px}
+.zeno-home-v10 .zeno-v10-open-rail{display:flex;gap:8px;padding:12px 0 4px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none}
+.zeno-home-v10 .zeno-v10-open-rail::-webkit-scrollbar{display:none}
+.zeno-home-v10 .zeno-v10-open-card{flex:0 0 200px;scroll-snap-align:start;display:flex;align-items:center;gap:12px;min-width:0;text-align:left;border:1px solid var(--zh-line);border-radius:12px;background:var(--zh-surface);color:var(--zh-text);padding:12px}
+.zeno-home-v10 .zeno-v10-open-card strong{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px}
+.zeno-home-v10 .zeno-v10-open-card small{display:block;margin-top:4px;color:var(--zh-muted);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.zeno-home-v10 .zeno-v10-mini-photo{flex:none;display:grid;place-items:center;position:relative;width:56px;height:56px;border:1px solid var(--zh-line);border-radius:8px;background:var(--zh-surface-alt)}
+.zeno-home-v10 .zeno-v10-mini-photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:8px}
+.zeno-home-v10 .zeno-v10-mini-photo img.is-logo{object-fit:contain}
+.zeno-home-v10 .zeno-v10-hospital-badges{display:flex;gap:4px;margin-top:8px;flex-wrap:wrap}
+.zeno-home-v10 .zeno-v10-badge{display:inline-flex;align-items:center;min-height:22px;padding:2px 8px;font-size:12px;line-height:16px;font-weight:700;color:var(--zh-text);border:1px solid var(--zh-line);border-radius:8px}
+.zeno-home-v10 .zeno-v10-badge.danger{color:var(--zh-danger);border-color:var(--zh-danger)}
+.zeno-home-v10 .zeno-v10-stats{color:var(--zh-muted);font-size:12px;line-height:1.5;margin:0 0 20px}
+.zeno-home-v10 .zeno-v10-symptom-btn{display:flex;align-items:center;gap:12px;width:100%;min-height:64px;text-align:left;padding:12px;border:1px solid var(--zh-line);border-radius:12px;background:var(--zh-surface);color:var(--zh-text)}
+.zeno-home-v10 .zeno-v10-help-icon{width:36px;height:36px;flex:none;display:grid;place-items:center;color:var(--zh-accent)}
 .zeno-home-v10 .zeno-v10-symptom-btn>span:nth-child(2){min-width:0;flex:1}
-.zeno-home-v10 .zeno-v10-symptom-btn strong{display:block;font-size:13.5px;font-weight:750;line-height:1.4}
-.zeno-home-v10 .zeno-v10-symptom-btn small{display:block;font-size:11.5px;font-weight:450;color:#64748b;margin-top:3px}
-.zeno-home-v10 .zeno-v10-symptom-btn>svg:last-child{width:17px;height:17px;color:#2563eb}
-.zeno-home-v10 .zeno-v10-quick{margin-top:31px}
-.zeno-home-v10 .zeno-v10-quick h2{margin:0 0 12px}
-.zeno-home-v10 .zeno-v10-quick-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-.zeno-home-v10 .zeno-v10-quick-grid button{display:flex;flex-direction:column;align-items:flex-start;gap:0;text-align:left;min-width:0;padding:14px;border:1px solid #e2e8f0;border-radius:16px;background:#fff;box-shadow:0 1px 3px #0f172a07}
-.zeno-home-v10 .zeno-v10-shortcut-icon{width:36px;height:36px;border-radius:11px;display:grid;place-items:center;margin-bottom:10px}
-.zeno-home-v10 .zeno-v10-shortcut-icon.night{background:#eef2ff;color:#4f46e5}.zeno-home-v10 .zeno-v10-shortcut-icon.urgent{background:#fff1f2;color:#e11d48}.zeno-home-v10 .zeno-v10-shortcut-icon.cat{background:#fffbeb;color:#b45309;margin:0;flex-shrink:0}
-.zeno-home-v10 .zeno-v10-quick-grid strong,.zeno-home-v10 .zeno-v10-cat strong{font-size:13px;line-height:1.35;font-weight:750;color:#1e293b}
-.zeno-home-v10 .zeno-v10-quick-grid small,.zeno-home-v10 .zeno-v10-cat small{font-size:11px;line-height:1.4;color:#64748b;margin-top:4px}
-.zeno-home-v10 .zeno-v10-cat{display:flex;align-items:center;gap:12px;width:100%;padding:14px;border:1px solid #e2e8f0;border-radius:16px;background:#fff;box-shadow:0 1px 3px #0f172a07;margin-top:10px;text-align:left}
+.zeno-home-v10 .zeno-v10-symptom-btn strong{display:block;font-size:14px}
+.zeno-home-v10 .zeno-v10-symptom-btn small{display:block;margin-top:4px;color:var(--zh-muted);font-size:12px}
+.zeno-home-v10 .zeno-v10-symptom-btn>svg:last-child{width:20px;height:20px;flex:none}
+.zeno-home-v10 .zeno-v10-care{margin-top:24px}
+.zeno-home-v10 .zeno-v10-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.zeno-home-v10 .zeno-v10-care-card{display:flex;flex-direction:column;align-items:flex-start;min-width:0;min-height:112px;padding:12px;text-align:left;border:1px solid var(--zh-line);border-radius:12px;background:var(--zh-surface);color:var(--zh-text)}
+.zeno-home-v10 .zeno-v10-care-card.is-wide{grid-column:1/-1;display:grid;grid-template-columns:36px minmax(0,1fr);grid-template-rows:auto auto;gap:4px 12px;align-items:center;min-height:80px}
+.zeno-home-v10 .zeno-v10-care-card.is-wide .zeno-v10-care-icon{grid-column:1;grid-row:1/3}
+.zeno-home-v10 .zeno-v10-care-card.is-wide strong{grid-column:2;grid-row:1}
+.zeno-home-v10 .zeno-v10-care-card.is-wide small{grid-column:2;grid-row:2}
+.zeno-home-v10 .zeno-v10-care-icon{flex:none;display:grid;place-items:center;width:36px;height:36px;color:var(--zh-accent)}
+.zeno-home-v10 .zeno-v10-care-icon svg{width:24px;height:24px;stroke-width:1.8}
+.zeno-home-v10 .zeno-v10-care-card strong{display:block;margin:4px 0 0;color:var(--zh-text);font-size:14px;font-weight:800;line-height:20px}
+.zeno-home-v10 .zeno-v10-care-card small{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:1;overflow:hidden;white-space:normal;color:var(--zh-muted);font-size:12px;line-height:16px}
+.zeno-home-v10 .zeno-v10-chip-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:8px}
+.zeno-home-v10 .zeno-v10-care-chip{display:grid;grid-template-columns:24px minmax(0,1fr);grid-template-rows:auto 1fr;gap:4px 8px;align-items:start;min-width:0;padding:12px;text-align:left;border:1px solid var(--zh-line);border-radius:12px;background:var(--zh-surface);color:var(--zh-text)}
+.zeno-home-v10 .zeno-v10-care-chip .zeno-v10-care-icon{grid-column:1;grid-row:1/3;width:24px;height:24px}
+.zeno-home-v10 .zeno-v10-care-chip .zeno-v10-care-icon svg{width:20px;height:20px}
+.zeno-home-v10 .zeno-v10-care-chip strong{font-size:14px;line-height:20px}
+.zeno-home-v10 .zeno-v10-care-chip small{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;white-space:normal;color:var(--zh-muted);font-size:12px;line-height:16px}
+.zeno-home-v10 .zeno-v10-show-all{display:block;margin-top:8px;border:0;background:transparent;color:var(--zh-accent);font-size:14px;font-weight:750;padding:12px 0}
+.zeno-home-v10 .zeno-v10-quick{margin-top:24px}
+.zeno-home-v10 .zeno-v10-quick-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.zeno-home-v10 .zeno-v10-quick-grid button{display:flex;flex-direction:column;align-items:flex-start;gap:4px;min-height:104px;min-width:0;padding:12px;border:1px solid var(--zh-line);border-radius:12px;background:var(--zh-surface);color:var(--zh-text);text-align:left}
+.zeno-home-v10 .zeno-v10-shortcut-icon{width:28px;height:28px;color:var(--zh-accent)}
+.zeno-home-v10 .zeno-v10-shortcut-icon.night,.zeno-home-v10 .zeno-v10-shortcut-icon.urgent{color:var(--zh-danger)}
+.zeno-home-v10 .zeno-v10-quick-grid strong{font-size:14px}
+.zeno-home-v10 .zeno-v10-quick-grid small{font-size:12px;line-height:16px;color:var(--zh-muted)}
+.zeno-home-v10 .zeno-v10-cat{display:flex;gap:12px;align-items:center;width:100%;min-height:72px;margin-top:8px;padding:12px;text-align:left;border:1px solid var(--zh-line);border-radius:12px;background:var(--zh-surface);color:var(--zh-text)}
 .zeno-home-v10 .zeno-v10-cat>span:nth-child(2){flex:1;min-width:0}
-.zeno-home-v10 .zeno-v10-cat strong,.zeno-home-v10 .zeno-v10-cat small{display:block}
-.zeno-home-v10 .zeno-v10-cat>svg:last-child{width:17px;height:17px;color:#94a3b8}
-.zeno-home-v10 .zeno-v10-links{display:flex;gap:9px;flex-wrap:wrap;justify-content:center;margin:22px 0 12px}
-.zeno-home-v10 .zeno-v10-links button{color:#64748b;font-size:12px;padding:8px 3px;background:transparent;border:0}
-.zeno-home-v10 .zeno-v10-links button+button:before{content:"·";margin-right:12px;color:#cbd5e1}
-.zeno-home-v10 .zeno-v10-footnote{font-size:11px;line-height:1.65;color:#94a3b8;margin:13px 0 0;padding:0 4px}
-@media(max-width:750px){
- .zeno-home-v10{background:#f8fafc!important}
- .zeno-home-v10 .zeno-v10-header{margin-left:-2px;margin-right:-2px}
- .zeno-home-v10 .zeno-v10-region-button{max-width:156px}
- .zeno-home-v10 .zeno-v10-care-card{height:120px!important;min-height:120px!important;max-height:120px!important}
-}
-@media(max-width:370px){
- .zeno-home-v10 .zeno-v10-brand{font-size:22px}
- .zeno-home-v10 .zeno-v10-header-left{gap:9px}
- .zeno-home-v10 .zeno-v10-grid{gap:8px!important}
- .zeno-home-v10 .zeno-v10-care-card{padding:12px!important}
- .zeno-home-v10 .zeno-v10-care-card strong{font-size:13.5px!important}
- .zeno-home-v10 .zeno-v10-care-card small{font-size:10.5px!important}
-}
-@media(hover:hover) and (pointer:fine){.zeno-home-v10 .zeno-v10-care-card:hover{border-color:#bfdbfe!important;background:#f8fbff!important}}
+.zeno-home-v10 .zeno-v10-cat strong{display:block;font-size:14px}
+.zeno-home-v10 .zeno-v10-cat small{display:block;margin-top:4px;font-size:12px;color:var(--zh-muted)}
+.zeno-home-v10 .zeno-v10-links{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:24px 0 16px}
+.zeno-home-v10 .zeno-v10-links button{display:flex;flex-direction:column;align-items:center;gap:8px;min-width:0;padding:12px 4px;text-align:center;font-size:12px;font-weight:700;border:1px solid var(--zh-line);border-radius:12px;background:var(--zh-surface);color:var(--zh-text)}
+.zeno-home-v10 .zeno-v10-links svg{width:20px;height:20px;color:var(--zh-accent)}
+.zeno-home-v10 .zeno-v10-footnote{font-size:12px;line-height:1.5;margin:8px 0 0;color:var(--zh-muted)}
+.zeno-home-v10 .zeno-v10-empty{padding:12px;margin:8px 0;border:1px solid var(--zh-line);border-radius:12px;font-size:12px;color:var(--zh-muted)}
+/* CHANGED: consistent hospital CTAs and photo area. */
+.zeno-hospital-card .zeno-card-actions{display:flex;gap:8px;flex-wrap:wrap}
+.zeno-hospital-card .zeno-card-action{display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:8px 12px;border:1px solid #aab9ca;border-radius:10px;background:#fff;color:#102f50;box-shadow:none;font-size:14px;font-weight:700}
+.zeno-hospital-card .zeno-card-action.primary{background:#102f50;border-color:#102f50;color:#fff}
+.zeno-hospital-card .zeno-card-action.icon-only{padding:8px;min-width:40px}
+.zeno-hospital-card .directory-photo{width:64px;height:64px;object-fit:cover}
+.zeno-hospital-card .directory-photo.directory-logo{object-fit:contain}
+.zeno-hospital-card .zeno-reservation-info{display:block;font-size:12px;color:#465b72;margin:8px 0 0}
+html.dark .zeno-hospital-card .zeno-card-action:not(.primary),html[data-theme="dark"] .zeno-hospital-card .zeno-card-action:not(.primary){background:#1d2937;color:#f4f7fb;border-color:#68798f}
+@media(max-width:750px){.zeno-home-v10 .zeno-v10-region-button{max-width:148px}.zeno-home-v10 .zeno-v10-open-card{flex-basis:184px}}
 </style><style id="zeno-more-refresh-20261113-v11">
 /* Scoped to More page: consistent spacing, robust Korean wrapping, no nested panels. */
 .zeno-more-page{min-width:0;max-width:640px;margin:0 auto;color:#1e293b;word-break:keep-all;overflow-wrap:break-word}
