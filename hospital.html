@@ -487,6 +487,30 @@ html,body,#app,.app{width:100%;max-width:100%;overflow-x:clip}
 @supports (-webkit-touch-callout:none){
  input:not([type=checkbox]):not([type=radio]),select,textarea{font-size:16px!important}
 }
+</style>
+<style id="zeno-ipad-galaxy-touch-v2">
+/* Consistent device font scaling and touch sizing across Android/iPadOS. */
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+.hi-inbox-row,.hi-change-request,.hi-sheet{max-width:100%}
+.hi-bottom-nav{padding-left:max(6px,env(safe-area-inset-left))!important;padding-right:max(6px,env(safe-area-inset-right))!important}
+.hi-bottom-nav button{touch-action:manipulation}
+.hi-change-request .field{min-width:0}
+.hi-change-request input,.hi-change-request textarea,.hi-change-request select{max-width:100%}
+@media(min-width:601px) and (max-width:1199px){
+ .hi-page-heading{align-items:center;gap:14px}
+ .hi-inbox-row{grid-template-columns:minmax(0,1fr) 122px}
+ .hi-change-request .hi-two-fields{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .hi-bottom-nav button span{font-size:13px}
+}
+@media(max-width:600px){
+ .hi-bottom-nav button{padding:4px 1px}
+ .hi-bottom-nav button span{font-size:12px;line-height:1.3}
+ .hi-change-request .hi-two-fields{gap:8px}
+ .hi-inbox-row{grid-template-columns:minmax(0,1fr) minmax(88px,104px)}
+}
+@supports(-webkit-touch-callout:none){
+ .hi-change-request input,.hi-change-request select,.hi-change-request textarea{font-size:16px!important}
+}
 </style></head><body><div id="app" class="app"></div><script>
 'use strict';
 const APP_MODE='hospital';
@@ -1015,4 +1039,27 @@ async function start(){
  }finally{zenoStartPending=false}
 }
 render();start();
+
+/* Shared version check for Galaxy Chrome and iPad Safari / installed PWA.
+   Never reload while a booking sheet, modal or editable form is active. */
+const ZENO_HOSPITAL_UI_REVISION='20261113-ipad-galaxy-v2';
+let zenoHospitalVersionBusy=false,zenoHospitalVersionLast=0;
+async function zenoCheckHospitalUIRevision(force=false){
+ if(zenoHospitalVersionBusy||document.hidden||state.modal||state.hDetailBookingId||document.activeElement?.closest('form'))return;
+ const now=Date.now();
+ if(!force&&now-zenoHospitalVersionLast<90000)return;
+ zenoHospitalVersionLast=now;zenoHospitalVersionBusy=true;
+ try{
+  const response=await fetch('/api/ui-version?ts='+now,{cache:'no-store',credentials:'same-origin'});
+  if(!response.ok)return;
+  const data=await response.json();
+  if(!data?.hospital||data.hospital===ZENO_HOSPITAL_UI_REVISION)return;
+  if(document.hidden||state.modal||state.hDetailBookingId||document.activeElement?.closest('form'))return;
+  window.location.replace('/hospital?ui='+encodeURIComponent(data.hospital));
+ }catch(error){/* Keep current form state if temporarily offline. */}
+ finally{zenoHospitalVersionBusy=false}
+}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)zenoCheckHospitalUIRevision(true)});
+window.addEventListener('pageshow',()=>zenoCheckHospitalUIRevision());
+setInterval(()=>zenoCheckHospitalUIRevision(),180000);
 </script></body></html>
