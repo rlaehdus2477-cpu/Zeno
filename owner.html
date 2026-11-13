@@ -1899,6 +1899,27 @@ html.dark .zeno-home-v10 {
   color:var(--zh-muted)!important;
   font-size:13px!important;font-weight:400!important;line-height:1.45;
 }
+
+/* CHANGED */ /* Keep hover within the white / light-gray palette. */
+@media(hover:hover) and (pointer:fine) {
+  .zeno-home-v10 .zeno-v10-care-card:hover {
+    border-color:var(--zh-line)!important;
+    background:var(--zh-bg)!important;
+  }
+}
+/* CHANGED */ /* All adjacent home controls also meet a 44px touch target. */
+.zeno-home-v10 .zeno-v10-search button,
+.zeno-home-v10 .zeno-v10-region-button,
+.zeno-home-v10 .zeno-v10-bell,
+.zeno-home-v10 .zeno-v10-section-heading button,
+.zeno-home-v10 .zeno-v10-area-menu button {
+  min-height:44px!important;
+}
+.zeno-home-v10 .zeno-v10-bell {
+  min-width:44px!important;
+  width:44px!important;
+  flex-basis:44px!important;
+}
 </style></head><body><div id="app" class="app"></div><script>
 'use strict';
 const APP_MODE='owner';
