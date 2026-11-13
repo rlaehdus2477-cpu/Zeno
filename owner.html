@@ -1509,6 +1509,35 @@ body,#app,.app{max-width:100%;overflow-x:clip}
  .zeno-search-page .zeno-hospital-card .directory-photo{width:72px!important;height:72px!important;min-width:72px!important}
 }
 @media(prefers-reduced-motion:reduce){.zeno-search-page .zeno-filter-rail .filters{scroll-behavior:auto}}
+</style><style id="zeno-wellbeing-fearfree-20261113">
+/* CFC and Fear Free are independent information systems, not a joint certification. */
+.zeno-search-page .zeno-wellbeing-guide{
+ margin:7px 0 4px!important;padding:0!important;border:0!important;background:transparent!important;
+ color:#4c6478;font-size:12px!important;font-weight:650;line-height:1.45;word-break:keep-all
+}
+.zeno-search-page .zeno-wellbeing-guide span{color:#778797;font-weight:450}
+.zeno-wellbeing-badges{display:flex;flex-wrap:wrap;align-items:flex-start;gap:4px;min-width:0;max-width:100%}
+.zeno-ff-badge{
+ display:inline-flex;align-items:center;gap:5px;max-width:100%;padding:3px 7px;
+ background:#eef7f3;border:1px solid #c6ded4;color:#306957;border-radius:7px;
+ font-size:10.5px;font-weight:700;line-height:1.35;word-break:keep-all;white-space:normal
+}
+.zeno-ff-badge small{color:#5d8073;font-size:9px;font-weight:550;white-space:nowrap}
+.zeno-hospital-card .directory-text .zeno-wellbeing-badges .zeno-cfc-badge,
+.zeno-hospital-card .directory-text .zeno-wellbeing-badges .zeno-ff-badge{margin:0!important}
+.zeno-search-page .zeno-hospital-card .zeno-wellbeing-badges{gap:4px!important}
+.zeno-search-page .zeno-hospital-card .zeno-ff-badge{font-size:10.5px!important}
+.zeno-ff-summary{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:7px;margin:9px 0}
+.zeno-ff-summary button{border:0;background:transparent;color:#256e65;font-size:12px;min-height:38px;padding:6px;text-decoration:underline;text-underline-offset:2px}
+.zeno-ff-detail{border:1px solid #dceae5;background:#f8fcfa;border-radius:11px;padding:12px 14px;margin:10px 0;color:#405b55}
+.zeno-ff-detail h3{margin:0 0 8px;font-size:14px;font-weight:750}
+.zeno-ff-detail p{font-size:12.5px;line-height:1.6;word-break:keep-all;margin:8px 0}
+.zeno-ff-detail .zeno-ff-source-date{font-size:11.5px;color:#738a81}
+@media(max-width:380px){
+ .zeno-search-page .zeno-wellbeing-guide{font-size:11.5px!important}
+ .zeno-wellbeing-badges .zeno-cfc-badge,.zeno-wellbeing-badges .zeno-ff-badge{font-size:10px!important}
+ .zeno-wellbeing-badges .zeno-ff-badge small{font-size:8.5px}
+}
 </style></head><body><div id="app" class="app"></div><script>
 'use strict';
 const APP_MODE='owner';
@@ -1534,7 +1563,7 @@ function zenoCfc(h){return ZENO_CFC[h?.id]||null}
 function zenoCfcBadge(h){
  const c=zenoCfc(h);if(!c)return '';
  const listed=c.status==='listed', criteria=c.status==='criteria', pending=c.status==='pending';
- const label=listed?'고양이 친화 · Gold':criteria?'Gold 기준 충족 · 병원 안내':pending?'Gold 관련 제보 · 확인 중':'Gold 표기 · 갱신 미확인';
+ const label=listed?'CFC 고양이 친화 · Gold':criteria?'Gold 기준 충족 · 병원 안내':pending?'Gold 관련 제보 · 확인 중':'Gold 표기 · 갱신 미확인';
  const tooltip=listed?'공식 명단 조사 기록 등재 · 현재 유효기간은 별도 확인 필요':criteria?'병원이 Gold 수준 기준 충족을 안내함 · 공식 인증과 다름':pending?'보호자 제보 · 병원·인증기관 근거 확인 중':'외부 인증 표기 · 최신 갱신 미확인';
  return '<span class="zeno-cfc-badge '+(listed?'listed':'unconfirmed')+'" title="'+e(tooltip)+'"><span class="zeno-cfc-glyph" aria-hidden="true">CFC</span>'+e(label)+'</span>';
 }
@@ -1554,6 +1583,41 @@ function zenoCfcDetail(h){
  +'<p>'+e(c.note)+'</p><p class="zeno-cfc-limit">자료 기준일 '+e(c.asOf)+' · 기준 충족 안내나 보호자 제보는 공식 인증을 의미하지 않습니다. 인증 여부는 인증기관과 병원에 확인해 주세요. 고양이 전용 대기실은 별도로 표시합니다.</p>'
  +'<div class="zeno-cfc-links">'+(c.url?'<a href="'+e(c.url)+'" target="_blank" rel="noopener noreferrer">'+e(criteria?'병원 소개 확인':listed?'CFC 인증기관 명단':'인증 표기 출처')+'</a>':'')
  +(c.review?'<a href="'+e(c.review)+'" target="_blank" rel="noopener noreferrer">국내 명단 확인 기록</a>':'')+'</div></section>';
+}
+/* Fear Free Korea maps credentialed professionals, not certified practices.
+   Keep practice-level certification, individual training, and low-stress care distinct. */
+const ZENO_FEAR_FREE={
+ pub006:{
+  status:'professional_directory',checkedAt:'2026-11-13',
+  directoryUrl:'https://fearfree.kr/map',
+  hospitalUrl:'https://dalamc.co.kr/',
+  summary:'피어프리 코리아 인증 전문가 지도에 달동물병원이 수의학 분야로 등재되어 있고 병원 홈페이지에서도 Fear Free 및 저스트레스 진료를 안내합니다.',
+  note:'공식 지도는 개별 전문가 인증 등록 정보입니다. 병원 전체의 Fear Free Certified Practice 인증을 의미하지 않으며 현재 수료·자격 유효 여부, 담당자 진료 가능 여부는 방문 전 확인해야 합니다.'
+ }
+};
+function zenoFearFree(h){return ZENO_FEAR_FREE[h?.id]||null}
+function zenoFearFreeBadge(h){
+ const f=zenoFearFree(h);if(!f)return '';
+ const directory=f.status==='professional_directory';
+ const label=directory?'피어프리 스트레스 케어':'저스트레스 진료 안내';
+ const source=directory?'Fear Free Korea 전문가 명단 등재 · 병원 전체 인증과 다름':'병원 자체 안내 · 별도의 시설 인증이 아님';
+ return '<span class="zeno-ff-badge" title="'+e(source)+'">'+e(label)+'<small>'+e(directory?'전문가 명단':'병원 안내')+'</small></span>';
+}
+function zenoWellbeingBadges(h){
+ const c=zenoCfcBadge(h),f=zenoFearFreeBadge(h);
+ return c||f?'<span class="zeno-wellbeing-badges" aria-label="반려동물 진료 환경 관련 정보">'+c+f+'</span>':'';
+}
+function zenoFearFreeSummary(h){
+ if(!zenoFearFree(h))return '';
+ return '<div class="zeno-ff-summary">'+zenoFearFreeBadge(h)+'<button type="button" data-action="detail-tab" data-value="intro">정보 근거 보기</button></div>';
+}
+function zenoFearFreeDetail(h){
+ const f=zenoFearFree(h);if(!f)return '';
+ return '<section class="zeno-ff-detail"><h3>피어프리·스트레스 케어 정보</h3>'+zenoFearFreeBadge(h)
+ +'<p>'+e(f.summary)+'</p><p>'+e(f.note)+'</p>'
+ +'<p class="zeno-ff-source-date">공개정보 확인: '+e(f.checkedAt)+' · 진료 스트레스가 완전히 없어지는 것은 아닙니다.</p>'
+ +'<div class="zeno-cfc-links"><a href="'+e(f.directoryUrl)+'" target="_blank" rel="noopener noreferrer">Fear Free Korea 전문가 검색</a>'
+ +'<a href="'+e(f.hospitalUrl)+'" target="_blank" rel="noopener noreferrer">병원 공식 안내</a></div></section>';
 }
 const SPECIALTIES=[
  ['일반 진료','stethoscope','가벼운 증상·정기 진료'],
@@ -2089,7 +2153,7 @@ function hospitalCard(h){
  const reserve=h.linked?'<button class="zeno-card-action primary" type="button" data-action="book" data-id="'+e(h.id)+'">예약하기</button>':site?'<a class="zeno-card-action" href="'+e(site)+'" target="_blank" rel="noopener noreferrer">홈페이지 보기</a>':(!h.phone?'<button class="zeno-card-action muted" type="button" data-action="details" data-id="'+e(h.id)+'">병원 정보</button>':'');
  const tags=zenoListMatchedConditions(h);
  return '<article class="directory-item zeno-hospital-card">'
- +'<button type="button" class="directory-main" data-action="details" data-id="'+e(h.id)+'" aria-label="'+e(h.name)+' 병원 상세정보 보기">'+photoHtml+'<span class="directory-text"><strong>'+e(h.name)+'</strong>'+zenoCfcBadge(h)+'<span class="directory-region">'+e(h.region)+'</span>'+zenoPublishedStatusMarkup(h)+(tags.length?'<span class="directory-conditions"><span class="directory-condition">'+e(tags[0])+'</span></span>':'')+'</span></button>'
+ +'<button type="button" class="directory-main" data-action="details" data-id="'+e(h.id)+'" aria-label="'+e(h.name)+' 병원 상세정보 보기">'+photoHtml+'<span class="directory-text"><strong>'+e(h.name)+'</strong>'+zenoWellbeingBadges(h)+'<span class="directory-region">'+e(h.region)+'</span>'+zenoPublishedStatusMarkup(h)+(tags.length?'<span class="directory-conditions"><span class="directory-condition">'+e(tags[0])+'</span></span>':'')+'</span></button>'
  +'<div class="zeno-card-actions">'+phone+map+reserve+'</div>'
  +(h.linked?'<small class="zeno-reservation-demo-note">제노 예약 시연 · 실제 병원 접수 아님</small>':'')
  +'</article>';
@@ -2097,6 +2161,21 @@ function hospitalCard(h){
 function hospitalResults(items){
  if(!items.length)return '<div class="empty zeno-results-empty"><strong>'+(state.query?'검색어에 맞는 병원이 없어요':'선택한 조건에 맞는 병원이 없어요')+'</strong><button type="button" class="btn secondary small" data-action="clear-search">조건 초기화</button></div>';
  const group=rows=>'<div class="hospital-list zeno-compact-results">'+rows.map(hospitalCard).join('')+'</div>';
+ if(state.page==='search'&&zenoHasFilter('강아지 피어프리·스트레스 케어')&&!state.specialty){
+  const cats=zenoHasFilter('고양이 친화 정보');
+  if(cats){
+   const both=items.filter(h=>zenoCfc(h)&&zenoFearFree(h));
+   const onlyCats=items.filter(h=>zenoCfc(h)&&!zenoFearFree(h));
+   const onlyDogs=items.filter(h=>zenoFearFree(h)&&!zenoCfc(h));
+   return (both.length?'<h3 class="zeno-result-group">고양이·강아지 모두 배려 · '+both.length+'곳</h3>'+group(both):'')
+    +(onlyCats.length?'<h3 class="zeno-result-group">고양이 친화 정보 · '+onlyCats.length+'곳</h3>'+group(onlyCats):'')
+    +(onlyDogs.length?'<h3 class="zeno-result-group">피어프리·스트레스 케어 정보 · '+onlyDogs.length+'곳</h3>'+group(onlyDogs):'');
+  }
+  const directory=items.filter(h=>zenoFearFree(h)?.status==='professional_directory');
+  const hospital=items.filter(h=>zenoFearFree(h)?.status!=='professional_directory');
+  return (directory.length?'<h3 class="zeno-result-group">피어프리 인증 전문가 명단 등재 · '+directory.length+'곳</h3>'+group(directory):'')
+   +(hospital.length?'<h3 class="zeno-result-group">저스트레스 진료 안내 · '+hospital.length+'곳</h3>'+group(hospital):'');
+ }
  if(state.page==='search'&&zenoHasFilter('고양이 친화 정보')&&!state.specialty){
   const yes=items.filter(h=>zenoCfc(h)?.status==='listed');
   const reported=items.filter(h=>zenoCfc(h)?.status==='reported');
@@ -2139,12 +2218,17 @@ function filteredHospitals(){
   const confirmed=h=>Boolean(h.catWaiting.verified||h.catWaiting.guardianConfirmed||h.catWaiting.visited);
   list=list.filter(h=>zenoCatWaitingLabel(h)).sort((a,b)=>Number(confirmed(b))-Number(confirmed(a)));
  }
- if(fs.includes('고양이 친화 정보'))list=list.filter(h=>Boolean(zenoCfc(h)));
+ const catFriendly=fs.includes('고양이 친화 정보'),dogStress=fs.includes('강아지 피어프리·스트레스 케어');
+ if(catFriendly||dogStress)list=list.filter(h=>(catFriendly&&Boolean(zenoCfc(h)))||(dogStress&&Boolean(zenoFearFree(h))));
  if(fs.includes('연결 병원'))list=list.filter(h=>h.linked);
  if(fs.includes('즐겨찾기'))list=list.filter(h=>state.favorites.includes(h.id));
  if(state.specialty)list=list.filter(h=>state.specialty==='특수동물'?(state.exoticSpecies?[...(h.officialExoticSpecies||[]),...(h.reportedExoticSpecies||[])].includes(state.exoticSpecies):Boolean((h.officialExoticSpecies||[]).length||(h.reportedExoticSpecies||[]).length)):Boolean(zenoSpecialtyOrigin(h)));
  if(state.specialty){const rank={official:0,report:1,demo:2,public:3,name:4,inquiry:5};list.sort((a,b)=>(rank[zenoSpecialtyOrigin(a)]??4)-(rank[zenoSpecialtyOrigin(b)]??4));}
- if(fs.includes('고양이 친화 정보'))list.sort((a,b)=>Number(zenoCfc(b)?.status==='listed')-Number(zenoCfc(a)?.status==='listed'));
+ if(catFriendly||dogStress)list.sort((a,b)=>{
+  const aBoth=Number(Boolean(zenoCfc(a))&&Boolean(zenoFearFree(a))),bBoth=Number(Boolean(zenoCfc(b))&&Boolean(zenoFearFree(b)));
+  if(catFriendly&&dogStress&&aBoth!==bBoth)return bBoth-aBoth;
+  return Number(zenoCfc(b)?.status==='listed')-Number(zenoCfc(a)?.status==='listed');
+ });
  return list;
 }
 function ad(){return `<div class="adline"><div><span class="tiny">광고 · 제휴 시연 영역</span><strong>반려동물에게 필요한 것, 제노에서 함께</strong><small>사료사·동물병원 제휴 배너는 실제 광고 계약 후 노출됩니다.</small></div><button class="btn secondary small" data-nav="membership">혜택 보기</button></div>`}
@@ -2188,13 +2272,15 @@ function searchPage(){
  const specialtyChip=state.specialty?'<button type="button" class="zeno-selected-care-chip" data-action="clear-specialty" aria-label="'+e(state.exoticSpecies||state.specialty)+' 진료 분야 선택 해제">'+e(state.exoticSpecies||state.specialty)+' <span aria-hidden="true">×</span></button>':'';
  const specialtyInfo=state.specialty?'<p><strong>'+e(state.specialty)+'</strong> · '+(state.specialty==='특수동물'?'진료 가능 동물종은 병원에 확인해 주세요.':'전문진료 가능 여부와 실제 진료 가능 여부는 병원에 확인해 주세요.')+'</p>':'';
  const cfcInfo=fs.includes('고양이 친화 정보')?'<p><strong>고양이 친화 정보</strong> · 공식 명단 조사 기록, 외부 인증 표기, 병원 자체 기준 충족 안내, 보호자 제보를 서로 구분합니다. Gold 기준 충족이 공식 인증을 의미하지는 않으며 인증 유효기간도 확인이 필요합니다.</p>':'';
- const info='<details class="zeno-search-help"><summary aria-label="검색 및 진료 안내 펼치기" title="검색 안내">i</summary><div class="zeno-search-help-panel"><strong>병원 찾기 안내</strong><p>진료시간과 실제 접수·응급 수용 가능 여부는 방문 전 병원에 전화로 확인해 주세요.</p>'+specialtyInfo+cfcInfo+'</div></details>';
+ const fearFreeInfo=fs.includes('강아지 피어프리·스트레스 케어')?'<p><strong>피어프리·저스트레스 진료</strong> · Fear Free Korea의 전문가 명단과 시설 전체 인증은 서로 다릅니다. 달동물병원은 전문가 명단 등재와 병원 공식 진료 안내가 확인됐습니다. 스트레스 완전 해소나 병원 전체 인증을 보장하지 않습니다.</p>':'';
+ const info='<details class="zeno-search-help"><summary aria-label="검색 및 진료 안내 펼치기" title="검색 안내">i</summary><div class="zeno-search-help-panel"><strong>병원 찾기 안내</strong><p>진료시간과 실제 접수·응급 수용 가능 여부는 방문 전 병원에 전화로 확인해 주세요.</p>'+specialtyInfo+cfcInfo+fearFreeInfo+'</div></details>';
  const reset=(state.query||fs.length||state.specialty)?'<button class="zeno-search-reset" type="button" data-action="clear-search">조건 초기화</button>':'';
- const chips=['전체','야간','24시','고양이 친화 정보','고양이 대기실','연결 병원','즐겨찾기'].map(x=>'<button type="button" class="filter '+((x==='전체'?!fs.length&&!state.specialty&&!state.query:fs.includes(x))?'active':'')+'" aria-pressed="'+(x==='전체'?!fs.length&&!state.specialty&&!state.query:fs.includes(x))+'" data-action="filter" data-value="'+x+'">'+(x==='24시'?'24시간 응급':x==='야간'?'야간 진료':x==='연결 병원'?'예약 요청 가능':x==='즐겨찾기'?'저장한 병원':x)+'</button>').join('');
+ const chips=['전체','야간','24시','고양이 친화 정보','강아지 피어프리·스트레스 케어','고양이 대기실','연결 병원','즐겨찾기'].map(x=>'<button type="button" class="filter '+((x==='전체'?!fs.length&&!state.specialty&&!state.query:fs.includes(x))?'active':'')+'" aria-pressed="'+(x==='전체'?!fs.length&&!state.specialty&&!state.query:fs.includes(x))+'" data-action="filter" data-value="'+x+'">'+(x==='24시'?'24시간 응급':x==='야간'?'야간 진료':x==='연결 병원'?'예약 요청 가능':x==='즐겨찾기'?'저장한 병원':x)+'</button>').join('');
  return topbar('병원 찾기','')+'<section class="zeno-search-page">'
  +'<div class="zeno-search-module"><label for="hospital-search">병원명·동네·시설 검색</label><div class="searchrow"><input type="search" class="search" id="hospital-search" placeholder="병원명·동네·시설 검색" value="'+e(state.query)+'"><button class="btn" data-action="search-apply">검색</button></div>'
  +'<div class="zeno-filter-rail"><div class="filters" role="group" aria-label="병원 조건 필터">'+chips+'</div></div></div>'
  +exotic
+ +'<p class="zeno-wellbeing-guide">고양이는 CFC, 강아지는 피어프리·스트레스 케어! <span>진료 스트레스를 줄이는 청주 병원 정보를 살펴보세요.</span></p>'
  +'<div class="zeno-results-bar"><div class="zeno-results-bar-leading"><h2 aria-live="polite">청주 병원 '+results.length+'곳</h2>'+specialtyChip+'</div><div class="zeno-results-bar-tools">'+reset+'<button class="zeno-search-emergency-link" type="button" data-nav="emergency">야간·24시간 안내</button>'+info+'</div></div>'
  +hospitalResults(results)
  +'<div class="zeno-price-inline zeno-price-after-results"><span>공개 진료비도 비교할 수 있어요.</span><button type="button" data-nav="prices">진료비 비교</button></div>'
@@ -2467,9 +2553,9 @@ if(m.type==='confirm-record-delete'){
  '</div>';
 }
 
-if(m.type==='details'&&h){let s=hs(h.id);const first=['hours','intro','photos','services','notices','fees'].includes(state.detailTab)?state.detailTab:'hours';title=h.name;body=`<div class="zeno-detail-fav"><button type="button" data-action="favorite" data-id="${e(h.id)}">${state.favorites.includes(h.id)?"♥ 저장한 병원":"♡ 병원 저장"}</button></div>${zenoDetailQuick(h)}${zenoCfcSummary(h)}${zenoDetailSource(h)}<div class="zeno-detail-tabs" role="tablist" aria-label="동물병원 상세 항목">
+if(m.type==='details'&&h){let s=hs(h.id);const first=['hours','intro','photos','services','notices','fees'].includes(state.detailTab)?state.detailTab:'hours';title=h.name;body=`<div class="zeno-detail-fav"><button type="button" data-action="favorite" data-id="${e(h.id)}">${state.favorites.includes(h.id)?"♥ 저장한 병원":"♡ 병원 저장"}</button></div>${zenoDetailQuick(h)}${zenoCfcSummary(h)}${zenoFearFreeSummary(h)}${zenoDetailSource(h)}<div class="zeno-detail-tabs" role="tablist" aria-label="동물병원 상세 항목">
  ${[['hours','운영시간'],['intro','병원소개'],['photos','사진'],['services','진료정보'],['fees','진료비'],['notices','공지사항']].map((t,i)=>`<button type="button" class="zeno-detail-tab ${t[0]===first?'active':''}" data-action="detail-tab" data-value="${t[0]}" role="tab" aria-selected="${t[0]===first}" aria-controls="zeno-detail-${t[0]}">${t[1]}</button>`).join('')}</div><p class="zeno-detail-swipe-hint" hidden>다른 정보는 탭을 좌우로 밀어 확인하세요.</p>
- <section id="zeno-detail-intro" class="zeno-detail-panel" data-detail-panel="intro" role="tabpanel" ${first!=='intro'?'hidden':''}>${zenoCfcDetail(h)}<div class="tags">${h.tags.map(x=>`<span class="tag">${e(x)}</span>`).join('')}</div><p class="desc" style="margin-top:14px">📍 ${e(h.address)}</p><p class="desc">☎ ${e(h.phone||'전화번호 확인 필요')}</p>${h.catWaiting?.verified?`<div class="banner" style="margin-top:12px"><strong>🐱 고양이 전용 대기실 · 공식 확인</strong><div>병원 공식 홈페이지 안내를 확인했습니다. 방문 전 운영 여부를 전화로 확인하세요.</div><a href="${e(h.catWaiting.sourceUrl)}" target="_blank" rel="noopener noreferrer" style="text-decoration:underline">공식 시설 안내 보기</a></div>`:(h.catWaiting?.reported||h.catWaiting?.visited||h.catWaiting?.guardianConfirmed)?`<div class="banner" style="margin-top:12px"><strong>🐱 ${e(zenoCatWaitingLabel(h))}</strong><div>${h.catWaiting?.visited||h.catWaiting?.source==='보호자 직접 방문'?'보호자가 직접 방문해 일반 대기실과 분리된 고양이 전용 대기실을 확인했습니다. 병원 공식 안내와는 별개의 확인이며, 현재 이용 가능 여부는 병원에 문의해 주세요.':'보호자 제보로 접수된 내용입니다. 병원 공식 확인 전이므로 방문 전 전화로 문의해 주세요.'}</div></div>`:``}</section>
+ <section id="zeno-detail-intro" class="zeno-detail-panel" data-detail-panel="intro" role="tabpanel" ${first!=='intro'?'hidden':''}>${zenoCfcDetail(h)}${zenoFearFreeDetail(h)}<div class="tags">${h.tags.map(x=>`<span class="tag">${e(x)}</span>`).join('')}</div><p class="desc" style="margin-top:14px">📍 ${e(h.address)}</p><p class="desc">☎ ${e(h.phone||'전화번호 확인 필요')}</p>${h.catWaiting?.verified?`<div class="banner" style="margin-top:12px"><strong>🐱 고양이 전용 대기실 · 공식 확인</strong><div>병원 공식 홈페이지 안내를 확인했습니다. 방문 전 운영 여부를 전화로 확인하세요.</div><a href="${e(h.catWaiting.sourceUrl)}" target="_blank" rel="noopener noreferrer" style="text-decoration:underline">공식 시설 안내 보기</a></div>`:(h.catWaiting?.reported||h.catWaiting?.visited||h.catWaiting?.guardianConfirmed)?`<div class="banner" style="margin-top:12px"><strong>🐱 ${e(zenoCatWaitingLabel(h))}</strong><div>${h.catWaiting?.visited||h.catWaiting?.source==='보호자 직접 방문'?'보호자가 직접 방문해 일반 대기실과 분리된 고양이 전용 대기실을 확인했습니다. 병원 공식 안내와는 별개의 확인이며, 현재 이용 가능 여부는 병원에 문의해 주세요.':'보호자 제보로 접수된 내용입니다. 병원 공식 확인 전이므로 방문 전 전화로 문의해 주세요.'}</div></div>`:``}</section>
  <section id="zeno-detail-fees" class="zeno-detail-panel" data-detail-panel="fees" role="tabpanel" ${first!=='fees'?'hidden':''}><h3>공개 진료비</h3>${zenoFeeHospitalMarkup(h)}<div class="zeno-fee-help"><button type="button" class="btn secondary small" data-nav="prices">다른 병원과 비교</button></div></section>
  <section id="zeno-detail-photos" class="zeno-detail-panel" data-detail-panel="photos" role="tabpanel" ${first!=='photos'?'hidden':''}>${zenoHospitalPhotos(h)}</section>
  <section id="zeno-detail-notices" class="zeno-detail-panel" data-detail-panel="notices" role="tabpanel" ${first!=='notices'?'hidden':''}><h3>공지사항</h3>${s.emergency?'<p class="zeno-emergency-note">응급은 전화로 문의해 주세요.</p>':''}${s.notice?`<div class="banner">${e(s.notice)}<br><small>병원용 데모 계정 입력</small></div>`:'<div class="banner">등록된 공지사항이 없습니다.</div>'}</section>
@@ -2898,7 +2984,7 @@ async function start(){
  }finally{zenoStartPending=false}
 }
 render();start();
-const ZENO_OWNER_UI_REVISION='20261113-search-mobile-v8';
+const ZENO_OWNER_UI_REVISION='20261113-wellbeing-v9';
 let zenoLastUIVersionCheck=0;
 let zenoUIVersionChecking=false;
 async function zenoCheckOwnerUIRevision(force=false){
