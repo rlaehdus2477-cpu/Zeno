@@ -2488,19 +2488,32 @@ function zenoSymptomPanel(){
 function zenoCareAliases(name){
  const names={
  '일반 진료':['일반 진료','일반'],
- '내과':['내과'],
- '피부·귀':['피부·귀','피부과','피부'],
+ '내과':['내과','소화기내과','심장내과','고양이내과'],
+ '피부·귀':['피부·귀','피부과','피부','피부귀'],
  '안과':['안과'],
- '치과·구강':['치과·구강','치과','구강'],
+ '치과·구강':['치과·구강','치과','구강','구강치과'],
  '정형외과':['정형외과','정형'],
- '외과':['외과'],
+ '외과':['외과','일반외과'],
  '중성화수술':['중성화수술','중성화','중성화 수술'],
- '심장·호흡기':['심장·호흡기','심장내과','심장','호흡기','흉부외과'],
- '비뇨기':['비뇨기','비뇨기과'],
- '건강검진·접종':['건강검진·접종','건강검진','예방접종'],
+ '심장·호흡기':['심장·호흡기','심장내과','심장','호흡기','흉부외과','심혈관'],
+ '비뇨기':['비뇨기','비뇨기과','신장·비뇨기','신장·비뇨기과'],
+ '건강검진·접종':['건강검진·접종','건강검진','예방접종','종합검진','정밀건강검진','백신접종'],
  '특수동물':['특수동물']
  };
  return names[name]||[name];
+}
+/* Search all recorded care labels, including composite department names.
+   This only matches a registered field; it never infers care from a hospital name. */
+function zenoCareLabelMatches(value,department){
+ const label=String(value||'').replace(/\\s+/g,'').toLowerCase();
+ if(!label)return false;
+ const aliases=zenoCareAliases(department).map(v=>String(v).replace(/\\s+/g,'').toLowerCase());
+ if(aliases.includes(label))return true;
+ if(department==='건강검진·접종'&&label.endsWith('건강검진'))return true;
+ const parts=label.split(/[·,/&+]|및/).filter(Boolean);
+ return parts.some(part=>aliases.some(alias=>
+  part===alias||part===alias+'진료'||part===alias+'센터'||part===alias+'클리닉'||part===alias+'치료'
+ ));
 }
 const EXOTIC=[['토끼','🐰'],['햄스터','🐹'],['기니피그','🐹'],['고슴도치','🦔'],['페럿','🐾'],['조류','🐦'],['거북이','🐢'],['기타 파충류','🦎']];
 const STATUS={pending:'병원 확인 대기',accepted:'병원 수락',suggested:'시간 변경 제안',confirmed:'예약 확정',rejected:'병원 거절',cancelled:'예약 취소',in_progress:'진료 중',done:'진료 완료'};
@@ -3089,11 +3102,7 @@ function zenoClinicalFocusEnabled(){
  return Boolean(state.specialty&&!['일반 진료','특수동물','잘 모르겠어요'].includes(state.specialty));
 }
 function zenoFocusAliasMatch(value,department){
- const t=String(value||'').replace(/\s+/g,'');
- return zenoCareAliases(department).some(a=>{
-  const alias=String(a).replace(/\s+/g,'');
-  return t===alias||t.startsWith(alias+'·')||t.startsWith(alias+'센터');
- });
+ return zenoCareLabelMatches(value,department);
 }
 function zenoSpecialtyFocus(h){
  if(!zenoClinicalFocusEnabled())return null;
@@ -3102,8 +3111,8 @@ function zenoSpecialtyFocus(h){
  const declared=(h.declaredSpecialties||[]).filter(x=>zenoFocusAliasMatch(x,department));
  const snippet=String((h.specialtySnippets||{})[department]||'');
  // A focus assertion must be explicit; 'focus to be confirmed' is not evidence.
- const explicit=!/특화 여부 (별도 )?확인|특화 (여부|확인) 필요/.test(snippet)&&
-  /특화진료|특화 병원|특화센터|치과전문동물병원/.test(snippet);
+ const explicit=!/특화 (여부|확인) 필요|특화 여부 (별도 )?확인|특화.{0,8}미확인/.test(snippet)&&
+  /특화진료|특화 병원|특화센터|치과전문동물병원|진료에 특화|진료에 집중/.test(snippet);
  if(!declared.length&&!explicit)return null;
  const source=h.specialtyEvidenceUrl||h.publishedCareUrl||'';
  const text=declared.length
@@ -3133,7 +3142,7 @@ function zenoSearchHospitalCard(h){
  const species=[...new Set([...(h.officialCompanionSpecies||[]),...(h.officialExoticSpecies||[])])].slice(0,4);
  const clinical=state.page==='search'&&zenoClinicalFocusEnabled(),focus=clinical?zenoSpecialtyFocus(h):null;
  const origin=state.specialty?zenoSpecialtyOrigin(h):'';
- const serviceLine=clinical?(focus?'':origin==='inquiry'?'<span class="zeno-search-fact">'+e(state.specialty)+' 진료 여부 미확인 · 전화 문의</span>':'<span class="zeno-search-fact">'+e(state.specialty)+' 진료 안내 등록</span>'):(Array.isArray(h.careFields)?zenoDeclaredSpecialtyLine(h):(h.declaredSpecialties||[]).length?'<span class="zeno-search-fact">대표 특화 · '+e(h.declaredSpecialties[0])+'</span>':specialties.length?'<span class="zeno-search-fact">공식 진료 안내 · '+e(specialties[0])+'</span>':'');
+ const serviceLine=clinical?(focus?'':origin==='inquiry'?'<span class="zeno-search-fact">'+e(state.specialty)+' 진료 여부 미확인 · 전화 문의</span>':'<span class="zeno-search-fact">'+e(state.specialty)+' 진료 항목 등록 · 방문 전 확인</span>'):(Array.isArray(h.careFields)?zenoDeclaredSpecialtyLine(h):(h.declaredSpecialties||[]).length?'<span class="zeno-search-fact">대표 특화 · '+e(h.declaredSpecialties[0])+'</span>':specialties.length?'<span class="zeno-search-fact">공식 진료 안내 · '+e(specialties[0])+'</span>':'');
  const selectedNote=state.specialty?(h.specialtySnippets||{})[state.specialty]||'':'';
  const specialtyLine=!focus&&selectedNote?'<span class="zeno-search-specialty-summary">'+e(selectedNote)+'</span>':'';
  const focusLine=focus?'<span class="zeno-internal-focus-line">'+e(state.specialty)+' 특화 · '+e(focus.status==='confirmed'?'확인됨':'병원 안내')+' <small>근거 보기</small></span>':'';
@@ -3209,16 +3218,16 @@ function hospitalResults(items){
 function zenoSpecialtyOrigin(h){
  const s=state.specialty;if(!s)return '';
  if(s==='특수동물')return (h.officialExoticSpecies||[]).length?'official':(h.publishedExoticSpecies||[]).length?'public':(hs(h.id).services||[]).some(x=>['토끼','햄스터','기니피그','조류','파충류'].includes(x))?'demo':'';
- const aliases=zenoCareAliases(s);
- if((h.declaredSpecialties||[]).some(x=>aliases.includes(x)))return 'official';
- if((h.officialSpecialties||[]).some(x=>aliases.includes(x)))return 'official';
- const services=hs(h.id).services||[];
- if(services.some(x=>aliases.includes(x)))return 'demo';
- if([...(h.cats||[]),...(h.publishedCareFields||[]),...(h.careFields||[])].some(x=>aliases.includes(x)))return 'public';
- if((h.reportedSpecialties||[]).some(x=>aliases.includes(x)))return 'report';
+ const matches=value=>zenoCareLabelMatches(value,s);
+ // A specialty focus and routine treatment share the same search, not the same evidence label.
+ if((h.declaredSpecialties||[]).some(matches)||(h.officialSpecialties||[]).some(matches))return 'official';
+ if((hs(h.id).services||[]).some(matches))return 'demo';
+ // Include all departments that ZENO has actually registered, including composite
+ // labels (e.g. 신장·비뇨기과), without treating a free-text hospital name as evidence.
+ if([...(h.cats||[]),...(h.publishedCareFields||[]),...(h.careFields||[]),...Object.keys(h.specialtySnippets||{})].some(matches))return 'public';
+ if((h.reportedSpecialties||[]).some(matches))return 'report';
  if(s==='내과'&&(h.cats||[]).includes('일반'))return 'inquiry';
- /* CHANGED: name matching does not confirm a department. */
- return ''; /* CHANGED: no unverified general search results. */
+ return '';
 }
 function zenoSpecialtyNameOnly(h){return zenoSpecialtyOrigin(h)==='name';}
 function filteredHospitals(){
@@ -4294,7 +4303,7 @@ async function start(){
  }finally{zenoStartPending=false}
 }
 render();start();
-const ZENO_OWNER_UI_REVISION='20261114-loro-ortho-focus-v25';
+const ZENO_OWNER_UI_REVISION='20261114-all-specialty-groups-v26';
 let zenoLastUIVersionCheck=0;
 let zenoUIVersionChecking=false;
 async function zenoCheckOwnerUIRevision(force=false){
