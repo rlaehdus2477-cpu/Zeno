@@ -2867,7 +2867,7 @@ function zenoSpecialtyOrigin(h){
 function zenoSpecialtyNameOnly(h){return zenoSpecialtyOrigin(h)==='name';}
 function filteredHospitals(){
  const query=zenoWaitingQuery(state.query);
- let list=HOSPITALS.filter(h=>!query.text||(h.name+' '+(h.aliases||[]).join(' ')+' '+h.address+' '+h.tags.join(' ')).toLowerCase().replace(/\s+/g,'').includes(query.text));
+ let list=HOSPITALS.filter(h=>!query.text||[h.name,...(h.aliases||[]),h.address,...(h.tags||[]),...(h.cats||[]),...(h.officialSpecialties||[]),...(h.reportedSpecialties||[]),...Object.keys(h.specialtySnippets||{})].join(' ').toLowerCase().replace(/\s+/g,'').includes(query.text));
  if(state.searchRegion)list=list.filter(h=>String(h.region||'').includes(state.searchRegion)||String(h.address||'').includes(state.searchRegion));
  const fs=zenoActiveFilters();
  if(fs.includes('24시'))list=list.filter(h=>Boolean(h.is24));
