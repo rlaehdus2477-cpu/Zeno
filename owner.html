@@ -1640,6 +1640,29 @@ html.dark .zeno-home-v10 .zeno-v10-brand-logo,html[data-theme="dark"] .zeno-home
 .zeno-hospital-card .zeno-reservation-info{display:block;font-size:12px;color:#465b72;margin:8px 0 0}
 html.dark .zeno-hospital-card .zeno-card-action:not(.primary),html[data-theme="dark"] .zeno-hospital-card .zeno-card-action:not(.primary){background:#1d2937;color:#f4f7fb;border-color:#68798f}
 @media(max-width:750px){.zeno-home-v10 .zeno-v10-region-button{max-width:148px}.zeno-home-v10 .zeno-v10-open-card{flex-basis:184px}}
+
+/* Home-only correction 2026-11-13: preserve existing event data-actions. */
+.zeno-home-v10 .zeno-v10-header{height:56px;min-height:56px;padding:0;background:var(--zh-bg);border:0;box-shadow:none}
+.zeno-home-v10 .zeno-v10-header-left{gap:8px}
+.zeno-home-v10 .zeno-v10-brand-logo{height:28px;max-height:28px;width:auto;max-width:100px}
+.zeno-home-v10 .zeno-v10-region-button{font-size:15px;color:var(--zh-text)}
+.zeno-home-v10 .zeno-v10-region-button svg{color:var(--zh-text)}
+.zeno-home-v10 .zeno-v10-intro{display:block;padding:12px 0 16px}
+.zeno-home-v10 .zeno-v10-search{height:48px;min-height:48px;padding:0 14px;border:0;border-radius:12px;background:#F2F4F6;box-shadow:none}
+.zeno-home-v10 .zeno-v10-search:focus-within{border:0;outline:2px solid #80c6ff}
+.zeno-home-v10 .zeno-v10-search input{min-height:46px}
+.zeno-home-v10 .zeno-v10-care{margin-top:20px}
+.zeno-home-v10 .zeno-v10-section-heading{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.zeno-home-v10 .zeno-v10-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px 4px;padding:16px 8px;background:#fff;border-radius:16px}
+.zeno-home-v10 .zeno-v10-grid .zeno-v10-care-card{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:8px;min-width:0;min-height:92px;padding:4px 0;text-align:center;border:0;border-radius:0;background:transparent;box-shadow:none}
+.zeno-home-v10 .zeno-v10-grid .zeno-v10-care-icon{width:48px;height:48px;border-radius:12px;background:#EEF4FF;color:#2976CC;margin:0;display:grid;place-items:center}
+.zeno-home-v10 .zeno-v10-grid .zeno-v10-care-icon svg{width:24px;height:24px}
+.zeno-home-v10 .zeno-v10-grid .zeno-v10-care-card strong{font-size:14px;line-height:20px;font-weight:650;white-space:nowrap;letter-spacing:-.5px}
+.zeno-home-v10 .zeno-v10-symptom-btn{margin-top:12px}
+.zeno-home-v10 .zeno-v10-badge.is-open{padding:0;min-height:0;border:0;border-radius:0;color:#16804A;font-size:12px;font-weight:600;background:transparent}
+@media(prefers-color-scheme:dark){.zeno-home-v10 .zeno-v10-brand-logo{height:28px;max-height:28px;padding:0;border-radius:0;background:transparent;mix-blend-mode:normal}}
+html.dark .zeno-home-v10 .zeno-v10-brand-logo,html[data-theme="dark"] .zeno-home-v10 .zeno-v10-brand-logo{height:28px;max-height:28px;padding:0;background:transparent;border-radius:0}
+@media(max-width:380px){.zeno-home-v10 .zeno-v10-grid{gap:10px 2px;padding:12px 4px}.zeno-home-v10 .zeno-v10-grid .zeno-v10-care-card strong{font-size:13px;letter-spacing:-.65px}}
 </style><style id="zeno-more-refresh-20261113-v11">
 /* Scoped to More page: consistent spacing, robust Korean wrapping, no nested panels. */
 .zeno-more-page{min-width:0;max-width:640px;margin:0 auto;color:#1e293b;word-break:keep-all;overflow-wrap:break-word}
@@ -2431,8 +2454,8 @@ function zenoHomeOperatingRail(){
  const cards=open.map(h=>{
   const p=(Array.isArray(h.photos)?h.photos:[]).find(x=>x.approved===true&&x.url);
   const img=p?'<img src="'+e(p.url)+'" alt="" class="'+(p.isLogo||p.fit==='contain'?'is-logo':'')+'" loading="lazy">':'';
-  const badge=zeno24HourEmergency(h)?'24시간 안내':zenoNightHours(h)?'야간':'시간표상 진료';
-  return '<button type="button" class="zeno-v10-open-card" data-action="details" data-id="'+e(h.id)+'"><span class="zeno-v10-mini-photo">'+zenoNavIcon('search')+img+'</span><span style="flex:1;min-width:0"><strong>'+e(h.name)+'</strong><small>'+e(String(h.region||'').split('·').pop().trim())+'</small><span class="zeno-v10-hospital-badges"><span class="zeno-v10-badge'+(badge==='시간표상 진료'?'':' danger')+'">'+badge+'</span></span></span></button>';
+  const badge=zeno24HourEmergency(h)?'24시간 안내':zenoNightHours(h)?'야간':'진료 중';
+  return '<button type="button" class="zeno-v10-open-card" data-action="details" data-id="'+e(h.id)+'"><span class="zeno-v10-mini-photo">'+zenoNavIcon('search')+img+'</span><span style="flex:1;min-width:0"><strong>'+e(h.name)+'</strong><small>'+e(String(h.region||'').split('·').pop().trim())+'</small><span class="zeno-v10-hospital-badges"><span class="zeno-v10-badge'+(badge==='진료 중'?' is-open':' danger')+'">'+badge+'</span></span></span></button>';
  }).join('');
  return '<section class="zeno-v10-open-section"><h2>지금 진료 중인 병원</h2>'+(open.length?'<div class="zeno-v10-open-rail">'+cards+'</div>':'<p class="zeno-v10-empty">공개 시간표 기준 진료 중인 병원을 확인할 수 없어요.</p>')+'</section><p class="zeno-v10-stats">청주 병원 '+list.length+'곳 · 야간 진료 '+night+'곳 · 24시간 응급 '+urgent+'곳</p>';
 }
@@ -2448,29 +2471,24 @@ function home(){
   '심장·호흡기':'기침을 해요 · 숨이 차 보여요','비뇨기':'소변을 자주 봐요 · 소변이 불편해 보여요',
   '건강검진·접종':'건강검진 · 예방접종','특수동물':'토끼 · 조류 · 파충류 진료 가능 병원 안내'
  };
- /* CHANGED: featured 4 care services with optional secondary chips. */
- const featured=['일반 진료','내과','피부·귀','특수동물'];
- const chip=(name,small)=>'<button type="button" class="'+(small?'zeno-v10-care-chip':'zeno-v10-care-card')+(name==='특수동물'&&!small?' is-wide':'')+'" data-action="specialty" data-value="'+e(name)+'"><span class="zeno-v10-care-icon">'+zenoCareIcon(name)+'</span><strong>'+e(name)+'</strong><small>'+e(subtitle[name])+'</small></button>';
- const chips=featured.map(name=>chip(name,false)).join('');
- const moreChips=visible.filter(x=>!featured.includes(x[0])).map(x=>chip(x[0],true)).join('');
+ const order=['일반 진료','내과','피부·귀','안과','치과·구강','정형외과','외과','중성화수술','심장·호흡기','비뇨기','건강검진·접종','특수동물'];
+ const labels={'치과·구강':'치과','중성화수술':'중성화','건강검진·접종':'검진·접종'};
+ const chips=order.map(name=>'<button type="button" class="zeno-v10-care-card" data-action="specialty" data-value="'+e(name)+'"><span class="zeno-v10-care-icon">'+zenoCareIcon(name)+'</span><strong>'+e(labels[name]||name)+'</strong></button>').join('');
 
  const regionItems=areas.map(area=>'<button type="button" role="option" aria-selected="'+(area===state.homeArea)+'" class="'+(area===state.homeArea?'selected':'')+'" data-action="home-area-select" data-value="'+e(area)+'">'+e(area)+'</button>').join('');
  const areaMenu=state.homeAreaOpen?'<div class="zeno-v10-area-menu" id="zeno-v10-area-menu" role="listbox" aria-label="청주 지역 선택">'+regionItems+'</div>':'';
  return '<div class="zeno-home-v10">'
- +'<header class="zeno-v10-header"><div class="zeno-v10-header-left"><img src="/brand-wordmark-v3.webp" class="zeno-v10-brand-logo" alt="ZENO"><span class="zeno-v10-separator" aria-hidden="true"></span>'
+ +'<header class="zeno-v10-header"><div class="zeno-v10-header-left"><img src="/brand-wordmark-v3.webp" class="zeno-v10-brand-logo" alt="ZENO"> '
  +'<div class="zeno-v10-region-wrap"><button type="button" class="zeno-v10-region-button" data-action="home-area-toggle" aria-haspopup="listbox" aria-expanded="'+state.homeAreaOpen+'" '+(state.homeAreaOpen?'aria-controls="zeno-v10-area-menu"':'')+'>'
- +zenoHomeSmallIcon('pin')+'<span>'+e(state.homeArea)+'</span>'+zenoHomeSmallIcon('chevron')+'</button>'+areaMenu+'</div></div>'
+ +'<span>'+e(state.homeArea)+'</span>'+zenoHomeSmallIcon('chevron')+'</button>'+areaMenu+'</div></div>'
  +'</header>'
- +'<section class="zeno-v10-intro"><p class="zeno-v10-eyebrow">반려동물 진료, 필요한 순간에</p><h1>어떤 진료가 필요하세요?</h1><p class="zeno-v10-subtitle">증상부터 진료과목까지 편하게 찾아보세요.</p>'
- +'<div class="zeno-v10-art" role="img" aria-label="반려견·반려묘 일러스트 자리"></div>'
-  +'<form id="home-search-form" class="zeno-v10-search" role="search"><label class="sr-only" for="home-hospital-search">증상, 병원명, 진료과목 검색</label>'
- +zenoNavIcon('search')+'<input id="home-hospital-search" name="homeQuery" type="search" autocomplete="off" placeholder="증상, 병원명, 진료과목 검색" value="'+e(state.query)+'">'
- +'<button type="submit">검색</button></form></section>'
+ +'<section class="zeno-v10-intro"><form id="home-search-form" class="zeno-v10-search" role="search"><label class="sr-only" for="home-hospital-search">증상, 병원명, 진료과목 검색</label>'
+ +zenoNavIcon('search')+'<input id="home-hospital-search" name="homeQuery" type="search" autocomplete="off" placeholder="증상, 병원명, 진료과목 검색" value="'+e(state.query)+'"></form></section>'
  +zenoHomeOperatingRail()
-  +'<section class="zeno-v10-care" aria-label="진료 분야로 찾기"><div class="zeno-v10-section-heading"><div><h2>진료 분야로 찾기</h2><p>우리 아이 증상에 맞는 진료를 골라보세요.</p></div><button type="button" data-action="show-all-hospitals">전체 병원 보기</button></div>'
- +'<div class="zeno-v10-grid">'+chips+'</div>'+(state.homeShowAllCare?'<div class="zeno-v10-chip-grid">'+moreChips+'</div>':'')+'<button type="button" class="zeno-v10-show-all" data-action="home-toggle-cares">'+(state.homeShowAllCare?'진료과 접기':'전체 진료과 보기')+'</button>'
+  +'<section class="zeno-v10-care" aria-label="진료 분야로 찾기"><div class="zeno-v10-section-heading"><h2>진료 분야</h2><button type="button" data-action="show-all-hospitals">전체 병원 보기</button></div>'
+ +'<div class="zeno-v10-grid">'+chips+'</div></section>'
  +'<button type="button" class="zeno-v10-symptom-btn" data-action="specialty" data-value="잘 모르겠어요" aria-expanded="'+state.symptomGuideOpen+'" aria-controls="zeno-symptom-guide"><span class="zeno-v10-help-icon">'+zenoHomeSmallIcon('help')+'</span><span><strong>어떤 진료인지 잘 모르겠어요</strong><small>증상을 보고 진료 분야를 찾아보세요.</small></span>'+zenoHomeSmallIcon('next')+'</button>'
- +(state.symptomGuideOpen?zenoSymptomPanel():'')+'</section>'
+ +(state.symptomGuideOpen?zenoSymptomPanel():'')
  +'<section class="zeno-v10-quick" aria-label="빠르게 병원 찾기"><h2>필요한 진료 빠르게 찾기</h2>'
  +'<div class="zeno-v10-quick-grid"><button type="button" data-action="night-shortcut"><span class="zeno-v10-shortcut-icon night">'+zenoHomeSmallIcon('moon')+'</span><strong>야간 진료</strong><small>밤에도 진료하는 병원</small></button>'
  +'<button type="button" data-action="around-clock-shortcut"><span class="zeno-v10-shortcut-icon urgent">'+zenoHomeSmallIcon('urgent')+'</span><strong>24시간 응급</strong><small>방문 전 전화 확인</small></button></div>'
