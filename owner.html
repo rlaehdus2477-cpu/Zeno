@@ -1668,9 +1668,9 @@ body,#app,.app{max-width:100%;overflow-x:clip}
 }
 </style><style id="zeno-home-editorial-20261113">
 /* CHANGED */ /* Home colors only. White/navy + one teal accent; red is emergency-only. */
-:root{--zh-navy:#102f50;--zh-accent:#00786e;--zh-red:#b42332;--zh-text:#142c41;--zh-muted:#526274;--zh-bg:#f6f9fb;--zh-surface:#fff;--zh-line:#d8e1e8;--zh-soft:#edf3f6;--zh-icon-bg:#e7eff6;--zh-icon-color:#102f50;--zh-accent-soft:#e7f3f0;--zh-urgent-soft:#fff0f1;--zh-urgent-line:#e2a0a6}
-@media(prefers-color-scheme:dark){:root:not([data-theme="light"]):not(.light){--zh-navy:#a9d0f0;--zh-accent:#75d9cf;--zh-red:#ffb5b9;--zh-text:#eef5fb;--zh-muted:#c0d1e0;--zh-bg:#111d2a;--zh-surface:#192b3d;--zh-line:#415668;--zh-soft:#21384a;--zh-icon-bg:#2b4357;--zh-icon-color:#d0e5f5;--zh-accent-soft:#1d4645;--zh-urgent-soft:#432b35;--zh-urgent-line:#b66a76}}
-html[data-theme="dark"],html.dark{--zh-navy:#a9d0f0;--zh-accent:#75d9cf;--zh-red:#ffb5b9;--zh-text:#eef5fb;--zh-muted:#c0d1e0;--zh-bg:#111d2a;--zh-surface:#192b3d;--zh-line:#415668;--zh-soft:#21384a;--zh-icon-bg:#2b4357;--zh-icon-color:#d0e5f5;--zh-accent-soft:#1d4645;--zh-urgent-soft:#432b35;--zh-urgent-line:#b66a76}
+:root{--zh-navy:#102f50;--zh-cta:#102f50;--zh-cta-text:#fff;--zh-accent:#00786e;--zh-red:#b42332;--zh-text:#142c41;--zh-muted:#526274;--zh-bg:#f6f9fb;--zh-surface:#fff;--zh-line:#d8e1e8;--zh-soft:#edf3f6;--zh-icon-bg:#e7eff6;--zh-icon-color:#102f50;--zh-accent-soft:#e7f3f0;--zh-urgent-soft:#fff0f1;--zh-urgent-line:#e2a0a6}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]):not(.light){--zh-navy:#a9d0f0;--zh-cta:#a9d0f0;--zh-cta-text:#102f50;--zh-accent:#75d9cf;--zh-red:#ffb5b9;--zh-text:#eef5fb;--zh-muted:#c0d1e0;--zh-bg:#111d2a;--zh-surface:#192b3d;--zh-line:#415668;--zh-soft:#21384a;--zh-icon-bg:#2b4357;--zh-icon-color:#d0e5f5;--zh-accent-soft:#1d4645;--zh-urgent-soft:#432b35;--zh-urgent-line:#b66a76}}
+html[data-theme="dark"],html.dark{--zh-navy:#a9d0f0;--zh-cta:#a9d0f0;--zh-cta-text:#102f50;--zh-accent:#75d9cf;--zh-red:#ffb5b9;--zh-text:#eef5fb;--zh-muted:#c0d1e0;--zh-bg:#111d2a;--zh-surface:#192b3d;--zh-line:#415668;--zh-soft:#21384a;--zh-icon-bg:#2b4357;--zh-icon-color:#d0e5f5;--zh-accent-soft:#1d4645;--zh-urgent-soft:#432b35;--zh-urgent-line:#b66a76}
 /* CHANGED */ /* Scoped to existing .zeno-home-v10. Preserve navigation and all other pages. */
 .zeno-home-v10{max-width:850px;margin:0 auto;padding:0 2px 26px;background:var(--zh-bg)!important;color:var(--zh-text)!important}
 .zeno-home-v10 .zeno-v10-header{padding:9px 0!important;border-color:var(--zh-line)!important;background:var(--zh-bg)!important}
@@ -1693,7 +1693,7 @@ html[data-theme="dark"],html.dark{--zh-navy:#a9d0f0;--zh-accent:#75d9cf;--zh-red
 .zeno-home-v10 .zeno-v10-search>svg{color:var(--zh-muted)!important}
 .zeno-home-v10 .zeno-v10-search input{color:var(--zh-text)!important;font-size:14px!important}
 .zeno-home-v10 .zeno-v10-search input::placeholder{color:var(--zh-muted)!important;opacity:1}
-.zeno-home-v10 .zeno-v10-search button{background:#102f50!important;color:#fff!important;border-radius:8px!important;font-size:13px!important;min-height:33px}
+.zeno-home-v10 .zeno-v10-search button{background:var(--zh-cta)!important;color:var(--zh-cta-text)!important;border-radius:8px!important;font-size:13px!important;min-height:33px}
 .zeno-home-v10 .zeno-v10-search:focus-within{border-color:var(--zh-accent)!important;box-shadow:0 0 0 2px var(--zh-accent-soft)!important}
 .zeno-home-v10 .zeno-v10-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;border:1px solid var(--zh-line);background:var(--zh-surface);border-radius:12px;margin:4px 0 0;overflow:hidden}
 .zeno-home-v10 .zeno-v10-stats>div{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 4px;gap:1px;min-width:0}
@@ -1749,6 +1749,12 @@ html[data-theme="dark"],html.dark{--zh-navy:#a9d0f0;--zh-accent:#75d9cf;--zh-red
 @media(min-width:540px){.zeno-home-v10 .zeno-v10-compact-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}}
 @media(max-width:750px){.zeno-home-v10{background:var(--zh-bg)!important;padding-bottom:24px}.zeno-home-v10 .zeno-v10-care-card{height:auto!important;min-height:110px!important;max-height:none!important}}
 @media(max-width:370px){.zeno-home-v10 .zeno-v10-visual{width:76px;flex-basis:76px;height:70px}.zeno-home-v10 .zeno-v10-visual svg{width:72px}.zeno-home-v10 .zeno-v10-care-chip{padding:8px!important}.zeno-home-v10 .zeno-v10-care-card strong{font-size:13px!important}.zeno-home-v10 .zeno-v10-care-card small{font-size:11px!important}.zeno-home-v10 .zeno-v10-care-chip strong{font-size:12px!important}.zeno-home-v10 .zeno-v10-care-chip small{font-size:10px!important}}
+
+/* CHANGED */ /* Keep the surrounding mobile content and bottom tab legible in dark mode. */
+body:has(.zeno-home-v10),body:has(.zeno-home-v10) .content{background:var(--zh-bg)!important}
+body:has(.zeno-home-v10) .mobilebar{background:var(--zh-surface)!important;border-color:var(--zh-line)!important;box-shadow:none!important}
+body:has(.zeno-home-v10) .mobilebar button{color:var(--zh-muted)!important}
+body:has(.zeno-home-v10) .mobilebar button.active{color:var(--zh-accent)!important}
 </style></head><body><div id="app" class="app"></div><script>
 'use strict';
 const APP_MODE='owner';
