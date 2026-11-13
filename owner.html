@@ -2494,6 +2494,28 @@ async function start(){
  }finally{zenoStartPending=false}
 }
 render();start();
+const ZENO_OWNER_UI_REVISION='20261113-petsettings-2';
+let zenoLastUIVersionCheck=0;
+let zenoUIVersionChecking=false;
+async function zenoCheckOwnerUIRevision(force=false){
+ if(zenoUIVersionChecking||document.hidden||state.modal||state.profileSaving||state.bookingSubmitting)return;
+ const now=Date.now();
+ if(!force&&now-zenoLastUIVersionCheck<90000)return;
+ zenoLastUIVersionCheck=now;
+ zenoUIVersionChecking=true;
+ try{
+  const response=await fetch('/api/ui-version?ts='+now,{cache:'no-store',credentials:'same-origin'});
+  if(!response.ok)return;
+  const data=await response.json();
+  if(!data?.owner||data.owner===ZENO_OWNER_UI_REVISION)return;
+  if(document.hidden||state.modal||state.profileSaving||state.bookingSubmitting)return;
+  window.location.replace('/owner?ui='+encodeURIComponent(data.owner));
+ }catch(error){/* Keep the existing page during network outages. */}
+ finally{zenoUIVersionChecking=false}
+}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)zenoCheckOwnerUIRevision(true)});
+window.addEventListener('pageshow',()=>zenoCheckOwnerUIRevision());
+setInterval(()=>zenoCheckOwnerUIRevision(),180000);
 /* Guests and logged-in users see changed evening hours without a reload. */
 setInterval(()=>{if(document.hidden)return;if(state.page==='emergency'||(state.page==='search'&&zenoHasFilter('야간')))render();},60000);
 </script><style>#memopen{position:fixed;bottom:16px;right:16px;z-index:100;border:0;border-radius:25px;background:#1979e6;color:white;padding:14px;font-weight:bold}#membg{display:none;position:fixed;inset:0;background:#091b32b8;z-index:110;overflow:auto;padding:20px}#membg.show{display:block}#memcard{background:white;color:#173452;max-width:560px;margin:4vh auto;border-radius:20px;padding:24px}#memcard input:not([type=checkbox]),#memcard textarea,#memcard select{display:block;width:100%;box-sizing:border-box;margin:9px 0;padding:12px;border:1px solid #ccc;border-radius:8px}#memcard button{padding:10px 14px;background:#1979e6;color:white;border:0;border-radius:9px;margin:5px}@media(max-width:750px){#memopen{bottom:calc(88px + env(safe-area-inset-bottom));right:13px;padding:9px 15px;font-size:13px;box-shadow:0 7px 20px #1861bb38}}</style>
