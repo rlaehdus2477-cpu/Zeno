@@ -80,3 +80,20 @@ CREATE TABLE IF NOT EXISTS booking_details (
  visit_type TEXT NOT NULL DEFAULT '',
  created_at TEXT NOT NULL
 );
+
+-- Hospital state and submitted corrections, without deleting existing data.
+CREATE TABLE IF NOT EXISTS hospital_operational_status (
+ hospital_id TEXT PRIMARY KEY,
+ emergency_status TEXT NOT NULL DEFAULT 'check',
+ updated_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS hospital_change_requests (
+ id TEXT PRIMARY KEY,
+ hospital_id TEXT NOT NULL,
+ kind TEXT NOT NULL,
+ payload_json TEXT NOT NULL,
+ status TEXT NOT NULL DEFAULT 'pending',
+ created_at TEXT NOT NULL,
+ reviewed_at TEXT
+);
+CREATE INDEX IF NOT EXISTS hospital_change_requests_by_hospital ON hospital_change_requests(hospital_id,created_at DESC);
