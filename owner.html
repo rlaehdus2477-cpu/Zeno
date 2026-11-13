@@ -2505,9 +2505,9 @@ function zenoCareAliases(name){
 /* Search all recorded care labels, including composite department names.
    This only matches a registered field; it never infers care from a hospital name. */
 function zenoCareLabelMatches(value,department){
- const label=String(value||'').replace(/\\s+/g,'').toLowerCase();
+ const label=String(value||'').replace(/\s+/g,'').toLowerCase();
  if(!label)return false;
- const aliases=zenoCareAliases(department).map(v=>String(v).replace(/\\s+/g,'').toLowerCase());
+ const aliases=zenoCareAliases(department).map(v=>String(v).replace(/\s+/g,'').toLowerCase());
  if(aliases.includes(label))return true;
  if(department==='건강검진·접종'&&label.endsWith('건강검진'))return true;
  const parts=label.split(/[·,/&+]|및/).filter(Boolean);
