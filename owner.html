@@ -1898,6 +1898,41 @@ html[data-theme="dark"] .zeno-search-page .zeno-search-card .zeno-search-evidenc
   .zeno-search-page .zeno-search-card .directory-main{min-width:0!important;max-width:100%!important}
   .zeno-search-page .zeno-search-card .zeno-card-actions{min-width:0!important}
 }
+</style>
+<style id="zeno-exotic-ui-20261113">
+/* Exclusive to exotic search. Equal cards without emoji, shadow or guessed availability. */
+.zeno-search-page .zeno-exotic-top{box-sizing:border-box;width:100%;max-width:100%;min-width:0;margin:16px 0 14px!important;padding:0 0 16px!important;border:0!important;border-bottom:1px solid #e1e7ed!important;border-radius:0!important;background:transparent!important;box-shadow:none!important}
+.zeno-search-page .zeno-exotic-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 12px}
+.zeno-search-page .zeno-exotic-heading>div{flex:1;min-width:0}
+.zeno-search-page .zeno-exotic-heading h2{margin:0!important;color:#22394d;font-size:16px!important;font-weight:750!important;line-height:1.4!important;letter-spacing:-.3px}
+.zeno-search-page .zeno-exotic-heading p{margin:4px 0 0;font-size:12px;line-height:1.45;color:#647b90}
+.zeno-search-page .zeno-exotic-clear{min-height:36px;flex:0 0 auto;padding:6px 0 6px 8px;border:0;background:transparent;color:#216ab5;font-size:12px;font-weight:700;white-space:nowrap}
+.zeno-search-page .zeno-exotic-chips{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px!important;width:100%;max-width:100%;min-width:0;margin:0!important;padding:0!important}
+.zeno-search-page .zeno-exotic-chips .zeno-exotic-option{display:flex;align-items:center;justify-content:center;box-sizing:border-box;width:100%;min-width:0;min-height:48px!important;padding:9px 5px!important;text-align:center!important;border:1px solid #dce4ed!important;border-radius:9px!important;background:#fff!important;color:#31475b!important;box-shadow:none!important;font-size:13.5px!important;font-weight:650!important;line-height:1.35!important;white-space:normal!important;word-break:keep-all!important}
+.zeno-search-page .zeno-exotic-chips .zeno-exotic-option.is-selected{border-color:#2474c2!important;background:#eef5fc!important;color:#155b9e!important;box-shadow:inset 0 0 0 1px #2474c2!important;font-weight:750!important}
+.zeno-search-page .zeno-exotic-option:focus-visible,.zeno-search-page .zeno-exotic-clear:focus-visible,.zeno-search-page .zeno-exotic-empty button:focus-visible{outline:2px solid #2474c2!important;outline-offset:2px}
+.zeno-search-page .zeno-exotic-note{margin:10px 0 0!important;color:#718398!important;font-size:11.5px!important;line-height:1.5!important;word-break:keep-all}
+.zeno-search-page .zeno-exotic-empty{width:100%;min-width:0;padding:24px 16px;margin:0;border:1px solid #e2e8ef;border-radius:10px;background:#fff;text-align:center}
+.zeno-search-page .zeno-exotic-empty strong{display:block;font-size:14.5px;line-height:1.45;font-weight:750;color:#29435a}
+.zeno-search-page .zeno-exotic-empty p{margin:8px auto 14px!important;max-width:270px;font-size:12.5px!important;line-height:1.55!important;color:#697d90;word-break:keep-all}
+.zeno-search-page .zeno-exotic-empty button{min-height:42px;padding:10px 14px;border:1px solid #c8d9e8;border-radius:8px;background:#fff;color:#276aa9;font-size:13px;font-weight:700}
+@media(max-width:750px){
+ .zeno-search-page .zeno-exotic-top{margin:13px 0 12px!important;padding-bottom:14px!important}
+ .zeno-search-page .zeno-exotic-heading{margin-bottom:10px}
+ .zeno-search-page .zeno-exotic-chips{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important}
+ .zeno-search-page .zeno-exotic-chips .zeno-exotic-option{min-height:46px!important;padding:9px 6px!important}
+}
+@media(max-width:350px){.zeno-search-page .zeno-exotic-chips{gap:7px!important}.zeno-search-page .zeno-exotic-chips .zeno-exotic-option{font-size:13px!important}}
+@media(prefers-color-scheme:dark){
+ .zeno-search-page .zeno-exotic-top{border-bottom-color:#3f5163!important}
+ .zeno-search-page .zeno-exotic-heading h2{color:#f1f6fb}
+ .zeno-search-page .zeno-exotic-heading p,.zeno-search-page .zeno-exotic-note{color:#b3c3d3!important}
+ .zeno-search-page .zeno-exotic-chips .zeno-exotic-option{background:#202e3d!important;border-color:#536477!important;color:#edf5fc!important}
+ .zeno-search-page .zeno-exotic-chips .zeno-exotic-option.is-selected{background:#21405e!important;border-color:#6db5fa!important;color:#e1f1ff!important}
+ .zeno-search-page .zeno-exotic-empty{background:#202e3d;border-color:#536477}
+ .zeno-search-page .zeno-exotic-empty strong{color:#f3f7fc}
+ .zeno-search-page .zeno-exotic-empty p{color:#c0d0df}
+}
 </style></head><body><div id="app" class="app"></div><script>
 'use strict';
 const APP_MODE='owner';
@@ -2396,6 +2431,7 @@ function zenoPublishedStatusMarkup(h){
 }
 
 /* CHANGED: only registered medical specialties are available in booking. */
+function zenoExoticMatches(h,species){const names=zenoBookingAnimals(h);return names.includes(species)||(species==='기타 파충류'&&names.includes('파충류'));}
 function zenoBookingAnimals(h){
  const services=hs(h.id).services||[];
  return [...new Set([...(h.officialCompanionSpecies||['고양이','강아지']),...(h.officialExoticSpecies||[]),...services.filter(x=>['토끼','햄스터','기니피그','조류','파충류'].includes(x))])];
@@ -2571,6 +2607,7 @@ function zenoSearchHospitalCard(h){
 }
 
 function hospitalResults(items){
+ if(!items.length&&state.specialty==='특수동물')return '<div class="zeno-exotic-empty" role="status"><strong>현재 조건에서 확인된 병원이 없어요.</strong><p>등록된 진료 동물 정보를 기준으로 표시합니다. 다른 동물이나 조건으로 다시 검색해 주세요.</p>'+(state.exoticSpecies?'<button type="button" data-action="exotic" data-value="">전체 동물 보기</button>':'<button type="button" data-action="clear-search">조건 초기화</button>')+'</div>';
  if(!items.length)return '<div class="empty zeno-results-empty"><strong>'+(state.query?'검색어에 맞는 병원이 없어요':'선택한 조건에 맞는 병원이 없어요')+'</strong><button type="button" class="btn secondary small" data-action="clear-search">조건 초기화</button></div>';
  const group=rows=>'<div class="hospital-list zeno-compact-results">'+rows.map(state.page==='search'?zenoSearchHospitalCard:hospitalCard).join('')+'</div>';
  if(state.page==='search'&&zenoHasFilter('강아지 피어프리·스트레스 케어')&&!state.specialty){
@@ -2636,7 +2673,7 @@ function filteredHospitals(){
  if(catFriendly||catEvidence||dogStress)list=list.filter(h=>(catFriendly&&zenoCfc(h)?.status==='listed')||(catEvidence&&Boolean(zenoCfc(h)))||(dogStress&&Boolean(zenoFearFree(h))));
  if(fs.includes('연결 병원'))list=list.filter(h=>h.linked);
  if(fs.includes('즐겨찾기'))list=list.filter(h=>state.favorites.includes(h.id));
- if(state.specialty)list=list.filter(h=>state.specialty==='특수동물'?(state.exoticSpecies?zenoBookingAnimals(h).includes(state.exoticSpecies):Boolean((h.officialExoticSpecies||[]).length||(hs(h.id).services||[]).some(x=>['토끼','햄스터','기니피그','조류','파충류'].includes(x)))):Boolean(zenoSpecialtyOrigin(h)));
+ if(state.specialty)list=list.filter(h=>state.specialty==='특수동물'?(state.exoticSpecies?zenoExoticMatches(h,state.exoticSpecies):Boolean((h.officialExoticSpecies||[]).length||(hs(h.id).services||[]).some(x=>['토끼','햄스터','기니피그','조류','파충류'].includes(x)))):Boolean(zenoSpecialtyOrigin(h)));
  if(state.specialty){const rank={official:0,report:1,demo:2,public:3,name:4,inquiry:5};list.sort((a,b)=>(rank[zenoSpecialtyOrigin(a)]??4)-(rank[zenoSpecialtyOrigin(b)]??4));}
  if(catFriendly||catEvidence||dogStress)list.sort((a,b)=>{
   const aBoth=Number(zenoCfc(a)?.status==='listed'&&Boolean(zenoFearFree(a))),bBoth=Number(zenoCfc(b)?.status==='listed'&&Boolean(zenoFearFree(b)));
@@ -2740,8 +2777,13 @@ function home(){
 }
 function searchPage(){
  const results=filteredHospitals(),fs=zenoActiveFilters();
- const exotic=state.specialty==='특수동물'?'<section class="zeno-exotic-top"><h3>어떤 동물인가요?</h3><div class="zeno-exotic-chips">'+EXOTIC.map(x=>'<button class="filter '+(state.exoticSpecies===x[0]?'active':'')+'" data-action="exotic" data-value="'+e(x[0])+'">'+e(x[0])+'</button>').join('')+'</div></section>':'';
- const specialtyChip=state.specialty?'<button type="button" class="zeno-selected-care-chip" data-action="clear-specialty" aria-label="'+e(state.exoticSpecies||state.specialty)+' 진료 분야 선택 해제">'+e(state.exoticSpecies||state.specialty)+' <span aria-hidden="true">×</span></button>':'';
+ const exotic=state.specialty==='특수동물'?'<section class="zeno-exotic-top" aria-labelledby="zeno-exotic-title">'
+  +'<div class="zeno-exotic-heading"><div><h2 id="zeno-exotic-title">특수동물 진료</h2><p>동물 종류를 선택하세요.</p></div>'
+  +(state.exoticSpecies?'<button type="button" class="zeno-exotic-clear" data-action="exotic" data-value="">전체 동물 보기</button>':'')+'</div>'
+  +'<div class="zeno-exotic-chips" role="group" aria-label="특수동물 종류">'
+  +EXOTIC.map(x=>'<button type="button" class="zeno-exotic-option'+(state.exoticSpecies===x[0]?' is-selected':'')+'" data-action="exotic" data-value="'+e(x[0])+'" aria-pressed="'+(state.exoticSpecies===x[0])+'">'+e(x[0])+'</button>').join('')
+  +'</div><p class="zeno-exotic-note">진료 가능 여부는 병원에 전화로 확인해 주세요.</p></section>':'';
+ const specialtyChip=state.specialty&&state.specialty!=='특수동물'?'<button type="button" class="zeno-selected-care-chip" data-action="clear-specialty" aria-label="'+e(state.specialty)+' 진료 분야 선택 해제">'+e(state.specialty)+' <span aria-hidden="true">×</span></button>':'';
  const reset=(state.query||fs.length||state.specialty||state.searchRegion)?'<button class="zeno-search-reset" type="button" data-action="clear-search">조건 초기화</button>':'';
  const regionChip=state.searchRegion?'<button type="button" class="zeno-selected-care-chip" data-action="clear-home-region-filter" aria-label="'+e(state.searchRegion)+' 지역 필터 해제">'+e(state.searchRegion)+' <span aria-hidden="true">×</span></button>':'';
  const chips=['전체','야간','24시','고양이 친화 인증','고양이 친화 정보','고양이 대기실','강아지 피어프리·스트레스 케어','연결 병원','즐겨찾기'].map(x=>'<button type="button" class="filter '+((x==='전체'?!fs.length&&!state.specialty&&!state.query:fs.includes(x))?'active':'')+'" aria-pressed="'+(x==='전체'?!fs.length&&!state.specialty&&!state.query:fs.includes(x))+'" data-action="filter" data-value="'+x+'">'+(x==='24시'?'24시간':x==='야간'?'야간 진료':x==='연결 병원'?'예약 요청 가능':x==='즐겨찾기'?'저장한 병원':x)+'</button>').join('');
@@ -2750,7 +2792,7 @@ function searchPage(){
  +'<div class="zeno-filter-rail"><div class="filters" role="group" aria-label="병원 조건 필터">'+chips+'</div></div></div>'
  +exotic
 
- +'<div class="zeno-results-bar"><div class="zeno-results-bar-leading"><h2 aria-live="polite">청주 병원 '+results.length+'곳</h2>'+regionChip+specialtyChip+'</div><div class="zeno-results-bar-tools">'+reset+'<button class="zeno-search-emergency-link" type="button" data-nav="emergency">야간·24시간 안내</button></div></div>'
+ +'<div class="zeno-results-bar"><div class="zeno-results-bar-leading"><h2 aria-live="polite">'+(state.specialty==='특수동물'?'검색 결과 ':'청주 병원 ')+results.length+'곳</h2>'+regionChip+specialtyChip+'</div><div class="zeno-results-bar-tools">'+reset+'<button class="zeno-search-emergency-link" type="button" data-nav="emergency">야간·24시간 안내</button></div></div>'
  +hospitalResults(results)
  +'<div class="zeno-price-inline zeno-price-after-results"><span>공개 진료비도 비교할 수 있어요.</span><button type="button" data-nav="prices">진료비 비교</button></div>'
  +'</section>';
@@ -3218,7 +3260,7 @@ if(a==='symptom-route'){
  navTo(item[2]?'emergency':'search');return
 }
 if(a==='clear-specialty'){state.specialty='';state.symptomLabel='';state.exoticSpecies='';render();return}if(a==='clear-search'){state.searchRegion='';state.query='';state.specialty='';state.exoticSpecies='';state.symptomLabel='';state.filter='전체';state.activeFilters=[];render();return}
-if(a==='exotic'){state.specialty='특수동물';state.exoticSpecies=val;render();toast('진료 가능 여부는 병원에 확인해 주세요.');return}
+if(a==='exotic'){if(val&&!EXOTIC.some(x=>x[0]===val))return;state.specialty='특수동물';state.exoticSpecies=state.exoticSpecies===val?'':val;render();return}
 if(a==='favorite'){if(!state.favorites.includes(id)&&state.favorites.length>=30){toast('병원은 최대 30곳까지 저장할 수 있어요.');return}state.favorites=state.favorites.includes(id)?state.favorites.filter(x=>x!==id):[...state.favorites,id];savePersonal();render();return}
 if(a==='retry-profile'){savePersonal();render();return}
 if(a==='pet-tab'){state.petTab=val;render();return}
