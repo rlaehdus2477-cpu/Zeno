@@ -1,0 +1,82 @@
+name: Build ZENO Owner Android APK
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "android/owner/**"
+      - ".github/workflows/build-android-owner.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: zeno-owner-android-apk-v1-1
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out ZENO
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android API 35 and build tools
+        run: |
+          sdkmanager --install "platforms;android-35" "build-tools;35.0.0"
+          yes | sdkmanager --licenses > /dev/null || true
+          test -f "$ANDROID_HOME/platforms/android-35/android.jar"
+          test -x "$ANDROID_HOME/build-tools/35.0.0/apksigner"
+
+      - name: Generate temporary test signing key
+        shell: bash
+        run: |
+          PASS="$(openssl rand -hex 24)"
+          echo "::add-mask::$PASS"
+          echo "ZENO_KEY_PASS=$PASS" >> "$GITHUB_ENV"
+          echo "ZENO_KEYSTORE=$RUNNER_TEMP/zeno-owner-test.p12" >> "$GITHUB_ENV"
+          keytool -genkeypair -noprompt -storetype PKCS12 \
+            -keystore "$RUNNER_TEMP/zeno-owner-test.p12" \
+            -storepass "$PASS" -keypass "$PASS" \
+            -alias owner -keyalg RSA -keysize 3072 -validity 3650 \
+            -dname "CN=ZENO Owner Test, OU=Development, O=ZENO, C=KR"
+
+      - name: Compile and sign Android APK
+        shell: bash
+        env:
+          ANDROID_JAR: ${{ env.ANDROID_HOME }}/platforms/android-35/android.jar
+          BUILD_TOOLS: ${{ env.ANDROID_HOME }}/build-tools/35.0.0
+        run: |
+          bash android/owner/build.sh "$GITHUB_WORKSPACE/ZENO-Owner-1.1.apk"
+          ls -lh ZENO-Owner-1.1.apk
+          "$BUILD_TOOLS/aapt" dump badging ZENO-Owner-1.1.apk | head -15
+
+      - name: Publish APK as workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ZENO-Owner-1.1-Android-APK
+          path: ZENO-Owner-1.1.apk
+          if-no-files-found: error
+
+      - name: Create public test APK release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          if gh release view owner-android-v1.1 >/dev/null 2>&1; then
+            echo "A v1.1 release already exists; keeping its original signing certificate."
+          else
+            gh release create owner-android-v1.1 ZENO-Owner-1.1.apk \
+              --title "ZENO 보호자용 Android 1.1 (테스트)" \
+              --notes "Android 8 이상 테스트 APK. https://zeno.rlaehdus2477.workers.dev/owner 에 연결하여 최신 모바일 화면을 표시합니다. Play Store 배포본이 아닙니다. 서명키가 이전 시험용 APK와 달라 기존 앱과 업데이트 설치가 안 되면 기존 앱을 삭제 후 설치해야 합니다."
+          fi
