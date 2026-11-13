@@ -1942,7 +1942,7 @@ function applyHospitalQuery(value){
  state.query=value.replace(CAT_WAITING_TERM,' ').trim().replace(/\s+/g,' ');
  if(waiting&&!zenoHasFilter('고양이 대기실'))state.activeFilters=[...zenoActiveFilters(),'고양이 대기실'];
 }
-function zenoActiveFilters(){return [...new Set([...(state.activeFilters||[]),...(state.filter!=='전체'?[state.filter]:[])])];}
+function zenoActiveFilters(){return [...new Set([...(state.activeFilters||[]),...(state.filter!=='전체'?[state.filter]:[])].map(x=>x==='고양이 친화 인증'?'고양이 친화 정보':x))];}
 function zenoHasFilter(v){return zenoActiveFilters().includes(v);}
 
 function zenoListMatchedConditions(h){
@@ -2776,7 +2776,7 @@ async function start(){
  }finally{zenoStartPending=false}
 }
 render();start();
-const ZENO_OWNER_UI_REVISION='20261113-cfc-v4';
+const ZENO_OWNER_UI_REVISION='20261113-cfc-v6';
 let zenoLastUIVersionCheck=0;
 let zenoUIVersionChecking=false;
 async function zenoCheckOwnerUIRevision(force=false){
@@ -2791,6 +2791,8 @@ async function zenoCheckOwnerUIRevision(force=false){
   const data=await response.json();
   if(!data?.owner||data.owner===ZENO_OWNER_UI_REVISION)return;
   if(document.hidden||state.modal||state.profileSaving||state.bookingSubmitting||document.activeElement?.closest('form'))return;
+  // Never loop when an older browser cache keeps returning the same HTML after an update.
+  if(new URLSearchParams(window.location.search).get('ui')===data.owner)return;
   window.location.replace('/owner?ui='+encodeURIComponent(data.owner));
  }catch(error){/* Keep the existing page during network outages. */}
  finally{zenoUIVersionChecking=false}
