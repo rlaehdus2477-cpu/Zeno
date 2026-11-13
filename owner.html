@@ -2274,6 +2274,36 @@ html.dark .zeno-care-hours,html[data-theme="dark"] .zeno-care-hours{border-color
  .modal.zeno-hospital-detail .zeno-detail-tabs{top:47px!important}
 }
 </style>
+<style id="zeno-care-picker-release-20261114">
+/* Compact, icon-free medical selector for owner home. Existing buttons/search routes remain intact. */
+.zeno-home-v10 .zeno-care-picker-trigger{width:100%;min-height:52px;padding:0 16px;display:flex;align-items:center;justify-content:space-between;background:var(--zh-surface);border:1px solid var(--zh-line);border-radius:9px;color:var(--zh-text);font-size:15px;font-weight:700;text-align:left}
+.zeno-home-v10 .zeno-care-picker-trigger>span:last-child{font-size:23px;line-height:1;font-weight:400;color:var(--zh-muted)}
+.zeno-home-v10 .zeno-care-exotic-link{width:100%;min-height:62px;display:flex;align-items:center;justify-content:space-between;gap:12px;background:transparent;border:0;border-bottom:1px solid var(--zh-line);margin-top:8px;padding:10px 4px;text-align:left;color:var(--zh-text)}
+.zeno-home-v10 .zeno-care-exotic-link strong{display:block;font-size:14px;font-weight:700}
+.zeno-home-v10 .zeno-care-exotic-link small{display:block;font-size:12px;margin-top:4px;color:var(--zh-muted)}
+.zeno-home-v10 .zeno-care-exotic-link>span:last-child{font-size:22px;color:var(--zh-muted)}
+.zeno-home-v10 .zeno-care-picker-backdrop{position:fixed!important;z-index:10005!important;inset:0!important;display:flex!important;align-items:flex-end;justify-content:center;padding:12px 8px 0;background:rgba(10,19,29,.55);overscroll-behavior:contain}
+.zeno-home-v10 .zeno-care-picker-panel{width:100%;max-width:500px;max-height:90dvh;display:flex;flex-direction:column;background:var(--zh-surface);color:var(--zh-text);border:1px solid var(--zh-line);border-radius:16px 16px 0 0;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.16)}
+.zeno-home-v10 .zeno-care-picker-head{display:flex;align-items:center;justify-content:space-between;padding:16px 16px 8px;gap:8px}
+.zeno-home-v10 .zeno-care-picker-head h2{font-size:17px!important;font-weight:750!important;margin:0;color:var(--zh-text)}
+.zeno-home-v10 .zeno-care-picker-close{border:0;background:none;color:var(--zh-muted);min-width:40px;min-height:40px;font-size:24px;line-height:1}
+.zeno-home-v10 .zeno-care-picker-search{padding:8px 16px}
+.zeno-home-v10 .zeno-care-picker-search input{width:100%;height:44px;background:var(--zh-surface-alt);border:1px solid var(--zh-line);border-radius:8px;padding:0 12px;color:var(--zh-text);font-size:14px}
+.zeno-home-v10 .zeno-care-picker-search input::placeholder{color:var(--zh-muted)}
+.zeno-home-v10 .zeno-care-picker-scroll{min-height:80px;overflow-y:auto;overscroll-behavior:contain;padding:8px 16px 16px}
+.zeno-home-v10 .zeno-care-picker-group{margin-top:12px}
+.zeno-home-v10 .zeno-care-picker-group h3{margin:0 0 10px;font-size:13px;font-weight:750;color:var(--zh-muted)}
+.zeno-home-v10 .zeno-care-picker-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.zeno-home-v10 .zeno-care-picker-option{min-width:0;min-height:48px;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;gap:4px;border:1px solid var(--zh-line);border-radius:8px;background:var(--zh-surface);color:var(--zh-text);font-size:14px!important;text-align:left;font-weight:600}
+.zeno-home-v10 .zeno-care-picker-option.is-selected{border-color:var(--zh-accent);background:var(--zh-surface-alt);font-weight:750}
+.zeno-home-v10 .zeno-care-picker-tick{min-width:10px;color:var(--zh-accent);font-size:14px}
+.zeno-home-v10 .zeno-care-picker-empty{margin:14px 0;color:var(--zh-muted);font-size:13px}
+.zeno-home-v10 .zeno-care-picker-foot{padding:12px 16px calc(12px + env(safe-area-inset-bottom));border-top:1px solid var(--zh-line)}
+.zeno-home-v10 .zeno-care-picker-foot button{width:100%;height:48px;border:0;border-radius:9px;background:#102f50;color:#fff;font-size:14px;font-weight:750}
+.zeno-home-v10 .zeno-care-picker-foot button:disabled{opacity:.48;cursor:not-allowed}
+.zeno-home-v10 .zeno-care-picker-option[hidden],.zeno-home-v10 .zeno-care-picker-group[hidden],.zeno-home-v10 .zeno-care-picker-empty[hidden]{display:none!important}
+@media(min-width:720px){.zeno-home-v10 .zeno-care-picker-backdrop{align-items:center;padding:24px}.zeno-home-v10 .zeno-care-picker-panel{border-radius:16px;max-height:85dvh}}
+</style>
 </head><body><div id="app" class="app"></div><script>
 'use strict';
 const APP_MODE='owner';
@@ -2447,7 +2477,7 @@ const hospitalById=id=>HOSPITALS.find(x=>x.id===id);
 function defaultStore(){return {settings:Object.fromEntries(['soo','naeum','tnd'].map(id=>[id,{status:'check',updatedAt:null,notice:'',services:[],prices:[],emergency:false}])),bookings:[],questions:[],reviews:[]}}
 function localGet(){try{return {...defaultStore(),...JSON.parse(localStorage.getItem(STOREKEY)||'{}')}}catch{return defaultStore()}}
 function localSet(x){localStorage.setItem(STOREKEY,JSON.stringify(x));window.dispatchEvent(new Event('zeno-refresh'))}
-const state={ownerToken:localStorage.getItem('zeno-owner-auth')||'',owner:null,authMode:'login',serverReady:false,profileLoaded:false,profileSaving:false,page:APP_MODE==='hospital'?'hospital':'home',internalFocusOnly:false,filter:'전체',query:'',specialty:'',exoticSpecies:'',detail:null,modal:null,local:true,settings:{},bookings:[],questions:[],reviews:[],hospitalBookings:[],hospitalQuestions:[],activeHospital:sessionStorage.getItem('zeno-h-hospital')||'soo',hospitalToken:sessionStorage.getItem('zeno-h-token')||'',adminToken:sessionStorage.getItem('zeno-admin-token')||'',pets:JSON.parse(localStorage.getItem('zeno-pets-v2')||'[]'),petPhotos:{},records:JSON.parse(localStorage.getItem('zeno-records-v2')||'[]'),favorites:JSON.parse(localStorage.getItem('zeno-favorites-v2')||'[]'),viewH:'soo',hTab:'bookings',appError:'',loading:false,adminStats:null,bookingTab:'전체',activeFilters:[],petTab:'전체',profileSaveError:'',authError:'',pendingAction:null,pendingPage:'',recoveryCode:'',afterRecoveryAction:null,authNotice:'',priceCategory:'초진 진찰료',healthCheckSpecies:'강아지',detailTab:'',symptomGuideOpen:false,symptomLabel:'',homeArea:'청주 전체',homeAreaOpen:false,homeShowAllCare:false,searchRegion:''};
+const state={ownerToken:localStorage.getItem('zeno-owner-auth')||'',owner:null,authMode:'login',serverReady:false,profileLoaded:false,profileSaving:false,page:APP_MODE==='hospital'?'hospital':'home',internalFocusOnly:false,filter:'전체',query:'',specialty:'',exoticSpecies:'',detail:null,modal:null,local:true,settings:{},bookings:[],questions:[],reviews:[],hospitalBookings:[],hospitalQuestions:[],activeHospital:sessionStorage.getItem('zeno-h-hospital')||'soo',hospitalToken:sessionStorage.getItem('zeno-h-token')||'',adminToken:sessionStorage.getItem('zeno-admin-token')||'',pets:JSON.parse(localStorage.getItem('zeno-pets-v2')||'[]'),petPhotos:{},records:JSON.parse(localStorage.getItem('zeno-records-v2')||'[]'),favorites:JSON.parse(localStorage.getItem('zeno-favorites-v2')||'[]'),viewH:'soo',hTab:'bookings',appError:'',loading:false,adminStats:null,bookingTab:'전체',activeFilters:[],petTab:'전체',profileSaveError:'',authError:'',pendingAction:null,pendingPage:'',recoveryCode:'',afterRecoveryAction:null,authNotice:'',priceCategory:'초진 진찰료',healthCheckSpecies:'강아지',detailTab:'',symptomGuideOpen:false,symptomLabel:'',homeArea:'청주 전체',homeAreaOpen:false,homeShowAllCare:false,homeCarePickerOpen:false,homeCareSelection:'',homeCarePickerQuery:'',searchRegion:''};
 let toastTimer;
 function toast(message){let o=document.querySelector('.toast');if(o)o.remove();o=document.createElement('div');o.className='toast';o.textContent=message;o.setAttribute('role','status');o.setAttribute('aria-live','polite');o.setAttribute('aria-atomic','true');document.body.appendChild(o);clearTimeout(toastTimer);toastTimer=setTimeout(()=>o.remove(),4500)}
 let profileSaveTimer;
@@ -3198,23 +3228,23 @@ function zenoSymptomPage(){
   +zenoSymptomPanel()+'</div></div>';
 }
 function home(){
- const visible=SPECIALTIES.filter(x=>x[0]!=='잘 모르겠어요');
  const areas=['청주 전체','청주 상당구','청주 서원구','청주 흥덕구','청주 청원구'];
- const subtitle={
-  '일반 진료':'가벼운 증상 · 정기검진','내과':'토하거나 설사해요 · 밥을 안 먹어요',
-  '피부·귀':'자꾸 긁어요 · 귀를 털어요','안과':'눈곱이 끼어요 · 눈이 빨개요',
-  '치과·구강':'입 냄새가 나요 · 치석이 있어요','정형외과':'다리를 절뚝거려요',
-  '외과':'수술 상담 · 상처가 났어요','중성화수술':'중성화 상담 · 수술 문의',
-  '심장·호흡기':'기침을 해요 · 숨이 차 보여요','비뇨기':'소변을 자주 봐요 · 소변이 불편해 보여요',
-  '건강검진·접종':'건강검진 · 예방접종','특수동물':'토끼 · 조류 · 파충류 진료 가능 병원 안내'
- };
- const order=['일반 진료','내과','피부·귀','안과','치과·구강','정형외과','외과','중성화수술','심장·호흡기','비뇨기','건강검진·접종','특수동물'];
- const labels={'치과·구강':'치과','중성화수술':'중성화','건강검진·접종':'검진·접종'};
- const primary=['일반 진료','내과','외과','중성화수술','치과·구강','안과','피부·귀','비뇨기','건강검진·접종','특수동물'];
- const careButton=name=>'<button type="button" class="zeno-v10-care-card" data-action="specialty" data-value="'+e(name)+'"><span class="zeno-v10-care-icon">'+zenoCareIcon(name)+'</span><strong>'+e(labels[name]||name)+'</strong></button>';
- const chips=primary.map(careButton).join('');
- const moreChips=order.filter(name=>!primary.includes(name)).map(careButton).join('');
-
+ const medicalFields=['일반 진료','내과','외과','치과·구강','안과','피부·귀','비뇨기','정형외과','심장·호흡기'];
+ const purposeFields=['중성화수술','건강검진·접종'];
+ const pickerLabels={'치과·구강':'치과','중성화수술':'중성화수술','건강검진·접종':'건강검진·접종'};
+ const query=(state.homeCarePickerQuery||'').replace(/\\s+/g,'').toLowerCase();
+ const matched=name=>!query||name.replace(/\\s+/g,'').toLowerCase().includes(query)||(pickerLabels[name]||'').replace(/\\s+/g,'').toLowerCase().includes(query);
+ const pickerOption=name=>'<button type="button" class="zeno-care-picker-option'+(state.homeCareSelection===name?' is-selected':'')+'" data-action="home-care-select" data-value="'+e(name)+'" aria-pressed="'+(state.homeCareSelection===name?'true':'false')+'" data-care-option="'+e(name)+'" '+(matched(name)?'':'hidden')+'><span>'+e(pickerLabels[name]||name)+'</span><span class="zeno-care-picker-tick" aria-hidden="true">'+(state.homeCareSelection===name?'✓':'')+'</span></button>';
+ const filteredMedical=medicalFields.filter(matched),filteredPurpose=purposeFields.filter(matched);
+ const picker=state.homeCarePickerOpen?'<div class="zeno-care-picker-backdrop" data-action="home-care-close">'
+   +'<section class="zeno-care-picker-panel" role="dialog" aria-modal="true" aria-labelledby="zeno-care-picker-title">'
+   +'<div class="zeno-care-picker-head"><h2 id="zeno-care-picker-title">진료 분야 선택</h2><button type="button" data-action="home-care-close" class="zeno-care-picker-close" aria-label="선택창 닫기">×</button></div>'
+   +'<div class="zeno-care-picker-search"><label class="sr-only" for="zeno-care-search">진료과목 검색</label><input id="zeno-care-search" type="search" placeholder="진료과목 검색" autocomplete="off" value="'+e(state.homeCarePickerQuery||'')+'"></div>'
+   +'<div class="zeno-care-picker-scroll"><div class="zeno-care-picker-group" data-care-group="medical" '+(filteredMedical.length?'':'hidden')+'><h3>진료 분야</h3><div class="zeno-care-picker-grid">'+medicalFields.map(pickerOption).join('')+'</div></div>'
+   +'<div class="zeno-care-picker-group" data-care-group="purpose" '+(filteredPurpose.length?'':'hidden')+'><h3>진료 목적</h3><div class="zeno-care-picker-grid">'+purposeFields.map(pickerOption).join('')+'</div></div>'
+   +'<p class="zeno-care-picker-empty" '+(filteredMedical.length||filteredPurpose.length?'hidden':'')+'>해당하는 진료 분야가 없습니다.</p></div>'
+   +'<div class="zeno-care-picker-foot"><button type="button" data-action="specialty" data-value="'+e(state.homeCareSelection||'')+'" '+(state.homeCareSelection?'':'disabled')+'>'+e(state.homeCareSelection?pickerLabels[state.homeCareSelection]||state.homeCareSelection:'진료 분야')+' 병원 보기</button></div>'
+   +'</section></div>':'';
  const regionItems=areas.map(area=>'<button type="button" role="option" aria-selected="'+(area===state.homeArea)+'" class="'+(area===state.homeArea?'selected':'')+'" data-action="home-area-select" data-value="'+e(area)+'">'+e(area)+'</button>').join('');
  const areaMenu=state.homeAreaOpen?'<div class="zeno-v10-area-menu" id="zeno-v10-area-menu" role="listbox" aria-label="청주 지역 선택">'+regionItems+'</div>':'';
  return '<div class="zeno-home-v10">'
@@ -3226,7 +3256,8 @@ function home(){
  +zenoNavIcon('search')+'<input id="home-hospital-search" name="homeQuery" type="search" autocomplete="off" placeholder="증상, 병원명, 진료과목 검색" value="'+e(state.query)+'"></form></section>'
  +zenoHomeOperatingRail()
   +'<section class="zeno-v10-care" aria-label="진료 분야로 찾기"><div class="zeno-v10-section-heading"><h2>진료 분야</h2><button type="button" data-action="show-all-hospitals">전체 병원 보기</button></div>'
- +'<div class="zeno-v10-grid">'+chips+'</div><details class="zeno-v10-more-care"><summary>전체 진료 분야 보기 <span aria-hidden="true">⌄</span></summary><div class="zeno-v10-grid">'+moreChips+'</div></details></section>'
+ +'<button type="button" class="zeno-care-picker-trigger" data-action="home-care-open" aria-haspopup="dialog" aria-expanded="'+state.homeCarePickerOpen+'"><span>진료 분야 선택</span><span aria-hidden="true">›</span></button>'
+ +'<button type="button" class="zeno-care-exotic-link" data-action="specialty" data-value="특수동물"><span><strong>특수동물 진료</strong><small>토끼 · 조류 · 파충류 등 진료 가능한 병원</small></span><span aria-hidden="true">›</span></button></section>'
  +'<button type="button" class="zeno-v10-symptom-btn" data-nav="symptoms"><span class="zeno-v10-help-icon">'+zenoHomeSmallIcon('help')+'</span><span><strong>어떤 진료인지 잘 모르겠어요</strong><small>증상을 보고 진료 분야를 찾아보세요.</small></span>'+zenoHomeSmallIcon('next')+'</button>'
  +'<section class="zeno-v10-quick" aria-label="빠르게 병원 찾기"><h2>필요한 진료 빠르게 찾기</h2>'
  +'<div class="zeno-v10-quick-grid"><button type="button" data-action="night-shortcut"><span class="zeno-v10-shortcut-icon night">'+zenoHomeSmallIcon('moon')+'</span><strong>야간 진료</strong><small>밤에도 진료하는 병원</small></button>'
@@ -3234,7 +3265,7 @@ function home(){
  +'<button type="button" class="zeno-v10-cat" data-action="cat-waiting-shortcut"><span class="zeno-v10-shortcut-icon cat">'+zenoNavIcon('pets')+'</span><span><strong>고양이 전용 대기실</strong><small>고양이를 위한 별도 공간 확인</small></span>'+zenoHomeSmallIcon('next')+'</button></section>'
  +zenoHomeBookingPreview()
  +'<div class="zeno-v10-links"><button type="button" data-nav="pets">'+zenoNavIcon('pets')+'내 아이 기록</button><button type="button" data-nav="qa">'+zenoNavIcon('qa')+'병원 질문·답변</button><button type="button" data-nav="prices">'+zenoNavIcon('search')+'진료비 비교</button></div>'
- +'<p class="zeno-v10-footnote">병원 사정에 따라 정보가 변경될 수 있어요.</p></div>';
+ +'<p class="zeno-v10-footnote">병원 사정에 따라 정보가 변경될 수 있어요.</p>'+picker+'</div>';
 }
 function searchPage(){
  const results=filteredHospitals(),fs=zenoActiveFilters();
@@ -3863,6 +3894,19 @@ if(a==='call-summary'){
  if(summary){ev.preventDefault();if(confirm((h?.name||'병원')+'\n'+summary+' 문의로 전화할까요?'))window.location.href=el.href;}
  return;
 }
+if(a==='home-care-open'){
+ state.homeCarePickerOpen=true;state.homeCarePickerSelectionBefore=state.homeCareSelection;
+ state.homeCarePickerQuery='';render();requestAnimationFrame(()=>document.getElementById('zeno-care-search')?.focus());return;
+}
+if(a==='home-care-close'){
+ if(el.classList.contains('zeno-care-picker-backdrop')&&ev.target!==el)return;
+ state.homeCarePickerOpen=false;state.homeCarePickerQuery='';render();return;
+}
+if(a==='home-care-select'){
+ const allowed=['일반 진료','내과','외과','치과·구강','안과','피부·귀','비뇨기','정형외과','심장·호흡기','중성화수술','건강검진·접종'];
+ if(!state.homeCarePickerOpen||!allowed.includes(val))return;
+ state.homeCareSelection=val;render();requestAnimationFrame(()=>document.querySelector('.zeno-care-picker-foot button')?.focus());return;
+}
 if(a==='home-toggle-cares'){state.homeShowAllCare=!state.homeShowAllCare;render();return}
 if(a==='home-area-toggle'){state.homeAreaOpen=!state.homeAreaOpen;render();return}
 if(a==='home-area-select'){
@@ -3883,6 +3927,8 @@ if(a==='health-check-species'){if(!['강아지','고양이'].includes(val))retur
 if(a==='internal-focus-only'){if(state.specialty==='내과'){state.internalFocusOnly=!state.internalFocusOnly;render()}return}
 if(a==='search-apply'){applyHospitalQuery(document.getElementById('hospital-search')?.value||'');render();return}
 if(a==='specialty'){
+ if(state.page==='home')state.query='';
+ state.homeCarePickerOpen=false;state.homeCarePickerQuery='';
  if(val==='잘 모르겠어요'){state.symptomGuideOpen=!state.symptomGuideOpen;render();if(state.symptomGuideOpen)requestAnimationFrame(()=>document.getElementById('zeno-symptom-guide')?.scrollIntoView({behavior:'smooth',block:'nearest'}));return}
  if(!SPECIALTIES.some(x=>x[0]===val))return;
  state.specialty=val;state.internalFocusOnly=false;state.searchRegion=state.homeArea==='청주 전체'?'':state.homeArea.replace('청주 ','');state.symptomLabel='';state.exoticSpecies='';state.filter='전체';state.activeFilters=[];state.symptomGuideOpen=false;zenoNewSearch=true;navTo('search');return
@@ -3977,7 +4023,17 @@ if(a==='answer'){let answer=document.getElementById('answer-'+id)?.value.trim();
 if(a==='price-remove'){let s=hs(state.activeHospital),prices=[...(s.prices||[])];prices.splice(Number(id),1);await mutate('PATCH','/api/settings',{prices},'가격 예시 항목을 삭제했습니다.');return}
 if(a==='service-remove'){let services=(hs(state.activeHospital).services||[]).filter(x=>x!==val);await mutate('PATCH','/api/settings',{services},'진료 분야를 삭제했습니다.');return}
 });
-document.addEventListener('keydown',ev=>{if(ev.key==='Escape'&&state.modal)zenoCloseModal();if(ev.key==='Enter'&&document.activeElement?.id==='hospital-search'){applyHospitalQuery(document.activeElement.value);render()}});
+document.addEventListener('keydown',ev=>{if(ev.key==='Escape'&&state.homeCarePickerOpen){state.homeCarePickerOpen=false;state.homeCarePickerQuery='';render();return}if(ev.key==='Escape'&&state.modal)zenoCloseModal();if(ev.key==='Enter'&&document.activeElement?.id==='hospital-search'){applyHospitalQuery(document.activeElement.value);render()}});
+/* Filter the picker in place to preserve Korean IME composition and input focus. */
+document.addEventListener('input',ev=>{
+ if(ev.target?.id!=='zeno-care-search'||!state.homeCarePickerOpen)return;
+ state.homeCarePickerQuery=ev.target.value;
+ const q=String(state.homeCarePickerQuery||'').replace(/\\s+/g,'').toLowerCase();
+ const options=[...document.querySelectorAll('.zeno-care-picker-option')];
+ for(const button of options)button.hidden=!!q&&!String(button.dataset.careOption||'').replace(/\\s+/g,'').toLowerCase().includes(q);
+ document.querySelectorAll('.zeno-care-picker-group').forEach(group=>{group.hidden=!group.querySelector('.zeno-care-picker-option:not([hidden])')});
+ const none=document.querySelector('.zeno-care-picker-empty');if(none)none.hidden=options.some(button=>!button.hidden);
+});
 /* ZENO pet photos: preview selected image without changing any saved data yet. */
 document.addEventListener('change',ev=>{
  const input=ev.target;
