@@ -3232,8 +3232,8 @@ function home(){
  const medicalFields=['일반 진료','내과','외과','치과·구강','안과','피부·귀','비뇨기','정형외과','심장·호흡기'];
  const purposeFields=['중성화수술','건강검진·접종'];
  const pickerLabels={'치과·구강':'치과','중성화수술':'중성화수술','건강검진·접종':'건강검진·접종'};
- const query=(state.homeCarePickerQuery||'').replace(/\\s+/g,'').toLowerCase();
- const matched=name=>!query||name.replace(/\\s+/g,'').toLowerCase().includes(query)||(pickerLabels[name]||'').replace(/\\s+/g,'').toLowerCase().includes(query);
+ const query=(state.homeCarePickerQuery||'').replace(/\s+/g,'').toLowerCase();
+ const matched=name=>!query||name.replace(/\s+/g,'').toLowerCase().includes(query)||(pickerLabels[name]||'').replace(/\s+/g,'').toLowerCase().includes(query);
  const pickerOption=name=>'<button type="button" class="zeno-care-picker-option'+(state.homeCareSelection===name?' is-selected':'')+'" data-action="home-care-select" data-value="'+e(name)+'" aria-pressed="'+(state.homeCareSelection===name?'true':'false')+'" data-care-option="'+e(name)+'" '+(matched(name)?'':'hidden')+'><span>'+e(pickerLabels[name]||name)+'</span><span class="zeno-care-picker-tick" aria-hidden="true">'+(state.homeCareSelection===name?'✓':'')+'</span></button>';
  const filteredMedical=medicalFields.filter(matched),filteredPurpose=purposeFields.filter(matched);
  const picker=state.homeCarePickerOpen?'<div class="zeno-care-picker-backdrop" data-action="home-care-close">'
@@ -4028,9 +4028,9 @@ document.addEventListener('keydown',ev=>{if(ev.key==='Escape'&&state.homeCarePic
 document.addEventListener('input',ev=>{
  if(ev.target?.id!=='zeno-care-search'||!state.homeCarePickerOpen)return;
  state.homeCarePickerQuery=ev.target.value;
- const q=String(state.homeCarePickerQuery||'').replace(/\\s+/g,'').toLowerCase();
+ const q=String(state.homeCarePickerQuery||'').replace(/\s+/g,'').toLowerCase();
  const options=[...document.querySelectorAll('.zeno-care-picker-option')];
- for(const button of options)button.hidden=!!q&&!String(button.dataset.careOption||'').replace(/\\s+/g,'').toLowerCase().includes(q);
+ for(const button of options)button.hidden=!!q&&!String(button.dataset.careOption||'').replace(/\s+/g,'').toLowerCase().includes(q);
  document.querySelectorAll('.zeno-care-picker-group').forEach(group=>{group.hidden=!group.querySelector('.zeno-care-picker-option:not([hidden])')});
  const none=document.querySelector('.zeno-care-picker-empty');if(none)none.hidden=options.some(button=>!button.hidden);
 });
