@@ -1666,6 +1666,239 @@ body,#app,.app{max-width:100%;overflow-x:clip}
  .zeno-more-page .zeno-more-account-primary{flex-wrap:wrap}
  .zeno-more-page .zeno-more-recovery-btn{width:100%}
 }
+</style><style id="zeno-home-editorial-20261113">
+/* CHANGED */ /* Home colors only. White/navy + one teal accent; red is emergency-only. */
+:root{--zh-navy:#102f50;--zh-cta:#102f50;--zh-cta-text:#fff;--zh-accent:#00786e;--zh-red:#b42332;--zh-text:#142c41;--zh-muted:#526274;--zh-bg:#f6f9fb;--zh-surface:#fff;--zh-line:#d8e1e8;--zh-soft:#edf3f6;--zh-icon-bg:#e7eff6;--zh-icon-color:#102f50;--zh-accent-soft:#e7f3f0;--zh-urgent-soft:#fff0f1;--zh-urgent-line:#e2a0a6}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]):not(.light){--zh-navy:#a9d0f0;--zh-cta:#a9d0f0;--zh-cta-text:#102f50;--zh-accent:#75d9cf;--zh-red:#ffb5b9;--zh-text:#eef5fb;--zh-muted:#c0d1e0;--zh-bg:#111d2a;--zh-surface:#192b3d;--zh-line:#415668;--zh-soft:#21384a;--zh-icon-bg:#2b4357;--zh-icon-color:#d0e5f5;--zh-accent-soft:#1d4645;--zh-urgent-soft:#432b35;--zh-urgent-line:#b66a76}}
+html[data-theme="dark"],html.dark{--zh-navy:#a9d0f0;--zh-cta:#a9d0f0;--zh-cta-text:#102f50;--zh-accent:#75d9cf;--zh-red:#ffb5b9;--zh-text:#eef5fb;--zh-muted:#c0d1e0;--zh-bg:#111d2a;--zh-surface:#192b3d;--zh-line:#415668;--zh-soft:#21384a;--zh-icon-bg:#2b4357;--zh-icon-color:#d0e5f5;--zh-accent-soft:#1d4645;--zh-urgent-soft:#432b35;--zh-urgent-line:#b66a76}
+/* CHANGED */ /* Scoped to existing .zeno-home-v10. Preserve navigation and all other pages. */
+.zeno-home-v10{max-width:850px;margin:0 auto;padding:0 2px 26px;background:var(--zh-bg)!important;color:var(--zh-text)!important}
+.zeno-home-v10 .zeno-v10-header{padding:9px 0!important;border-color:var(--zh-line)!important;background:var(--zh-bg)!important}
+.zeno-home-v10 .zeno-v10-brand{color:var(--zh-text)!important}
+.zeno-home-v10 .zeno-v10-brand i,.zeno-home-v10 .zeno-v10-region-button svg:first-child{color:var(--zh-accent)!important}
+.zeno-home-v10 .zeno-v10-separator{background:var(--zh-line)!important}
+.zeno-home-v10 .zeno-v10-bell,.zeno-home-v10 .zeno-v10-region-button{color:var(--zh-text)!important;background:transparent!important}
+.zeno-home-v10 .zeno-v10-area-menu{background:var(--zh-surface)!important;border-color:var(--zh-line)!important}
+.zeno-home-v10 .zeno-v10-area-menu button{background:var(--zh-surface)!important;color:var(--zh-text)!important}
+.zeno-home-v10 .zeno-v10-area-menu button.selected{background:var(--zh-soft)!important;color:var(--zh-navy)!important}
+.zeno-home-v10 .zeno-v10-intro{padding:18px 0 13px!important}
+.zeno-home-v10 .zeno-v10-intro-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.zeno-home-v10 .zeno-v10-intro-copy{flex:1;min-width:0}
+.zeno-home-v10 .zeno-v10-eyebrow{color:var(--zh-accent)!important;font-size:12px!important}
+.zeno-home-v10 .zeno-v10-intro h1{color:var(--zh-text)!important;font-size:clamp(20px,5.6vw,27px)!important;line-height:1.28!important;letter-spacing:-.6px!important;word-break:keep-all}
+.zeno-home-v10 .zeno-v10-subtitle{color:var(--zh-muted)!important;font-size:13px!important}
+.zeno-home-v10 .zeno-v10-visual{width:108px;height:82px;flex:0 0 108px;border:1px solid var(--zh-line);border-radius:15px;background:var(--zh-soft);color:var(--zh-navy);display:grid;place-items:center}
+.zeno-home-v10 .zeno-v10-visual svg{width:91px;max-height:70px}
+.zeno-home-v10 .zeno-v10-search{height:48px!important;min-height:48px!important;margin-top:15px!important;border:1px solid var(--zh-line)!important;border-radius:12px!important;background:var(--zh-surface)!important;box-shadow:none!important}
+.zeno-home-v10 .zeno-v10-search>svg{color:var(--zh-muted)!important}
+.zeno-home-v10 .zeno-v10-search input{color:var(--zh-text)!important;font-size:14px!important}
+.zeno-home-v10 .zeno-v10-search input::placeholder{color:var(--zh-muted)!important;opacity:1}
+.zeno-home-v10 .zeno-v10-search button{background:var(--zh-cta)!important;color:var(--zh-cta-text)!important;border-radius:8px!important;font-size:13px!important;min-height:33px}
+.zeno-home-v10 .zeno-v10-search:focus-within{border-color:var(--zh-accent)!important;box-shadow:0 0 0 2px var(--zh-accent-soft)!important}
+.zeno-home-v10 .zeno-v10-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;border:1px solid var(--zh-line);background:var(--zh-surface);border-radius:12px;margin:4px 0 0;overflow:hidden}
+.zeno-home-v10 .zeno-v10-stats>div{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 4px;gap:1px;min-width:0}
+.zeno-home-v10 .zeno-v10-stats>div+div{border-left:1px solid var(--zh-line)}
+.zeno-home-v10 .zeno-v10-stats strong{font-size:16px;font-weight:800;line-height:1.35;color:var(--zh-text)}
+.zeno-home-v10 .zeno-v10-stats span{font-size:11.5px;line-height:1.5;color:var(--zh-muted);text-align:center}
+.zeno-home-v10 .zeno-v10-stats .urgent strong,.zeno-home-v10 .zeno-v10-stats .urgent span{color:var(--zh-red)}
+.zeno-home-v10 .zeno-v10-stats-note{font-size:11px;line-height:1.5;color:var(--zh-muted);margin:6px 1px 12px}
+.zeno-home-v10 .zeno-v10-section-heading h2,.zeno-home-v10 .zeno-v10-quick h2,.zeno-home-v10 .zeno-v10-others h2,.zeno-home-v10 .zeno-v10-tools h2{font-size:16px!important;font-weight:800;color:var(--zh-text)!important;margin:0 0 9px;letter-spacing:-.25px}
+.zeno-home-v10 .zeno-v10-section-heading h2{margin:0}
+.zeno-home-v10 .zeno-v10-section-heading p{font-size:12px!important;color:var(--zh-muted)!important}
+.zeno-home-v10 .zeno-v10-section-heading button{font-size:12px!important;color:var(--zh-accent)!important}
+.zeno-home-v10 .zeno-v10-symptom-btn{margin:0 0 19px!important;padding:11px!important;min-height:60px!important;border:1px solid var(--zh-line)!important;border-left:3px solid var(--zh-accent)!important;border-radius:12px!important;background:var(--zh-accent-soft)!important;color:var(--zh-text)!important}
+.zeno-home-v10 .zeno-v10-help-icon{background:var(--zh-surface)!important;color:var(--zh-accent)!important;border-radius:9px!important}
+.zeno-home-v10 .zeno-v10-symptom-btn strong{color:var(--zh-text)!important;font-size:13px!important}
+.zeno-home-v10 .zeno-v10-symptom-btn small{color:var(--zh-muted)!important;font-size:11.5px!important}
+.zeno-home-v10 .zeno-v10-symptom-btn>svg:last-child{color:var(--zh-accent)!important}
+.zeno-home-v10 .zeno-v10-grid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:9px!important}
+.zeno-home-v10 .zeno-v10-care-card{height:auto!important;min-height:110px!important;max-height:none!important;padding:12px!important;gap:0!important;align-items:flex-start!important;background:var(--zh-surface)!important;border:1px solid var(--zh-line)!important;border-radius:12px!important;box-shadow:none!important;color:var(--zh-text)!important}
+.zeno-home-v10 .zeno-v10-care-icon,.zeno-home-v10 .zeno-v10-shortcut-icon.cat{width:34px;height:34px;flex:0 0 34px;border-radius:9px;background:var(--zh-icon-bg)!important;color:var(--zh-icon-color)!important;display:grid;place-items:center}
+.zeno-home-v10 .zeno-v10-care-icon svg{width:21px;height:21px}
+.zeno-home-v10 .zeno-v10-care-copy{display:block;min-width:0;max-width:100%}
+.zeno-home-v10 .zeno-v10-care-card strong{margin-top:7px!important;font-size:14px!important;font-weight:750!important;line-height:1.35!important;color:var(--zh-text)!important}
+.zeno-home-v10 .zeno-v10-care-card small{margin-top:3px!important;font-size:11.5px!important;line-height:1.45!important;color:var(--zh-muted)!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+.zeno-home-v10 .zeno-v10-care-chip{display:flex!important;flex-direction:row!important;align-items:center!important;gap:8px!important;min-height:65px!important;padding:10px!important}
+.zeno-home-v10 .zeno-v10-care-chip .zeno-v10-care-icon{width:29px;height:29px;flex-basis:29px;border-radius:8px}
+.zeno-home-v10 .zeno-v10-care-chip .zeno-v10-care-icon svg{width:18px;height:18px}
+.zeno-home-v10 .zeno-v10-care-chip strong{font-size:12.8px!important;margin-top:0!important}
+.zeno-home-v10 .zeno-v10-care-chip small{font-size:10.5px!important}
+.zeno-home-v10 .zeno-v10-quick{margin:21px 0!important}
+.zeno-home-v10 .zeno-v10-quick-grid{gap:9px!important}
+.zeno-home-v10 .zeno-v10-quick-grid button{display:flex!important;flex-direction:row!important;align-items:center!important;gap:8px!important;min-height:74px!important;padding:10px!important;border:1px solid var(--zh-urgent-line)!important;border-radius:12px!important;background:var(--zh-urgent-soft)!important;box-shadow:none!important}
+.zeno-home-v10 .zeno-v10-quick-grid button>span:nth-child(2){flex:1;min-width:0}
+.zeno-home-v10 .zeno-v10-shortcut-icon.night,.zeno-home-v10 .zeno-v10-shortcut-icon.urgent{width:31px;height:31px;flex:0 0 31px;border-radius:9px;background:var(--zh-surface)!important;color:var(--zh-red)!important;margin:0!important;display:grid;place-items:center}
+.zeno-home-v10 .zeno-v10-quick-grid strong{font-size:13px!important;color:var(--zh-red)!important}
+.zeno-home-v10 .zeno-v10-quick-grid small{font-size:11px!important;color:var(--zh-text)!important;display:block}
+.zeno-home-v10 .zeno-v10-quick-grid button>svg:last-child{width:14px;height:14px;color:var(--zh-red)}
+.zeno-home-v10 .zeno-v10-others{margin:4px 0 12px}
+.zeno-home-v10 .zeno-v10-compact-grid{gap:8px!important}
+.zeno-home-v10 .zeno-v10-cat{padding:12px!important;margin:13px 0 0!important;border:1px solid var(--zh-line)!important;border-radius:12px!important;background:var(--zh-surface)!important;box-shadow:none!important}
+.zeno-home-v10 .zeno-v10-cat strong{font-size:13px!important;color:var(--zh-text)!important}
+.zeno-home-v10 .zeno-v10-cat small{font-size:11.5px!important;color:var(--zh-muted)!important}
+.zeno-home-v10 .zeno-v10-cat>svg:last-child{color:var(--zh-muted)!important}
+.zeno-home-v10 .zeno-v10-tools{margin:23px 0 0}
+.zeno-home-v10 .zeno-v10-links{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px!important;margin:0!important}
+.zeno-home-v10 .zeno-v10-links button{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;text-align:left;min-width:0;min-height:78px;gap:7px;padding:10px!important;background:var(--zh-surface)!important;border:1px solid var(--zh-line)!important;border-radius:12px;color:var(--zh-text)!important;box-shadow:none}
+.zeno-home-v10 .zeno-v10-links button>span{width:27px;height:27px;border-radius:7px;background:var(--zh-icon-bg);color:var(--zh-icon-color);display:grid;place-items:center}
+.zeno-home-v10 .zeno-v10-links button svg{width:18px;height:18px}
+.zeno-home-v10 .zeno-v10-links button strong{font-size:12px;font-weight:750;line-height:1.4;word-break:keep-all}
+.zeno-home-v10 .zeno-v10-links button+button:before{content:none!important}
+.zeno-home-v10 .zeno-v10-footnote{color:var(--zh-muted)!important;font-size:11.5px!important;line-height:1.6!important;margin-top:16px!important}
+.zeno-home-v10 button:focus-visible{outline:2px solid var(--zh-accent)!important;outline-offset:2px}
+@media(min-width:540px){.zeno-home-v10 .zeno-v10-compact-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}}
+@media(max-width:750px){.zeno-home-v10{background:var(--zh-bg)!important;padding-bottom:24px}.zeno-home-v10 .zeno-v10-care-card{height:auto!important;min-height:110px!important;max-height:none!important}}
+@media(max-width:370px){.zeno-home-v10 .zeno-v10-visual{width:76px;flex-basis:76px;height:70px}.zeno-home-v10 .zeno-v10-visual svg{width:72px}.zeno-home-v10 .zeno-v10-care-chip{padding:8px!important}.zeno-home-v10 .zeno-v10-care-card strong{font-size:13px!important}.zeno-home-v10 .zeno-v10-care-card small{font-size:11px!important}.zeno-home-v10 .zeno-v10-care-chip strong{font-size:12px!important}.zeno-home-v10 .zeno-v10-care-chip small{font-size:10px!important}}
+
+/* CHANGED */ /* Keep the surrounding mobile content and bottom tab legible in dark mode. */
+body:has(.zeno-home-v10),body:has(.zeno-home-v10) .content{background:var(--zh-bg)!important}
+body:has(.zeno-home-v10) .mobilebar{background:var(--zh-surface)!important;border-color:var(--zh-line)!important;box-shadow:none!important}
+body:has(.zeno-home-v10) .mobilebar button{color:var(--zh-muted)!important}
+body:has(.zeno-home-v10) .mobilebar button.active{color:var(--zh-accent)!important}
+
+/* CHANGED */ /* v10 care cards: domestic-app spacing and visual hierarchy */
+.zeno-home-v10 {
+  --zh-bg:#f5f7f9;
+  --zh-surface:#fff;
+  --zh-soft:#f5f7f9;
+  --zh-icon-bg:#f5f7f9;
+  --zh-accent-soft:#f5f7f9;
+  font-family:Pretendard,-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+/* CHANGED */ /* Dark theme remains scoped to the ZENO home. */
+@media(prefers-color-scheme:dark) {
+  html:not([data-theme="light"]):not(.light) .zeno-home-v10 {
+    --zh-bg:#141f29;--zh-surface:#202d39;--zh-soft:#283541;
+    --zh-text:#edf4f9;--zh-muted:#c3d1dd;--zh-line:#455666;
+    --zh-icon-bg:#283541;--zh-accent-soft:#283541;
+  }
+}
+html[data-theme="dark"] .zeno-home-v10,
+html.dark .zeno-home-v10 {
+  --zh-bg:#141f29;--zh-surface:#202d39;--zh-soft:#283541;
+  --zh-text:#edf4f9;--zh-muted:#c3d1dd;--zh-line:#455666;
+  --zh-icon-bg:#283541;--zh-accent-soft:#283541;
+}
+/* CHANGED */ /* Four featured cards: 12px gutters, 16px inset, left alignment. */
+.zeno-home-v10 .zeno-v10-grid,
+.zeno-home-v10 .zeno-v10-compact-grid {
+  gap:12px!important;
+}
+.zeno-home-v10 .zeno-v10-care-card {
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:flex-start!important;
+  justify-content:flex-start!important;
+  min-width:0!important;
+  height:auto!important;
+  min-height:88px!important;
+  max-height:none!important;
+  padding:16px!important;
+  gap:0!important;
+  border:1px solid var(--zh-line)!important;
+  border-radius:12px!important;
+  background:var(--zh-surface)!important;
+  box-shadow:none!important;
+  color:var(--zh-text)!important;
+  text-align:left!important;
+  touch-action:manipulation;
+  -webkit-tap-highlight-color:transparent;
+}
+/* CHANGED */ /* Single-color icons without colored badges. */
+.zeno-home-v10 .zeno-v10-care-icon {
+  width:24px;height:24px;flex:0 0 24px;
+  background:transparent!important;
+  color:var(--zh-text)!important;
+  border-radius:0;
+  display:grid;place-items:center;
+}
+.zeno-home-v10 .zeno-v10-care-icon svg {
+  width:24px;height:24px;
+}
+.zeno-home-v10 .zeno-v10-care-copy {
+  min-width:0;max-width:100%;width:100%;flex:1 1 auto;
+}
+/* CHANGED */ /* One strong heading, subdued one-line description. */
+.zeno-home-v10 .zeno-v10-care-card strong {
+  display:block!important;
+  max-width:100%;
+  margin-top:8px!important;
+  color:var(--zh-text)!important;
+  font-size:16px!important;font-weight:600!important;line-height:1.4!important;
+  white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;
+}
+.zeno-home-v10 .zeno-v10-care-card small {
+  display:block!important;
+  max-width:100%;width:100%;
+  margin-top:4px!important;
+  color:var(--zh-muted)!important;
+  font-size:13px!important;font-weight:400!important;line-height:1.45!important;
+  white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;
+}
+/* CHANGED */ /* Two feature cards are horizontal; the middle two remain compact. */
+.zeno-home-v10 .zeno-v10-grid:not(.zeno-v10-compact-grid) > .zeno-v10-care-card:first-child,
+.zeno-home-v10 .zeno-v10-grid:not(.zeno-v10-compact-grid) > .zeno-v10-care-card:nth-child(4) {
+  grid-column:1 / -1;
+  flex-direction:row!important;
+  align-items:center!important;
+  gap:12px!important;
+  min-height:76px!important;
+}
+.zeno-home-v10 .zeno-v10-grid:not(.zeno-v10-compact-grid) > .zeno-v10-care-card:first-child strong,
+.zeno-home-v10 .zeno-v10-grid:not(.zeno-v10-compact-grid) > .zeno-v10-care-card:nth-child(4) strong {
+  margin-top:0!important;
+}
+/* CHANGED */ /* Compact chips: 20px icon, horizontal content and 10px requested icon gap. */
+.zeno-home-v10 .zeno-v10-care-chip {
+  display:flex!important;flex-direction:row!important;align-items:center!important;
+  justify-content:flex-start!important;
+  min-width:0!important;
+  min-height:56px!important;
+  padding:16px!important;
+  gap:10px!important;
+}
+.zeno-home-v10 .zeno-v10-care-chip .zeno-v10-care-icon {
+  width:20px;height:20px;flex:0 0 20px;
+  border-radius:0;
+}
+.zeno-home-v10 .zeno-v10-care-chip .zeno-v10-care-icon svg {
+  width:20px;height:20px;
+}
+.zeno-home-v10 .zeno-v10-care-chip strong {
+  margin-top:0!important;
+  font-size:14px!important;font-weight:600!important;
+}
+.zeno-home-v10 .zeno-v10-care-chip small {
+  margin-top:4px!important;
+  font-size:12px!important;font-weight:400!important;
+}
+/* CHANGED */ /* Native-like press and keyboard focus. */
+.zeno-home-v10 .zeno-v10-care-card:active {
+  background:var(--zh-bg)!important;
+}
+.zeno-home-v10 .zeno-v10-care-card:focus-visible {
+  outline:2px solid var(--zh-accent)!important;
+  outline-offset:2px;
+}
+/* CHANGED */ /* 360–430px: prevent previous small-screen rules from shrinking type. */
+@media(min-width:360px) and (max-width:430px) {
+  .zeno-home-v10 .zeno-v10-care-card { padding:16px!important; }
+  .zeno-home-v10 .zeno-v10-care-card strong { font-size:16px!important; }
+  .zeno-home-v10 .zeno-v10-care-card small { font-size:13px!important; }
+  .zeno-home-v10 .zeno-v10-care-chip strong { font-size:14px!important; }
+  .zeno-home-v10 .zeno-v10-care-chip small { font-size:12px!important; }
+}
+/* CHANGED */ /* Section text uses the same quiet hierarchy. */
+.zeno-home-v10 .zeno-v10-section-heading h2,
+.zeno-home-v10 .zeno-v10-others h2 {
+  color:var(--zh-text)!important;
+  font-size:16px!important;font-weight:600!important;line-height:1.4;
+}
+.zeno-home-v10 .zeno-v10-section-heading p {
+  color:var(--zh-muted)!important;
+  font-size:13px!important;font-weight:400!important;line-height:1.45;
+}
 </style></head><body><div id="app" class="app"></div><script>
 'use strict';
 const APP_MODE='owner';
@@ -1780,7 +2013,7 @@ const SYMPTOM_GUIDE=[
 const CARE_SVG={
  '일반 진료':'<path d="M6 3v6a5 5 0 0 0 10 0V3M6 3H4m12 0h2m-7 11v3a4 4 0 0 0 8 0v-3"/><circle cx="19" cy="12" r="2"/>',
  '내과':'<path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0l-1 1-1-1a5.5 5.5 0 0 0-7.8 7.8l8.8 8.8 8.8-8.8a5.5 5.5 0 0 0 0-7.8Z"/>',
- '피부·귀':'<circle cx="5" cy="9" r="1"/><circle cx="10" cy="5" r="1"/><circle cx="16" cy="5" r="1"/><circle cx="20" cy="9" r="1"/><path d="M8 14c-3 3-1 7 2 7 1 0 1.3-1 2-1s1 1 2 1c3 0 5-4 2-7-3-4-5-4-8 0Z"/>',
+ /* CHANGED */ '피부·귀':'<path d="M9 21c-4 0-6-3-6-8C3 7 7 3 13 3s9 4 9 9c0 4-2 6-5 6-2 0-2 3-5 3"/><path d="M10 10c2-3 7-1 7 3 0 2-1 3-3 3"/>',
  '안과':'<path d="M2 12s3.7-6 10-6 10 6 10 6-3.7 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/>',
  '치과·구강':'<path d="M7 3C4 3 3 5 3 8c0 3 2 6 3 10 .5 2 2.6 3 4 1 .8-1.4.7-4 2-4s1.2 2.6 2 4c1.4 2 3.5 1 4-1 1-4 3-7 3-10 0-3-1-5-4-5-2 0-3 1-5 1S9 3 7 3Z"/>',
  '정형외과':'<path d="M17 11a3 3 0 1 0-4-4l-6 6a3 3 0 1 0 4 4l6-6Z"/><path d="M15 5a2 2 0 0 1 3 0m-13 13a2 2 0 0 0 3 0"/>',
@@ -1789,7 +2022,7 @@ const CARE_SVG={
  '심장·호흡기':'<path d="M2 12h4l2-5 4 10 3-7 2 2h5"/>',
  '비뇨기':'<path d="M12 2c-3 4.5-7 8-7 12a7 7 0 0 0 14 0c0-4-4-7.5-7-12Z"/>',
  '건강검진·접종':'<rect x="5" y="4" width="14" height="18" rx="2"/><rect x="9" y="2" width="6" height="4" rx="1"/><path d="m8 14 3 3 5-6"/>',
- '특수동물':'<circle cx="5" cy="9" r="1"/><circle cx="10" cy="5" r="1"/><circle cx="16" cy="5" r="1"/><circle cx="20" cy="9" r="1"/><path d="M8 14c-3 3-1 7 2 7 1 0 1.3-1 2-1s1 1 2 1c3 0 5-4 2-7-3-4-5-4-8 0Z"/>',
+ /* CHANGED */ '특수동물':'<path d="M10 13c-3-2-3-6 0-8s6-2 8 1c2 2 1 5-1 7l-4 3-2 5"/><circle cx="16" cy="7" r=".7"/><path d="m10 11-5 2-2-3m8 5-3 3-4 1m11-6 4 4 3-1m-7-5 5-2 2-3"/>',
  '잘 모르겠어요':'<circle cx="12" cy="12" r="10"/><path d="M9.2 9a3 3 0 0 1 5.8 1c0 2-3 2.5-3 4.5"/><path d="M12 18h.01"/>'
 };
 function zenoCareIcon(name){
@@ -2390,7 +2623,10 @@ function zenoHomeSmallIcon(name){
   'chevron':'<path d="m6 9 6 6 6-6"/>',
   'bell':'<path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/>',
   'moon':'<path d="M20 14.5A8.5 8.5 0 0 1 9.5 4 8.5 8.5 0 1 0 20 14.5Z"/>',
-  'urgent':'<path d="M12 3v3M4.8 6l2 2M19.2 6l-2 2M5 14h14l-2-7H7l-2 7ZM3 18h18"/><path d="M10 10h4"/>',
+  /* CHANGED */ 'urgent':'<circle cx="10.5" cy="10.5" r="8"/><path d="M10.5 6.5V11l3 2M16 19h6m-3-3v6"/>',
+  'records':'<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V2h6v2m-6 7h6m-6 4h6"/>',
+  'questions':'<path d="M4 5h16v12H9l-5 4V5Z"/><path d="M8 10h8m-8 4h5"/>',
+  'cost':'<rect x="3" y="5" width="18" height="15" rx="2"/><path d="M7 9h10M7 13h5m-5 4h3"/>',
   'next':'<path d="m9 18 6-6-6-6"/>',
   'help':'<circle cx="12" cy="12" r="9"/><path d="M9.7 9a2.5 2.5 0 1 1 4 2c-1.2 1-1.7 1.5-1.7 2.5M12 17h.01"/>'
  };
@@ -2399,25 +2635,32 @@ function zenoHomeSmallIcon(name){
 function home(){
  const visible=SPECIALTIES.filter(x=>x[0]!=='잘 모르겠어요');
  const areas=['청주 전체','청주 상당구','청주 서원구','청주 흥덕구','청주 청원구'];
- const pastel={
-  '일반 진료':'blue','내과':'rose','피부·귀':'amber','안과':'cyan',
-  '치과·구강':'violet','정형외과':'teal','외과':'indigo','중성화수술':'sky',
-  '심장·호흡기':'pink','비뇨기':'sky','건강검진·접종':'emerald','특수동물':'orange'
- };
+
+ /* CHANGED */ /* Four prominent services, eight compact services, parent-friendly one-line copy. */
+ const priorityNames=['일반 진료','내과','피부·귀','특수동물'];
  const subtitle={
-  '일반 진료':'가벼운 증상 · 정기검진','내과':'구토 · 설사 · 식욕저하',
-  '피부·귀':'가려움 · 탈모 · 귓병','안과':'충혈 · 눈곱 · 눈물자국',
-  '치과·구강':'스케일링 · 치석 · 구취','정형외과':'절뚝거림 · 슬개골 · 관절',
-  '외과':'일반 외과 · 수술 상담','중성화수술':'중성화 상담 · 수술 문의',
-  '심장·호흡기':'기침 · 호흡 · 심장','비뇨기':'소변 · 방광 · 신장',
-  '건강검진·접종':'건강검진 · 예방접종','특수동물':'토끼 · 조류 · 파충류'
+  '일반 진료':'평소와 달리 기운이 없어요','내과':'토하거나 설사해요',
+  '피부·귀':'자꾸 긁거나 귀를 털어요','특수동물':'토끼나 도마뱀도 진료하나요?',
+  '안과':'눈곱이 끼고 눈이 빨개요','치과·구강':'입 냄새가 심해졌어요',
+  '정형외과':'다리를 절뚝거려요','외과':'수술 상담이 필요해요',
+  '중성화수술':'중성화를 고민 중이에요','심장·호흡기':'기침이 계속 나요',
+  '비뇨기':'소변을 자주 봐요','건강검진·접종':'예방접종 시기가 됐어요'
  };
- const chips=visible.map(x=>{
-  const name=x[0],tone=pastel[name]||'blue';
-  return '<button type="button" class="zeno-v10-care-card" data-action="specialty" data-value="'+e(name)+'" aria-label="'+e(name+': '+subtitle[name]+' 병원 찾기')+'">'
-   +'<span class="zeno-v10-care-icon tone-'+tone+'">'+zenoCareIcon(name)+'</span>'
-   +'<strong>'+e(name)+'</strong><small>'+e(subtitle[name])+'</small></button>';
- }).join('');
+ const careItem=(x,small=false)=>{
+  const name=x[0],hint=subtitle[name]||x[2];
+  return '<button type="button" class="zeno-v10-care-card'+(small?' zeno-v10-care-chip':'')+'" data-action="specialty" data-value="'+e(name)+'" aria-label="'+e(name+': '+hint)+'">'
+    +'<span class="zeno-v10-care-icon">'+zenoCareIcon(name)+'</span><span class="zeno-v10-care-copy"><strong>'+e(name)+'</strong><small>'+e(hint)+'</small></span></button>';
+ };
+ const featured=priorityNames.map(n=>visible.find(x=>x[0]===n)).filter(Boolean).map(x=>careItem(x)).join('');
+ const compact=visible.filter(x=>!priorityNames.includes(x[0])).map(x=>careItem(x,true)).join('');
+ /* CHANGED */ /* Counts reuse search-page hospital flags and the current Korea-time night filter. */
+ const areaText=state.homeArea.replace(/^청주\s*/,'');
+ const areaHospitals=state.homeArea==='청주 전체'?HOSPITALS:HOSPITALS.filter(h=>String(h.region||'').includes(areaText));
+ const homeStats={
+  total:areaHospitals.length,
+  night:areaHospitals.filter(h=>!zeno24HourEmergency(h)&&zenoNightHours(h)).length,
+  emergency:areaHospitals.filter(zeno24HourEmergency).length
+ };
  const regionItems=areas.map(area=>'<button type="button" role="option" aria-selected="'+(area===state.homeArea)+'" class="'+(area===state.homeArea?'selected':'')+'" data-action="home-area-select" data-value="'+e(area)+'">'+e(area)+'</button>').join('');
  const areaMenu=state.homeAreaOpen?'<div class="zeno-v10-area-menu" id="zeno-v10-area-menu" role="listbox" aria-label="청주 지역 선택">'+regionItems+'</div>':'';
  return '<div class="zeno-home-v10">'
@@ -2425,20 +2668,30 @@ function home(){
  +'<div class="zeno-v10-region-wrap"><button type="button" class="zeno-v10-region-button" data-action="home-area-toggle" aria-haspopup="listbox" aria-expanded="'+state.homeAreaOpen+'" '+(state.homeAreaOpen?'aria-controls="zeno-v10-area-menu"':'')+'>'
  +zenoHomeSmallIcon('pin')+'<span>'+e(state.homeArea)+'</span>'+zenoHomeSmallIcon('chevron')+'</button>'+areaMenu+'</div></div>'
  +'<button type="button" class="zeno-v10-bell" data-action="home-notifications" aria-label="알림 보기">'+zenoHomeSmallIcon('bell')+'</button></header>'
- +'<section class="zeno-v10-intro"><p class="zeno-v10-eyebrow">반려동물 진료, 필요한 순간에</p><h1>어떤 진료가 필요하세요?</h1><p class="zeno-v10-subtitle">증상부터 진료과목까지 편하게 찾아보세요.</p>'
+
+ /* CHANGED */ /* Quiet top visual, grouped navigation, real counts, existing click handlers. */
+ +'<section class="zeno-v10-intro"><div class="zeno-v10-intro-row"><div class="zeno-v10-intro-copy"><p class="zeno-v10-eyebrow">청주 반려동물 진료 안내</p><h1>우리 아이, 어디로 가야 할까요?</h1><p class="zeno-v10-subtitle">증상이나 병원 이름으로 바로 찾아보세요.</p></div>'
+ +'<div class="zeno-v10-visual" role="img" aria-label="강아지와 고양이 일러스트"><svg viewBox="0 0 108 78" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 35 11 15l14 9 13-9 2 20c0 14-6 22-17 22S9 49 9 35Z"/><path d="M17 37h.1M32 37h.1m-11 8 3 2 3-2M24 47v4m0 0-4 2m4-2 4 2"/><path d="M65 29c0-9 6-15 16-15s16 6 16 15v16c0 13-7 20-16 20s-16-7-16-20Z"/><path d="M65 29c-4-10-12-4-9 9l9 5m32-14c4-10 12-4 9 9l-9 5"/><path d="M74 42h.1M88 42h.1m-10 8h7l-3.5 3.5L78 50Z"/></svg></div></div>'
  +'<form id="home-search-form" class="zeno-v10-search" role="search"><label class="sr-only" for="home-hospital-search">증상, 병원명, 진료과목 검색</label>'
- +zenoNavIcon('search')+'<input id="home-hospital-search" name="homeQuery" type="search" autocomplete="off" placeholder="증상, 병원명, 진료과목 검색" value="'+e(state.query)+'">'
- +'<button type="submit">검색</button></form></section>'
- +'<section class="zeno-v10-care" aria-label="진료 분야로 찾기"><div class="zeno-v10-section-heading"><div><h2>진료 분야로 찾기</h2><p>우리 아이 증상에 맞는 진료를 골라보세요.</p></div><button type="button" data-action="show-all-hospitals">전체 병원 보기</button></div>'
- +'<div class="zeno-v10-grid">'+chips+'</div>'
- +'<button type="button" class="zeno-v10-symptom-btn" data-action="specialty" data-value="잘 모르겠어요" aria-expanded="'+state.symptomGuideOpen+'" aria-controls="zeno-symptom-guide"><span class="zeno-v10-help-icon">'+zenoHomeSmallIcon('help')+'</span><span><strong>어떤 진료인지 잘 모르겠어요</strong><small>증상을 보고 진료 분야를 찾아보세요.</small></span>'+zenoHomeSmallIcon('next')+'</button>'
- +(state.symptomGuideOpen?zenoSymptomPanel():'')+'</section>'
- +'<section class="zeno-v10-quick" aria-label="빠르게 병원 찾기"><h2>필요한 진료 빠르게 찾기</h2>'
- +'<div class="zeno-v10-quick-grid"><button type="button" data-action="night-shortcut"><span class="zeno-v10-shortcut-icon night">'+zenoHomeSmallIcon('moon')+'</span><strong>야간 진료</strong><small>밤에도 진료하는 병원</small></button>'
- +'<button type="button" data-action="around-clock-shortcut"><span class="zeno-v10-shortcut-icon urgent">'+zenoHomeSmallIcon('urgent')+'</span><strong>24시간 응급</strong><small>방문 전 전화 확인</small></button></div>'
- +'<button type="button" class="zeno-v10-cat" data-action="cat-waiting-shortcut"><span class="zeno-v10-shortcut-icon cat">'+zenoNavIcon('pets')+'</span><span><strong>고양이 전용 대기실</strong><small>고양이를 위한 별도 공간 확인</small></span>'+zenoHomeSmallIcon('next')+'</button></section>'
+ +zenoNavIcon('search')+'<input id="home-hospital-search" name="homeQuery" type="search" autocomplete="off" placeholder="증상이나 병원 이름을 입력하세요" value="'+e(state.query)+'"><button type="submit">검색</button></form></section>'
+ +'<div class="zeno-v10-stats" role="group" aria-label="동물병원 등록 현황" aria-live="polite">'
+ +'<div><strong>'+homeStats.total+'곳</strong><span>'+(state.homeArea==='청주 전체'?'청주 병원':'선택 지역 병원')+'</span></div>'
+ +'<div><strong>'+homeStats.night+'곳</strong><span>야간 진료</span></div>'
+ +'<div class="urgent"><strong>'+homeStats.emergency+'곳</strong><span>24시간 응급</span></div></div>'
+ +'<p class="zeno-v10-stats-note">등록된 병원 안내 기준이며, 진료·응급 수용 가능 여부는 방문 전 전화로 확인해 주세요.</p>'
+ +'<button type="button" class="zeno-v10-symptom-btn" data-action="specialty" data-value="잘 모르겠어요" aria-expanded="'+state.symptomGuideOpen+'" aria-controls="zeno-symptom-guide"><span class="zeno-v10-help-icon">'+zenoHomeSmallIcon('help')+'</span><span><strong>어떤 진료인지 잘 모르겠어요</strong><small>증상을 골라서 진료 분야를 찾을 수 있어요.</small></span>'+zenoHomeSmallIcon('next')+'</button>'
+ +(state.symptomGuideOpen?zenoSymptomPanel():'')
+ +'<section class="zeno-v10-care" aria-label="자주 찾는 진료 분야"><div class="zeno-v10-section-heading"><div><h2>자주 찾는 진료</h2><p>많이 찾는 분야부터 골라보세요.</p></div><button type="button" data-action="show-all-hospitals">전체 병원</button></div><div class="zeno-v10-grid">'+featured+'</div></section>'
+ +'<section class="zeno-v10-quick" aria-label="야간과 응급 진료"><h2>늦은 시간에도 병원을 찾으세요?</h2><div class="zeno-v10-quick-grid">'
+ +'<button type="button" data-action="night-shortcut"><span class="zeno-v10-shortcut-icon night">'+zenoHomeSmallIcon('moon')+'</span><span><strong>야간 진료</strong><small>밤에 진료하는 병원</small></span>'+zenoHomeSmallIcon('next')+'</button>'
+ +'<button type="button" data-action="around-clock-shortcut"><span class="zeno-v10-shortcut-icon urgent">'+zenoHomeSmallIcon('urgent')+'</span><span><strong>24시간 응급</strong><small>먼저 전화해 주세요</small></span>'+zenoHomeSmallIcon('next')+'</button></div></section>'
+ +'<section class="zeno-v10-others" aria-label="다른 진료 분야"><h2>다른 진료도 살펴보기</h2><div class="zeno-v10-grid zeno-v10-compact-grid">'+compact+'</div></section>'
+ +'<button type="button" class="zeno-v10-cat" data-action="cat-waiting-shortcut"><span class="zeno-v10-shortcut-icon cat">'+zenoNavIcon('pets')+'</span><span><strong>고양이 전용 대기실</strong><small>강아지와 분리된 공간을 찾고 싶어요.</small></span>'+zenoHomeSmallIcon('next')+'</button>'
  +zenoHomeBookingPreview()
- +'<div class="zeno-v10-links"><button type="button" data-nav="pets">내 아이 기록</button><button type="button" data-nav="qa">병원 질문·답변</button><button type="button" data-nav="prices">진료비 비교</button></div>'
+ +'<section class="zeno-v10-tools" aria-label="보호자 기능"><h2>함께 쓰면 좋은 기능</h2><div class="zeno-v10-links">'
+ +'<button type="button" data-nav="pets"><span>'+zenoHomeSmallIcon('records')+'</span><strong>내 아이 기록</strong></button>'
+ +'<button type="button" data-nav="qa"><span>'+zenoHomeSmallIcon('questions')+'</span><strong>병원 질문·답변</strong></button>'
+ +'<button type="button" data-nav="prices"><span>'+zenoHomeSmallIcon('cost')+'</span><strong>진료비 비교</strong></button></div></section>'
  +'<p class="zeno-v10-footnote">ZENO는 병원 정보 탐색을 돕는 서비스입니다. 진료 가능 여부와 응급 수용 여부는 방문 전 확인해 주세요.</p></div>';
 }
 function searchPage(){
