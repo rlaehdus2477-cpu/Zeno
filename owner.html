@@ -1694,6 +1694,25 @@ html.dark .zeno-hospital-card .zeno-card-action:not(.primary),html[data-theme="d
 @media(prefers-color-scheme:dark){.zeno-service-guide{background:#1d2937;color:#f4f7fb;border-color:#627185}.zeno-service-guide p{color:#d0dce9}}
 html.dark .zeno-service-guide,html[data-theme="dark"] .zeno-service-guide{background:#1d2937;color:#f4f7fb;border-color:#627185}
 html.dark .zeno-service-guide p,html[data-theme="dark"] .zeno-service-guide p{color:#d0dce9}
+
+/* Mobile home density fix: keep four specialties in a balanced 2x2 grid. */
+@media(max-width:750px){
+.zeno-home-v10 .zeno-v10-care{margin-top:16px!important}
+.zeno-home-v10 .zeno-v10-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.zeno-home-v10 .zeno-v10-care-card,.zeno-home-v10 .zeno-v10-care-card.is-wide{display:grid!important;grid-template-columns:24px minmax(0,1fr)!important;grid-template-rows:auto auto!important;gap:3px 8px;grid-column:auto!important;align-content:center;align-items:center;min-height:76px!important;padding:10px!important;border-radius:10px!important}
+.zeno-home-v10 .zeno-v10-care-card .zeno-v10-care-icon,.zeno-home-v10 .zeno-v10-care-card.is-wide .zeno-v10-care-icon{grid-column:1!important;grid-row:1/3!important;width:24px!important;height:24px!important}
+.zeno-home-v10 .zeno-v10-care-card .zeno-v10-care-icon svg{width:21px!important;height:21px!important}
+.zeno-home-v10 .zeno-v10-care-card strong,.zeno-home-v10 .zeno-v10-care-card.is-wide strong{grid-column:2!important;grid-row:1!important;font-size:13px!important;line-height:18px!important;margin:0!important;font-weight:700!important}
+.zeno-home-v10 .zeno-v10-care-card small,.zeno-home-v10 .zeno-v10-care-card.is-wide small{grid-column:2!important;grid-row:2!important;font-size:11px!important;line-height:15px!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block!important}
+.zeno-home-v10 .zeno-v10-section-heading{align-items:flex-start;gap:8px;margin-bottom:12px}
+.zeno-home-v10 .zeno-v10-section-heading h2{font-size:17px!important;line-height:24px!important}
+.zeno-home-v10 .zeno-v10-section-heading p{font-size:12px!important;line-height:18px!important}
+.zeno-home-v10 .zeno-v10-section-heading button{flex:none;font-size:12px!important;padding:4px 0}
+.zeno-home-v10 .zeno-v10-symptom-btn{min-height:56px!important;padding:10px 12px!important;border-radius:10px!important}
+.zeno-home-v10 .zeno-v10-help-icon{width:24px!important;height:24px!important}
+.zeno-home-v10 .zeno-v10-show-all{font-size:12px!important;padding:8px 0!important}
+.zeno-home-v10 .zeno-v10-quick{margin-top:16px!important}
+}
 </style></head><body><div id="app" class="app"></div><script>
 'use strict';
 const APP_MODE='owner';
@@ -2450,7 +2469,7 @@ function home(){
  };
  /* CHANGED: featured 4 care services with optional secondary chips. */
  const featured=['일반 진료','내과','피부·귀','특수동물'];
- const chip=(name,small)=>'<button type="button" class="'+(small?'zeno-v10-care-chip':'zeno-v10-care-card')+(name==='특수동물'&&!small?' is-wide':'')+'" data-action="specialty" data-value="'+e(name)+'"><span class="zeno-v10-care-icon">'+zenoCareIcon(name)+'</span><strong>'+e(name)+'</strong><small>'+e(subtitle[name])+'</small></button>';
+ const chip=(name,small)=>'<button type="button" class="'+(small?'zeno-v10-care-chip':'zeno-v10-care-card')+''+'" data-action="specialty" data-value="'+e(name)+'"><span class="zeno-v10-care-icon">'+zenoCareIcon(name)+'</span><strong>'+e(name)+'</strong><small>'+e(subtitle[name])+'</small></button>';
  const chips=featured.map(name=>chip(name,false)).join('');
  const moreChips=visible.filter(x=>!featured.includes(x[0])).map(x=>chip(x[0],true)).join('');
 
