@@ -3455,6 +3455,35 @@ function zenoPriceCategory(label){
 
 /* Public published prices: checked 2026-11-13; unrelated to simulated hospital prices. */
 const ZENO_PUBLIC_FEES=[
+ {id:'pub039',url:'',source:'보호자 제공 병원 게시 진료비표 사진',checked:'2026-11-14',prices:[
+ ['초진 진찰료',5500,11000,'기본 신체검사 등 · 동일 증상 첫 진찰, 병력 청취 및 문진 포함'],
+ ['재진 진찰료',5500,11000,'동일 증상 재진 · 8시간 외 별도 진찰료 안내'],
+ ['상담료(10분당)',5500,11000,'행동학·영양학 상담 등 · 진찰료에 해당하지 않는 상담'],
+ ['입원비(1일)',99000,246000,'체중별 시작금액: 10kg 이하 99,000원부터 · 10kg 이상 121,000원부터 · 30kg 이상 246,000원부터 · 사료·음수·입원장 기본 위생 관리 외 처치 별도'],
+ ['개 종합백신',20000,20000,'조에티스 · 3가 이상 기초백신 1회 · 진찰료·문진·신체검사·부작용 처치 별도'],
+ ['고양이 종합백신',37000,37000,'조에티스 · 3가 이상 기초백신 1회 · 진찰료 등 별도'],
+ ['광견병 예방접종',20000,20000,'조에티스 · 개·고양이 1회 · 진찰료 등 별도'],
+ ['코로나 장염·켄넬코프 백신',18000,18000,'조에티스 · 각 백신 1회 접종비 · 진찰료 등 별도'],
+ ['인플루엔자 백신',32000,32000,'바이오노트 · 1회 접종비 · 진찰료 등 별도'],
+ ['심장사상충 예방(제품별)',5000,41000,'서로 다른 제품·체중 규격의 가격 범위로 동일 조건 비교 불가 · 아래 제품별 가격 참조'],
+ ['넥스가드 스펙트라',19000,40000,'2~3.5kg 19,000원 · 3.5~7.5kg 21,000원 · 7.5~15kg 24,000원 · 15~30kg 30,000원 · 30~60kg 40,000원'],
+ ['애드보킷(개)',16000,18000,'개 4kg 이하 16,000원 · 4kg 이상 18,000원 · 기준 경계·제품 재고 방문 전 확인'],
+ ['애드보킷(고양이)',16000,18000,'고양이 4kg 이상 16,000원 · 4kg 이하 18,000원 · 사진 표기 그대로 · 규격과 금액 확인 권장'],
+ ['하트가드',9000,16000,'BLUE 11kg 미만 9,000원 · GREEN 11~22kg 13,000원 · BROWN 22~44kg 16,000원'],
+ ['하트세이버',5000,10000,'12kg 미만 5,000원 · 12~22kg 5,000원 · 23~45kg 10,000원'],
+ ['프론트라인(외부기생충 예방)',15000,24000,'10kg 이하 15,000원 · 10~20kg 21,000원 · 20~40kg 24,000원 · 심장사상충 예방제와 구분 필요'],
+ ['심파리카 트리오',19000,41000,'1.25~2.5kg 19,000원 · 2.5~5kg 21,000원 · 5~10kg 23,000원 · 10~20kg 26,000원 · 20~40kg 31,000원 · 40~60kg 41,000원'],
+ ['구충제(1정)',3300,3300,'1정(1ea) · 기타 비용 별도 확인'],
+ ['전혈구검사(CBC)',36000,36000,'전혈구검사 및 판독료 1회 · 외부위탁 검사 별도'],
+ ['전해질검사',55000,55000,'전해질 검사 및 판독료 1회'],
+ ['혈액화학검사',55000,88000,'검사 및 판독료 1회 · 10항목 55,000원 · 17항목 88,000원'],
+ ['심장사상충 키트검사',44000,44000,'심장사상충 키트 검사 · 기타 검사 별도'],
+ ['개 항체검사(3종)',66000,66000,'CDV·CPV·CAV 항체검사 · 검사 항목 3종'],
+ ['고양이 항체검사(3종)',66000,66000,'FPV·FCV·FHV 항체검사 · 검사 항목 3종'],
+ ['고양이 심장마커 BNP 검사',69000,69000,'고양이 심장마커 BNP 검사'],
+ ['엑스레이',44000,55000,'촬영·판독료 1장당 · 10kg 이하 44,000원 · 10~15kg 55,000원 · 그 외 체중 별도 문의'],
+ ['초음파 검사',65000,80000,'촬영·판독료 1장당 · 10kg 이하 65,000원 · 10~20kg 80,000원 · 다른 체중 별도 문의']
+ ]},
  {id:'pub006',url:'https://dalamc.co.kr/prices/',checked:'2026-11-13',prices:[
  ['초진 진찰료',7500,7500,'기본 진찰료'],['재진 진찰료',5000,5000,'기본 진찰료'],
  ['고양이 종합백신',30000,30000,'1회 접종 · 추가 진찰료 확인'],['개 종합백신',25000,25000,'1회 접종 · 추가 진찰료 확인'],
@@ -3540,7 +3569,7 @@ const ZENO_HEALTH_SCREENINGS=[
   ]}
 ];
 const ZENO_FEE_CARE_CATEGORIES=SPECIALTIES.filter(x=>x[0]!=='잘 모르겠어요').map(x=>x[0]);
-const ZENO_FEE_CATEGORIES=['초진 진찰료','재진 진찰료','건강검진','고양이 종합백신','개 종합백신','전혈구검사(CBC)','혈액화학검사','엑스레이','초음파 검사','입원비(1일)','중성화 수술'];
+const ZENO_FEE_CATEGORIES=['초진 진찰료','재진 진찰료','건강검진','고양이 종합백신','개 종합백신','전혈구검사(CBC)','혈액화학검사','엑스레이','초음파 검사','입원비(1일)','심장사상충 예방(제품별)','중성화 수술'];
 const ZENO_FEE_ALL_CATEGORIES=[...ZENO_FEE_CARE_CATEGORIES,...ZENO_FEE_CATEGORIES];
 function zenoPublishedFee(id){return ZENO_PUBLIC_FEES.find(x=>x.id===id)||null}
 function zenoNeuterReport(id){return ZENO_NEUTER_REPORTS.find(x=>x.id===id)||null}
@@ -3548,7 +3577,7 @@ function zenoFeeAmount(min,max){return Number(min).toLocaleString('ko-KR')+(min=
 function zenoFeeHospitalMarkup(h){
  const v=zenoPublishedFee(h.id),r=zenoNeuterReport(h.id);
  if(!v&&!r)return '<p class="zeno-fee-help">확인된 공개 진료비가 없습니다. 정확한 비용은 병원에 문의해 주세요.</p>';
- return (v?'<div class="zeno-fee-detail-list">'+v.prices.map(p=>'<div class="zeno-fee-line"><span>'+e(p[0])+'<small>'+e(p[3])+'</small></span><strong>'+zenoFeeAmount(p[1],p[2])+'</strong></div>').join('')+'</div><a class="zeno-fee-source" href="'+e(v.url)+'" target="_blank" rel="noopener noreferrer">병원 공식 가격표 보기</a><p class="zeno-fee-help">공식 홈페이지 확인일 '+e(v.checked)+' · 실제 결제비용은 진료 조건에 따라 달라질 수 있습니다.</p>':'')
+ return (v?'<div class="zeno-fee-detail-list">'+v.prices.map(p=>'<div class="zeno-fee-line"><span>'+e(p[0])+'<small>'+e(p[3])+'</small></span><strong>'+zenoFeeAmount(p[1],p[2])+'</strong></div>').join('')+'</div>'+(v.url?'<a class="zeno-fee-source" href="'+e(v.url)+'" target="_blank" rel="noopener noreferrer">병원 공식 가격표 보기</a>':'')+'<p class="zeno-fee-help">'+(v.url?'공식 홈페이지 확인일 ':'자료 등록일 ')+e(v.checked)+(v.source?' · '+e(v.source):'')+' · 실제 결제비용은 진료 조건에 따라 달라질 수 있습니다.</p>':'')
  +(r?'<div class="zeno-fee-report"><strong>중성화 수술 · 보호자 견적 사례 '+zenoFeeAmount(r.amount,r.amount)+'</strong><p>등록일: '+e(r.dates.join(' · '))+' (2건)</p><p>'+e(r.note)+' · 병원 공식 수술비가 아닙니다.</p><a href="'+e(r.url)+'" target="_blank" rel="noopener noreferrer">견적 사례 원문 보기</a></div>':'');
 }
 
@@ -3605,7 +3634,7 @@ function pricesPage(){
  const priceKey=selected==='일반 진료'?'초진 진찰료':selected;
  const careChips=ZENO_FEE_CARE_CATEGORIES.map(c=>'<button type="button" class="filter'+(selected===c?' active':'')+'" aria-pressed="'+(selected===c)+'" data-action="price-category" data-value="'+e(c)+'">'+e(c)+'</button>').join('');
  const priceChips=ZENO_FEE_CATEGORIES.map(c=>'<button type="button" class="filter'+(selected===c?' active':'')+'" aria-pressed="'+(selected===c)+'" data-action="price-category" data-value="'+e(c)+'">'+e(c)+'</button>').join('');
- const mixedUnits=['혈액화학검사','엑스레이','초음파 검사','입원비(1일)'].includes(selected);
+ const mixedUnits=['혈액화학검사','엑스레이','초음파 검사','입원비(1일)','심장사상충 예방(제품별)'].includes(selected);
  const rows=ZENO_PUBLIC_FEES.map(v=>{
   const p=v.prices.find(x=>x[0]===priceKey);
   return p?{id:v.id,name:hospitalById(v.id)?.name||'병원명 확인',url:v.url,checked:v.checked,price:p}:null;
@@ -3613,14 +3642,14 @@ function pricesPage(){
  if(!mixedUnits)rows.sort((a,b)=>a.price[1]-b.price[1]);
  const priceCaution=mixedUnits
   ?'병원마다 검사 개수·부위·체중·포함 항목이 달라 가격순으로 정렬하지 않았습니다.':'같은 항목도 진료 조건에 따라 총비용이 달라질 수 있습니다.';
- const official=rows.map(r=>'<article class="zeno-fee-card"><div class="zeno-fee-top"><div><strong>'+e(r.name)+'</strong><small>병원 공식 홈페이지 게시가격</small></div><span class="zeno-fee-amount">'+zenoFeeAmount(r.price[1],r.price[2])+'</span></div><p>'+e(r.price[3])+'</p><a href="'+e(r.url)+'" target="_blank" rel="noopener noreferrer">공식 진료비 안내 확인</a></article>').join('');
+ const official=rows.map(r=>'<article class="zeno-fee-card"><div class="zeno-fee-top"><div><strong>'+e(r.name)+'</strong><small>'+(r.url?'병원 공식 홈페이지 게시가격':'보호자 제공 병원 진료비표')+'</small></div><span class="zeno-fee-amount">'+zenoFeeAmount(r.price[1],r.price[2])+'</span></div><p>'+e(r.price[3])+'</p>'+(r.url?'<a href="'+e(r.url)+'" target="_blank" rel="noopener noreferrer">공식 진료비 안내 확인</a>':'<small>제공받은 진료비표 기준 · 방문 전 확인</small>')+'</article>').join('');
  const estimates=ZENO_NEUTER_REPORTS.map(r=>'<article class="zeno-fee-card zeno-fee-case"><div class="zeno-fee-top"><div><strong>'+e(hospitalById(r.id)?.name||'병원명 확인')+'</strong><small>보호자 등록 견적 · 병원 공식가격 아님</small></div><span class="zeno-fee-amount">'+zenoFeeAmount(r.amount,r.amount)+'</span></div><p>견적 등록 사례 2건 ('+e(r.dates.join(', '))+')</p><p>'+e(r.note)+'</p><a href="'+e(r.url)+'" target="_blank" rel="noopener noreferrer">견적 사례 원문 보기</a></article>').join('');
  const amountNote=isHealth?'건강검진 패키지 가격 공개 '+new Set(ZENO_HEALTH_SCREENINGS.map(v=>v.id)).size+'곳'
   :noCarePrices?'분야별 치료비 공개 여부 확인 중'
   :isNeuter?'수술비 공식 공개 미확인'
   :'해당 비용 항목 공식 가격 '+rows.length+'곳';
  return topbar('진료비 비교','')
-  +'<div class="zeno-fee-intro"><strong>청주 동물병원 공개 진료비</strong><p>진료 분야를 선택하고 공개가격이 있는 검사·진찰 항목을 비교해 보세요. 분야별 전체 진료비와 개별 검사비는 다릅니다.</p><small>자료 확인일 2026.11.13 · '+amountNote+'</small></div>'
+  +'<div class="zeno-fee-intro"><strong>청주 동물병원 공개 진료비</strong><p>진료 분야를 선택하고 공개가격이 있는 검사·진찰 항목을 비교해 보세요. 분야별 전체 진료비와 개별 검사비는 다릅니다.</p><small>자료 등록 기준 2026.11.14 · '+amountNote+'</small></div>'
   +'<section class="zeno-fee-section"><h2>진료 분야</h2><div class="zeno-fee-care-grid" role="group" aria-label="진료 분야 선택">'+careChips+'</div></section>'
   +'<section class="zeno-fee-section"><h2>공개 진료비 항목</h2><div class="zeno-fee-choices" role="group" aria-label="비교할 가격 항목">'+priceChips+'</div></section>'
   +(noCarePrices?zenoFeeCareNoPriceMarkup(selected)
