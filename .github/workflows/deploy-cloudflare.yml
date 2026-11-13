@@ -52,7 +52,7 @@ jobs:
           for(const [name,constant] of [['owner.html','OWNER_HTML'],['hospital.html','HOSPITAL_HTML']]){
             const html=fs.readFileSync(name,'utf8');
             if(!worker.includes('const '+constant+' = '+JSON.stringify(html)+';'))throw Error(name+' is not synchronized with the deployed Worker');
-            const scripts=[...html.matchAll(/<script\\b[^>]*>([\\s\\S]*?)<\\/script>/gi)].map(m=>m[1]).filter(Boolean);
+            const scripts=[...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)].map(m=>m[1]).filter(Boolean);
             if(!scripts.length)throw Error(name+' has no inline JavaScript');
             for(const [i,code] of scripts.entries())new vm.Script(code,{filename:name+'#script'+i});
             if(name==='owner.html'){
@@ -68,8 +68,6 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN || secrets.CF_API_TOKEN || secrets.CLOUDFLARE_TOKEN || secrets.CF_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: "f805a734c87c90e765d7e455a469a730"
-
-# Deploy latest ZENO owner and hospital app revision after Cloudflare secret setup.
 
       - name: Verify production public routes
         id: live_smoke
