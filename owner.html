@@ -908,18 +908,18 @@ body{word-break:keep-all;overflow-wrap:break-word}
 .zeno-results-title .owner-reset{min-height:44px;padding:4px 8px}
 @media(max-width:360px){.zeno-home-shortcuts.owner-shortcuts button{gap:4px}.owner-shortcuts svg{width:16px;flex-basis:16px}}
 </style><style>
-@media(max-width:700px){
-.hospital-list.zeno-compact-results .zeno-list-item{grid-template-columns:minmax(0,1fr)!important;gap:0!important;padding:12px!important}
-.hospital-list.zeno-compact-results .zeno-list-main{grid-column:1!important;align-items:flex-start!important;gap:10px!important}
-.hospital-list.zeno-compact-results .zeno-list-photo{width:48px!important;min-width:48px!important;flex:0 0 48px!important;height:48px!important;border-radius:6px!important}
-.hospital-list.zeno-compact-results .zeno-list-text{gap:3px!important}
-.hospital-list.zeno-compact-results .zeno-list-text strong{font-size:16px!important;line-height:1.35!important;font-weight:650!important;color:#24292e!important}
-.hospital-list.zeno-compact-results :is(.zeno-list-region,.zeno-list-hours,.zeno-list-hours b,.zeno-list-hours-label,.zeno-list-condition){font-size:13px!important;font-weight:400!important;line-height:1.4!important;color:#53606a!important}
-.hospital-list.zeno-compact-results .zeno-list-condition{background:transparent!important;border:0!important;padding:0!important}
-.hospital-list.zeno-compact-results .owner-detail-link{display:none!important}
-.hospital-list.zeno-compact-results .zeno-list-action{grid-column:1!important;grid-row:2!important;justify-self:end!important;width:auto!important;min-height:36px!important;padding:5px 10px!important;font-weight:550!important;font-size:13px!important}
-body .mobilebar button b,body .mobilebar b{font-size:12px!important;font-weight:500!important;white-space:nowrap!important}
-}
+.directory-item{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:0 12px;padding:14px 12px;background:#fff;border-bottom:1px solid #eef0f1}
+.directory-item:last-child{border-bottom:0}
+.directory-main{display:grid;grid-template-columns:44px minmax(0,1fr);align-items:start;gap:12px;grid-column:1/-1;text-align:left;background:none;border:0;color:#24282c;padding:0;min-width:0;width:100%}
+.directory-photo{width:44px;height:44px;display:block;object-fit:cover;border-radius:6px;background:#f5f6f6}
+.directory-logo{object-fit:contain}
+.directory-text{display:grid;gap:3px;min-width:0}
+.directory-text strong{font-size:16px;line-height:1.4;font-weight:650;word-break:keep-all;overflow-wrap:anywhere}
+.directory-region,.directory-hours,.directory-condition{font-size:13px;font-weight:400;line-height:1.5;color:#535c62}
+.directory-hours b{font-weight:500;margin-left:5px}
+.directory-conditions,.directory-condition{display:block}
+.directory-action{grid-column:2;display:inline-flex;align-items:center;justify-content:center;color:#225881;background:#fff;border:1px solid #dce2e6;border-radius:6px;min-height:44px;padding:0 12px;line-height:1.3;font-family:inherit;font-size:13px;font-weight:500;margin-top:4px}
+@media(max-width:700px){.app .mobilebar b,body .mobilebar button b{font-size:12px!important;font-weight:500!important;line-height:1.4!important;white-space:nowrap!important}}
 </style></head><body><div id="app" class="app"></div><script>
 'use strict';
 const APP_MODE='owner';
@@ -1264,16 +1264,16 @@ function zenoListMatchedConditions(h){
 }
 function hospitalCard(h){
  const photo=Array.isArray(h.photos)?h.photos.find(p=>p&&p.approved===true&&p.url):null;
- const photoHtml=photo?'<img class="zeno-list-photo'+(photo.isLogo||photo.fit==='contain'?' zeno-list-logo':'')+'" loading="lazy" referrerpolicy="no-referrer" src="'+e(photo.url)+'" alt="'+e(h.name)+' 사진" onerror="this.style.visibility=\'hidden\'">':'<span class="zeno-list-photo zeno-list-placeholder" aria-hidden="true"></span>';
- const phone=h.phone?'<a class="btn secondary small zeno-list-action" href="tel:'+e(h.phone)+'">병원에 전화</a>':'';
- const map='<a class="btn secondary small zeno-list-action" href="'+zenoNaverPhotoUrl(h)+'" target="_blank" rel="noopener noreferrer">지도에서 보기</a>';
- const action=state.page==='emergency'?(phone||map):h.linked?'<button type="button" class="btn secondary small zeno-list-action" data-action="book" data-id="'+e(h.id)+'">예약 요청</button>':(phone||map);
+ const photoHtml=photo?'<img class="directory-photo'+(photo.isLogo||photo.fit==='contain'?' directory-logo':'')+'" loading="lazy" referrerpolicy="no-referrer" src="'+e(photo.url)+'" alt="'+e(h.name)+' 사진" onerror="this.style.visibility=\'hidden\'">':'<span class="directory-photo directory-placeholder" aria-hidden="true"></span>';
+ const phone=h.phone?'<a class="directory-action" href="tel:'+e(h.phone)+'">전화하기</a>':'';
+ const map='<a class="directory-action" href="'+zenoNaverPhotoUrl(h)+'" target="_blank" rel="noopener noreferrer">지도에서 보기</a>';
+ const action=state.page==='emergency'?(phone||map):h.linked?'<button type="button" class="directory-action" data-action="book" data-id="'+e(h.id)+'">예약 요청</button>':(phone||map);
  const conditions=zenoListMatchedConditions(h);
  const visibleConditions=photo?.isConcept?['외관 시안 · 실제 사진 아님',...conditions]:conditions;
- const conditionHtml=visibleConditions.length?'<span class="zeno-list-conditions">'+visibleConditions.map(c=>'<span class="zeno-list-condition">'+e(c)+'</span>').join('')+'</span>':'';
- return '<article class="zeno-list-item"><button type="button" class="zeno-list-main" data-action="details" data-id="'+e(h.id)+'" aria-label="'+e(h.name)+' 상세정보 보기">'+photoHtml+
- '<span class="zeno-list-text"><strong>'+e(h.name)+'</strong><span class="zeno-list-region">'+e(h.region)+'</span>'+
- '<span class="zeno-list-hours"><span class="zeno-list-hours-label">오늘</span><b>'+e(zenoListTodayHours(h))+'</b></span>'+conditionHtml+'<span class="owner-detail-link">상세 보기 <span aria-hidden="true">›</span></span></span></button>'+action+'</article>';
+ const conditionHtml=visibleConditions.length?'<span class="directory-conditions">'+visibleConditions.map(c=>'<span class="directory-condition">'+e(c)+'</span>').join('')+'</span>':'';
+ return '<article class="directory-item"><button type="button" class="directory-main" data-action="details" data-id="'+e(h.id)+'" aria-label="'+e(h.name)+' 상세정보 보기">'+photoHtml+
+ '<span class="directory-text"><strong>'+e(h.name)+'</strong><span class="directory-region">'+e(h.region)+'</span>'+
+ '<span class="directory-hours"><span class="directory-hours-label">오늘</span><b>'+e(zenoListTodayHours(h))+'</b></span>'+conditionHtml+'</span></button>'+action+'</article>';
 }
 function hospitalResults(items){
  if(!items.length)return '<div class="empty zeno-results-empty"><strong>'+(state.query?'검색어에 맞는 병원이 없어요':'선택한 조건에 맞는 병원이 없어요')+'</strong><button type="button" class="btn secondary small" data-action="clear-search">조건 초기화</button></div>';
