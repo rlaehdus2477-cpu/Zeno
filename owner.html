@@ -1177,6 +1177,40 @@ body{word-break:keep-all;overflow-wrap:break-word}
 .zeno-care-grid button strong{font-size:11.8px!important}
 .zeno-care-grid button small{font-size:9.5px!important}
 }
+</style><style id="zeno-pet-settings-compact-20261113">
+.zeno-pet-settings{display:flex;flex-direction:column;gap:14px;color:#263e54}
+.zeno-pet-settings .zeno-pet-photo-compact{display:flex;align-items:center;gap:12px;border:0;border-bottom:1px solid #e8edf2;border-radius:0;background:#fff;padding:2px 0 14px;box-shadow:none}
+.zeno-pet-settings .zeno-pet-photo-preview{width:65px!important;height:65px!important;min-width:65px!important;border-radius:50%;font-size:24px}
+.zeno-pet-settings .zeno-pet-photo-manage{min-width:0;flex:1;display:flex;flex-direction:column;gap:5px}
+.zeno-pet-settings .zeno-pet-photo-manage>strong{font-size:14px;font-weight:750}
+.zeno-pet-settings .zeno-pet-photo-manage>small{font-size:11.5px;color:#8493a2;line-height:1.4}
+.zeno-pet-settings .zeno-pet-native-upload{position:absolute!important;width:1px!important;height:1px!important;opacity:0!important;clip-path:inset(50%);overflow:hidden}
+.zeno-pet-settings .zeno-pet-photo-actions{display:flex;flex-wrap:wrap;gap:7px;margin:0;align-items:center}
+.zeno-pet-settings .zeno-pet-photo-change,.zeno-pet-settings .zeno-pet-save-photo,.zeno-pet-settings .zeno-pet-photo-delete{display:inline-flex;align-items:center;justify-content:center;min-height:35px!important;padding:7px 10px!important;font-size:12.5px!important;font-weight:650;line-height:1.25!important;border-radius:8px;border:1px solid #dae4ec;background:white;color:#356e9a;cursor:pointer}
+.zeno-pet-settings .zeno-pet-save-photo{background:#edf6ff;color:#1c6eb7;border-color:#c2dcf3}
+.zeno-pet-settings .zeno-pet-save-photo[hidden]{display:none!important}
+.zeno-pet-settings .zeno-pet-photo-delete{border:0;color:#798b9a}
+.zeno-pet-settings .zeno-pet-record-action{min-height:43px;border-radius:10px;border:1px solid #c9dff2;background:#f4f9fe;color:#276ba6;font-size:14px!important;font-weight:700}
+.zeno-pet-settings .zeno-pet-record-action span{font-size:18px;font-weight:400}
+.zeno-pet-settings .zeno-pet-hospital-setting{display:flex;flex-direction:column;gap:7px}
+.zeno-pet-settings .zeno-pet-hospital-setting label{font-size:14px!important;font-weight:750;color:#304f66}
+.zeno-pet-settings .zeno-pet-hospital-setting select{width:100%;min-height:44px!important;border:1px solid #d8e1ea;border-radius:10px!important;background:#fff;font-size:14px!important;padding:10px 11px!important;color:#2b465b}
+.zeno-pet-settings .zeno-pet-hospital-setting p{margin:0;font-size:11.5px!important;color:#8794a1}
+.zeno-pet-settings .zeno-pet-more{border-top:1px solid #edf0f4;margin-top:1px}
+.zeno-pet-settings .zeno-pet-more summary{display:flex;align-items:center;justify-content:space-between;list-style:none;cursor:pointer;color:#6d7d8d;font-size:13.5px;font-weight:650;min-height:46px;padding:12px 0}
+.zeno-pet-settings .zeno-pet-more summary::-webkit-details-marker{display:none}
+.zeno-pet-settings .zeno-pet-more summary:after{content:"⌄";font-size:19px;line-height:1}
+.zeno-pet-settings .zeno-pet-more[open] summary:after{transform:rotate(180deg)}
+.zeno-pet-settings .zeno-pet-more-content{padding:0 0 8px;display:flex;flex-direction:column;gap:16px}
+.zeno-pet-settings .zeno-pet-memorial{display:flex;flex-direction:column;gap:8px}
+.zeno-pet-settings .zeno-pet-memorial strong{font-size:14px;color:#35566e}
+.zeno-pet-settings .zeno-pet-memorial p{margin:0;color:#8493a2;font-size:12px!important;line-height:1.5}
+.zeno-pet-settings .zeno-pet-memorial button{min-height:38px;align-self:flex-start;border:1px solid #dde5ed;background:white;border-radius:9px;font-size:12.5px!important;color:#45718e;padding:8px 12px}
+.zeno-pet-settings .zeno-pet-memorial-note{padding-top:9px;border-top:1px solid #eef1f5}
+.zeno-pet-settings .zeno-pet-delete-row{padding-top:11px;border-top:1px solid #eceff3}
+.zeno-pet-settings .zeno-pet-delete-row button{border:0;background:transparent;color:#a15b62;padding:7px 0;font-size:12.5px!important;font-weight:650;min-height:34px}
+.zeno-pet-settings .zeno-pet-delete-row p{margin:0;font-size:11.5px!important;line-height:1.5;color:#929da8}
+@media(max-width:750px){.zeno-pet-settings .zeno-pet-photo-preview{width:62px!important;height:62px!important;min-width:62px!important}.modal:has(.zeno-pet-settings){max-height:86dvh!important}}
 </style></head><body><div id="app" class="app"></div><script>
 'use strict';
 const APP_MODE='owner';
@@ -1859,15 +1893,15 @@ function zenoPetPhotoPickerMarkup(pet){
  const editing=!!pet,photo=editing?zenoPetPhotoSource(state.petPhotos[pet.id]||pet.photoUrl):'';
  const id=editing?'zeno-edit-pet-photo':'zeno-new-pet-photo';
  const letter=editing?(Array.from(String(pet.name||'?'))[0]||'?'):'+';
- return '<div class="field zeno-pet-photo-field"><label for="'+id+'">프로필 사진 (선택)</label>'+
-  '<div class="zeno-pet-photo-picker">'+
-  '<div class="zeno-pet-photo-preview"><span'+(photo?' hidden':'')+'>'+e(letter)+'</span><img'+(photo?' src="'+e(photo)+'"':'')+' alt="프로필 사진 미리보기"'+(photo?'':' hidden')+'></div>'+
-  '<div class="zeno-pet-photo-input"><input id="'+id+'" type="file" name="petPhoto" accept="image/jpeg,image/png,image/webp,image/heic,image/heif" aria-label="반려동물 프로필 사진 선택">'+
-  '<small>사진을 선택하면 자동으로 정사각형 프로필 사진을 만들어요.</small>'+
-  (editing?'<div class="zeno-pet-photo-actions"><button type="button" class="btn secondary small" data-action="save-pet-photo" data-id="'+e(pet.id)+'">사진 저장</button>'+
-    (photo?'<button type="button" class="btn ghost small" data-action="remove-pet-photo" data-id="'+e(pet.id)+'">사진 삭제</button>':'')+
-   '</div>':'')+
-  '</div></div></div>';
+ const preview='<div class="zeno-pet-photo-preview"><span'+(photo?' hidden':'')+'>'+e(letter)+'</span><img'+(photo?' src="'+e(photo)+'"':'')+' alt="프로필 사진 미리보기"'+(photo?'':' hidden')+'></div>';
+ if(editing)return '<div class="zeno-pet-photo-picker zeno-pet-photo-compact">'+preview+
+  '<div class="zeno-pet-photo-manage"><strong>프로필 사진</strong><input id="'+id+'" class="zeno-pet-native-upload" type="file" name="petPhoto" accept="image/jpeg,image/png,image/webp,image/heic,image/heif" aria-label="반려동물 프로필 사진 선택">'+
+  '<div class="zeno-pet-photo-actions"><label for="'+id+'" class="zeno-pet-photo-change">사진 변경</label>'+
+  '<button type="button" class="zeno-pet-save-photo" data-action="save-pet-photo" data-id="'+e(pet.id)+'" hidden>변경 저장</button>'+
+  (photo?'<button type="button" class="zeno-pet-photo-delete" data-action="remove-pet-photo" data-id="'+e(pet.id)+'">삭제</button>':'')+
+  '</div><small>원하는 사진으로 바꿀 수 있어요.</small></div></div>';
+ return '<div class="field zeno-pet-photo-field"><label for="'+id+'">프로필 사진 (선택)</label><div class="zeno-pet-photo-picker">'+preview+
+  '<div class="zeno-pet-photo-input"><input id="'+id+'" type="file" name="petPhoto" accept="image/jpeg,image/png,image/webp,image/heic,image/heif" aria-label="반려동물 프로필 사진 선택"><small>사진을 선택하면 정사각형으로 맞춰 저장해요.</small></div></div></div>';
 }
 /* UX 2026-11-08 [2][3][4][6][7][8]: tap-anywhere pet cards, letter avatar, compact separate records. */
 function petsPage(){
@@ -2043,9 +2077,15 @@ if(m.type==='pet-settings'){
  if(pet){
   title=pet.name+' · 아이 정보';
   const inMemorial=mem.petIds.includes(pet.id);
-  body=zenoPetPhotoPickerMarkup(pet)+'<p class="desc">아이 정보와 생전 건강 기록은 그대로 유지됩니다.</p><button class="btn secondary" data-action="record" data-id="'+e(pet.id)+'">건강 기록 추가</button><div class="field zeno-pet-home-hospital"><label for="zeno-pet-hospital">단골병원</label><select id="zeno-pet-hospital"><option value="">설정하지 않음</option>'+HOSPITALS.map(h=>'<option value="'+e(h.id)+'"'+(pet.homeHospitalId===h.id?' selected':'')+'>'+e(h.name)+'</option>').join('')+'</select><button type="button" class="btn secondary small" data-action="pet-hospital-save" data-id="'+e(pet.id)+'">단골병원 저장</button></div>'
-  +(inMemorial?'<div class="panel" style="margin-top:16px"><h3>추모 공간</h3><p class="desc">기억하고 싶은 순간을 남길 수 있어요. 이 기기에만 저장됩니다.</p><button class="btn" data-action="memorial-note" data-id="'+e(pet.id)+'">추억 남기기</button>'+mem.notes.filter(x=>x.petId===pet.id).map(x=>'<div class="row-line"><div><strong>'+e(x.title)+'</strong><p class="preline">'+e(x.text)+'</p></div></div>').join('')+'</div>':'<div class="panel" style="margin-top:16px"><h3>추모관으로 전환</h3><p class="desc">보호자가 직접 선택할 때만 열립니다.</p><button class="btn secondary" data-action="activate-memorial" data-id="'+e(pet.id)+'">추모관으로 전환</button></div>')
-  +'<div class="section"><button class="btn ghost small" data-action="delete-pet" data-id="'+e(pet.id)+'">아이 정보 삭제</button></div>';
+  const hospitalOptions=HOSPITALS.map(h=>'<option value="'+e(h.id)+'"'+(pet.homeHospitalId===h.id?' selected':'')+'>'+e(h.name)+'</option>').join('');
+  const memorial=inMemorial?
+   '<div class="zeno-pet-memorial"><strong>추모 기록</strong><p>기억하고 싶은 순간을 남길 수 있어요.</p><button type="button" data-action="memorial-note" data-id="'+e(pet.id)+'">추억 남기기</button>'+mem.notes.filter(x=>x.petId===pet.id).map(x=>'<div class="zeno-pet-memorial-note"><strong>'+e(x.title)+'</strong><p class="preline">'+e(x.text)+'</p></div>').join('')+'</div>':
+   '<div class="zeno-pet-memorial"><strong>추모 기록</strong><p>원할 때만 추모 공간을 만들어 사용할 수 있어요.</p><button type="button" data-action="activate-memorial" data-id="'+e(pet.id)+'">추모 공간 만들기</button></div>';
+  body='<section class="zeno-pet-settings">'+zenoPetPhotoPickerMarkup(pet)
+   +'<button type="button" class="zeno-pet-record-action" data-action="record" data-id="'+e(pet.id)+'"><span aria-hidden="true">＋</span> 건강 기록 추가</button>'
+   +'<div class="zeno-pet-hospital-setting"><label for="zeno-pet-hospital">단골병원</label><select id="zeno-pet-hospital" data-pet-id="'+e(pet.id)+'"><option value="">설정하지 않음</option>'+hospitalOptions+'</select><p>선택하면 자동으로 저장돼요.</p></div>'
+   +'<details class="zeno-pet-more"><summary>추가 설정</summary><div class="zeno-pet-more-content">'+memorial
+   +'<div class="zeno-pet-delete-row"><button type="button" data-action="delete-pet" data-id="'+e(pet.id)+'">아이 정보 삭제</button><p>삭제하면 이 아이의 건강 기록도 함께 삭제돼요.</p></div></div></details></section>';
  }
 }
 if(m.type==='memorial-note'){
@@ -2201,7 +2241,7 @@ if(a==='save-pet-photo'){
   const image=await zenoCompressPetPhoto(file);
   await api('PUT','/api/pet-photos/'+encodeURIComponent(pet.id),{image});
   state.petPhotos[pet.id]=image;
-  state.modal=null;render();toast('아이 사진을 변경했어요.');
+  render();toast('아이 사진을 변경했어요.');
  }catch(err){toast('사진 저장 실패: '+err.message)}
  finally{button.disabled=false}
  return;
@@ -2213,7 +2253,7 @@ if(a==='remove-pet-photo'){
   await api('DELETE','/api/pet-photos/'+encodeURIComponent(id));
   delete state.petPhotos[id];
   const pet=state.pets.find(p=>p.id===id);if(pet&&pet.photoUrl)delete pet.photoUrl;
-  state.modal=null;render();toast('프로필 사진을 삭제했어요.');
+  render();toast('프로필 사진을 삭제했어요.');
  }catch(err){toast('사진 삭제 실패: '+err.message)}
  finally{button.disabled=false}
  return;
@@ -2274,6 +2314,14 @@ document.addEventListener('keydown',ev=>{if(ev.key==='Escape'&&state.modal)zenoC
 /* ZENO pet photos: preview selected image without changing any saved data yet. */
 document.addEventListener('change',ev=>{
  const input=ev.target;
+ if(input?.id==='zeno-pet-hospital'){
+  const pet=state.pets.find(p=>p.id===input.dataset.petId);
+  if(!pet||state.modal?.type!=='pet-settings'||state.modal.id!==pet.id)return;
+  const selected=input.value;
+  if(selected&&!hospitalById(selected)){toast('병원을 다시 선택해 주세요.');return;}
+  if((pet.homeHospitalId||'')!==selected){pet.homeHospitalId=selected;savePersonal();}
+  return;
+ }
  if(!input||!['zeno-new-pet-photo','zeno-edit-pet-photo'].includes(input.id))return;
  const file=input.files?.[0],container=input.closest('.zeno-pet-photo-picker');
  if(!container)return;
@@ -2285,6 +2333,7 @@ document.addEventListener('change',ev=>{
  img.onload=()=>URL.revokeObjectURL(url);
  img.onerror=()=>{URL.revokeObjectURL(url);img.hidden=true;if(letter)letter.hidden=false;toast('사진 미리보기를 표시할 수 없어요.');};
  img.src=url;img.hidden=false;if(letter)letter.hidden=true;
+ const save=container.querySelector('.zeno-pet-save-photo');if(save)save.hidden=false;
 });
 document.addEventListener('submit',async ev=>{let f=ev.target,id=f.id;if(!id)return;ev.preventDefault();let d=Object.fromEntries(new FormData(f).entries());const val=s=>String(s||'').trim();
 if(id==='home-search-form'){state.specialty='';state.symptomLabel='';state.exoticSpecies='';state.filter='전체';state.activeFilters=[];applyHospitalQuery(val(d.homeQuery));zenoNewSearch=true;navTo('search');return}
