@@ -19,7 +19,7 @@ const HOSPITAL_HTML = "<!doctype html><html lang=\"ko\"><head><meta charset=\"ut
 const IDS = new Set(['soo','naeum','tnd']);
 const STATUSES = new Set(['available','busy','check']);
 const BOOKING_STATES = new Set(['pending','accepted','suggested','confirmed','rejected','cancelled','in_progress','done']);
-const DEFAULT = () => ({status:'available',updatedAt:null,notice:'',emergency:false,prices:[],services:[]});
+const DEFAULT = () => ({status:'check',updatedAt:null,notice:'',emergency:false,emergencyStatus:'check',emergencyUpdatedAt:null,prices:[],services:[]});
 const now=()=>new Date().toISOString();
 const clean=(x,n=500)=>String(x??'').trim().slice(0,n);
 const validOwner=x=>typeof x==='string'&&/^[a-zA-Z0-9\-]{12,90}$/.test(x);
@@ -32,7 +32,7 @@ async function verify(auth,secret){if(!secret||!auth?.startsWith('Bearer '))retu
 function validateHospital(id){if(!IDS.has(id))throw new HttpError('해당 병원은 현재 연결 대상이 아닙니다.',400)}
 class HttpError extends Error{constructor(message,status=400){super(message);this.status=status}}
 const assert=(cond,message,status=400)=>{if(!cond)throw new HttpError(message,status)};
-function savedSettings(row){if(!row)return DEFAULT();return {status:row.status||'check',updatedAt:row.updated_at,notice:row.notice||'',emergency:!!row.emergency,prices:parseJSON(row.prices),services:parseJSON(row.services)}}
+function savedSettings(row){if(!row)return DEFAULT();return {status:row.status||'check',updatedAt:row.updated_at,notice:row.notice||'',emergency:!!row.emergency,emergencyStatus:['check','available','busy','unavailable'].includes(row.emergency_status)?row.emergency_status:'check',emergencyUpdatedAt:row.emergency_updated_at||null,prices:parseJSON(row.prices),services:parseJSON(row.services)}}
 function parseJSON(value){try{return JSON.parse(value||'[]')}catch{return []}}
 function booking(row){
  if(!row)return null;
@@ -52,7 +52,22 @@ async function ensureBookingDetails(db){
 }
 function question(row){return row&&{id:row.id,ownerId:row.owner_id,hospitalId:row.hospital_id,petName:row.pet_name,text:row.text,answer:row.answer,status:row.status,createdAt:row.created_at,updatedAt:row.updated_at}}
 function review(row){return row&&{id:row.id,ownerId:row.owner_id,bookingId:row.booking_id,hospitalId:row.hospital_id,stars:row.stars,text:row.text,points:row.points,createdAt:row.created_at}}
-async function getSettings(DB,id){const x=await DB.prepare('SELECT * FROM hospital_settings WHERE hospital_id=?').bind(id).first();return savedSettings(x)}
+
+let zenoOpsInit=null,zenoRequestsInit=null;
+function ensureHospitalOps(db){
+ if(!zenoOpsInit)zenoOpsInit=db.prepare("CREATE TABLE IF NOT EXISTS hospital_operational_status (hospital_id TEXT PRIMARY KEY, emergency_status TEXT NOT NULL DEFAULT 'check', updated_at TEXT NOT NULL)").run().catch(e=>{zenoOpsInit=null;throw e});
+ return zenoOpsInit;
+}
+function ensureHospitalRequests(db){
+ if(!zenoRequestsInit)zenoRequestsInit=db.prepare("CREATE TABLE IF NOT EXISTS hospital_change_requests (id TEXT PRIMARY KEY, hospital_id TEXT NOT NULL, kind TEXT NOT NULL, payload_json TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'pending', created_at TEXT NOT NULL, reviewed_at TEXT)").run().catch(e=>{zenoRequestsInit=null;throw e});
+ return zenoRequestsInit;
+}
+function hospitalChangeRequest(row){
+ let payload={};try{payload=JSON.parse(row.payload_json||'{}')}catch{}
+ return {id:row.id,hospitalId:row.hospital_id,kind:row.kind,payload,status:row.status,createdAt:row.created_at,reviewedAt:row.reviewed_at||null};
+}
+
+async function getSettings(DB,id){await ensureHospitalOps(DB);const x=await DB.prepare('SELECT s.*,o.emergency_status,o.updated_at AS emergency_updated_at FROM hospital_settings s LEFT JOIN hospital_operational_status o ON o.hospital_id=s.hospital_id WHERE s.hospital_id=?').bind(id).first();return savedSettings(x)}
 async function checkHospital(request,env,id){const session=await verify(request.headers.get('Authorization'),env.SESSION_SECRET);assert(session?.role==='hospital'&&session.hospitalId===id,'인증되지 않은 병원 요청입니다.',401);return session}
 
 const normUsername=x=>clean(x,32).toLowerCase();
@@ -149,7 +164,7 @@ const db=env.DB;let data={};if(['POST','PATCH','PUT'].includes(method)){
  try{data=JSON.parse(raw)}catch{throw new HttpError('요청 형식이 올바르지 않습니다.')}
  assert(data&&typeof data==='object'&&!Array.isArray(data),'요청 형식이 올바르지 않습니다.');
 }
-if(path==='/api/bootstrap'&&method==='GET'){const session=await checkOwner(request,env);let owner=session.ownerId;await ensureOwnerPetPhotoTable(db);const [settings,bookings,questions,reviews]=await Promise.all([db.prepare('SELECT * FROM hospital_settings').all(),db.prepare('SELECT * FROM bookings WHERE owner_id=? ORDER BY created_at DESC LIMIT 150').bind(owner).all(),db.prepare('SELECT * FROM questions WHERE owner_id=? ORDER BY created_at DESC LIMIT 120').bind(owner).all(),db.prepare('SELECT * FROM reviews WHERE owner_id=? ORDER BY created_at DESC LIMIT 120').bind(owner).all()]);const ss=Object.fromEntries([...IDS].map(id=>[id,DEFAULT()]));for(const x of(settings.results||[]))ss[x.hospital_id]=savedSettings(x);const user=await db.prepare('SELECT id,username,display_name,profile_json FROM owners WHERE id=?').bind(owner).first();const photoRows=await db.prepare('SELECT pet_id,image_data FROM owner_pet_photos WHERE owner_id=? LIMIT 20').bind(owner).all();const petPhotos=Object.fromEntries((photoRows.results||[]).map(p=>[p.pet_id,p.image_data]));assert(user,'사용자 계정을 찾을 수 없습니다.',401);return json({profile:profileParse(user.profile_json),petPhotos,owner:{id:user.id,username:user.username,displayName:user.display_name},settings:ss,bookings:(bookings.results||[]).map(booking),questions:(questions.results||[]).map(question),reviews:(reviews.results||[]).map(review)})}
+if(path==='/api/bootstrap'&&method==='GET'){const session=await checkOwner(request,env);let owner=session.ownerId;await ensureOwnerPetPhotoTable(db);await ensureHospitalOps(db);const [settings,bookings,questions,reviews]=await Promise.all([db.prepare('SELECT s.*,o.emergency_status,o.updated_at AS emergency_updated_at FROM hospital_settings s LEFT JOIN hospital_operational_status o ON o.hospital_id=s.hospital_id').all(),db.prepare('SELECT * FROM bookings WHERE owner_id=? ORDER BY created_at DESC LIMIT 150').bind(owner).all(),db.prepare('SELECT * FROM questions WHERE owner_id=? ORDER BY created_at DESC LIMIT 120').bind(owner).all(),db.prepare('SELECT * FROM reviews WHERE owner_id=? ORDER BY created_at DESC LIMIT 120').bind(owner).all()]);const ss=Object.fromEntries([...IDS].map(id=>[id,DEFAULT()]));for(const x of(settings.results||[]))ss[x.hospital_id]=savedSettings(x);const user=await db.prepare('SELECT id,username,display_name,profile_json FROM owners WHERE id=?').bind(owner).first();const photoRows=await db.prepare('SELECT pet_id,image_data FROM owner_pet_photos WHERE owner_id=? LIMIT 20').bind(owner).all();const petPhotos=Object.fromEntries((photoRows.results||[]).map(p=>[p.pet_id,p.image_data]));assert(user,'사용자 계정을 찾을 수 없습니다.',401);return json({profile:profileParse(user.profile_json),petPhotos,owner:{id:user.id,username:user.username,displayName:user.display_name},settings:ss,bookings:(bookings.results||[]).map(booking),questions:(questions.results||[]).map(question),reviews:(reviews.results||[]).map(review)})}
 
 if(path==='/api/auth/register'&&method==='POST'){
  assert(env.SESSION_SECRET,'서버 비밀키가 아직 설정되지 않았습니다.',503);
@@ -255,12 +270,55 @@ if(path==='/api/admin/login'&&method==='POST'){
 if(path==='/api/admin/stats'&&method==='GET'){await checkAdmin(request,env);let [b,q,c]=await Promise.all([db.prepare('SELECT COUNT(*) n FROM bookings').first(),db.prepare('SELECT COUNT(*) n FROM questions').first(),db.prepare("SELECT COUNT(*) n FROM bookings WHERE status IN ('confirmed','in_progress','done')").first()]);return json({bookings:b.n,questions:q.n,confirmed:c.n,hospitals:3})}
 if(path==='/api/dashboard'&&method==='GET'){
  let id=url.searchParams.get('hospitalId');validateHospital(id);await checkHospital(request,env,id);
- await ensureBookingDetails(db);
- const [s,b,q]=await Promise.all([getSettings(db,id),
+ await ensureBookingDetails(db);await ensureHospitalRequests(db);
+ const [s,b,q,changeRequests]=await Promise.all([getSettings(db,id),
  db.prepare("SELECT b.*, o.display_name AS owner_name,o.profile_json AS owner_profile_json,d.owner_phone,d.breed,d.age,d.weight,d.visit_type FROM bookings b LEFT JOIN owners o ON o.id=b.owner_id LEFT JOIN booking_details d ON d.booking_id=b.id WHERE b.hospital_id=? ORDER BY b.created_at DESC LIMIT 200").bind(id).all(),
- db.prepare('SELECT * FROM questions WHERE hospital_id=? ORDER BY created_at DESC LIMIT 200').bind(id).all()]);
- return json({settings:s,bookings:(b.results||[]).map(booking),questions:(q.results||[]).map(question)})
+ db.prepare('SELECT * FROM questions WHERE hospital_id=? ORDER BY created_at DESC LIMIT 200').bind(id).all(),
+ db.prepare('SELECT * FROM hospital_change_requests WHERE hospital_id=? ORDER BY created_at DESC LIMIT 30').bind(id).all()]);
+ return json({settings:s,bookings:(b.results||[]).map(booking),questions:(q.results||[]).map(question),changeRequests:(changeRequests.results||[]).map(hospitalChangeRequest)})
 }
+
+/* Requests from a logged-in hospital are held for review, never published automatically. */
+if(path==='/api/hospital-change-requests'&&method==='POST'){
+ const session=await verify(request.headers.get('Authorization'),env.SESSION_SECRET);
+ assert(session?.role==='hospital'&&IDS.has(session.hospitalId),'병원 담당자 로그인이 필요합니다.',401);
+ const kind=clean(data.kind,20);assert(['fee','info'].includes(kind),'요청 종류가 올바르지 않습니다.');
+ const sourceUrl=clean(data.sourceUrl,250);
+ assert(!sourceUrl||/^https:\/\/[^\s]+$/i.test(sourceUrl),'출처 주소는 https://로 시작해야 합니다.');
+ let payload;
+ if(kind==='fee'){
+  const item=clean(data.item,60),species=clean(data.species,20),sex=clean(data.sex,20),weight=clean(data.weight,70),included=clean(data.included,350);
+  const min=Number(data.minPrice),max=Number(data.maxPrice);
+  assert(['초진 진찰료','재진 진찰료','고양이 종합백신','개 종합백신','전혈구검사(CBC)','중성화 수술','기타 진료비'].includes(item),'진료 항목을 선택해 주세요.');
+  assert(['고양이','강아지','공통'].includes(species)&&['수컷','암컷','무관'].includes(sex),'동물 종류와 성별을 확인해 주세요.');
+  assert(Number.isSafeInteger(min)&&Number.isSafeInteger(max)&&min>=0&&max>=min&&max<=10000000,'금액 범위를 확인해 주세요.');
+  assert(included.length>=2,'진찰료·검사·마취·약값 포함 여부를 입력해 주세요.');
+  payload={item,species,sex,weight,minPrice:min,maxPrice:max,included,sourceUrl};
+ }else{
+  const field=clean(data.field,30),value=clean(data.value,600);
+  assert(['전화번호','요일별 진료시간','점심시간','휴진일','진료 동물','시설 정보','기타'].includes(field),'수정할 항목을 선택해 주세요.');
+  assert(value.length>=2,'변경할 내용을 입력해 주세요.');
+  payload={field,value,sourceUrl};
+ }
+ await ensureHospitalRequests(db);
+ const id=crypto.randomUUID(),stamp=now();
+ await db.prepare("INSERT INTO hospital_change_requests(id,hospital_id,kind,payload_json,status,created_at,reviewed_at) VALUES(?,?,?,?, 'pending',?,NULL)").bind(id,session.hospitalId,kind,JSON.stringify(payload),stamp).run();
+ return json({id,kind,status:'pending',createdAt:stamp},201);
+}
+if(path==='/api/admin/hospital-change-requests'&&method==='GET'){
+ await checkAdmin(request,env);await ensureHospitalRequests(db);
+ const rows=await db.prepare('SELECT * FROM hospital_change_requests ORDER BY created_at DESC LIMIT 150').all();
+ return json({changeRequests:(rows.results||[]).map(hospitalChangeRequest),note:'검토 내역이며 보호자 앱에 자동 게시되지 않습니다.'});
+}
+if(/^\/api\/admin\/hospital-change-requests\/[^/]+$/.test(path)&&method==='PATCH'){
+ await checkAdmin(request,env);await ensureHospitalRequests(db);
+ const id=decodeURIComponent(path.split('/')[4]),status=clean(data.status,20);
+ assert(['reviewed','rejected'].includes(status),'검토 상태를 확인해 주세요.');
+ const result=await db.prepare("UPDATE hospital_change_requests SET status=?,reviewed_at=? WHERE id=? AND status='pending'").bind(status,now(),id).run();
+ assert(result.meta?.changes===1,'요청이 없거나 이미 검토되었습니다.',409);
+ return json({id,status,publiclyPublished:false});
+}
+
 if(path==='/api/bookings'&&method==='POST'){
  const sess=await checkOwner(request,env);let ownerId=sess.ownerId,id=clean(data.hospitalId,20);validateHospital(id);
  let p=clean(data.petName,30),dt=clean(data.date,10),tm=clean(data.time,5),sp=clean(data.species,25),svc=clean(data.service,70),note=clean(data.note,500);
@@ -295,7 +353,7 @@ if(/^\/api\/bookings\/[^/]+$/.test(path)&&method==='PATCH'){let id=decodeURIComp
 if(side==='owner'){const own=await checkOwner(request,env);assert(own.ownerId===r.owner_id,'예약 소유자만 변경할 수 있습니다.',403);assert(['suggested','pending','accepted'].includes(prev),'이미 처리된 예약입니다.');if(next==='confirmed')assert(prev==='suggested','시간 제안이 있을 때만 확정할 수 있습니다.');else assert(next==='cancelled','허용되지 않은 변경입니다.');}
 else{await checkHospital(request,env,r.hospital_id);assert(allowed[prev]?.includes(next),'현재 예약 단계에서는 변경할 수 없습니다.');}
 let newProp=clean(data.proposedAt||r.proposed_at,30),newNote=clean(data.hospitalNote??r.hospital_note,300);if(next==='suggested'){assert(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(newProp),'제안 시간을 입력해 주세요.');assert(new Date(newProp+':00+09:00').getTime()>Date.now(),'과거 시각을 제안할 수 없습니다.')}const t=now();const result=await db.prepare('UPDATE bookings SET status=?,proposed_at=?,hospital_note=?,updated_at=? WHERE id=? AND status=?').bind(next,newProp,newNote,t,id,prev).run();assert((result.meta?.changes||0)===1,'다른 화면에서 먼저 변경되었습니다. 새로고침 후 다시 시도하세요.',409);const updated=await db.prepare('SELECT * FROM bookings WHERE id=?').bind(id).first();return json(booking(updated))}
-if(path==='/api/settings'&&method==='PATCH'){let session=await verify(request.headers.get('Authorization'),env.SESSION_SECRET);assert(session?.role==='hospital'&&IDS.has(session.hospitalId),'병원 로그인 후 이용할 수 있습니다.',401);let id=session.hospitalId;let old=await getSettings(db,id);let status=data.status===undefined?old.status:clean(data.status,30);assert(STATUSES.has(status),'유효하지 않은 진료 수용 상태입니다.');let notice=data.notice===undefined?old.notice:clean(data.notice,250);let emergency=data.emergency===undefined?old.emergency:!!data.emergency;let services=data.services===undefined?old.services:data.services;assert(Array.isArray(services)&&services.length<=20&&services.every(x=>typeof x==='string'&&['내과','안과','외과','흉부외과','피부과','토끼','햄스터','조류','파충류'].includes(x)),'진료 과목 설정이 올바르지 않습니다.');services=[...new Set(services)];let prices=data.prices===undefined?old.prices:data.prices;assert(Array.isArray(prices)&&prices.length<=25,'가격 항목을 확인해 주세요.');/* UX prices: preserve optional examination components */prices=prices.map(p=>({label:clean(p.label,55),amount:Number(p.amount),included:clean(p.included,400)}));assert(prices.every(p=>p.label&&Number.isFinite(p.amount)&&p.amount>=0&&p.amount<=1e7),'잘못된 진료비 정보입니다.');let t=now();await db.prepare('INSERT INTO hospital_settings (hospital_id,status,notice,emergency,prices,services,updated_at) VALUES (?,?,?,?,?,?,?) ON CONFLICT(hospital_id) DO UPDATE SET status=excluded.status,notice=excluded.notice,emergency=excluded.emergency,prices=excluded.prices,services=excluded.services,updated_at=excluded.updated_at').bind(id,status,notice,emergency?1:0,JSON.stringify(prices),JSON.stringify(services),t).run();return json(await getSettings(db,id))}
+if(path==='/api/settings'&&method==='PATCH'){let session=await verify(request.headers.get('Authorization'),env.SESSION_SECRET);assert(session?.role==='hospital'&&IDS.has(session.hospitalId),'병원 로그인 후 이용할 수 있습니다.',401);let id=session.hospitalId;let old=await getSettings(db,id);let status=data.status===undefined?old.status:clean(data.status,30);assert(STATUSES.has(status),'유효하지 않은 진료 수용 상태입니다.');let notice=data.notice===undefined?old.notice:clean(data.notice,250);let emergency=data.emergency===undefined?old.emergency:!!data.emergency;let services=data.services===undefined?old.services:data.services;assert(Array.isArray(services)&&services.length<=20&&services.every(x=>typeof x==='string'&&['내과','안과','외과','흉부외과','피부과','토끼','햄스터','조류','파충류'].includes(x)),'진료 과목 설정이 올바르지 않습니다.');services=[...new Set(services)];let prices=data.prices===undefined?old.prices:data.prices;assert(Array.isArray(prices)&&prices.length<=25,'가격 항목을 확인해 주세요.');/* UX prices: preserve optional examination components */prices=prices.map(p=>({label:clean(p.label,55),amount:Number(p.amount),included:clean(p.included,400)}));assert(prices.every(p=>p.label&&Number.isFinite(p.amount)&&p.amount>=0&&p.amount<=1e7),'잘못된 진료비 정보입니다.');let emergencyStatus=data.emergencyStatus===undefined?old.emergencyStatus:clean(data.emergencyStatus,30);assert(['check','available','busy','unavailable'].includes(emergencyStatus),'응급 수용 상태를 확인해 주세요.');let t=now();await db.prepare('INSERT INTO hospital_settings (hospital_id,status,notice,emergency,prices,services,updated_at) VALUES (?,?,?,?,?,?,?) ON CONFLICT(hospital_id) DO UPDATE SET status=excluded.status,notice=excluded.notice,emergency=excluded.emergency,prices=excluded.prices,services=excluded.services,updated_at=excluded.updated_at').bind(id,status,notice,emergency?1:0,JSON.stringify(prices),JSON.stringify(services),t).run();if(data.emergencyStatus!==undefined){await ensureHospitalOps(db);await db.prepare('INSERT INTO hospital_operational_status(hospital_id,emergency_status,updated_at) VALUES(?,?,?) ON CONFLICT(hospital_id) DO UPDATE SET emergency_status=excluded.emergency_status,updated_at=excluded.updated_at').bind(id,emergencyStatus,t).run();}return json(await getSettings(db,id))}
 if(path==='/api/questions'&&method==='POST'){const sess=await checkOwner(request,env);let ownerId=sess.ownerId;let hospitalId=clean(data.hospitalId,20);validateHospital(hospitalId);let t=clean(data.text,1200);assert(t.length>=5,'질문을 5자 이상 입력해 주세요.');let row={id:crypto.randomUUID(),ownerId,hospitalId,petName:clean(data.petName,30),text:t,answer:'',status:'pending',createdAt:now(),updatedAt:now()};await db.prepare('INSERT INTO questions(id,owner_id,hospital_id,pet_name,text,answer,status,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?)').bind(row.id,row.ownerId,row.hospitalId,row.petName,row.text,row.answer,row.status,row.createdAt,row.updatedAt).run();return json(row,201)}
 if(/^\/api\/questions\/[^/]+$/.test(path)&&method==='PATCH'){let id=decodeURIComponent(path.split('/')[3]);let row=await db.prepare('SELECT * FROM questions WHERE id=?').bind(id).first();assert(row,'질문을 찾을 수 없습니다.',404);await checkHospital(request,env,row.hospital_id);let answer=clean(data.answer,1200);assert(answer.length>=3,'답변을 입력해 주세요.');await db.prepare("UPDATE questions SET answer=?,status='answered',updated_at=? WHERE id=?").bind(answer,now(),id).run();return json(question(await db.prepare('SELECT * FROM questions WHERE id=?').bind(id).first()))}
 if(path==='/api/reviews'&&method==='POST'){const sess=await checkOwner(request,env);let ownerId=sess.ownerId;let row=await db.prepare('SELECT * FROM bookings WHERE id=?').bind(clean(data.bookingId,90)).first();assert(row&&row.owner_id===ownerId&&row.status==='done','완료된 본인 예약에만 후기를 작성할 수 있습니다.',403);let stars=Number(data.stars),reviewText=clean(data.text,800);assert(Number.isInteger(stars)&&stars>=1&&stars<=5&&reviewText.length>=10,'후기 내용과 별점을 확인해 주세요.');const r={id:crypto.randomUUID(),ownerId:row.owner_id,bookingId:row.id,hospitalId:row.hospital_id,stars,text:reviewText,points:100,createdAt:now()};try{await db.prepare('INSERT INTO reviews(id,owner_id,booking_id,hospital_id,stars,text,points,created_at) VALUES(?,?,?,?,?,?,?,?)').bind(r.id,r.ownerId,r.bookingId,r.hospitalId,r.stars,r.text,r.points,r.createdAt).run()}catch{throw new HttpError('이미 후기를 작성한 예약입니다.',409)}return json(r,201)}
