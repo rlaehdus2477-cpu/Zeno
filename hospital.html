@@ -643,7 +643,7 @@ function hiInboxRow(b){
  +'<span class="hi-row-date">'+hsIcon('calendar',14)+e(hsSlot(b.date,b.time))+'</span></span></button>'
  +'<div class="hi-row-side"><span class="hi-status-badge'+(b.status==='in_progress'?' hi-status-progress':'')+'">'+e(hiStatus(b))+'</span>'+(risk.note&&hiShowRiskHint(b)?'<small>'+e(risk.note)+'</small>':'')
  +(action?'<button type="button" class="hi-inline-action" data-action="hospital-update" data-status="'+action.status+'" data-id="'+e(b.id)+'">'+action.label+'</button>':'')
- +(['cancelled','rejected'].includes(b.status)?'<button type="button" class="hi-delete-booking" data-action="hospital-delete" data-id="'+e(b.id)+'">삭제</button>':'')
+ +(['cancelled','rejected'].includes(b.status)&&!b.demo?'<button type="button" class="hi-delete-booking" data-action="hospital-delete" data-id="'+e(b.id)+'">삭제</button>':'')
  +'</div></div>';
 }
 function hiInboxGroups(rows){
@@ -868,7 +868,11 @@ if(id==='propose-form'&&String(d.bookingId||'').startsWith('zeno-demo-')){
  if(b){b.status='suggested';b.proposedAt=d.proposedAt;b.hospitalNote=val(d.hospitalNote);b.updatedAt=new Date().toISOString();state.modal=null;render();toast('예시 예약 시간을 변경했습니다.')}
  return;
 }
-if(id==='propose-form'){if(d.proposedAt.slice(0,10)<today()){toast('지난 날짜를 제안할 수 없습니다.');return}await mutate('PATCH','/api/bookings/'+d.bookingId,{status:'suggested',side:'hospital',proposedAt:d.proposedAt,hospitalNote:val(d.hospitalNote)},'보호자에게 시간 변경을 제안했습니다.');return}
+if(id==='propose-form'){
+ if(new Date(d.proposedAt+':00+09:00').getTime()<=Date.now()){toast('미래의 날짜와 시간을 제안해 주세요.');return;}
+ if(String(d.bookingId).startsWith('zeno-demo-')){const booking=hsDemoBookings().find(b=>b.id===d.bookingId);if(!booking){toast('예시 예약을 찾을 수 없습니다.');return;}booking.proposedAt=d.proposedAt;booking.hospitalNote=val(d.hospitalNote);booking.status='suggested';booking.updatedAt=new Date().toISOString();state.modal=null;render();toast('예시 예약에 시간 제안을 표시했습니다.');return;}
+ await mutate('PATCH','/api/bookings/'+d.bookingId,{status:'suggested',side:'hospital',proposedAt:d.proposedAt,hospitalNote:val(d.hospitalNote)},'보호자에게 시간 변경을 제안했습니다.');return;
+}
 if(id==='status-settings'){await mutate('PATCH','/api/settings',{notice:val(d.notice),emergency:!!f.querySelector('[name=emergency]').checked},'병원 운영 안내를 저장했습니다.');return}
 if(id==='hospital-service'){const services=[...new Set([...(hs(state.activeHospital).services||[]),val(d.service)])];await mutate('PATCH','/api/settings',{services},'진료 과목을 시연 설정에 추가했습니다.');return}
 if(id==='hospital-fee-request'){
