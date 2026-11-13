@@ -1999,6 +1999,39 @@ html.dark .zeno-internal-note,html[data-theme="dark"] .zeno-internal-note{backgr
 html.dark .zeno-internal-note strong,html[data-theme="dark"] .zeno-internal-note strong{color:#ecf4fb}
 html.dark .zeno-internal-note span,html[data-theme="dark"] .zeno-internal-note span{color:#c1d1df}
 html.dark .zeno-symptoms-page .zeno-symptom-panel,html[data-theme="dark"] .zeno-symptoms-page .zeno-symptom-panel{background:#202f3f!important;border-color:#405466!important}
+</style><style id="zeno-health-screening-20261113">
+/* Public, source-linked screening packages only. Avoid misleading cross-hospital estimates. */
+.zeno-health-species{display:flex;gap:8px;margin:10px 0 14px}
+.zeno-health-species-option{
+ min-height:42px!important;padding:9px 18px!important;border:1px solid #dce5ee!important;
+ background:#fff!important;border-radius:8px!important;color:#3b5369!important;
+ font-size:13px!important;font-weight:700!important;line-height:1.45!important;font-family:inherit!important;box-shadow:none!important
+}
+.zeno-health-species-option.active,.zeno-health-species-option[aria-pressed="true"]{
+ border-color:#2474c2!important;background:#edf5fc!important;color:#155b9e!important
+}
+.zeno-health-species-option:focus-visible{outline:2px solid #2474c2;outline-offset:2px}
+.zeno-health-clinic{padding:14px 14px 16px;margin:0 0 12px;border:1px solid #e1e8ef;border-radius:11px;background:#fff}
+.zeno-health-clinic-head{display:flex;flex-direction:column;gap:4px;margin:0 0 13px}
+.zeno-health-clinic-head strong{font-size:15px;line-height:1.4;color:#243d54}
+.zeno-health-clinic-head small{font-size:11.5px;line-height:1.45;color:#62788b}
+.zeno-health-programs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.zeno-health-program{box-sizing:border-box;min-width:0;border:1px solid #e5ebf1;border-radius:9px;padding:12px 10px;background:#fafbfd}
+.zeno-health-program-top{display:flex;flex-direction:column;align-items:flex-start;gap:4px}
+.zeno-health-program-top strong{font-size:13.5px;line-height:1.4;font-weight:750;color:#2d4358}
+.zeno-health-program-top span{font-variant-numeric:tabular-nums;font-size:16px;line-height:1.45;font-weight:800;color:#215c99;white-space:nowrap}
+.zeno-health-program p{margin:7px 0 0!important;font-size:12px!important;line-height:1.5!important;word-break:keep-all;color:#607489}
+.zeno-health-note,.zeno-health-unlisted{font-size:12px!important;line-height:1.6!important;color:#62788d;word-break:keep-all}
+.zeno-health-note{margin:14px 0 10px!important}
+.zeno-health-unlisted{margin:12px 0 18px!important}
+.zeno-health-clinic>a{display:inline-block;color:#216bb4;font-weight:700;font-size:12.5px;line-height:1.5}
+.zeno-health-date{display:block;margin:8px 0 0;color:#728498;font-size:11px}
+.zeno-fee-empty{padding:14px;border:1px solid #e5ebf1;border-radius:8px;color:#63788c;font-size:12px}
+@media(max-width:360px){.zeno-health-programs{grid-template-columns:1fr}.zeno-health-program-top{flex-direction:row;justify-content:space-between;align-items:baseline}}
+html.dark .zeno-health-clinic,html[data-theme="dark"] .zeno-health-clinic{background:#202f3f;border-color:#405466}
+html.dark .zeno-health-program,html[data-theme="dark"] .zeno-health-program{background:#25374b;border-color:#405466}
+html.dark .zeno-health-clinic-head strong,html[data-theme="dark"] .zeno-health-clinic-head strong,html.dark .zeno-health-program-top strong,html[data-theme="dark"] .zeno-health-program-top strong{color:#eff5fb}
+html.dark .zeno-health-program p,html[data-theme="dark"] .zeno-health-program p{color:#c4d3e2}
 </style></head><body><div id="app" class="app"></div><script>
 'use strict';
 const APP_MODE='owner';
@@ -2172,7 +2205,7 @@ const hospitalById=id=>HOSPITALS.find(x=>x.id===id);
 function defaultStore(){return {settings:Object.fromEntries(['soo','naeum','tnd'].map(id=>[id,{status:'check',updatedAt:null,notice:'',services:[],prices:[],emergency:false}])),bookings:[],questions:[],reviews:[]}}
 function localGet(){try{return {...defaultStore(),...JSON.parse(localStorage.getItem(STOREKEY)||'{}')}}catch{return defaultStore()}}
 function localSet(x){localStorage.setItem(STOREKEY,JSON.stringify(x));window.dispatchEvent(new Event('zeno-refresh'))}
-const state={ownerToken:localStorage.getItem('zeno-owner-auth')||'',owner:null,authMode:'login',serverReady:false,profileLoaded:false,profileSaving:false,page:APP_MODE==='hospital'?'hospital':'home',filter:'전체',query:'',specialty:'',exoticSpecies:'',detail:null,modal:null,local:true,settings:{},bookings:[],questions:[],reviews:[],hospitalBookings:[],hospitalQuestions:[],activeHospital:sessionStorage.getItem('zeno-h-hospital')||'soo',hospitalToken:sessionStorage.getItem('zeno-h-token')||'',adminToken:sessionStorage.getItem('zeno-admin-token')||'',pets:JSON.parse(localStorage.getItem('zeno-pets-v2')||'[]'),petPhotos:{},records:JSON.parse(localStorage.getItem('zeno-records-v2')||'[]'),favorites:JSON.parse(localStorage.getItem('zeno-favorites-v2')||'[]'),viewH:'soo',hTab:'bookings',appError:'',loading:false,adminStats:null,bookingTab:'전체',activeFilters:[],petTab:'전체',profileSaveError:'',authError:'',pendingAction:null,pendingPage:'',recoveryCode:'',afterRecoveryAction:null,authNotice:'',priceCategory:'초진 진찰료',detailTab:'',symptomGuideOpen:false,symptomLabel:'',homeArea:'청주 전체',homeAreaOpen:false,homeShowAllCare:false,searchRegion:''};
+const state={ownerToken:localStorage.getItem('zeno-owner-auth')||'',owner:null,authMode:'login',serverReady:false,profileLoaded:false,profileSaving:false,page:APP_MODE==='hospital'?'hospital':'home',filter:'전체',query:'',specialty:'',exoticSpecies:'',detail:null,modal:null,local:true,settings:{},bookings:[],questions:[],reviews:[],hospitalBookings:[],hospitalQuestions:[],activeHospital:sessionStorage.getItem('zeno-h-hospital')||'soo',hospitalToken:sessionStorage.getItem('zeno-h-token')||'',adminToken:sessionStorage.getItem('zeno-admin-token')||'',pets:JSON.parse(localStorage.getItem('zeno-pets-v2')||'[]'),petPhotos:{},records:JSON.parse(localStorage.getItem('zeno-records-v2')||'[]'),favorites:JSON.parse(localStorage.getItem('zeno-favorites-v2')||'[]'),viewH:'soo',hTab:'bookings',appError:'',loading:false,adminStats:null,bookingTab:'전체',activeFilters:[],petTab:'전체',profileSaveError:'',authError:'',pendingAction:null,pendingPage:'',recoveryCode:'',afterRecoveryAction:null,authNotice:'',priceCategory:'초진 진찰료',healthCheckSpecies:'강아지',detailTab:'',symptomGuideOpen:false,symptomLabel:'',homeArea:'청주 전체',homeAreaOpen:false,homeShowAllCare:false,searchRegion:''};
 let toastTimer;
 function toast(message){let o=document.querySelector('.toast');if(o)o.remove();o=document.createElement('div');o.className='toast';o.textContent=message;o.setAttribute('role','status');o.setAttribute('aria-live','polite');o.setAttribute('aria-atomic','true');document.body.appendChild(o);clearTimeout(toastTimer);toastTimer=setTimeout(()=>o.remove(),4500)}
 let profileSaveTimer;
@@ -3076,7 +3109,28 @@ const ZENO_PUBLIC_FEES=[
  ['전혈구검사(CBC)',35000,55000,'검사 및 판독 · 추가 검사 별도']]}
 ];
 const ZENO_NEUTER_REPORTS=[{id:'pub028',amount:150000,dates:['2026-05-08','2025-09-18'],url:'https://sungyesa.com/ahlist/3879',note:'동물종·성별·체중 및 마취·사전검사·약값 포함 여부 미확인'}];
-const ZENO_FEE_CATEGORIES=['초진 진찰료','재진 진찰료','고양이 종합백신','개 종합백신','전혈구검사(CBC)','중성화 수술'];
+/* Published health-screening program prices, 2026-11-13. Not estimates for other clinics.
+ * Source: https://dalamc.co.kr/specialty/health-check/
+ * Package amounts shown are the second (displayed offer) amounts on the clinic page.
+ * The official site says the programs are for animals <=10 kg; contents may be adjusted.
+ */
+const ZENO_HEALTH_SCREENINGS=[
+ {id:'pub006',species:'강아지',url:'https://dalamc.co.kr/specialty/health-check/',checked:'2026-11-13',weight:'10kg 이하',
+  programs:[
+   ['초승달',170000,'기초 신체검사 · 혈액검사 · 흉·복부 방사선'],
+   ['상현달',340000,'신체·안과·혈압·소변검사 · 혈액검사 · 복부 초음파'],
+   ['보름달',400000,'상현달 검진 + 염증·호르몬 등 추가 검사'],
+   ['달무리',620000,'정밀 혈액검사 · 복부·심장 초음파 포함']
+  ]},
+ {id:'pub006',species:'고양이',url:'https://dalamc.co.kr/specialty/health-check/',checked:'2026-11-13',weight:'10kg 이하',
+  programs:[
+   ['초승달',220000,'기초 신체검사 · 혈액검사 · proBNP · 흉·복부 방사선'],
+   ['상현달',390000,'신체·안과·혈압·소변검사 · 혈액검사 · 복부 초음파'],
+   ['보름달',480000,'상현달 검진 + 바이러스·갑상선 등 추가 검사'],
+   ['달무리',670000,'정밀 혈액검사 · 복부·심장 초음파 포함']
+  ]}
+];
+const ZENO_FEE_CATEGORIES=['초진 진찰료','재진 진찰료','건강검진','고양이 종합백신','개 종합백신','전혈구검사(CBC)','중성화 수술'];
 function zenoPublishedFee(id){return ZENO_PUBLIC_FEES.find(x=>x.id===id)||null}
 function zenoNeuterReport(id){return ZENO_NEUTER_REPORTS.find(x=>x.id===id)||null}
 function zenoFeeAmount(min,max){return Number(min).toLocaleString('ko-KR')+(min===max?'':' ~ '+Number(max).toLocaleString('ko-KR'))+'원'}
@@ -3087,6 +3141,21 @@ function zenoFeeHospitalMarkup(h){
  +(r?'<div class="zeno-fee-report"><strong>중성화 수술 · 보호자 견적 사례 '+zenoFeeAmount(r.amount,r.amount)+'</strong><p>등록일: '+e(r.dates.join(' · '))+' (2건)</p><p>'+e(r.note)+' · 병원 공식 수술비가 아닙니다.</p><a href="'+e(r.url)+'" target="_blank" rel="noopener noreferrer">견적 사례 원문 보기</a></div>':'');
 }
 
+function zenoHealthCheckPriceMarkup(){
+ const species=state.healthCheckSpecies==='고양이'?'고양이':'강아지';
+ const clinics=ZENO_HEALTH_SCREENINGS.filter(row=>row.species===species);
+ const toggle=['강아지','고양이'].map(kind=>'<button type="button" data-action="health-check-species" data-value="'+e(kind)+'" aria-pressed="'+(kind===species)+'" class="zeno-health-species-option'+(kind===species?' active':'')+'">'+e(kind)+'</button>').join('');
+ const list=clinics.map(row=>{
+  const clinic=hospitalById(row.id),name=clinic?.name||'병원명 확인';
+  const programs=row.programs.map(p=>'<article class="zeno-health-program"><div class="zeno-health-program-top"><strong>'+e(p[0])+' 검진</strong><span>'+zenoFeeAmount(p[1],p[1])+'</span></div><p>'+e(p[2])+'</p></article>').join('');
+  return '<section class="zeno-health-clinic"><div class="zeno-health-clinic-head"><strong>'+e(name)+'</strong><small>병원 공식 홈페이지 공개 프로그램 · '+e(row.weight)+' 기준</small></div><div class="zeno-health-programs">'+programs+'</div><p class="zeno-health-note">검사 구성·대상 동물·체중 및 추가 검사 여부에 따라 실제 금액은 달라질 수 있습니다. 표시된 가격의 적용 여부를 예약 전 확인해 주세요.</p><a href="'+e(row.url)+'" target="_blank" rel="noopener noreferrer">건강검진 프로그램·가격 원문 확인</a><small class="zeno-health-date">정보 확인일 '+e(row.checked)+'</small></section>';
+ }).join('');
+ return '<div class="zeno-fee-subhead"><h2>건강검진</h2><p>가격을 공식 공개한 병원 '+new Set(clinics.map(v=>v.id)).size+'곳 · 검사 범위가 달라 금액만으로 직접 비교하기 어렵습니다.</p></div>'
+  +'<div class="zeno-health-species" role="group" aria-label="건강검진 대상 동물">'+toggle+'</div>'
+  +(list||'<div class="zeno-fee-empty">현재 공식 게시된 건강검진 패키지 가격을 확인할 수 없습니다. 병원에 직접 문의해 주세요.</div>')
+  +'<p class="zeno-health-unlisted">다른 병원은 건강검진 패키지의 공식 공개가격이 확인되지 않아 금액을 표시하지 않았습니다. 진찰료·혈액검사비만 더한 금액은 종합 건강검진 비용이 아닙니다.</p>';
+}
+
 function pricesPage(){
  const selected=ZENO_FEE_CATEGORIES.includes(state.priceCategory)?state.priceCategory:'초진 진찰료';
  const chips=ZENO_FEE_CATEGORIES.map(c=>'<button type="button" class="filter '+(selected===c?'active':'')+'" aria-pressed="'+(selected===c)+'" data-action="price-category" data-value="'+e(c)+'">'+e(c)+'</button>').join('');
@@ -3094,9 +3163,10 @@ function pricesPage(){
  const official=rows.map(r=>'<article class="zeno-fee-card"><div class="zeno-fee-top"><div><strong>'+e(r.name)+'</strong><small>병원 홈페이지 게시가격</small></div><span class="zeno-fee-amount">'+zenoFeeAmount(r.price[1],r.price[2])+'</span></div><p>'+e(r.price[3])+'</p><a href="'+e(r.url)+'" target="_blank" rel="noopener noreferrer">공식 진료비 안내 확인</a></article>').join('');
  const estimates=ZENO_NEUTER_REPORTS.map(r=>'<article class="zeno-fee-card zeno-fee-case"><div class="zeno-fee-top"><div><strong>'+e(hospitalById(r.id)?.name||'병원명 확인')+'</strong><small>보호자 등록 견적 · 병원 공식가격 아님</small></div><span class="zeno-fee-amount">'+zenoFeeAmount(r.amount,r.amount)+'</span></div><p>견적 등록 사례 2건 ('+e(r.dates.join(', '))+')</p><p>'+e(r.note)+'</p><a href="'+e(r.url)+'" target="_blank" rel="noopener noreferrer">견적 사례 원문 보기</a></article>').join('');
  return topbar('진료비 비교','')
- +'<div class="zeno-fee-intro"><strong>청주 동물병원 공개 진료비</strong><p>공식 홈페이지에 게시된 비용을 같은 항목끼리 확인할 수 있어요. 게시가격과 실제 청구금액은 다를 수 있습니다.</p><small>공개가격 확인일 2026.11.13 · 현재 3개 병원</small></div>'
+ +'<div class="zeno-fee-intro"><strong>청주 동물병원 공개 진료비</strong><p>공식 홈페이지에 게시된 비용을 같은 항목끼리 확인할 수 있어요. 게시가격과 실제 청구금액은 다를 수 있습니다.</p><small>공개가격 확인일 2026.11.13 · '+(selected==='건강검진'?'건강검진 가격 게시 1개 병원':'일반 진료비 가격 게시 3개 병원')+'</small></div>'
  +'<div class="zeno-fee-choices" role="group" aria-label="비교할 진료 항목">'+chips+'</div>'
- +(selected==='중성화 수술'?'<div class="zeno-fee-subhead"><h2>중성화 수술</h2><p>공식 공개 수술비를 확인한 병원은 아직 없습니다. 다음 견적 사례는 병원 간 가격 순위에 포함하지 않습니다.</p></div>'+estimates
+ +(selected==='건강검진'?zenoHealthCheckPriceMarkup()
+ :selected==='중성화 수술'?'<div class="zeno-fee-subhead"><h2>중성화 수술</h2><p>공식 공개 수술비를 확인한 병원은 아직 없습니다. 다음 견적 사례는 병원 간 가격 순위에 포함하지 않습니다.</p></div>'+estimates
  :'<div class="zeno-fee-subhead"><h2>'+e(selected)+'</h2><p>공식 가격표 '+rows.length+'곳 · 진료 조건이 달라 최저가만으로 판단할 수 없어요.</p></div>'+official)
  +'<div class="zeno-fee-disclaimer"><strong>가격 확인 전 알아두세요</strong><p>동물 종류·체중·성별·진료 시간, 마취·사전검사·약값 포함 여부에 따라 총비용이 달라집니다. 중성화는 병원에서 최종 수술 견적을 확인해 주세요.</p><a href="https://animalclinicfee.or.kr/" target="_blank" rel="noopener noreferrer">정부 지역별 진료비 통계 보기</a></div>';
 }
@@ -3318,7 +3388,8 @@ if(a==='night-shortcut'||a==='around-clock-shortcut'){state.searchRegion='';stat
 if(a==='cat-waiting-shortcut'){state.searchRegion='';state.query='';state.specialty='';state.exoticSpecies='';state.filter='전체';state.activeFilters=['고양이 대기실'];zenoNewSearch=true;navTo('search');return}/* UX reset: keep state.query but clear specialty and every other condition. */
 if(a==='filter'){if(val==='전체'){state.query='';state.activeFilters=[];state.filter='전체';state.specialty='';state.symptomLabel='';state.exoticSpecies=''}else{let a=zenoActiveFilters();const other=val==='야간'?'24시':val==='24시'?'야간':'';state.activeFilters=a.includes(val)?a.filter(x=>x!==val):[...a.filter(x=>x!==other),val];state.filter='전체'}render();return}
 if(a==='remove-filter'){state.activeFilters=zenoActiveFilters().filter(x=>x!==val);state.filter='전체';render();return}if(a==='booking-tab'){state.bookingTab=val;render();return}
-if(a==='price-category'){state.priceCategory=val;render();return}
+if(a==='price-category'){if(!ZENO_FEE_CATEGORIES.includes(val))return;state.priceCategory=val;render();return}
+if(a==='health-check-species'){if(!['강아지','고양이'].includes(val))return;state.healthCheckSpecies=val;render();return}
 if(a==='search-apply'){applyHospitalQuery(document.getElementById('hospital-search')?.value||'');render();return}
 if(a==='specialty'){
  if(val==='잘 모르겠어요'){state.symptomGuideOpen=!state.symptomGuideOpen;render();if(state.symptomGuideOpen)requestAnimationFrame(()=>document.getElementById('zeno-symptom-guide')?.scrollIntoView({behavior:'smooth',block:'nearest'}));return}
@@ -3599,7 +3670,7 @@ async function start(){
  }finally{zenoStartPending=false}
 }
 render();start();
-const ZENO_OWNER_UI_REVISION='20261113-owner-consistency-v15';
+const ZENO_OWNER_UI_REVISION='20261113-health-check-v16';
 let zenoLastUIVersionCheck=0;
 let zenoUIVersionChecking=false;
 async function zenoCheckOwnerUIRevision(force=false){
