@@ -102,7 +102,7 @@ jobs:
             try{
               const nonce=encodeURIComponent(expectedOwnerRevision)+'-'+attempt;
               const owner=await (await get('/owner?ui='+nonce)).text();
-              for(const expected of ['ZENO','진료 분야로 찾기','진료 과목','예약 요청','24시 청주이음동물의료센터','종양 수술','영상의학','수술 후 재활']){if(!owner.includes(expected))throw Error('Production owner UI missing: '+expected);}
+              for(const expected of ['ZENO','진료 분야로 찾기','특수동물','예약 요청','24시 청주이음동물의료센터','종양 수술','영상의학','수술 후 재활']){if(!owner.includes(expected))throw Error('Production owner UI missing: '+expected);}
               const hospital=await (await get('/hospital?ui='+nonce)).text();
               for(const expected of ['예약','24시 청주이음동물의료센터','영상의학','종양 수술']){if(!hospital.includes(expected))throw Error('Production hospital UI missing: '+expected);}
               const revision=await (await get('/api/ui-version?ui='+nonce)).json();
