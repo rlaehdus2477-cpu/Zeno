@@ -2960,7 +2960,7 @@ function home(){
  };
  const order=['일반 진료','내과','피부·귀','안과','치과·구강','정형외과','외과','중성화수술','심장·호흡기','비뇨기','건강검진·접종','특수동물'];
  const labels={'치과·구강':'치과','중성화수술':'중성화','건강검진·접종':'검진·접종'};
- const primary=['일반 진료','내과','피부·귀','특수동물'];
+ const primary=['일반 진료','내과','외과','중성화수술','치과·구강','안과','피부·귀','비뇨기','건강검진·접종','특수동물'];
  const careButton=name=>'<button type="button" class="zeno-v10-care-card" data-action="specialty" data-value="'+e(name)+'"><span class="zeno-v10-care-icon">'+zenoCareIcon(name)+'</span><strong>'+e(labels[name]||name)+'</strong></button>';
  const chips=primary.map(careButton).join('');
  const moreChips=order.filter(name=>!primary.includes(name)).map(careButton).join('');
