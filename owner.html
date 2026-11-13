@@ -1412,26 +1412,33 @@ const ZENO_CFC={
  cj24:{grade:'Gold',status:'reported',asOf:'2026-11-13',year:'2025년 GOLD 표시 사진',url:'https://bemypet.kr/hospital/2820',note:'병원 관련 사진에 Cat Friendly Clinic GOLD 2025 표시가 있고 공개 병원정보에도 ISFM Gold로 등록되어 있습니다. 최신 공식 목록 등재와 갱신은 미확인입니다.'},
  pub007:{grade:'Gold',status:'reported',asOf:'2026-11-13',url:'https://bemypet.kr/hospital/2811',note:'외부 병원정보 사이트에 ISFM Gold로 표기되어 있으나 2026년 11월 공식 디렉터리 조사 기록에서 동일 병원의 현행 등재는 확인하지 못했습니다.'},
  pub011:{grade:'Gold',status:'reported',asOf:'2026-11-13',url:'https://bemypet.kr/hospital/2821',note:'외부 병원정보 사이트에 ISFM Gold로 표기되어 있으나 2026년 11월 공식 디렉터리 조사 기록에서 동일 병원의 현행 등재는 확인하지 못했습니다.'}
+,
+ tnd:{grade:'Gold',status:'criteria',asOf:'2026-11-13',url:'https://www.daangn.com/kr/local-profile/%ED%8B%B0%EC%95%A4%EB%94%94-%EB%8F%99%EB%AC%BC%EB%B3%91%EC%9B%90-hp3mgxnum7p5/',note:'병원에서 제공한 업체 소개에 ISFM GOLD 등급 충족이라고 안내합니다. Gold 공식 인증을 받았다는 의미는 아니며 인증기관 등록·유효 여부는 별도로 확인해야 합니다.'},
+ pub028:{grade:'Gold',status:'pending',asOf:'2026-11-13',note:'보호자가 ISFM Gold 인증 또는 Gold 기준 충족 병원으로 알려주셨습니다. 공개된 병원·인증기관 자료에서 아직 확인하지 못했으므로 공식 인증 또는 기준 충족을 확정해 안내하지 않습니다.'}
 };
 function zenoCfc(h){return ZENO_CFC[h?.id]||null}
 function zenoCfcBadge(h){
  const c=zenoCfc(h);if(!c)return '';
- const found=c.status==='listed';
- return '<span class="zeno-cfc-badge '+(found?'listed':'unconfirmed')+'" title="'+e(found?'공식 디렉터리 조사 기록 등재':'과거 인증 표기 · 현재 유효 여부 미확인')+'"><span class="zeno-cfc-glyph" aria-hidden="true">CFC</span>'+e(found?'고양이 친화 · Gold':'Gold 표기 · 갱신 미확인')+'</span>';
+ const listed=c.status==='listed', criteria=c.status==='criteria', pending=c.status==='pending';
+ const label=listed?'고양이 친화 · Gold':criteria?'Gold 기준 충족 · 병원 안내':pending?'Gold 관련 제보 · 확인 중':'Gold 표기 · 갱신 미확인';
+ const tooltip=listed?'공식 명단 조사 기록 등재 · 현재 유효기간은 별도 확인 필요':criteria?'병원이 Gold 수준 기준 충족을 안내함 · 공식 인증과 다름':pending?'보호자 제보 · 병원·인증기관 근거 확인 중':'외부 인증 표기 · 최신 갱신 미확인';
+ return '<span class="zeno-cfc-badge '+(listed?'listed':'unconfirmed')+'" title="'+e(tooltip)+'"><span class="zeno-cfc-glyph" aria-hidden="true">CFC</span>'+e(label)+'</span>';
 }
 function zenoCfcSummary(h){
- if(!zenoCfc(h))return '';
- return '<div class="zeno-cfc-summary">'+zenoCfcBadge(h)+'<button type="button" data-action="detail-tab" data-value="intro">인증 출처 보기</button></div>';
+ const c=zenoCfc(h);if(!c)return '';
+ return '<div class="zeno-cfc-summary">'+zenoCfcBadge(h)+'<button type="button" data-action="detail-tab" data-value="intro">'+(c.status==='pending'?'제보 확인 상태':'표시 근거 보기')+'</button></div>';
 }
 function zenoCfcDetail(h){
  const c=zenoCfc(h);if(!c)return '';
- const listed=c.status==='listed';
- return '<section class="zeno-cfc-detail"><h3>고양이 친화병원 인증 정보</h3>'+zenoCfcBadge(h)
- +'<p><strong>등급 표기:</strong> ISFM Cat Friendly Clinic '+e(c.grade)+'</p>'
- +'<p><strong>확인 구분:</strong> '+e(listed?'2026년 공식 명단 조사 기록 등재':'외부 자료 인증 표기 · 현행 갱신 미확인')+'</p>'
+ const listed=c.status==='listed',criteria=c.status==='criteria',pending=c.status==='pending';
+ const gradeLabel=criteria?'ISFM Gold 기준 충족(병원 안내)':pending?'ISFM Gold 관련 정보(추가 확인 중)':'ISFM Cat Friendly Clinic '+e(c.grade);
+ const evidenceLabel=listed?'공식 명단 조사 기록 등재':criteria?'병원 업체 소개에서 Gold 기준 충족 안내':pending?'보호자 제공 정보 · 공개 근거 미확인':'외부 자료 인증 표기 · 현행 갱신 미확인';
+ return '<section class="zeno-cfc-detail"><h3>고양이 친화 관련 정보</h3>'+zenoCfcBadge(h)
+ +'<p><strong>등급 관련 정보:</strong> '+gradeLabel+'</p>'
+ +'<p><strong>확인 구분:</strong> '+e(evidenceLabel)+'</p>'
  +(c.year?'<p><strong>인증마크에 표시된 연도:</strong> '+e(c.year)+'</p>':'')
- +'<p>'+e(c.note)+'</p><p class="zeno-cfc-limit">자료 기준일 '+e(c.asOf)+' · 인증은 진료 실력·결과 및 응급 수용을 보장하지 않습니다. 고양이 전용 대기실과도 별도로 표시합니다.</p>'
- +'<div class="zeno-cfc-links"><a href="'+e(c.url)+'" target="_blank" rel="noopener noreferrer">'+e(listed?'CFC 인증기관 명단':'인증 표기 출처')+'</a>'
+ +'<p>'+e(c.note)+'</p><p class="zeno-cfc-limit">자료 기준일 '+e(c.asOf)+' · 기준 충족 안내나 보호자 제보는 공식 인증을 의미하지 않습니다. 인증 여부는 인증기관과 병원에 확인해 주세요. 고양이 전용 대기실은 별도로 표시합니다.</p>'
+ +'<div class="zeno-cfc-links">'+(c.url?'<a href="'+e(c.url)+'" target="_blank" rel="noopener noreferrer">'+e(criteria?'병원 소개 확인':listed?'CFC 인증기관 명단':'인증 표기 출처')+'</a>':'')
  +(c.review?'<a href="'+e(c.review)+'" target="_blank" rel="noopener noreferrer">국내 명단 확인 기록</a>':'')+'</div></section>';
 }
 const SPECIALTIES=[
@@ -1976,11 +1983,15 @@ function hospitalCard(h){
 function hospitalResults(items){
  if(!items.length)return '<div class="empty zeno-results-empty"><strong>'+(state.query?'검색어에 맞는 병원이 없어요':'선택한 조건에 맞는 병원이 없어요')+'</strong><button type="button" class="btn secondary small" data-action="clear-search">조건 초기화</button></div>';
  const group=rows=>'<div class="hospital-list zeno-compact-results">'+rows.map(hospitalCard).join('')+'</div>';
- if(state.page==='search'&&zenoHasFilter('고양이 친화 인증')&&!state.specialty){
+ if(state.page==='search'&&zenoHasFilter('고양이 친화 정보')&&!state.specialty){
   const yes=items.filter(h=>zenoCfc(h)?.status==='listed');
   const reported=items.filter(h=>zenoCfc(h)?.status==='reported');
-  return (yes.length?'<h3 class="zeno-result-group">공식 명단 등재 확인 · '+yes.length+'곳</h3>'+group(yes):'')
-   +(reported.length?'<h3 class="zeno-result-group">공개 인증 표기 · 갱신 미확인 · '+reported.length+'곳</h3>'+group(reported):'');
+  const criteria=items.filter(h=>zenoCfc(h)?.status==='criteria');
+  const pending=items.filter(h=>zenoCfc(h)?.status==='pending');
+  return (yes.length?'<h3 class="zeno-result-group">공식 명단 조사 기록 · '+yes.length+'곳</h3>'+group(yes):'')
+   +(reported.length?'<h3 class="zeno-result-group">공개 인증 표기 · 갱신 미확인 · '+reported.length+'곳</h3>'+group(reported):'')
+   +(criteria.length?'<h3 class="zeno-result-group">Gold 기준 충족 · 병원 자체 안내 · '+criteria.length+'곳</h3>'+group(criteria):'')
+   +(pending.length?'<h3 class="zeno-result-group">보호자 제보 · 인증 근거 확인 중 · '+pending.length+'곳</h3>'+group(pending):'');
  }
  if(state.page==='search'&&state.specialty){
   return [['official','병원 공식 안내 진료과'],['demo','병원 시연 계정 입력 · 미검증'],['public','공개정보 등록 진료과 · 공식 확인 필요'],['name','병원명 일치 · 진료 여부 전화 확인'],['report','보호자 제보 · 진료종 전화 확인'],['inquiry','진료 여부 미확인 · 전화 문의']].map(([kind,label])=>{
@@ -2014,12 +2025,12 @@ function filteredHospitals(){
   const confirmed=h=>Boolean(h.catWaiting.verified||h.catWaiting.guardianConfirmed||h.catWaiting.visited);
   list=list.filter(h=>zenoCatWaitingLabel(h)).sort((a,b)=>Number(confirmed(b))-Number(confirmed(a)));
  }
- if(fs.includes('고양이 친화 인증'))list=list.filter(h=>Boolean(zenoCfc(h)));
+ if(fs.includes('고양이 친화 정보'))list=list.filter(h=>Boolean(zenoCfc(h)));
  if(fs.includes('연결 병원'))list=list.filter(h=>h.linked);
  if(fs.includes('즐겨찾기'))list=list.filter(h=>state.favorites.includes(h.id));
  if(state.specialty)list=list.filter(h=>state.specialty==='특수동물'?(state.exoticSpecies?[...(h.officialExoticSpecies||[]),...(h.reportedExoticSpecies||[])].includes(state.exoticSpecies):Boolean((h.officialExoticSpecies||[]).length||(h.reportedExoticSpecies||[]).length)):Boolean(zenoSpecialtyOrigin(h)));
  if(state.specialty){const rank={official:0,report:1,demo:2,public:3,name:4,inquiry:5};list.sort((a,b)=>(rank[zenoSpecialtyOrigin(a)]??4)-(rank[zenoSpecialtyOrigin(b)]??4));}
- if(fs.includes('고양이 친화 인증'))list.sort((a,b)=>Number(zenoCfc(b)?.status==='listed')-Number(zenoCfc(a)?.status==='listed'));
+ if(fs.includes('고양이 친화 정보'))list.sort((a,b)=>Number(zenoCfc(b)?.status==='listed')-Number(zenoCfc(a)?.status==='listed'));
  return list;
 }
 function ad(){return `<div class="adline"><div><span class="tiny">광고 · 제휴 시연 영역</span><strong>반려동물에게 필요한 것, 제노에서 함께</strong><small>사료사·동물병원 제휴 배너는 실제 광고 계약 후 노출됩니다.</small></div><button class="btn secondary small" data-nav="membership">혜택 보기</button></div>`}
@@ -2062,10 +2073,10 @@ function searchPage(){
  const exotic=state.specialty==='특수동물'?'<section class="zeno-exotic-top"><h3>어떤 동물인가요?</h3><div class="zeno-exotic-chips">'+EXOTIC.map(x=>'<button class="filter '+(state.exoticSpecies===x[0]?'active':'')+'" data-action="exotic" data-value="'+e(x[0])+'">'+e(x[0])+'</button>').join('')+'</div></section>':'';
  const remove=state.specialty?'<div class="zeno-remove-filters"><button data-action="clear-specialty" aria-label="진료과 조건 해제">'+e(state.exoticSpecies||state.specialty)+' ×</button></div>':'';
  const careIntro=state.specialty?'<div class="zeno-specialty-note"><strong>'+e(state.specialty)+(state.symptomLabel?' · '+e(state.symptomLabel):'')+'</strong><p>'+(state.specialty==='특수동물'?'특수동물은 공식 안내 및 보호자 제보를 구분해서 표시합니다. 실제 진료하는 동물종은 전화로 확인해 주세요.':'이 분야의 전문진료 여부가 공식 확인된 병원은 우선 표시하고, 다른 병원은 진료 가능 여부를 문의할 수 있도록 구분합니다. 검색 결과만으로 진료가 보장되지는 않습니다.')+'</p></div>':'';
- return topbar('병원 찾기','')+'<div class="zeno-price-inline"><span>공개된 진료비를 먼저 확인하고 싶으신가요?</span><button type="button" data-nav="prices">진료비 비교</button></div><div class="zeno-search-module"><label for="hospital-search">병원명·동네·시설 검색</label><div class="searchrow"><input type="search" class="search" id="hospital-search" placeholder="병원명·동네·시설 검색" value="'+e(state.query)+'"><button class="btn" data-action="search-apply">검색</button></div>'+remove+'<div class="filters">'+['전체','야간','24시','고양이 친화 인증','고양이 대기실','연결 병원','즐겨찾기'].map(x=>'<button class="filter '+((x==='전체'?!fs.length&&!state.specialty&&!state.query:fs.includes(x))?'active':'')+'" aria-pressed="'+(x==='전체'?!fs.length&&!state.specialty&&!state.query:fs.includes(x))+'" data-action="filter" data-value="'+x+'">'+(x==='24시'?'24시간 응급':x==='야간'?'야간 진료':x==='연결 병원'?'예약 요청 가능':x==='즐겨찾기'?'저장한 병원':x)+'</button>').join('')+'</div></div>'
+ return topbar('병원 찾기','')+'<div class="zeno-price-inline"><span>공개된 진료비를 먼저 확인하고 싶으신가요?</span><button type="button" data-nav="prices">진료비 비교</button></div><div class="zeno-search-module"><label for="hospital-search">병원명·동네·시설 검색</label><div class="searchrow"><input type="search" class="search" id="hospital-search" placeholder="병원명·동네·시설 검색" value="'+e(state.query)+'"><button class="btn" data-action="search-apply">검색</button></div>'+remove+'<div class="filters">'+['전체','야간','24시','고양이 친화 정보','고양이 대기실','연결 병원','즐겨찾기'].map(x=>'<button class="filter '+((x==='전체'?!fs.length&&!state.specialty&&!state.query:fs.includes(x))?'active':'')+'" aria-pressed="'+(x==='전체'?!fs.length&&!state.specialty&&!state.query:fs.includes(x))+'" data-action="filter" data-value="'+x+'">'+(x==='24시'?'24시간 응급':x==='야간'?'야간 진료':x==='연결 병원'?'예약 요청 가능':x==='즐겨찾기'?'저장한 병원':x)+'</button>').join('')+'</div></div>'
  +careIntro+exotic+'<div class="zeno-home-shortcuts zeno-search-emergency"><button type="button" class="zeno-emergency-shortcut" data-nav="emergency">야간·24시간 구분 보기</button></div>'
  +'<div class="section-title zeno-results-title"><h2 aria-live="polite">청주 병원 '+results.length+'곳</h2>'+((state.query||fs.length||state.specialty)&&results.length?'<button class="link owner-reset" type="button" data-action="clear-search">조건 초기화</button>':'')+'</div><p class="zeno-catalog-note">진료시간과 실제 진료 가능 여부는 방문 전 병원에 확인해 주세요.</p>'
- +(fs.includes('고양이 친화 인증')?'<p class="zeno-cfc-filter-note">2026.11.06 공식 명단 등재 확인 3곳과 공개 자료에 인증 표기가 있으나 갱신 미확인인 3곳을 함께 표시합니다. 인증 유효기간·진료 가능 여부는 인증기관이나 병원에 확인해 주세요.</p>':'')+hospitalResults(results);
+ +(fs.includes('고양이 친화 정보')?'<p class="zeno-cfc-filter-note">공식 명단 조사 기록, 외부 인증 표기, 병원 자체의 Gold 기준 충족 안내, 보호자 제보를 구분합니다. 모든 병원이 공식 Gold 인증을 받은 것은 아니며 인증 유효기간은 기관에 확인해 주세요.</p>':'')+hospitalResults(results);
 }
 function emergency(){
  const always=HOSPITALS.filter(h=>zeno24HourEmergency(h));
