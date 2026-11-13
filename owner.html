@@ -36,6 +36,7 @@ input,select,textarea,.search{font-size:16px;line-height:1.45}
  .metric small{font-size:12.5px}
  .mobilebar button{font-size:12px}
 }
+.zeno-home-v10 .zeno-v10-more-care{margin-top:12px}.zeno-home-v10 .zeno-v10-more-care summary{list-style:none;cursor:pointer;text-align:center;padding:13px 12px;border:1px solid var(--zh-line);border-radius:10px;background:var(--zh-surface);font-weight:650;font-size:14px;color:var(--zh-text)}.zeno-home-v10 .zeno-v10-more-care summary::-webkit-details-marker{display:none}.zeno-home-v10 .zeno-v10-more-care[open] summary{margin-bottom:12px}.zeno-home-v10 .zeno-v10-more-care summary span{margin-left:5px}.zeno-home-v10 .zeno-v10-more-care[open] summary span{display:inline-block;transform:rotate(180deg)}
 </style>
 <style>
 /* ZENO optional hospital photo gallery / Naver photo discovery */
@@ -2473,7 +2474,10 @@ function home(){
  };
  const order=['일반 진료','내과','피부·귀','안과','치과·구강','정형외과','외과','중성화수술','심장·호흡기','비뇨기','건강검진·접종','특수동물'];
  const labels={'치과·구강':'치과','중성화수술':'중성화','건강검진·접종':'검진·접종'};
- const chips=order.map(name=>'<button type="button" class="zeno-v10-care-card" data-action="specialty" data-value="'+e(name)+'"><span class="zeno-v10-care-icon">'+zenoCareIcon(name)+'</span><strong>'+e(labels[name]||name)+'</strong></button>').join('');
+ const primary=['일반 진료','내과','피부·귀','특수동물'];
+ const careButton=name=>'<button type="button" class="zeno-v10-care-card" data-action="specialty" data-value="'+e(name)+'"><span class="zeno-v10-care-icon">'+zenoCareIcon(name)+'</span><strong>'+e(labels[name]||name)+'</strong></button>';
+ const chips=primary.map(careButton).join('');
+ const moreChips=order.filter(name=>!primary.includes(name)).map(careButton).join('');
 
  const regionItems=areas.map(area=>'<button type="button" role="option" aria-selected="'+(area===state.homeArea)+'" class="'+(area===state.homeArea?'selected':'')+'" data-action="home-area-select" data-value="'+e(area)+'">'+e(area)+'</button>').join('');
  const areaMenu=state.homeAreaOpen?'<div class="zeno-v10-area-menu" id="zeno-v10-area-menu" role="listbox" aria-label="청주 지역 선택">'+regionItems+'</div>':'';
@@ -2486,7 +2490,7 @@ function home(){
  +zenoNavIcon('search')+'<input id="home-hospital-search" name="homeQuery" type="search" autocomplete="off" placeholder="증상, 병원명, 진료과목 검색" value="'+e(state.query)+'"></form></section>'
  +zenoHomeOperatingRail()
   +'<section class="zeno-v10-care" aria-label="진료 분야로 찾기"><div class="zeno-v10-section-heading"><h2>진료 분야</h2><button type="button" data-action="show-all-hospitals">전체 병원 보기</button></div>'
- +'<div class="zeno-v10-grid">'+chips+'</div></section>'
+ +'<div class="zeno-v10-grid">'+chips+'</div><details class="zeno-v10-more-care"><summary>전체 진료 분야 보기 <span aria-hidden="true">⌄</span></summary><div class="zeno-v10-grid">'+moreChips+'</div></details></section>'
  +'<button type="button" class="zeno-v10-symptom-btn" data-action="specialty" data-value="잘 모르겠어요" aria-expanded="'+state.symptomGuideOpen+'" aria-controls="zeno-symptom-guide"><span class="zeno-v10-help-icon">'+zenoHomeSmallIcon('help')+'</span><span><strong>어떤 진료인지 잘 모르겠어요</strong><small>증상을 보고 진료 분야를 찾아보세요.</small></span>'+zenoHomeSmallIcon('next')+'</button>'
  +(state.symptomGuideOpen?zenoSymptomPanel():'')
  +'<section class="zeno-v10-quick" aria-label="빠르게 병원 찾기"><h2>필요한 진료 빠르게 찾기</h2>'
