@@ -66,7 +66,18 @@ jobs:
 
       - name: Deploy existing Worker and D1 binding
         id: deploy
-        run: npx wrangler deploy --config wrangler.toml
+        run: |
+          # Cloudflare may intermittently fail Worker version uploads (API 10013).
+          # Retry the same compiled artifact, then retry with an earlier Wrangler release.
+          for attempt in 1 2; do
+            echo "Production deployment attempt $attempt using repository Wrangler"
+            if npx wrangler deploy --config wrangler.toml; then
+              exit 0
+            fi
+            if [ "$attempt" -lt 2 ]; then sleep 10; fi
+          done
+          echo "Trying the previous Wrangler release after two Cloudflare API failures"
+          npx --yes wrangler@4.150.0 deploy --config wrangler.toml
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN || secrets.CF_API_TOKEN || secrets.CLOUDFLARE_TOKEN || secrets.CF_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: "f805a734c87c90e765d7e455a469a730"
@@ -81,10 +92,12 @@ jobs:
             if(!response.ok)throw Error(path+' returned HTTP '+response.status);
             return response;
           }
-          const owner=await (await get('/owner?release=pr30')).text();
-          for(const expected of ['ZENO','진료 분야로 찾기','진료 과목','예약 요청']){if(!owner.includes(expected))throw Error('Owner UI missing: '+expected);}
-          const hospital=await (await get('/hospital?release=pr30')).text();
-          if(!hospital.includes('예약'))throw Error('Hospital UI does not contain booking view');
+          const owner=await (await get('/owner?release=clinical-20261114')).text();
+          for(const expected of ['ZENO','진료 분야로 찾기','진료 과목','예약 요청','20261114-clinical-data-v22','24시 청주이음동물의료센터','종양 수술','영상의학','수술 후 재활']){if(!owner.includes(expected))throw Error('Production owner UI missing: '+expected);}
+          const hospital=await (await get('/hospital?release=clinical-20261114')).text();
+          for(const expected of ['예약','24시 청주이음동물의료센터','영상의학','종양 수술']){if(!hospital.includes(expected))throw Error('Production hospital UI missing: '+expected);}
+          const revision=await (await get('/api/ui-version')).json();
+          if(revision?.owner!=='20261114-clinical-data-v22')throw Error('Owner UI version not deployed: '+JSON.stringify(revision));
           const json=await (await get('/api/public/hospital-status')).json();
           if(!json||typeof json.settings!=='object')throw Error('Public hospital status response invalid');
           console.log('ZENO production owner/hospital/public API smoke test PASS');
