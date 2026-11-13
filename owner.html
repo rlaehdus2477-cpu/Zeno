@@ -2192,6 +2192,7 @@ function zenoBookingServices(h,species){
  return zenoBookingAnimals(h).includes(species)?[['특수동물','진료 동물 종류 및 방문 일정 문의']]:[];
 }
 
+/* CHANGED: pet profile and symptom prefill in appointment. */
 function zenoBookingFlow(h){
  const chosenKind=state.modal.kind||'',selected=state.modal.service||'';
  const defaultPet=state.pets.find(p=>p.species===chosenKind)||null;
@@ -2208,20 +2209,20 @@ function zenoBookingFlow(h){
  const kindText='<div class="zeno-book-summary"><span>'+e(chosenKind)+' · '+e(selected)+'</span><button type="button" data-action="zeno-book-back">변경</button></div>';
  const body='<form id="booking-form"><p class="zeno-book-step-label">2 / 2 · 예약 정보</p>'+kindText
  +'<div class="zeno-book-warning">예약 요청을 전송한 뒤 병원에서 수락해야 방문 시간이 확정됩니다.</div>'
- +'<input type="hidden" name="hospitalId" value="'+e(h.id)+'"><input type="hidden" name="petId" value="">'
+ +'<input type="hidden" name="hospitalId" value="'+e(h.id)+'"><input type="hidden" name="petId" value="'+e(defaultPet?.id||'')+'">'
  +'<input type="hidden" id="zeno-book-species" name="species" value="'+e(chosenKind)+'">'
  +'<input type="hidden" id="zeno-book-service" name="service" value="'+e(selected)+'">'
  +'<div class="zeno-book-picker"><h3>진료받을 아이</h3><p>등록한 아이를 선택하거나 이름을 입력하세요.</p><div class="zeno-book-pets">'+petChoices+'<button type="button" class="zeno-book-pet" data-action="book-pet" data-id="">직접 입력</button></div></div>'
  +'<div class="formgrid"><div class="field"><label for="zeno-book-owner-name">보호자 이름</label><input id="zeno-book-owner-name" value="'+e(state.owner?.displayName||'로그인 보호자')+'" readonly></div>'
  +'<div class="field"><label for="zeno-book-owner-phone">연락처</label><input id="zeno-book-owner-phone" name="ownerPhone" type="tel" inputmode="tel" autocomplete="tel" required maxlength="15" placeholder="010-1234-5678" pattern="[0-9-]{10,15}"></div>'
- +'<div class="field"><label for="zeno-book-pet-name">반려동물 이름</label><input id="zeno-book-pet-name" name="petName" required maxlength="30" placeholder="아이 이름"></div>'
- +'<div class="field"><label for="zeno-book-breed">품종 (선택)</label><input id="zeno-book-breed" name="breed" maxlength="35" placeholder="예: 코리안숏헤어"></div>'
- +'<div class="field"><label for="zeno-book-age">나이 (선택)</label><input id="zeno-book-age" name="age" maxlength="20" placeholder="예: 4세"></div>'
- +'<div class="field"><label for="zeno-book-weight">체중 (선택)</label><input id="zeno-book-weight" name="weight" maxlength="20" placeholder="예: 4.6kg"></div>'
+ +'<div class="field"><label for="zeno-book-pet-name">반려동물 이름</label><input id="zeno-book-pet-name" name="petName" required maxlength="30" placeholder="아이 이름" value="'+e(defaultPet?.name||'')+'"></div>'
+ +'<div class="field"><label for="zeno-book-breed">품종 (선택)</label><input id="zeno-book-breed" name="breed" maxlength="35" placeholder="예: 코리안숏헤어" value="'+e(defaultPet?.breed||'')+'"></div>'
+ +'<div class="field"><label for="zeno-book-age">나이 (선택)</label><input id="zeno-book-age" name="age" maxlength="20" placeholder="예: 4세" value="'+e(defaultPet?.age||'')+'"></div>'
+ +'<div class="field"><label for="zeno-book-weight">체중 (선택)</label><input id="zeno-book-weight" name="weight" maxlength="20" placeholder="예: 4.6kg" value="'+e(defaultPet?.weight||'')+'"></div>'
  +'<div class="field"><label for="zeno-book-visit-type">방문 구분</label><select id="zeno-book-visit-type" name="visitType"><option>첫 방문</option><option>재방문</option></select></div>'
  +'<div class="field"><label for="zeno-book-date">희망 날짜</label><input id="zeno-book-date" name="date" type="date" min="'+today()+'" value="'+defaultBookingDate()+'" required></div>'
  +'<div class="field"><label for="zeno-book-time">희망 시간</label><input id="zeno-book-time" name="time" type="time" value="11:00" required></div>'
- +'<div class="field wide"><label for="zeno-book-note">수의사에게 말하고 싶은 것</label><textarea id="zeno-book-note" maxlength="500" name="note" placeholder="예: 언제부터 식욕이 줄었는지, 복용 중인 약, 걱정되는 증상 등"></textarea></div>'
+ +'<div class="field wide"><label for="zeno-book-note">수의사에게 말하고 싶은 것</label><textarea id="zeno-book-note" maxlength="500" name="note" placeholder="예: 언제부터 식욕이 줄었는지, 복용 중인 약, 걱정되는 증상 등">'+e(state.symptomLabel||'')+'</textarea></div>'
  +'</div>'+optionHint+'<button class="btn full" type="submit">예약 요청하기</button></form>';
  return {title:'예약 정보 · '+h.name,body};
 }
