@@ -907,6 +907,19 @@ body{word-break:keep-all;overflow-wrap:break-word}
 .owner-detail-link{display:inline-block;font-size:14px;font-weight:650;color:#1768ae;margin-top:4px}
 .zeno-results-title .owner-reset{min-height:44px;padding:4px 8px}
 @media(max-width:360px){.zeno-home-shortcuts.owner-shortcuts button{gap:4px}.owner-shortcuts svg{width:16px;flex-basis:16px}}
+</style><style>
+@media(max-width:700px){
+.hospital-list.zeno-compact-results .zeno-list-item{grid-template-columns:minmax(0,1fr)!important;gap:0!important;padding:12px!important}
+.hospital-list.zeno-compact-results .zeno-list-main{grid-column:1!important;align-items:flex-start!important;gap:10px!important}
+.hospital-list.zeno-compact-results .zeno-list-photo{width:48px!important;min-width:48px!important;flex:0 0 48px!important;height:48px!important;border-radius:6px!important}
+.hospital-list.zeno-compact-results .zeno-list-text{gap:3px!important}
+.hospital-list.zeno-compact-results .zeno-list-text strong{font-size:16px!important;line-height:1.35!important;font-weight:650!important;color:#24292e!important}
+.hospital-list.zeno-compact-results :is(.zeno-list-region,.zeno-list-hours,.zeno-list-hours b,.zeno-list-hours-label,.zeno-list-condition){font-size:13px!important;font-weight:400!important;line-height:1.4!important;color:#53606a!important}
+.hospital-list.zeno-compact-results .zeno-list-condition{background:transparent!important;border:0!important;padding:0!important}
+.hospital-list.zeno-compact-results .owner-detail-link{display:none!important}
+.hospital-list.zeno-compact-results .zeno-list-action{grid-column:1!important;grid-row:2!important;justify-self:end!important;width:auto!important;min-height:36px!important;padding:5px 10px!important;font-weight:550!important;font-size:13px!important}
+body .mobilebar button b,body .mobilebar b{font-size:12px!important;font-weight:500!important;white-space:nowrap!important}
+}
 </style></head><body><div id="app" class="app"></div><script>
 'use strict';
 const APP_MODE='owner';
