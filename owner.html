@@ -3163,7 +3163,7 @@ function pricesPage(){
  const official=rows.map(r=>'<article class="zeno-fee-card"><div class="zeno-fee-top"><div><strong>'+e(r.name)+'</strong><small>병원 홈페이지 게시가격</small></div><span class="zeno-fee-amount">'+zenoFeeAmount(r.price[1],r.price[2])+'</span></div><p>'+e(r.price[3])+'</p><a href="'+e(r.url)+'" target="_blank" rel="noopener noreferrer">공식 진료비 안내 확인</a></article>').join('');
  const estimates=ZENO_NEUTER_REPORTS.map(r=>'<article class="zeno-fee-card zeno-fee-case"><div class="zeno-fee-top"><div><strong>'+e(hospitalById(r.id)?.name||'병원명 확인')+'</strong><small>보호자 등록 견적 · 병원 공식가격 아님</small></div><span class="zeno-fee-amount">'+zenoFeeAmount(r.amount,r.amount)+'</span></div><p>견적 등록 사례 2건 ('+e(r.dates.join(', '))+')</p><p>'+e(r.note)+'</p><a href="'+e(r.url)+'" target="_blank" rel="noopener noreferrer">견적 사례 원문 보기</a></article>').join('');
  return topbar('진료비 비교','')
- +'<div class="zeno-fee-intro"><strong>청주 동물병원 공개 진료비</strong><p>공식 홈페이지에 게시된 비용을 같은 항목끼리 확인할 수 있어요. 게시가격과 실제 청구금액은 다를 수 있습니다.</p><small>공개가격 확인일 2026.11.13 · 현재 3개 병원</small></div>'
+ +'<div class="zeno-fee-intro"><strong>청주 동물병원 공개 진료비</strong><p>공식 홈페이지에 게시된 비용을 같은 항목끼리 확인할 수 있어요. 게시가격과 실제 청구금액은 다를 수 있습니다.</p><small>공개가격 확인일 2026.11.13 · '+(selected==='건강검진'?'건강검진 가격 게시 1개 병원':'일반 진료비 가격 게시 3개 병원')+'</small></div>'
  +'<div class="zeno-fee-choices" role="group" aria-label="비교할 진료 항목">'+chips+'</div>'
  +(selected==='건강검진'?zenoHealthCheckPriceMarkup()
  :selected==='중성화 수술'?'<div class="zeno-fee-subhead"><h2>중성화 수술</h2><p>공식 공개 수술비를 확인한 병원은 아직 없습니다. 다음 견적 사례는 병원 간 가격 순위에 포함하지 않습니다.</p></div>'+estimates
