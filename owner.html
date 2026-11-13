@@ -1800,7 +1800,7 @@ const SYMPTOM_GUIDE=[
 const CARE_SVG={
  '일반 진료':'<path d="M6 3v6a5 5 0 0 0 10 0V3M6 3H4m12 0h2m-7 11v3a4 4 0 0 0 8 0v-3"/><circle cx="19" cy="12" r="2"/>',
  '내과':'<path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0l-1 1-1-1a5.5 5.5 0 0 0-7.8 7.8l8.8 8.8 8.8-8.8a5.5 5.5 0 0 0 0-7.8Z"/>',
- '피부·귀':'<circle cx="5" cy="9" r="1"/><circle cx="10" cy="5" r="1"/><circle cx="16" cy="5" r="1"/><circle cx="20" cy="9" r="1"/><path d="M8 14c-3 3-1 7 2 7 1 0 1.3-1 2-1s1 1 2 1c3 0 5-4 2-7-3-4-5-4-8 0Z"/>',
+ '피부·귀':'<path d="M12 3c-4 0-7 4-7 9 0 5 3 9 7 9 3 0 5-2 5-5 0-2-2-4-4-4-2 0-3 1-3 3"/><path d="M16 5c2 2 3 4 3 7"/>',
  '안과':'<path d="M2 12s3.7-6 10-6 10 6 10 6-3.7 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/>',
  '치과·구강':'<path d="M7 3C4 3 3 5 3 8c0 3 2 6 3 10 .5 2 2.6 3 4 1 .8-1.4.7-4 2-4s1.2 2.6 2 4c1.4 2 3.5 1 4-1 1-4 3-7 3-10 0-3-1-5-4-5-2 0-3 1-5 1S9 3 7 3Z"/>',
  '정형외과':'<path d="M17 11a3 3 0 1 0-4-4l-6 6a3 3 0 1 0 4 4l6-6Z"/><path d="M15 5a2 2 0 0 1 3 0m-13 13a2 2 0 0 0 3 0"/>',
@@ -1809,7 +1809,7 @@ const CARE_SVG={
  '심장·호흡기':'<path d="M2 12h4l2-5 4 10 3-7 2 2h5"/>',
  '비뇨기':'<path d="M12 2c-3 4.5-7 8-7 12a7 7 0 0 0 14 0c0-4-4-7.5-7-12Z"/>',
  '건강검진·접종':'<rect x="5" y="4" width="14" height="18" rx="2"/><rect x="9" y="2" width="6" height="4" rx="1"/><path d="m8 14 3 3 5-6"/>',
- '특수동물':'<circle cx="5" cy="9" r="1"/><circle cx="10" cy="5" r="1"/><circle cx="16" cy="5" r="1"/><circle cx="20" cy="9" r="1"/><path d="M8 14c-3 3-1 7 2 7 1 0 1.3-1 2-1s1 1 2 1c3 0 5-4 2-7-3-4-5-4-8 0Z"/>',
+ '특수동물':'<path d="M8 10C5 7 5 2 7 2c2 0 3 4 4 6M16 10c3-3 3-8 1-8-2 0-3 4-4 6"/><path d="M4 15a8 8 0 0 1 16 0c0 4-3 7-8 7s-8-3-8-7Z"/>',
  '잘 모르겠어요':'<circle cx="12" cy="12" r="10"/><path d="M9.2 9a3 3 0 0 1 5.8 1c0 2-3 2.5-3 4.5"/><path d="M12 18h.01"/>'
 };
 function zenoCareIcon(name){
@@ -1859,7 +1859,7 @@ const hospitalById=id=>HOSPITALS.find(x=>x.id===id);
 function defaultStore(){return {settings:Object.fromEntries(['soo','naeum','tnd'].map(id=>[id,{status:'check',updatedAt:null,notice:'',services:[],prices:[],emergency:false}])),bookings:[],questions:[],reviews:[]}}
 function localGet(){try{return {...defaultStore(),...JSON.parse(localStorage.getItem(STOREKEY)||'{}')}}catch{return defaultStore()}}
 function localSet(x){localStorage.setItem(STOREKEY,JSON.stringify(x));window.dispatchEvent(new Event('zeno-refresh'))}
-const state={ownerToken:localStorage.getItem('zeno-owner-auth')||'',owner:null,authMode:'login',serverReady:false,profileLoaded:false,profileSaving:false,page:APP_MODE==='hospital'?'hospital':'home',filter:'전체',query:'',specialty:'',exoticSpecies:'',detail:null,modal:null,local:true,settings:{},bookings:[],questions:[],reviews:[],hospitalBookings:[],hospitalQuestions:[],activeHospital:sessionStorage.getItem('zeno-h-hospital')||'soo',hospitalToken:sessionStorage.getItem('zeno-h-token')||'',adminToken:sessionStorage.getItem('zeno-admin-token')||'',pets:JSON.parse(localStorage.getItem('zeno-pets-v2')||'[]'),petPhotos:{},records:JSON.parse(localStorage.getItem('zeno-records-v2')||'[]'),favorites:JSON.parse(localStorage.getItem('zeno-favorites-v2')||'[]'),viewH:'soo',hTab:'bookings',appError:'',loading:false,adminStats:null,bookingTab:'전체',activeFilters:[],petTab:'전체',profileSaveError:'',authError:'',pendingAction:null,pendingPage:'',recoveryCode:'',afterRecoveryAction:null,authNotice:'',priceCategory:'초진 진찰료',detailTab:'',symptomGuideOpen:false,symptomLabel:'',homeArea:'청주 흥덕구',homeAreaOpen:false,searchRegion:''};
+const state={ownerToken:localStorage.getItem('zeno-owner-auth')||'',owner:null,authMode:'login',serverReady:false,profileLoaded:false,profileSaving:false,page:APP_MODE==='hospital'?'hospital':'home',filter:'전체',query:'',specialty:'',exoticSpecies:'',detail:null,modal:null,local:true,settings:{},bookings:[],questions:[],reviews:[],hospitalBookings:[],hospitalQuestions:[],activeHospital:sessionStorage.getItem('zeno-h-hospital')||'soo',hospitalToken:sessionStorage.getItem('zeno-h-token')||'',adminToken:sessionStorage.getItem('zeno-admin-token')||'',pets:JSON.parse(localStorage.getItem('zeno-pets-v2')||'[]'),petPhotos:{},records:JSON.parse(localStorage.getItem('zeno-records-v2')||'[]'),favorites:JSON.parse(localStorage.getItem('zeno-favorites-v2')||'[]'),viewH:'soo',hTab:'bookings',appError:'',loading:false,adminStats:null,bookingTab:'전체',activeFilters:[],petTab:'전체',profileSaveError:'',authError:'',pendingAction:null,pendingPage:'',recoveryCode:'',afterRecoveryAction:null,authNotice:'',priceCategory:'초진 진찰료',detailTab:'',symptomGuideOpen:false,symptomLabel:'',homeArea:'청주 전체',homeAreaOpen:false,homeShowAllCare:false,searchRegion:''};
 let toastTimer;
 function toast(message){let o=document.querySelector('.toast');if(o)o.remove();o=document.createElement('div');o.className='toast';o.textContent=message;o.setAttribute('role','status');o.setAttribute('aria-live','polite');o.setAttribute('aria-atomic','true');document.body.appendChild(o);clearTimeout(toastTimer);toastTimer=setTimeout(()=>o.remove(),4500)}
 let profileSaveTimer;
@@ -2416,41 +2416,54 @@ function zenoHomeSmallIcon(name){
  };
  return '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+(paths[name]||paths.next)+'</svg>';
 }
+/* CHANGED: schedule-based cards, never hardcoded live reception. */
+function zenoHomeOperatingRail(){
+ const region=state.homeArea==='청주 전체'?'':state.homeArea.replace('청주 ','');
+ const list=HOSPITALS.filter(h=>!region||String(h.region||'').includes(region));
+ const open=list.filter(h=>zenoPublishedClinicStatus(h).kind==='hours').slice(0,3);
+ const night=list.filter(h=>!zeno24HourEmergency(h)&&zenoNightHours(h)).length;
+ const urgent=list.filter(zeno24HourEmergency).length;
+ const cards=open.map(h=>{
+  const p=(Array.isArray(h.photos)?h.photos:[]).find(x=>x.approved===true&&x.url);
+  const img=p?'<img src="'+e(p.url)+'" alt="" class="'+(p.isLogo||p.fit==='contain'?'is-logo':'')+'" loading="lazy">':'';
+  const badge=zeno24HourEmergency(h)?'24시간 안내':zenoNightHours(h)?'야간':'시간표상 진료';
+  return '<button type="button" class="zeno-v10-open-card" data-action="details" data-id="'+e(h.id)+'"><span class="zeno-v10-mini-photo">'+zenoNavIcon('search')+img+'</span><span style="flex:1;min-width:0"><strong>'+e(h.name)+'</strong><small>'+e(String(h.region||'').split('·').pop().trim())+'</small><span class="zeno-v10-hospital-badges"><span class="zeno-v10-badge'+(badge==='시간표상 진료'?'':' danger')+'">'+badge+'</span></span></span></button>';
+ }).join('');
+ return '<section class="zeno-v10-open-section"><h2>지금 진료 중인 병원</h2>'+(open.length?'<div class="zeno-v10-open-rail">'+cards+'</div>':'<p class="zeno-v10-empty">공개 시간표 기준 진료 중인 병원을 확인할 수 없어요.</p>')+'</section><p class="zeno-v10-stats">청주 병원 '+list.length+'곳 · 야간 진료 '+night+'곳 · 24시간 응급 '+urgent+'곳</p>';
+}
+
 function home(){
  const visible=SPECIALTIES.filter(x=>x[0]!=='잘 모르겠어요');
  const areas=['청주 전체','청주 상당구','청주 서원구','청주 흥덕구','청주 청원구'];
- const pastel={
-  '일반 진료':'blue','내과':'rose','피부·귀':'amber','안과':'cyan',
-  '치과·구강':'violet','정형외과':'teal','외과':'indigo','중성화수술':'sky',
-  '심장·호흡기':'pink','비뇨기':'sky','건강검진·접종':'emerald','특수동물':'orange'
- };
  const subtitle={
-  '일반 진료':'가벼운 증상 · 정기검진','내과':'구토 · 설사 · 식욕저하',
-  '피부·귀':'가려움 · 탈모 · 귓병','안과':'충혈 · 눈곱 · 눈물자국',
-  '치과·구강':'스케일링 · 치석 · 구취','정형외과':'절뚝거림 · 슬개골 · 관절',
-  '외과':'일반 외과 · 수술 상담','중성화수술':'중성화 상담 · 수술 문의',
-  '심장·호흡기':'기침 · 호흡 · 심장','비뇨기':'소변 · 방광 · 신장',
-  '건강검진·접종':'건강검진 · 예방접종','특수동물':'토끼 · 조류 · 파충류'
+  '일반 진료':'가벼운 증상 · 정기검진','내과':'토하거나 설사해요 · 밥을 안 먹어요',
+  '피부·귀':'자꾸 긁어요 · 귀를 털어요','안과':'눈곱이 끼어요 · 눈이 빨개요',
+  '치과·구강':'입 냄새가 나요 · 치석이 있어요','정형외과':'다리를 절뚝거려요',
+  '외과':'수술 상담 · 상처가 났어요','중성화수술':'중성화 상담 · 수술 문의',
+  '심장·호흡기':'기침을 해요 · 숨이 차 보여요','비뇨기':'소변을 자주 봐요 · 소변이 불편해 보여요',
+  '건강검진·접종':'건강검진 · 예방접종','특수동물':'토끼 · 조류 · 파충류 진료 가능 병원 안내'
  };
- const chips=visible.map(x=>{
-  const name=x[0],tone=pastel[name]||'blue';
-  return '<button type="button" class="zeno-v10-care-card" data-action="specialty" data-value="'+e(name)+'" aria-label="'+e(name+': '+subtitle[name]+' 병원 찾기')+'">'
-   +'<span class="zeno-v10-care-icon tone-'+tone+'">'+zenoCareIcon(name)+'</span>'
-   +'<strong>'+e(name)+'</strong><small>'+e(subtitle[name])+'</small></button>';
- }).join('');
+ /* CHANGED: featured 4 care services with optional secondary chips. */
+ const featured=['일반 진료','내과','피부·귀','특수동물'];
+ const chip=(name,small)=>'<button type="button" class="'+(small?'zeno-v10-care-chip':'zeno-v10-care-card')+(name==='특수동물'&&!small?' is-wide':'')+'" data-action="specialty" data-value="'+e(name)+'"><span class="zeno-v10-care-icon">'+zenoCareIcon(name)+'</span><strong>'+e(name)+'</strong><small>'+e(subtitle[name])+'</small></button>';
+ const chips=featured.map(name=>chip(name,false)).join('');
+ const moreChips=visible.filter(x=>!featured.includes(x[0])).map(x=>chip(x[0],true)).join('');
+
  const regionItems=areas.map(area=>'<button type="button" role="option" aria-selected="'+(area===state.homeArea)+'" class="'+(area===state.homeArea?'selected':'')+'" data-action="home-area-select" data-value="'+e(area)+'">'+e(area)+'</button>').join('');
  const areaMenu=state.homeAreaOpen?'<div class="zeno-v10-area-menu" id="zeno-v10-area-menu" role="listbox" aria-label="청주 지역 선택">'+regionItems+'</div>':'';
  return '<div class="zeno-home-v10">'
  +'<header class="zeno-v10-header"><div class="zeno-v10-header-left"><span class="zeno-v10-brand" aria-label="ZENO">ZENO<i>.</i></span><span class="zeno-v10-separator" aria-hidden="true"></span>'
  +'<div class="zeno-v10-region-wrap"><button type="button" class="zeno-v10-region-button" data-action="home-area-toggle" aria-haspopup="listbox" aria-expanded="'+state.homeAreaOpen+'" '+(state.homeAreaOpen?'aria-controls="zeno-v10-area-menu"':'')+'>'
  +zenoHomeSmallIcon('pin')+'<span>'+e(state.homeArea)+'</span>'+zenoHomeSmallIcon('chevron')+'</button>'+areaMenu+'</div></div>'
- +'<button type="button" class="zeno-v10-bell" data-action="home-notifications" aria-label="알림 보기">'+zenoHomeSmallIcon('bell')+'</button></header>'
+ +'</header>'
  +'<section class="zeno-v10-intro"><p class="zeno-v10-eyebrow">반려동물 진료, 필요한 순간에</p><h1>어떤 진료가 필요하세요?</h1><p class="zeno-v10-subtitle">증상부터 진료과목까지 편하게 찾아보세요.</p>'
- +'<form id="home-search-form" class="zeno-v10-search" role="search"><label class="sr-only" for="home-hospital-search">증상, 병원명, 진료과목 검색</label>'
+ +'<div class="zeno-v10-art" role="img" aria-label="반려견·반려묘 일러스트 자리"></div>'
+  +'<form id="home-search-form" class="zeno-v10-search" role="search"><label class="sr-only" for="home-hospital-search">증상, 병원명, 진료과목 검색</label>'
  +zenoNavIcon('search')+'<input id="home-hospital-search" name="homeQuery" type="search" autocomplete="off" placeholder="증상, 병원명, 진료과목 검색" value="'+e(state.query)+'">'
  +'<button type="submit">검색</button></form></section>'
- +'<section class="zeno-v10-care" aria-label="진료 분야로 찾기"><div class="zeno-v10-section-heading"><div><h2>진료 분야로 찾기</h2><p>우리 아이 증상에 맞는 진료를 골라보세요.</p></div><button type="button" data-action="show-all-hospitals">전체 병원 보기</button></div>'
- +'<div class="zeno-v10-grid">'+chips+'</div>'
+ +zenoHomeOperatingRail()
+  +'<section class="zeno-v10-care" aria-label="진료 분야로 찾기"><div class="zeno-v10-section-heading"><div><h2>진료 분야로 찾기</h2><p>우리 아이 증상에 맞는 진료를 골라보세요.</p></div><button type="button" data-action="show-all-hospitals">전체 병원 보기</button></div>'
+ +'<div class="zeno-v10-grid">'+chips+'</div>'+(state.homeShowAllCare?'<div class="zeno-v10-chip-grid">'+moreChips+'</div>':'')+'<button type="button" class="zeno-v10-show-all" data-action="home-toggle-cares">'+(state.homeShowAllCare?'진료과 접기':'전체 진료과 보기')+'</button>'
  +'<button type="button" class="zeno-v10-symptom-btn" data-action="specialty" data-value="잘 모르겠어요" aria-expanded="'+state.symptomGuideOpen+'" aria-controls="zeno-symptom-guide"><span class="zeno-v10-help-icon">'+zenoHomeSmallIcon('help')+'</span><span><strong>어떤 진료인지 잘 모르겠어요</strong><small>증상을 보고 진료 분야를 찾아보세요.</small></span>'+zenoHomeSmallIcon('next')+'</button>'
  +(state.symptomGuideOpen?zenoSymptomPanel():'')+'</section>'
  +'<section class="zeno-v10-quick" aria-label="빠르게 병원 찾기"><h2>필요한 진료 빠르게 찾기</h2>'
@@ -2458,8 +2471,8 @@ function home(){
  +'<button type="button" data-action="around-clock-shortcut"><span class="zeno-v10-shortcut-icon urgent">'+zenoHomeSmallIcon('urgent')+'</span><strong>24시간 응급</strong><small>방문 전 전화 확인</small></button></div>'
  +'<button type="button" class="zeno-v10-cat" data-action="cat-waiting-shortcut"><span class="zeno-v10-shortcut-icon cat">'+zenoNavIcon('pets')+'</span><span><strong>고양이 전용 대기실</strong><small>고양이를 위한 별도 공간 확인</small></span>'+zenoHomeSmallIcon('next')+'</button></section>'
  +zenoHomeBookingPreview()
- +'<div class="zeno-v10-links"><button type="button" data-nav="pets">내 아이 기록</button><button type="button" data-nav="qa">병원 질문·답변</button><button type="button" data-nav="prices">진료비 비교</button></div>'
- +'<p class="zeno-v10-footnote">ZENO는 병원 정보 탐색을 돕는 서비스입니다. 진료 가능 여부와 응급 수용 여부는 방문 전 확인해 주세요.</p></div>';
+ +'<div class="zeno-v10-links"><button type="button" data-nav="pets">'+zenoNavIcon('pets')+'내 아이 기록</button><button type="button" data-nav="qa">'+zenoNavIcon('qa')+'병원 질문·답변</button><button type="button" data-nav="prices">'+zenoNavIcon('search')+'진료비 비교</button></div>'
+ +'<p class="zeno-v10-footnote">병원 사정에 따라 정보가 변경될 수 있어요.</p></div>';
 }
 function searchPage(){
  const results=filteredHospitals(),fs=zenoActiveFilters();
@@ -2900,6 +2913,7 @@ if(a==='book-pet'){
  return;
 }
 
+if(a==='home-toggle-cares'){state.homeShowAllCare=!state.homeShowAllCare;render();return}
 if(a==='home-area-toggle'){state.homeAreaOpen=!state.homeAreaOpen;render();return}
 if(a==='home-area-select'){
  if(['청주 전체','청주 상당구','청주 서원구','청주 흥덕구','청주 청원구'].includes(val)){
@@ -2907,7 +2921,7 @@ if(a==='home-area-select'){
  }
  return;
 }
-if(a==='home-notifications'){toast('알림 기능은 준비 중입니다.');return}
+/* CHANGED: dead notification action removed. */
 if(a==='clear-home-region-filter'){state.searchRegion='';render();return}
 if(a==='show-all-hospitals'){state.searchRegion='';state.query='';state.specialty='';state.symptomLabel='';state.exoticSpecies='';state.filter='전체';state.activeFilters=[];zenoNewSearch=true;navTo('search');return}
 if(a==='night-shortcut'||a==='around-clock-shortcut'){state.searchRegion='';state.query='';state.specialty='';state.exoticSpecies='';state.filter='전체';state.activeFilters=[a==='night-shortcut'?'야간':'24시'];zenoNewSearch=true;navTo('search');return}
