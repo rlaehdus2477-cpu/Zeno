@@ -1686,6 +1686,14 @@ html.dark .zeno-hospital-card .zeno-card-action:not(.primary),html[data-theme="d
  .zeno-more-page .zeno-more-account-primary{flex-wrap:wrap}
  .zeno-more-page .zeno-more-recovery-btn{width:100%}
 }
+</style><style id="zeno-service-guide-release">
+/* CHANGED */
+.zeno-service-guide{margin:24px 0;padding:12px 16px;border:1px solid #cbd3dc;border-radius:12px;color:#172b40;background:#fff}
+.zeno-service-guide summary{cursor:pointer;font-size:14px;font-weight:750}
+.zeno-service-guide p{font-size:14px;line-height:1.7;color:#45576c}
+@media(prefers-color-scheme:dark){.zeno-service-guide{background:#1d2937;color:#f4f7fb;border-color:#627185}.zeno-service-guide p{color:#d0dce9}}
+html.dark .zeno-service-guide,html[data-theme="dark"] .zeno-service-guide{background:#1d2937;color:#f4f7fb;border-color:#627185}
+html.dark .zeno-service-guide p,html[data-theme="dark"] .zeno-service-guide p{color:#d0dce9}
 </style></head><body><div id="app" class="app"></div><script>
 'use strict';
 const APP_MODE='owner';
@@ -2032,7 +2040,7 @@ function zenoNavIcon(name){
 function nav(){
  const menu=APP_MODE==='hospital'?
  [['bookings','예약 관리'],['emergency','진료 상태'],['qa','문의 답변'],['more','병원 정보']]:
- [['home','홈'],['search','병원 찾기'],['emergency','응급 진료'],['pets','내 아이'],['bookings','내 예약'],['qa','내 질문'],['membership','내 포인트'],['prices','진료비 비교'],['more','더 보기']];
+ [['home','홈'],['search','병원 찾기'],['emergency','응급 진료'],['pets','내 아이'],['bookings','내 예약'],['qa','내 질문'],/* CHANGED: unreleased points navigation hidden. */['prices','진료비 비교'],['more','더 보기']];
  const item=(m,mobile=false)=>APP_MODE==='hospital'?
  '<button class="'+(mobile?'':'navlink ')+(state.hTab===m[0]?'active':'')+'" data-action="h-tab" data-value="'+e(m[0])+'"><span class="ico">'+zenoNavIcon(m[0])+'</span><b>'+e(m[1])+'</b></button>':
  '<button class="'+(mobile?'':'navlink ')+(state.page===m[0]?'active':'')+'" data-nav="'+e(m[0])+'"'+(state.page===m[0]?' aria-current="page"':'')+'><span class="ico">'+zenoNavIcon(m[0])+'</span><b>'+e(m[1])+'</b></button>';
@@ -2641,7 +2649,7 @@ function bookingCard(b,hospital=false){
  +'<div class="buttons">'+ownerBookingButtons(b)+'</div>'
  +'<details class="zeno-booking-details"><summary>예약 상세</summary><p>신청: '+e(dateTime(b.createdAt))+' · 최근 변경: '+e(dateTime(b.updatedAt))+'</p>'+(b.note?'<p>요청 사항: '+e(b.note)+'</p>':'')+(b.hospitalNote?'<p>병원 메모: '+e(b.hospitalNote)+'</p>':'')+'</details></article>';
 }
-function ownerBookingButtons(b){let s=b.status;return `${s==='suggested'?`<button class="btn small" data-action="owner-confirm" data-id="${e(b.id)}">이 시간으로 확정</button>`:''}${['pending','accepted','suggested'].includes(s)?`<button class="btn secondary small" data-action="owner-cancel" data-id="${e(b.id)}">요청 취소</button>`:''}${s==='done'&&!state.reviews.some(x=>x.bookingId===b.id)?`<button class="btn small" data-action="review" data-id="${e(b.id)}">방문 인증 후기 작성</button>`:''}${s==='done'&&state.reviews.some(x=>x.bookingId===b.id)?'<span class="tag teal">후기 작성 완료 · 100P 적립</span>':''}`}
+function ownerBookingButtons(b){let s=b.status;return `${s==='suggested'?`<button class="btn small" data-action="owner-confirm" data-id="${e(b.id)}">이 시간으로 확정</button>`:''}${['pending','accepted','suggested'].includes(s)?`<button class="btn secondary small" data-action="owner-cancel" data-id="${e(b.id)}">요청 취소</button>`:''}${s==='done'&&!state.reviews.some(x=>x.bookingId===b.id)?`<button class="btn small" data-action="review" data-id="${e(b.id)}">방문 인증 후기 작성</button>`:''}${s==='done'&&state.reviews.some(x=>x.bookingId===b.id)?'<span class="tag teal">후기 작성 완료</span>':''}`}
 function hospitalBookingButtons(b){let s=b.status;return `${['pending','accepted'].includes(s)?`<button class="btn small teal" data-action="hospital-update" data-status="${s==='pending'?'accepted':'confirmed'}" data-id="${e(b.id)}">${s==='pending'?'예약 수락':'예약 확정'}</button>`:''}${['pending','accepted','suggested'].includes(s)?`<button class="btn small secondary" data-action="propose" data-id="${e(b.id)}">시간 제안</button><button class="btn small red" data-action="hospital-update" data-status="rejected" data-id="${e(b.id)}">거절</button>`:''}${s==='confirmed'?`<button class="btn small teal" data-action="hospital-update" data-status="in_progress" data-id="${e(b.id)}">진료 시작</button><button class="btn small secondary" data-action="hospital-update" data-status="done" data-id="${e(b.id)}">진료 완료</button>`:''}${s==='in_progress'?`<button class="btn small teal" data-action="hospital-update" data-status="done" data-id="${e(b.id)}">진료 완료</button>`:''}`}
 /* UX bookings: accepted/pending/suggested visible before final confirmation; effective times sorted. */
 function bookingsPage(){
@@ -2756,10 +2764,11 @@ function morePage(){
   +'<div class="zeno-giving-card"><p class="zeno-giving-message" data-zeno-copy="headline">'+e(ZENO_MORE_COPY.headline)+'</p>'
   +'<p class="zeno-giving-detail" data-zeno-copy="description">'+e(ZENO_MORE_COPY.description)+'</p>'
   +'</div></section>';
- return '<div class="zeno-more-page">'+topbar('더 보기','')+menu+account+about+'</div>';
+ return '<div class="zeno-more-page">'+topbar('더 보기','')+menu+account+about+'<details class="zeno-service-guide"><summary>서비스 안내</summary><p>병원 공개정보와 병원이 등록한 진료과·상태를 바탕으로 안내합니다. 앱에서 보낸 예약 요청은 병원이 확인하고 확정해야 완료됩니다. 응급 증상은 병원에 직접 전화해 주세요.</p></details></div>'; /* CHANGED */
 }
 // UX 2026-11-08 [7]: unified footer copy.
-function footer(){return '<div class="footer">ZENO · 필요한 순간, 필요한 진료를 찾아드립니다.<br>이 앱은 의료기관 공식 서비스가 아닌 제노 창업 시연용 프로토타입입니다. 응급 상황은 병원에 직접 전화하세요.</div>'}
+/* CHANGED */
+function footer(){return '<div class="footer">병원 사정에 따라 정보가 변경될 수 있어요.</div>'}
 function renderModal(){let m=state.modal;if(!m)return '';let h=hospitalById(m.id||state.detail),title='',body='',wide=false;
 /* UX 2026-11-08 [5]: explicit cancellable delete modal; only destructive action is red. */
 if(m.type==='confirm-record-delete'){
@@ -3227,7 +3236,7 @@ async function start(){
  }finally{zenoStartPending=false}
 }
 render();start();
-const ZENO_OWNER_UI_REVISION='20261113-more-settings-v11';
+const ZENO_OWNER_UI_REVISION='20261113-release-v12';
 let zenoLastUIVersionCheck=0;
 let zenoUIVersionChecking=false;
 async function zenoCheckOwnerUIRevision(force=false){
