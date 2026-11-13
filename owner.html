@@ -2877,8 +2877,8 @@ function zenoListMatchedConditions(h){
 /* Clinically offered fields and declared focus are distinct. */
 function zenoDeclaredSpecialtyLine(h){
  if(!Array.isArray(h.careFields))return '';
- const focus=(h.declaredSpecialties||[]).slice(0,3);
- return '<span class="zeno-search-fact">'+(focus.length?'특화진료 · '+e(focus.join(' · ')):'일반진료')+'</span>';
+ const focus=(h.declaredSpecialties||[]).filter(Boolean).slice(0,1);
+ return '<span class="zeno-search-fact">'+(focus.length?'대표 특화 · '+e(focus[0]):'특화 분야 확인 필요')+'</span>';
 }
 function zenoDetailDepartments(h, services){
  const seen=new Set(), verified=[], published=[], reported=[], hospitalProvided=[];
@@ -2927,7 +2927,8 @@ function zenoProvidedClinicalProfile(h){
  const tags=arr=>'<div class="tags">'+arr.map(x=>'<span class="tag">'+e(x)+'</span>').join('')+'</div>';
  const focus=h.declaredSpecialties||[],fields=h.careFields,extra=fields.slice(4);
  return '<div class="zeno-clinic-profile">'
-  +'<div class="section"><h3>특화 진료</h3>'+(focus.length?tags(focus):'<p class="desc">확인된 특화진료 정보 없음 · 일반진료</p>')+'</div>'
+  +'<div class="section"><h3>대표 특화진료</h3>'+(focus.length?tags(focus.slice(0,1)):'<p class="desc">대표 특화진료 확인 필요</p>')+'</div>'
+  +(focus.length>1?'<div class="section"><h3>그 외 병원 안내 특화분야</h3>'+tags(focus.slice(1))+'</div>':'')
   +'<div class="section"><h3>진료 분야</h3>'+tags(fields.slice(0,4))+(extra.length?'<details class="zeno-care-more"><summary>전체 보기 ('+fields.length+'개)</summary>'+tags(extra)+'</details>':'')+'</div>'
   +((h.focusedCare||[]).length?'<div class="section"><h3>중점 안내 진료 · 특화 여부 확인 필요</h3>'+tags(h.focusedCare)+'</div>':'')
   +((h.detailedCare||[]).length?'<div class="section"><h3>세부 진료</h3>'+tags(h.detailedCare)+'</div>':'')
@@ -3026,13 +3027,13 @@ function zenoSearchHospitalCard(h){
  const lunch=zenoWeeklyData(h)['점심시간'];
  const timeText=(h.careSchedule?'주간 09:30~21:00 · 야간 21:00~24:00 · 운영 요일 확인':time)+(lunch&&!/휴진|휴무/.test(String(today||''))?' · 점심 '+lunch:'');
  // Only explicitly official/confirmed fields are printed, never name-derived categories.
- const specialties=[...new Set(h.officialSpecialties||[])].slice(0,3);
+ const specialties=[...new Set(h.officialSpecialties||[])].slice(0,1);
  const species=[...new Set([...(h.officialCompanionSpecies||[]),...(h.officialExoticSpecies||[])])].slice(0,4);
  const internal=state.page==='search'&&state.specialty==='내과',focus=internal?zenoInternalFocus(h):null;
- const serviceLine=internal?(focus?'':zenoSpecialtyOrigin(h)==='inquiry'?'<span class="zeno-search-fact">내과 진료 여부 미확인 · 전화 문의</span>':'<span class="zeno-search-fact">내과 관련 진료정보 등록</span>'):(Array.isArray(h.careFields)?zenoDeclaredSpecialtyLine(h):specialties.length?'<span class="zeno-search-fact">공식 안내 · '+e(specialties.join(' · '))+'</span>':'');
+ const serviceLine=internal?(focus?'':zenoSpecialtyOrigin(h)==='inquiry'?'<span class="zeno-search-fact">내과 진료 여부 미확인 · 전화 문의</span>':'<span class="zeno-search-fact">내과 관련 진료정보 등록</span>'):(Array.isArray(h.careFields)?zenoDeclaredSpecialtyLine(h):(h.declaredSpecialties||[]).length?'<span class="zeno-search-fact">대표 특화 · '+e(h.declaredSpecialties[0])+'</span>':specialties.length?'<span class="zeno-search-fact">공식 진료 안내 · '+e(specialties[0])+'</span>':'');
  const selectedNote=state.specialty?(h.specialtySnippets||{})[state.specialty]||'':'';
  const specialtyLine=!internal&&selectedNote?'<span class="zeno-search-specialty-summary">'+e(selectedNote)+'</span>':'';
- const focusLine=focus?'<span class="zeno-internal-focus-line">내과 특화 · '+e(focus.fields.join('·'))+' · '+e(focus.status==='confirmed'?'확인됨':'병원 안내')+' <small>근거 보기</small></span>':'';
+ const focusLine=focus?'<span class="zeno-internal-focus-line">내과 특화 · '+e(focus.status==='confirmed'?'확인됨':'병원 안내')+' <small>근거 보기</small></span>':'';
  const animalLine=species.length?'<span class="zeno-search-fact">진료 동물 · '+e(species.join(' · '))+'</span>':'';
  const publishedSpecies=h.publishedExoticSpecies||[];
  const publishedAnimalLine=publishedSpecies.length?'<span class="zeno-search-fact">네이버 공개 진료 대상 · '+e(publishedSpecies.join(' · '))+' · 방문 전 전화 확인</span>':'';
