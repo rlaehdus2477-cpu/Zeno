@@ -808,7 +808,7 @@ function hospitalBookingButtons(b){
  else if(s==='in_progress')primary='<button class="hi-action hi-primary" data-action="hospital-update" data-status="done" data-id="'+id+'">진료 완료</button>';
  if(hiCanConfirm(b)){
   secondary='<button class="hi-action hi-outline" data-action="propose" data-id="'+id+'">시간 제안</button>';
-  refuse='<button class="hi-action hi-text" data-action="hospital-update" data-status="rejected" data-id="'+id+'">거절</button><button class="hi-action hi-text" data-action="hospital-update" data-status="cancelled" data-id="'+id+'">취소</button>';
+  refuse='<button class="hi-action hi-text" data-action="hospital-reject" data-status="rejected" data-id="'+id+'">거절</button><button class="hi-action hi-text" data-action="hospital-update" data-status="cancelled" data-id="'+id+'">취소</button>';
  }else if(s==='suggested'){secondary='<button class="hi-action hi-outline" data-action="propose" data-id="'+id+'">다시 제안</button>';refuse='<button class="hi-action hi-text" data-action="hospital-update" data-status="cancelled" data-id="'+id+'">취소</button>';}
  else if(s==='confirmed')refuse='<button class="hi-action hi-text" data-action="hospital-update" data-status="cancelled" data-id="'+id+'">취소</button>';
  if(['cancelled','rejected'].includes(s))return b.demo?'<span class="hi-done-note">예시 예약입니다.</span>':'<button class="hi-action hi-outline hi-delete-booking" data-action="hospital-delete" data-id="'+id+'">예약 삭제</button>';
@@ -879,6 +879,11 @@ if(m.type==='book'&&h){title='예약 요청 · '+h.name;body=`<div class="banner
 if(m.type==='pet'){title='우리 아이 등록';body=`<form id="pet-form"><div class="field"><label>이름</label><input name="name" maxlength="30" required placeholder="반려동물 이름"></div><div class="field"><label>종류</label><select name="species"><option>고양이</option><option>강아지</option><option>토끼</option><option>햄스터</option><option>조류</option><option>파충류</option><option>기타</option></select></div><div class="formgrid"><div class="field"><label>나이 (선택)</label><input name="age" maxlength="22" placeholder="예: 4살"></div><div class="field"><label>체중 (선택)</label><input name="weight" maxlength="16" placeholder="예: 3.2kg"></div></div><button class="btn full" type="submit">저장하기</button></form>`}
 if(m.type==='record'){title='건강 기록 추가';let p=state.pets.find(x=>x.id===m.id);body=`<p class="desc">${e(p?.name)}의 건강 기록</p><form id="record-form"><input type="hidden" name="petId" value="${e(m.id)}"><div class="field"><label>기록 종류</label><select name="kind"><option>예방접종</option><option>건강검진</option><option>진료 기록</option><option>체중 변화</option><option>투약 기록</option><option>건강 메모</option></select></div><div class="field"><label>날짜</label><input type="date" name="date" value="${today()}" required></div><div class="field"><label>상세 내용</label><textarea name="memo" required maxlength="500" placeholder="검진 항목, 예방접종 종류 등"></textarea></div><button class="btn full" type="submit">기록 저장</button></form>`}
 if(m.type==='ask'){title='병원에 질문 보내기';body=`<div class="banner warning" style="margin-bottom:14px">의료진 자격과 응답 시간이 검증되지 않은 질문·답변 시연 기능입니다.</div><form id="question-form"><div class="field"><label>답변을 요청할 병원</label><select name="hospitalId">${HOSPITALS.filter(x=>x.linked).map(x=>`<option value="${x.id}">${e(x.name)}</option>`).join('')}</select></div><div class="field"><label>반려동물 이름</label><input name="petName" maxlength="30" placeholder="예: 조림이"></div><div class="field"><label>궁금한 내용</label><textarea name="text" required maxlength="1200" placeholder="예: 예방접종 일정을 어떤 기준으로 잡는지 궁금합니다."></textarea></div><button class="btn full" type="submit">질문 등록</button></form>`}
+/* CHANGED: explain rejection to the owner rather than silently changing state. */
+if(m.type==='reject'){
+ title='예약 거절 사유';
+ body='<form id="hospital-reject-form"><input type="hidden" name="bookingId" value="'+e(m.id)+'"><div class="field"><label>사유 선택</label><select name="reason" required><option value="">사유를 선택해 주세요</option><option value="진료 가능 시간이 아닙니다">진료 가능 시간이 아닙니다</option><option value="해당 진료 분야를 제공하지 않습니다">해당 진료 분야를 제공하지 않습니다</option><option value="현재 진료 접수가 어렵습니다">현재 진료 접수가 어렵습니다</option><option value="병원에서 전화 안내가 필요합니다">병원에서 전화 안내가 필요합니다</option></select></div><button class="btn full" type="submit">사유와 함께 거절</button></form>';
+}
 if(m.type==='propose'){title='예약 시간 다시 제안';body=`<form id="propose-form"><input type="hidden" name="bookingId" value="${e(m.id)}"><div class="field"><label>새로 제안할 날짜 및 시간</label><input name="proposedAt" type="datetime-local" required min="${today()}T00:00"></div><div class="field"><label>병원 안내 문구</label><textarea name="hospitalNote" maxlength="300" placeholder="제안 이유 또는 내원 안내"></textarea></div><button class="btn full" type="submit">보호자에게 시간 제안</button></form>`}
 if(m.type==='review'){title='진료 경험 후기';body=`<div class="banner">시연 기준: 완료 처리된 예약 1건당 후기 1회 작성, 100P 적립.</div><form id="review-form" style="margin-top:14px"><input type="hidden" name="bookingId" value="${e(m.id)}"><div class="field"><label>진료 경험 점수</label><select name="stars"><option value="5">★★★★★ (5점)</option><option value="4">★★★★ (4점)</option><option value="3">★★★ (3점)</option><option value="2">★★ (2점)</option><option value="1">★ (1점)</option></select></div><div class="field"><label>후기 내용</label><textarea name="text" required minlength="10" maxlength="800" placeholder="실제 방문 경험을 바탕으로 작성해 주세요."></textarea></div><button class="btn full" type="submit">후기 등록 · 100P 받기</button></form>`}
 if(m.type==='point'){let p=state.reviews.reduce((a,x)=>a+(x.points||0),0),discount=Math.min(p,1800),cost=1800-discount;title='멤버십 포인트 계산';body=`<p class="desc">멤버십 월 요금 <strong>1,800원</strong> · 현재 포인트 <strong>${p}P</strong></p><div class="panel" style="margin-top:17px;background:#f0f8ff"><div class="row-line"><span>월 요금</span><strong>1,800원</strong></div><div class="row-line"><span>보유 포인트 적용</span><strong>-${discount}P</strong></div><div class="row-line"><span>가상 결제 금액</span><strong style="font-size:27px;color:var(--blue)">${cost.toLocaleString()}원</strong></div></div><p class="notice">1P=1원 가정의 PPT 기반 시뮬레이션입니다. 실제 결제·포인트 사용·구독 등록은 되지 않습니다.</p>`}
@@ -953,6 +958,8 @@ if(a==='hospital-delete'){
  }catch(error){toast(error.message)}
  return;
 }
+/* CHANGED: rejection requires a selected reason. */
+if(a==='hospital-reject'){openModal('reject',id);return}
 if(a==='hospital-update'&&el.dataset.status==='cancelled'&&!confirm('정말 취소할까요?'))return;
 if(a==='hospital-update'&&el.dataset.status==='confirmed'){const row=(state.hDemoMode?hsDemoBookings():state.hospitalBookings).find(x=>x.id===id);if(row?.status==='suggested'){toast('보호자가 제안 시간을 수락한 뒤 확정됩니다.');return;}}
 /* CHANGED: removed fabricated booking status path. */
@@ -976,11 +983,14 @@ if(id==='booking-form'){if(d.date<today()){toast('오늘 이후 날짜를 선택
 if(id==='question-form'){if(val(d.text).length<5){toast('질문을 5자 이상 작성해 주세요.');return}await mutate('POST','/api/questions',{hospitalId:d.hospitalId,petName:val(d.petName),text:val(d.text)},'병원용 데모 질문으로 등록되었습니다.');navTo('qa');return}
 if(id==='pet-form'){state.pets.push({id:uid(),name:val(d.name),species:d.species,age:val(d.age),weight:val(d.weight)});savePersonal();state.modal=null;render();toast('우리 아이를 등록했습니다.');return}
 if(id==='record-form'){state.records.push({id:uid(),petId:d.petId,kind:d.kind,date:d.date,memo:val(d.memo)});savePersonal();state.modal=null;render();toast('건강 기록을 저장했습니다.');return}
-if(id==='propose-form'&&String(d.bookingId||'').startsWith('zeno-demo-')){
- const b=hsDemoBookings().find(x=>x.id===d.bookingId);
- if(b){b.status='suggested';b.proposedAt=d.proposedAt;b.hospitalNote=val(d.hospitalNote);b.updatedAt=new Date().toISOString();state.modal=null;render();toast('예시 예약 시간을 변경했습니다.')}
+/* CHANGED: no fabricated sample reservation time changes. */
+if(id==='hospital-reject-form'){
+ const reason=val(d.reason);
+ if(!reason||!d.bookingId){toast('거절 사유를 선택해 주세요.');return}
+ await mutate('PATCH','/api/bookings/'+encodeURIComponent(d.bookingId),{status:'rejected',side:'hospital',hospitalNote:reason},'예약 거절 사유를 보호자에게 전달했습니다.');
  return;
 }
+
 if(id==='propose-form'){
  if(new Date(d.proposedAt+':00+09:00').getTime()<=Date.now()){toast('미래의 날짜와 시간을 제안해 주세요.');return;}
  /* CHANGED: time proposals go only through persisted booking API. */
