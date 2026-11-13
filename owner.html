@@ -2128,6 +2128,15 @@ html[data-theme="dark"] .zeno-home-v10 .zeno-v10-care-icon{color:#b0cde3!importa
 @media(prefers-color-scheme:dark){.zeno-search-page .zeno-search-specialty-summary{color:#b6cadd}}
 html.dark .zeno-search-page .zeno-search-specialty-summary,
 html[data-theme="dark"] .zeno-search-page .zeno-search-specialty-summary{color:#b6cadd}
+</style><style id="zeno-urgent-urology-call-20261113">
+/* Separate emergency phone action from urology specialty claims, preserving source trust. */
+.zeno-search-page .zeno-urgent-call{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;min-width:0;margin:18px 0 8px;padding:12px 0;border-top:1px solid #e0e7ef;color:#263f58}
+.zeno-search-page .zeno-urgent-call>span{display:flex;flex:1 1 180px;flex-direction:column;gap:3px;min-width:0}
+.zeno-search-page .zeno-urgent-call strong{font-size:13.5px;font-weight:750;line-height:1.35}
+.zeno-search-page .zeno-urgent-call small{font-size:12px;line-height:1.45;color:#697d91;word-break:keep-all}
+.zeno-search-page .zeno-urgent-call a{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:8px 14px;border:1px solid #cfdae6;border-radius:9px;background:transparent;color:#2762a0;font-size:13px;font-weight:700;white-space:nowrap}
+.zeno-search-page .zeno-urgent-call a:focus-visible{outline:2px solid #2674c5;outline-offset:2px}
+@media(prefers-color-scheme:dark){.zeno-search-page .zeno-urgent-call{border-color:#4c647b;color:#edf5fd}.zeno-search-page .zeno-urgent-call small{color:#bdcbda}.zeno-search-page .zeno-urgent-call a{color:#b9ddff;border-color:#5d7792}}
 </style></head><body><div id="app" class="app"></div><script>
 'use strict';
 const APP_MODE='owner';
@@ -2710,7 +2719,7 @@ function zenoListMatchedConditions(h){
   if(origin==='official')result.push('병원 공식 안내 진료과');
   if(origin==='demo')result.push('병원 입력 · 진료 여부 확인 필요');
   if(origin==='public')result.push('공개정보 등록 과목 · 공식 확인 필요');
-  if(origin==='report')result.push('특수동물 진료 제보 · 병원 확인 필요');
+  if(origin==='report')result.push('보호자 제공 정보 · 진료 여부 전화 확인');
   if(origin==='name')result.push('병원명 일치 · 진료 여부 확인 필요');
   if(origin==='inquiry')result.push(state.specialty==='내과'?'내과 진료 여부 전화 확인':'진료 분야 미확인 · 전화 문의');
  }
@@ -2835,10 +2844,12 @@ function hospitalResults(items){
   return listed.length?'<h3 class="zeno-result-group">고양이 친화 인증 · 공식 명단 조사 기록 · '+listed.length+'곳</h3>'+group(listed):group(items);
  }
  if(state.page==='search'&&state.specialty){
+  const fallback=state.specialty==='비뇨기'?HOSPITALS.find(h=>h.id==='pub042'&&h.emergencyInquiry):null;
+  const nightCall=fallback?'<aside class="zeno-urgent-call"><span><strong>야간 응급 문의</strong><small>'+e(fallback.name)+' · 접수 가능 여부 전화 확인</small></span><a href="tel:'+e(fallback.phone.replace(/[^0-9]/g,''))+'" aria-label="'+e(fallback.name)+' 전화 문의">전화하기</a></aside>':'';
   return [['official','병원 공식 안내 진료과'],['public','외부 공개 안내 · 진료 여부 전화 확인'],['report','보호자 제공 정보 · 전화 확인 필요'],['demo','병원 입력 · 진료 여부 확인 필요'],['name','병원명 일치 · 진료 여부 전화 확인'],['inquiry','진료 여부 미확인 · 전화 문의']].map(([kind,label])=>{
    const part=items.filter(h=>zenoSpecialtyOrigin(h)===kind);
    return part.length?'<h3 class="zeno-result-group">'+e(label)+' · '+part.length+'곳</h3>'+group(part):'';
-  }).join('')||group(items);
+  }).join('')+nightCall||group(items);
  }
  return group(items);
 }
