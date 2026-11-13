@@ -86,6 +86,10 @@ jobs:
         id: live_smoke
         run: |
           node --input-type=module <<'NODE'
+          const fs = await import('node:fs');
+          const workerSource=fs.readFileSync('worker.js','utf8');
+          const expectedOwnerRevision=workerSource.match(/const OWNER_UI_REVISION\s*=\s*'([^']+)'/)?.[1];
+          if(!expectedOwnerRevision)throw Error('Worker UI revision missing');
           const base='https://zeno.rlaehdus2477.workers.dev';
           async function get(path){
             const response=await fetch(base+path,{headers:{'Cache-Control':'no-cache'},signal:AbortSignal.timeout(20000)});
@@ -93,11 +97,12 @@ jobs:
             return response;
           }
           const owner=await (await get('/owner?release=clinical-20261114')).text();
-          for(const expected of ['ZENO','진료 분야로 찾기','진료 과목','예약 요청','20261114-multispecialty-search-v24','24시 청주이음동물의료센터','종양 수술','영상의학','수술 후 재활']){if(!owner.includes(expected))throw Error('Production owner UI missing: '+expected);}
+          for(const expected of ['ZENO','진료 분야로 찾기','진료 과목','예약 요청','24시 청주이음동물의료센터','종양 수술','영상의학','수술 후 재활']){if(!owner.includes(expected))throw Error('Production owner UI missing: '+expected);}
           const hospital=await (await get('/hospital?release=clinical-20261114')).text();
           for(const expected of ['예약','24시 청주이음동물의료센터','영상의학','종양 수술']){if(!hospital.includes(expected))throw Error('Production hospital UI missing: '+expected);}
           const revision=await (await get('/api/ui-version')).json();
-          if(revision?.owner!=='20261114-multispecialty-search-v24')throw Error('Owner UI version not deployed: '+JSON.stringify(revision));
+          if(revision?.owner!==expectedOwnerRevision)throw Error('Owner UI version not deployed: '+JSON.stringify(revision)+' expected '+expectedOwnerRevision);
+          if(!owner.includes("const ZENO_OWNER_UI_REVISION='"+expectedOwnerRevision+"'"))throw Error('Owner page revision not synchronized with Worker: '+expectedOwnerRevision);
           const json=await (await get('/api/public/hospital-status')).json();
           if(!json||typeof json.settings!=='object')throw Error('Public hospital status response invalid');
           console.log('ZENO production owner/hospital/public API smoke test PASS');
