@@ -25,7 +25,7 @@ import android.widget.Toast;
 
 public final class OwnerActivity extends Activity {
     private static final String HOST = "zeno.rlaehdus2477.workers.dev";
-    private static final String HOME = "https://" + HOST + "/owner";
+    private static final String HOME = "https://" + HOST + "/owner?android_app=1.2";
     private static final int PHOTO = 1;
     private static final int SURFACE = Color.rgb(248, 250, 252);
     private WebView web;
@@ -59,6 +59,9 @@ public final class OwnerActivity extends Activity {
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
         settings.setDefaultTextEncodingName("UTF-8");
+        // The live ZENO UI is served by Cloudflare. Never reuse an obsolete WebView HTTP cache.
+        settings.setCacheMode(WebSettings.LOAD_NO_CACHE);
+        web.clearCache(true);
         settings.setUseWideViewPort(true);
         settings.setLoadWithOverviewMode(true);
         settings.setTextZoom(100);
