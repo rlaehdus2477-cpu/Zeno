@@ -2849,7 +2849,7 @@ function home(){
 }
 function searchPage(){
  const results=filteredHospitals(),fs=zenoActiveFilters();
- const internalNote=state.specialty==='내과'?'<div class="zeno-internal-note" role="note"><strong>공식 내과 진료 안내 '+results.filter(h=>zenoSpecialtyOrigin(h)==='official').length+'곳</strong><span>그 외 '+results.filter(h=>zenoSpecialtyOrigin(h)==='inquiry').length+'곳은 일반 진료 병원이며, 내과 진료 여부는 전화로 확인해야 합니다.</span></div>':'';
+ const internalNote=state.specialty==='내과'?'<div class="zeno-internal-note" role="note"><strong>공식 내과 진료 안내 '+results.filter(h=>zenoSpecialtyOrigin(h)==='official').length+'곳</strong><span>그 외 '+results.filter(h=>zenoSpecialtyOrigin(h)!=='official').length+'곳은 공개 등록 정보 또는 일반 진료 병원으로, 내과 진료 여부는 전화 확인이 필요합니다.</span></div>':'';
  const exotic=state.specialty==='특수동물'?'<section class="zeno-exotic-top" aria-labelledby="zeno-exotic-title">'
   +'<div class="zeno-exotic-heading"><div><h2 id="zeno-exotic-title">특수동물 진료</h2><p>동물 종류를 선택하세요.</p></div>'
   +(state.exoticSpecies?'<button type="button" class="zeno-exotic-clear" data-action="exotic" data-value="">전체 동물 보기</button>':'')+'</div>'
