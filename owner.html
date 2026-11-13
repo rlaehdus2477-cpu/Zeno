@@ -1213,6 +1213,10 @@ function zenoCatWaitingLabel(h){
  if(c.guardianConfirmed||c.visited||c.source==='보호자 직접 방문')return '고양이 전용 대기실 · 보호자 방문 확인';
  return c.reported?'고양이 대기실 · 보호자 제보':'';
 }
+function zenoWaitingQuery(query){
+ const facility=/고양이\s*(?:전용\s*)?대기실/;
+ return {waiting:facility.test(query),text:query.replace(facility,' ').trim().replace(/\s+/g,'').toLowerCase()};
+}
 function zenoActiveFilters(){return [...new Set([...(state.activeFilters||[]),...(state.filter!=='전체'?[state.filter]:[])])];}
 function zenoHasFilter(v){return zenoActiveFilters().includes(v);}
 
@@ -1226,10 +1230,10 @@ function zenoListMatchedConditions(h){
   if(origin==='public')result.push('공개정보 등록 과목 · 공식 확인 필요');
   if(origin==='name')result.push('병원명 일치 · 진료 여부 확인 필요');
  }
- if(fs.includes('고양이 대기실')&&h.catWaiting){const label=zenoCatWaitingLabel(h);if(label)result.push(label);}
+ const waitingLabel=zenoCatWaitingLabel(h);
+ if(waitingLabel)result.push(waitingLabel);
  if(fs.includes('연결 병원')&&h.linked)result.push('예약 요청 가능');
  if(fs.includes('즐겨찾기'))result.push('저장한 병원');
- if(!fs.length&&!state.specialty&&h.catWaiting?.separate)result.push('별도 고양이 전용 대기실');
  return [...new Set(result)];
 }
 function hospitalCard(h){
@@ -1268,11 +1272,15 @@ function zenoSpecialtyOrigin(h){
 }
 function zenoSpecialtyNameOnly(h){return zenoSpecialtyOrigin(h)==='name';}
 function filteredHospitals(){
- let list=HOSPITALS.filter(h=>!state.query||(h.name+' '+(h.aliases||[]).join(' ')+' '+h.address+' '+h.tags.join(' ')).toLowerCase().includes(state.query.toLowerCase()));
+ const query=zenoWaitingQuery(state.query);
+ let list=HOSPITALS.filter(h=>!query.text||(h.name+' '+(h.aliases||[]).join(' ')+' '+h.address+' '+h.tags.join(' ')).toLowerCase().replace(/\s+/g,'').includes(query.text));
  const fs=zenoActiveFilters();
  if(fs.includes('24시'))list=list.filter(h=>h.is24);
  if(fs.includes('야간'))list=list.filter(h=>zenoNightHours(h));
- if(fs.includes('고양이 대기실'))list=list.filter(h=>h.catWaiting?.verified===true||h.catWaiting?.reported===true||h.catWaiting?.visited===true||h.catWaiting?.guardianConfirmed===true||h.catWaiting?.separate===true);
+ if(fs.includes('고양이 대기실')||query.waiting){
+  const confirmed=h=>Boolean(h.catWaiting.verified||h.catWaiting.guardianConfirmed||h.catWaiting.visited);
+  list=list.filter(h=>zenoCatWaitingLabel(h)).sort((a,b)=>Number(confirmed(b))-Number(confirmed(a)));
+ }
  if(fs.includes('연결 병원'))list=list.filter(h=>h.linked);
  if(fs.includes('즐겨찾기'))list=list.filter(h=>state.favorites.includes(h.id));
  if(state.specialty)list=list.filter(h=>state.specialty==='특수동물'?(state.exoticSpecies?((hs(h.id).services||[]).includes(state.exoticSpecies)||(h.id==='soo'&&['햄스터','기니피그'].includes(state.exoticSpecies))||(h.name==='충북대학교 동물병원'&&state.exoticSpecies==='파충류')):(h.cats.includes('특수동물')||(hs(h.id).services||[]).some(x=>['토끼','햄스터','기니피그','조류','파충류'].includes(x)))):(h.cats.includes(state.specialty)||(hs(h.id).services||[]).includes(state.specialty)||zenoSpecialtyNameOnly(h)));
@@ -1306,7 +1314,7 @@ function home(){
  const order=['안과','피부과','외과','특수동물','내과','흉부외과'];
  const choices=order.map(name=>SPECIALTIES.find(x=>x[0]===name)).filter(Boolean);
  return topbar('청주 동물병원','')
- +'<section class="zeno-home-find"><form id="home-search-form" class="zeno-home-search"><label class="sr-only" for="home-hospital-search">병원명 또는 동네 검색</label><input id="home-hospital-search" name="homeQuery" type="search" autocomplete="off" placeholder="병원명 또는 동네 검색" value="'+e(state.query)+'"><button class="btn" type="submit">검색</button></form>'
+ +'<section class="zeno-home-find"><form id="home-search-form" class="zeno-home-search"><label class="sr-only" for="home-hospital-search">병원명·동네·시설 검색</label><input id="home-hospital-search" name="homeQuery" type="search" autocomplete="off" placeholder="병원명·동네·시설 검색" value="'+e(state.query)+'"><button class="btn" type="submit">검색</button></form>'
  +'<div class="zeno-home-specialties"><div class="zeno-home-title"><h2>어떤 진료를 찾으세요?</h2><button class="link" type="button" data-action="show-all-hospitals">전체 병원 보기</button></div><div class="zeno-specialty-chips">'+choices.map(x=>'<button type="button" data-action="specialty" data-value="'+e(x[0])+'">'+e(x[0])+'</button>').join('')+'</div></div>'
  +'<div class="zeno-home-shortcuts"><button type="button" class="zeno-emergency-shortcut" data-nav="emergency">야간·응급 병원 찾기</button><button type="button" class="zeno-cat-shortcut" data-action="cat-waiting-shortcut">시설 · 고양이 전용 대기실</button></div>'
  +'</section>'+zenoHomeBookingPreview()
@@ -1318,7 +1326,7 @@ function searchPage(){
  const results=filteredHospitals(),fs=zenoActiveFilters();
  const exotic=state.specialty==='특수동물'?'<section class="zeno-exotic-top"><h3>어떤 동물인가요?</h3><div class="zeno-exotic-chips">'+EXOTIC.map(x=>'<button class="filter '+(state.exoticSpecies===x[0]?'active':'')+'" data-action="exotic" data-value="'+e(x[0])+'">'+e(x[0])+'</button>').join('')+'</div></section>':'';
  const remove=state.specialty?'<div class="zeno-remove-filters"><button data-action="clear-specialty" aria-label="진료과 조건 해제">'+e(state.exoticSpecies||state.specialty)+' ×</button></div>':'';
- return topbar('병원 찾기','')+'<div class="zeno-search-module"><label for="hospital-search">병원명 또는 동네 검색</label><div class="searchrow"><input type="search" class="search" id="hospital-search" placeholder="병원명 또는 동네 검색" value="'+e(state.query)+'"><button class="btn" data-action="search-apply">검색</button></div>'+remove+'<div class="filters">'+['전체','야간','24시','고양이 대기실','연결 병원','즐겨찾기'].map(x=>'<button class="filter '+((x==='전체'?!fs.length&&!state.specialty:fs.includes(x))?'active':'')+'" aria-pressed="'+(x==='전체'?!fs.length&&!state.specialty:fs.includes(x))+'" data-action="filter" data-value="'+x+'">'+(x==='24시'?'24시간':x==='야간'?'야간 진료':x==='연결 병원'?'예약 요청 가능':x==='즐겨찾기'?'저장한 병원':x)+'</button>').join('')+'</div></div>'
+ return topbar('병원 찾기','')+'<div class="zeno-search-module"><label for="hospital-search">병원명·동네·시설 검색</label><div class="searchrow"><input type="search" class="search" id="hospital-search" placeholder="병원명·동네·시설 검색" value="'+e(state.query)+'"><button class="btn" data-action="search-apply">검색</button></div>'+remove+'<div class="filters">'+['전체','야간','24시','고양이 대기실','연결 병원','즐겨찾기'].map(x=>'<button class="filter '+((x==='전체'?!fs.length&&!state.specialty:fs.includes(x))?'active':'')+'" aria-pressed="'+(x==='전체'?!fs.length&&!state.specialty:fs.includes(x))+'" data-action="filter" data-value="'+x+'">'+(x==='24시'?'24시간':x==='야간'?'야간 진료':x==='연결 병원'?'예약 요청 가능':x==='즐겨찾기'?'저장한 병원':x)+'</button>').join('')+'</div></div>'
  +exotic+'<div class="zeno-home-shortcuts zeno-search-emergency"><button type="button" class="zeno-emergency-shortcut" data-nav="emergency">야간·응급 병원 찾기</button></div>'
  +'<div class="section-title zeno-results-title"><h2>병원 '+results.length+'곳</h2><span>청주</span></div><p class="zeno-catalog-note">진료시간과 실제 진료 가능 여부는 방문 전 병원에 확인해 주세요.</p>'
  +hospitalResults(results);
@@ -1702,7 +1710,7 @@ if(a==='recovery-setup'){if(!state.ownerToken){navTo('login');return}openModal('
 if(a==='copy-recovery-code'){const code=state.recoveryCode;if(!code)return;try{await navigator.clipboard.writeText(code);toast('복구 코드를 복사했어요. 안전하게 보관해 주세요.')}catch(err){const input=document.getElementById('zeno-recovery-code-value');if(input){input.focus();input.select();toast('복구 코드를 선택했습니다. 길게 눌러 복사해 주세요.')}}return}
 if(a==='owner-logout'){clearTimeout(profileSaveTimer);state.recoveryCode='';state.afterRecoveryAction=null;state.profileSaving=false;state.profileSaveError='';state.ownerToken='';state.page='home';state.owner=null;ownerId='';state.pets=[];state.petPhotos={};state.records=[];state.favorites=[];state.bookings=[];state.questions=[];state.reviews=[];state.authMode='login';localStorage.removeItem('zeno-owner-auth');render();return}
 if(a==='refresh'){await refresh(true);toast('최신 정보를 불러왔습니다.');return}
-if(a==='details'||a==='book'){if(a==='book'&&!state.ownerToken){state.pendingAction={type:'book',id};navTo('login');return}if(a==='details')state.detailTab=ev.target.closest('img.zeno-list-photo')?'photos':(ev.target.closest('.zeno-hours-card')?'hours':(zenoHasFilter('고양이 대기실')?'intro':state.specialty?'services':'hours'));openModal(a==='details'?'details':'book',id);return}
+if(a==='details'||a==='book'){if(a==='book'&&!state.ownerToken){state.pendingAction={type:'book',id};navTo('login');return}if(a==='details')state.detailTab=ev.target.closest('img.zeno-list-photo')?'photos':(ev.target.closest('.zeno-hours-card')?'hours':((zenoHasFilter('고양이 대기실')||zenoWaitingQuery(state.query).waiting||ev.target.closest('.zeno-list-condition')?.textContent.includes('대기실'))?'intro':state.specialty?'services':'hours'));openModal(a==='details'?'details':'book',id);return}
 if(a==='book-pet'){
  const form=document.getElementById('booking-form');
  if(!form)return;
