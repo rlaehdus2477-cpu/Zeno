@@ -1755,6 +1755,150 @@ body:has(.zeno-home-v10),body:has(.zeno-home-v10) .content{background:var(--zh-b
 body:has(.zeno-home-v10) .mobilebar{background:var(--zh-surface)!important;border-color:var(--zh-line)!important;box-shadow:none!important}
 body:has(.zeno-home-v10) .mobilebar button{color:var(--zh-muted)!important}
 body:has(.zeno-home-v10) .mobilebar button.active{color:var(--zh-accent)!important}
+
+/* CHANGED */ /* v10 care cards: domestic-app spacing and visual hierarchy */
+.zeno-home-v10 {
+  --zh-bg:#f5f7f9;
+  --zh-surface:#fff;
+  --zh-soft:#f5f7f9;
+  --zh-icon-bg:#f5f7f9;
+  --zh-accent-soft:#f5f7f9;
+  font-family:Pretendard,-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+/* CHANGED */ /* Dark theme remains scoped to the ZENO home. */
+@media(prefers-color-scheme:dark) {
+  html:not([data-theme="light"]):not(.light) .zeno-home-v10 {
+    --zh-bg:#141f29;--zh-surface:#202d39;--zh-soft:#283541;
+    --zh-text:#edf4f9;--zh-muted:#c3d1dd;--zh-line:#455666;
+    --zh-icon-bg:#283541;--zh-accent-soft:#283541;
+  }
+}
+html[data-theme="dark"] .zeno-home-v10,
+html.dark .zeno-home-v10 {
+  --zh-bg:#141f29;--zh-surface:#202d39;--zh-soft:#283541;
+  --zh-text:#edf4f9;--zh-muted:#c3d1dd;--zh-line:#455666;
+  --zh-icon-bg:#283541;--zh-accent-soft:#283541;
+}
+/* CHANGED */ /* Four featured cards: 12px gutters, 16px inset, left alignment. */
+.zeno-home-v10 .zeno-v10-grid,
+.zeno-home-v10 .zeno-v10-compact-grid {
+  gap:12px!important;
+}
+.zeno-home-v10 .zeno-v10-care-card {
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:flex-start!important;
+  justify-content:flex-start!important;
+  min-width:0!important;
+  height:auto!important;
+  min-height:88px!important;
+  max-height:none!important;
+  padding:16px!important;
+  gap:0!important;
+  border:1px solid var(--zh-line)!important;
+  border-radius:12px!important;
+  background:var(--zh-surface)!important;
+  box-shadow:none!important;
+  color:var(--zh-text)!important;
+  text-align:left!important;
+  touch-action:manipulation;
+  -webkit-tap-highlight-color:transparent;
+}
+/* CHANGED */ /* Single-color icons without colored badges. */
+.zeno-home-v10 .zeno-v10-care-icon {
+  width:24px;height:24px;flex:0 0 24px;
+  background:transparent!important;
+  color:var(--zh-text)!important;
+  border-radius:0;
+  display:grid;place-items:center;
+}
+.zeno-home-v10 .zeno-v10-care-icon svg {
+  width:24px;height:24px;
+}
+.zeno-home-v10 .zeno-v10-care-copy {
+  min-width:0;max-width:100%;width:100%;flex:1 1 auto;
+}
+/* CHANGED */ /* One strong heading, subdued one-line description. */
+.zeno-home-v10 .zeno-v10-care-card strong {
+  display:block!important;
+  max-width:100%;
+  margin-top:8px!important;
+  color:var(--zh-text)!important;
+  font-size:16px!important;font-weight:600!important;line-height:1.4!important;
+  white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;
+}
+.zeno-home-v10 .zeno-v10-care-card small {
+  display:block!important;
+  max-width:100%;width:100%;
+  margin-top:4px!important;
+  color:var(--zh-muted)!important;
+  font-size:13px!important;font-weight:400!important;line-height:1.45!important;
+  white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;
+}
+/* CHANGED */ /* Two feature cards are horizontal; the middle two remain compact. */
+.zeno-home-v10 .zeno-v10-grid:not(.zeno-v10-compact-grid) > .zeno-v10-care-card:first-child,
+.zeno-home-v10 .zeno-v10-grid:not(.zeno-v10-compact-grid) > .zeno-v10-care-card:nth-child(4) {
+  grid-column:1 / -1;
+  flex-direction:row!important;
+  align-items:center!important;
+  gap:12px!important;
+  min-height:76px!important;
+}
+.zeno-home-v10 .zeno-v10-grid:not(.zeno-v10-compact-grid) > .zeno-v10-care-card:first-child strong,
+.zeno-home-v10 .zeno-v10-grid:not(.zeno-v10-compact-grid) > .zeno-v10-care-card:nth-child(4) strong {
+  margin-top:0!important;
+}
+/* CHANGED */ /* Compact chips: 20px icon, horizontal content and 10px requested icon gap. */
+.zeno-home-v10 .zeno-v10-care-chip {
+  display:flex!important;flex-direction:row!important;align-items:center!important;
+  justify-content:flex-start!important;
+  min-width:0!important;
+  min-height:56px!important;
+  padding:16px!important;
+  gap:10px!important;
+}
+.zeno-home-v10 .zeno-v10-care-chip .zeno-v10-care-icon {
+  width:20px;height:20px;flex:0 0 20px;
+  border-radius:0;
+}
+.zeno-home-v10 .zeno-v10-care-chip .zeno-v10-care-icon svg {
+  width:20px;height:20px;
+}
+.zeno-home-v10 .zeno-v10-care-chip strong {
+  margin-top:0!important;
+  font-size:14px!important;font-weight:600!important;
+}
+.zeno-home-v10 .zeno-v10-care-chip small {
+  margin-top:4px!important;
+  font-size:12px!important;font-weight:400!important;
+}
+/* CHANGED */ /* Native-like press and keyboard focus. */
+.zeno-home-v10 .zeno-v10-care-card:active {
+  background:var(--zh-bg)!important;
+}
+.zeno-home-v10 .zeno-v10-care-card:focus-visible {
+  outline:2px solid var(--zh-accent)!important;
+  outline-offset:2px;
+}
+/* CHANGED */ /* 360–430px: prevent previous small-screen rules from shrinking type. */
+@media(min-width:360px) and (max-width:430px) {
+  .zeno-home-v10 .zeno-v10-care-card { padding:16px!important; }
+  .zeno-home-v10 .zeno-v10-care-card strong { font-size:16px!important; }
+  .zeno-home-v10 .zeno-v10-care-card small { font-size:13px!important; }
+  .zeno-home-v10 .zeno-v10-care-chip strong { font-size:14px!important; }
+  .zeno-home-v10 .zeno-v10-care-chip small { font-size:12px!important; }
+}
+/* CHANGED */ /* Section text uses the same quiet hierarchy. */
+.zeno-home-v10 .zeno-v10-section-heading h2,
+.zeno-home-v10 .zeno-v10-others h2 {
+  color:var(--zh-text)!important;
+  font-size:16px!important;font-weight:600!important;line-height:1.4;
+}
+.zeno-home-v10 .zeno-v10-section-heading p {
+  color:var(--zh-muted)!important;
+  font-size:13px!important;font-weight:400!important;line-height:1.45;
+}
 </style></head><body><div id="app" class="app"></div><script>
 'use strict';
 const APP_MODE='owner';
