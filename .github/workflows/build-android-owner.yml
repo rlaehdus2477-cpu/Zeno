@@ -12,7 +12,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: zeno-owner-android-apk-v1-1
+  group: zeno-owner-android-apk-v1-2
   cancel-in-progress: false
 
 jobs:
@@ -56,15 +56,15 @@ jobs:
       - name: Compile and sign Android APK
         shell: bash
         run: |
-          bash android/owner/build.sh "$GITHUB_WORKSPACE/ZENO-Owner-1.1.apk"
-          ls -lh ZENO-Owner-1.1.apk
-          "$BUILD_TOOLS/aapt" dump badging ZENO-Owner-1.1.apk | head -15
+          bash android/owner/build.sh "$GITHUB_WORKSPACE/ZENO-Owner-1.2.apk"
+          ls -lh ZENO-Owner-1.2.apk
+          "$BUILD_TOOLS/aapt" dump badging ZENO-Owner-1.2.apk | head -15
 
       - name: Publish APK as workflow artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ZENO-Owner-1.1-Android-APK
-          path: ZENO-Owner-1.1.apk
+          name: ZENO-Owner-1.2-Android-APK
+          path: ZENO-Owner-1.2.apk
           if-no-files-found: error
 
       - name: Create public test APK release
@@ -72,10 +72,10 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
-          if gh release view owner-android-v1.1 >/dev/null 2>&1; then
-            echo "A v1.1 release already exists; keeping its original signing certificate."
+          if gh release view owner-android-v1.2 >/dev/null 2>&1; then
+            echo "A v1.2 release already exists; keeping its existing published APK."
           else
-            gh release create owner-android-v1.1 ZENO-Owner-1.1.apk \
-              --title "ZENO 보호자용 Android 1.1 (테스트)" \
-              --notes "Android 8 이상 테스트 APK. https://zeno.rlaehdus2477.workers.dev/owner 에 연결하여 최신 모바일 화면을 표시합니다. Play Store 배포본이 아닙니다. 서명키가 이전 시험용 APK와 달라 기존 앱과 업데이트 설치가 안 되면 기존 앱을 삭제 후 설치해야 합니다."
+            gh release create owner-android-v1.2 ZENO-Owner-1.2.apk \
+              --title "ZENO 보호자용 Android 1.2 (갤럭시 테스트)" \
+              --notes "Android 8 이상 갤럭시 설치형 테스트 APK. Cloudflare 운영 주소에서 최신 ZENO 보호자 UI를 매 실행 시 로드하도록 WebView 캐시를 끕니다. Play Store 배포본은 아닙니다. 테스트 빌드는 각 버전마다 별도 임시 서명키를 사용하므로 v1.1 위에 업데이트 설치할 수 없습니다. 새 앱을 설치하기 전, 기존 앱에서 복구 코드를 안전하게 보관하세요. 데이터 백업 후 기존 앱 삭제가 필요할 수 있습니다."
           fi
