@@ -47,6 +47,40 @@ state.ownerToken='';
 vm.runInContext('zenoApplyGuestProfile()',context);
 assert.equal(state.pets[0].name,'별이','Signed-out view restores isolated guest data');
 
+// Regression: older device-local profiles can be recovered without overwriting new guest data.
+store.set('zeno-pets-v2',JSON.stringify([{id:'old-pet',name:'이전 등록 아이',species:'고양이'}]));
+store.set('zeno-records-v2',JSON.stringify([{id:'old-record',petId:'old-pet',memo:'이전 진료 기록'}]));
+const legacy=vm.runInContext('zenoLegacyDeviceProfile()',context);
+assert.equal(legacy.pets[0].name,'이전 등록 아이');
+let recovered=vm.runInContext('zenoImportDeviceProfile(zenoLegacyDeviceProfile())',context);
+assert.equal(recovered.success,true,'Legacy device data import must succeed');
+vm.runInContext('zenoApplyGuestProfile()',context);
+assert.deepEqual(state.pets.map(x=>x.name).sort(),['별이','이전 등록 아이'].sort(),
+ 'Recovering older pets must preserve already registered guest pets');
+assert.equal(state.records.length,2,'Both old and current records must survive');
+recovered=vm.runInContext('zenoImportDeviceProfile(zenoLegacyDeviceProfile())',context);
+assert.equal(recovered.count,2,'Repeated recovery must not duplicate pets');
+
+// A logged-in profile may be copied to local storage only by a user action.
+// The original signed-in records remain untouched.
+state.ownerToken='signed-in';
+state.profileLoaded=true;
+state.pets=[{id:'account-pet',name:'기존 계정 아이'}];
+state.records=[{id:'account-record',petId:'account-pet',memo:'계정 건강 기록'}];
+state.petPhotos={'account-pet':'data:image/png;base64,YWJj'};
+context.zenoPetPhotoSource=(x)=>x||'';
+const copy=vm.runInContext('zenoCopyAccountPetsToDevice()',context);
+assert.equal(copy.success,true,'Account records must be copied to the guest store');
+assert.equal(state.pets[0].name,'기존 계정 아이','Copy must not log out or modify the account view');
+state.ownerToken='';
+vm.runInContext('zenoApplyGuestProfile()',context);
+assert.ok(state.pets.some(x=>x.name==='기존 계정 아이'),'Copied account pets must be available after sign-out');
+assert.ok(state.records.some(x=>x.memo==='계정 건강 기록'));
+assert.equal(state.pets.find(x=>x.id==='account-pet').photoUrl,'data:image/png;base64,YWJj');
+assert.match(owner,/data-action="recover-account-pets"/,'Guest must be offered account recovery');
+assert.match(owner,/data-action="copy-account-pets-local"/,'Signed-in owner must be able to copy records');
+assert.match(owner,/data-action="recover-legacy-pets"/,'Older device profiles must have recovery action');
+
 const memStart=owner.indexOf('function zenoMemorialKey(){');
 const memEnd=owner.indexOf('/* ZENO pet portrait upload',memStart);
 assert.ok(memStart>0&&memEnd>memStart,'Guest memorial storage code missing');
