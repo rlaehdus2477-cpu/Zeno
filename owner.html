@@ -3643,7 +3643,7 @@ function zenoHomeOperatingRail(){
   const badge=h.is24?'24시간 운영':zenoNightHours(h)?'야간':'진료시간';
   return '<button type="button" class="zeno-v10-open-card" data-action="details" data-id="'+e(h.id)+'"><span class="zeno-v10-mini-photo">'+(img||zenoCareIcon('일반 진료'))+'</span><span style="flex:1;min-width:0"><strong>'+e(h.name)+'</strong><small>'+e(String(h.region||'').split('·').pop().trim())+'</small><span class="zeno-v10-hospital-badges"><span class="zeno-v10-badge'+(badge==='진료시간'?' is-open':' danger')+'">'+badge+'</span></span><small>'+e(zenoEmergencyCardNote(h))+'</small></span></button>';
  }).join('');
- return '<section class="zeno-v10-open-section"><div class="care-list-heading"><h2>지금 진료시간인 병원</h2><button data-action="show-all-hospitals">전체 병원 ›</button></div><p class="zeno-open-note">등록된 운영시간 기준 · 방문 전 전화 확인</p>'+(open.length?'<div class="zeno-v10-open-rail">'+cards+'</div>':'<p class="zeno-v10-empty">현재 시간에 해당하는 등록 진료시간을 찾지 못했어요.</p>')+'</section><p class="zeno-v10-stats">청주 병원 '+list.length+'곳 · 야간 진료 '+night+'곳 · 24시간 응급 '+urgent+'곳</p>';
+ return '<section class="zeno-v10-open-section"><div class="care-list-heading"><h2>지금 문 여는 병원</h2><button data-action="show-all-hospitals">전체 병원 ›</button></div><p class="zeno-open-note">등록된 운영시간 기준 · 방문 전 전화 확인</p>'+(open.length?'<div class="zeno-v10-open-rail">'+cards+'</div>':'<p class="zeno-v10-empty">현재 시간에 해당하는 등록 진료시간을 찾지 못했어요.</p>')+'</section><p class="zeno-v10-stats">청주 병원 '+list.length+'곳 · 야간 진료 '+night+'곳 · 24시간 응급 '+urgent+'곳</p>';
 }
 
 function zenoSymptomPage(){
