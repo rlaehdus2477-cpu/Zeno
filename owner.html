@@ -3090,14 +3090,13 @@ function zenoDetailDepartments(h, services){
  // 달동물병원: retain evidence levels but show all fields in one compact row.
  // Legacy categories must never be promoted to verified medical services.
  if(h.id==='pub006'){
-  const pending=[...new Set([...published,...legacy,...reported])];
-  const confirmedChips=verified.map(x=>'<span class="tag">'+e(x)+'</span>');
-  const pendingChips=pending.map(x=>'<span class="tag" title="진료 여부 확인 필요">'+e(x)+' <small style="font-size:10px;color:#738394">확인 필요</small></span>');
-  const providedChips=hospitalProvided.map(x=>'<span class="tag">'+e(x)+' <small style="font-size:10px;color:#738394">병원 입력</small></span>');
-  const row=[...confirmedChips,...pendingChips,...providedChips];
-  return (row.length?'<div class="tags">'+row.join('')+'</div>':'<p class="zeno-detail-dept-note">확인된 진료 분야가 없습니다. 병원에 전화로 문의해 주세요.</p>')
-    +(pending.length?'<p class="zeno-detail-dept-note">확인 필요 표시가 있는 진료는 방문 전 병원에 문의해 주세요.</p>':'')
-    +((h.specialtyEvidenceUrl||h.publishedCareUrl)?'<a class="zeno-dept-source-link" target="_blank" rel="noopener noreferrer" href="'+e(h.specialtyEvidenceUrl||h.publishedCareUrl)+'">진료 분야 근거 보기</a>':'');
+  // All existing ZENO categories are shown, but none is represented as NAVER-verified.
+  // A complete NAVER Place list has not yet been recovered.
+  const stored=[...new Set([...(h.cats||[]),...(h.careFields||[]),...(h.publishedCareFields||[]),...(h.officialSpecialties||[])].map(x=>x==='일반'?'일반진료':x).filter(Boolean))];
+  const row=stored.map(x=>'<span class="tag">'+e(x)+'</span>').join('');
+  return (row?'<div class="tags">'+row+'</div>':'')
+   +'<p class="zeno-detail-dept-note">ZENO에 등록된 진료 분야입니다. 네이버에 등록된 전체 진료과목 및 현재 진료 가능 여부는 아직 확인되지 않았습니다.</p>'
+   +'<a class="zeno-dept-source-link" target="_blank" rel="noopener noreferrer" href="'+e('https://map.naver.com/p/search/'+encodeURIComponent(h.name+' '+h.address))+'">네이버에서 전체 진료과목 확인하기</a>';
  }
  return (verified.length?chips(verified):'')
    +group(published,'공개 안내 · 실제 진료 여부 확인')
@@ -3109,7 +3108,7 @@ function zenoDetailDepartments(h, services){
 }
 function zenoClinicalFallbackMarkup(h,services){
  if(Array.isArray(h.careFields)&&h.careFields.length)return '';
- return '<div class="section zeno-detail-departments"><h3>진료 분야</h3>'+zenoDetailDepartments(h,services)+'</div>';
+ return '<div class="section zeno-detail-departments"><h3>'+(h.id==='pub006'?'진료과목':'진료 분야')+'</h3>'+zenoDetailDepartments(h,services)+'</div>';
 }
 function zenoDetailPriceSummary(h,s){
  const rows=Array.isArray(s.prices)&&s.prices.length?s.prices.map(x=>
@@ -3210,7 +3209,7 @@ const ZENO_INTERNAL_FOCUS={
  pub047:{status:'hospital',fields:['신장·비뇨기','순환기·심장','내분비','소화기·피부·호흡기'],checkedAt:'2026-11-14',evidence:[{kind:'네이버 병원 진료과목',text:'사용자 제공 네이버 병원 안내 이미지에 ‘내과 전문 진료’로 명시돼 있으며 신장·비뇨기, 순환기·심장, 내분비, 소화기·피부·호흡기 항목이 안내되어 있습니다.'}],note:'병원이 직접 설명한 내과 중점 진료 기준이며, 수의사 전문의 자격이나 별도 전문병원 인증을 확인한 것은 아닙니다.'},
  central2026:{status:'hospital',fields:['심장','신장','내분비'],checkedAt:'2026-11-14',evidence:[{kind:'병원 네이버 소개',text:'대학병원 출신 대표원장 2인의 내과 전문 진료와 심장·신장·내분비·소화기 만성질환 관리에 관한 병원 자체 소개를 확인했습니다.'}],note:'병원 자체 안내 자료 기준이며 국가 인정 전문의 자격이나 별도 인증을 뜻하지 않습니다.'}
 };
-function zenoInternalFocus(h){return ZENO_INTERNAL_FOCUS[h?.id]||null;}
+function zenoInternalFocus(h){if(h?.id==='pub006')return null; // No direct NAVER verification for Dal clinic focus.\n return ZENO_INTERNAL_FOCUS[h?.id]||null;}
 
 /* Shared specialty evidence: only declared focus or explicit hospital-specialty wording qualifies.
    A general service listing alone never makes a hospital a 'focus' hospital. */
