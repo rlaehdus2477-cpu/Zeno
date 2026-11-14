@@ -1,0 +1,32 @@
+name: Test ZENO guest My Pets
+
+on:
+  pull_request:
+    paths:
+      - "owner.html"
+      - "worker.js"
+      - "tests/guest-pets.mjs"
+      - ".github/workflows/test-guest-pets.yml"
+  push:
+    branches: ["fix/pets-open-without-login-20261114"]
+    paths:
+      - "owner.html"
+      - "worker.js"
+      - "tests/guest-pets.mjs"
+      - ".github/workflows/test-guest-pets.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  guest-pets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Verify server JS syntax
+        run: node --check worker.js
+      - name: Verify guest profile behavior and page syntax
+        run: node tests/guest-pets.mjs
