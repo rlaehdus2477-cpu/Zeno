@@ -1134,7 +1134,7 @@ render();start();
 
 /* Shared version check for Galaxy Chrome and iPad Safari / installed PWA.
    Never reload while a booking sheet, modal or editable form is active. */
-const ZENO_HOSPITAL_UI_REVISION='20261114-hospital-keyword-status-v17';
+const ZENO_HOSPITAL_UI_REVISION='20261115-hospital-draft-sync-v18';
 let zenoHospitalVersionBusy=false,zenoHospitalVersionLast=0;
 async function zenoCheckHospitalUIRevision(force=false){
  if(zenoHospitalVersionBusy||document.hidden||state.modal||state.hDetailBookingId||document.activeElement?.closest('form'))return;
