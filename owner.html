@@ -3148,12 +3148,12 @@ function zenoProvidedClinicalProfile(h){
    +'<div class="section"><h3>편의시설·서비스</h3>'+tags(h.facilitiesServices)+'</div>'
    +'<p class="desc">네이버 플레이스 정보 탭 · 사용자 제공 화면 (2026-11-14) · 실제 진료 가능 여부는 병원에 확인</p></div>';
  }
- const focus=h.declaredSpecialties||[],fields=h.careFields,extra=fields.slice(4);
+ const focus=h.declaredSpecialties||[],fields=h.careFields,extra=h.id==='pub046'?[]:fields.slice(4);
  return '<div class="zeno-clinic-profile">'
   +'<div class="section"><h3>대표 특화진료'+(h.specialtyVerificationStatus==='needs-naver-check'?' · 네이버 확인 대기':'')+'</h3>'+(focus.length?tags(focus.slice(0,1)):'<p class="desc">대표 특화진료 확인 필요</p>')+'</div>'
   +(focus.length>1?'<div class="section"><h3>그 외 병원 안내 특화분야</h3>'+tags(focus.slice(1))+'</div>':'')
   +(h.id==='pub046'?'<div class="section"><h3>주요 진료 대상 (7종)</h3>'+tags([...new Set([...(h.officialCompanionSpecies||[]),...(h.publishedExoticSpecies||[])])])+'</div>':'')
-  +'<div class="section"><h3>진료 분야'+(h.careVerificationStatus==='needs-naver-check'?' · 네이버 확인 대기':'')+'</h3>'+tags(fields.slice(0,4))+(extra.length?'<details class="zeno-care-more"><summary>전체 보기 ('+fields.length+'개)</summary>'+tags(extra)+'</details>':'')+'</div>'
+  +'<div class="section"><h3>진료 분야'+(h.careVerificationStatus==='needs-naver-check'?' · 네이버 확인 대기':'')+'</h3>'+tags(h.id==='pub046'?fields:fields.slice(0,4))+(extra.length?'<details class="zeno-care-more"><summary>전체 보기 ('+fields.length+'개)</summary>'+tags(extra)+'</details>':'')+'</div>'
   +((h.focusedCare||[]).length?'<div class="section"><h3>중점 안내 진료 · 특화 여부 확인 필요</h3>'+tags(h.focusedCare)+'</div>':'')
   +((h.detailedCare||[]).length?'<div class="section"><h3>세부 진료</h3>'+tags(h.detailedCare)+'</div>':'')
   +((h.facilitiesServices||[]).length?'<div class="section"><h3>시설·서비스</h3>'+tags(h.facilitiesServices)+'</div>':'')
