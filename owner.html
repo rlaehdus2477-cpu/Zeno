@@ -2806,7 +2806,7 @@ const hospitalById=id=>HOSPITALS.find(x=>x.id===id);
 function defaultStore(){return {settings:Object.fromEntries(['soo','naeum','tnd'].map(id=>[id,{status:'check',updatedAt:null,notice:'',services:[],prices:[],emergency:false}])),bookings:[],questions:[],reviews:[]}}
 function localGet(){try{return {...defaultStore(),...JSON.parse(localStorage.getItem(STOREKEY)||'{}')}}catch{return defaultStore()}}
 function localSet(x){localStorage.setItem(STOREKEY,JSON.stringify(x));window.dispatchEvent(new Event('zeno-refresh'))}
-const state={ownerToken:localStorage.getItem('zeno-owner-auth')||'',owner:null,authMode:'login',serverReady:false,profileLoaded:false,profileSaving:false,page:APP_MODE==='hospital'?'hospital':'home',internalFocusOnly:false,filter:'전체',query:'',specialty:'',exoticSpecies:'',detail:null,modal:null,local:true,settings:{},bookings:[],questions:[],reviews:[],hospitalBookings:[],hospitalQuestions:[],activeHospital:sessionStorage.getItem('zeno-h-hospital')||'soo',hospitalToken:sessionStorage.getItem('zeno-h-token')||'',adminToken:sessionStorage.getItem('zeno-admin-token')||'',pets:[],petPhotos:{},records:[],favorites:[],viewH:'soo',hTab:'bookings',appError:'',loading:false,adminStats:null,bookingTab:'전체',activeFilters:[],petTab:'전체',profileSaveError:'',authError:'',pendingAction:null,pendingPage:'',recoveryCode:'',afterRecoveryAction:null,authNotice:'',priceCategory:'초진 진찰료',healthCheckSpecies:'강아지',detailTab:'',symptomGuideOpen:false,symptomLabel:'',homeArea:'청주 전체',homeAreaOpen:false,homeShowAllCare:false,homeCarePickerOpen:false,homeCareSelection:'',homeCarePickerQuery:'',searchRegion:''};
+const state={ownerToken:localStorage.getItem('zeno-owner-auth')||'',owner:null,authMode:'login',serverReady:false,profileLoaded:false,profileSaving:false,page:APP_MODE==='hospital'?'hospital':'home',internalFocusOnly:false,filter:'전체',query:'',specialty:'',exoticSpecies:'',detail:null,modal:null,local:true,settings:{},hospitalSpecialties:{},bookings:[],questions:[],reviews:[],hospitalBookings:[],hospitalQuestions:[],activeHospital:sessionStorage.getItem('zeno-h-hospital')||'soo',hospitalToken:sessionStorage.getItem('zeno-h-token')||'',adminToken:sessionStorage.getItem('zeno-admin-token')||'',pets:[],petPhotos:{},records:[],favorites:[],viewH:'soo',hTab:'bookings',appError:'',loading:false,adminStats:null,bookingTab:'전체',activeFilters:[],petTab:'전체',profileSaveError:'',authError:'',pendingAction:null,pendingPage:'',recoveryCode:'',afterRecoveryAction:null,authNotice:'',priceCategory:'초진 진찰료',healthCheckSpecies:'강아지',detailTab:'',symptomGuideOpen:false,symptomLabel:'',homeArea:'청주 전체',homeAreaOpen:false,homeShowAllCare:false,homeCarePickerOpen:false,homeCareSelection:'',homeCarePickerQuery:'',searchRegion:''};
 let toastTimer;
 function toast(message){let o=document.querySelector('.toast');if(o)o.remove();o=document.createElement('div');o.className='toast';o.textContent=message;o.setAttribute('role','status');o.setAttribute('aria-live','polite');o.setAttribute('aria-atomic','true');document.body.appendChild(o);clearTimeout(toastTimer);toastTimer=setTimeout(()=>o.remove(),4500)}
 /* Guest "내 아이" data is device-local and intentionally separate from account data.
@@ -2958,6 +2958,22 @@ async function zenoLoadPublicHospitalSettings(){
  }catch(error){/* Public browsing remains available during network errors. */}
 }
 
+async function zenoLoadPublicHospitalSpecialties(){
+ try{
+  const response=await fetch('/api/public/hospital-specialties',{cache:'no-store',credentials:'same-origin'});
+  if(!response.ok)return;
+  const body=await response.json();
+  if(!body||!body.hospitals||typeof body.hospitals!=='object')return;
+  const result={};
+  for(const [id,rows] of Object.entries(body.hospitals)){
+   if(!Array.isArray(rows))continue;
+   result[id]=rows.slice(0,3).filter(row=>row&&typeof row.keyword==='string').map(row=>({
+    keyword:row.keyword,status:row.status==='확인됨'?'확인됨':'병원 안내',lastCheckedAt:row.lastCheckedAt||''
+   }));
+  }
+  state.hospitalSpecialties=result;
+ }catch(error){/* Keep public browsing available during a connection error. */}
+}
 async function refresh(force=false){
  if(zenoRefreshTask){
   if(force){await zenoRefreshTask;return refresh(false)}
@@ -2971,7 +2987,8 @@ async function refresh(force=false){
     if(!state.hospitalToken){render();return}
     await loadHospital(false);
    }else{
-    if(!state.ownerToken){await zenoLoadPublicHospitalSettings();zenoRefreshPaint(before,page);return}
+    await zenoLoadPublicHospitalSpecialties();
+     if(!state.ownerToken){await zenoLoadPublicHospitalSettings();zenoRefreshPaint(before,page);return}
     const v=await api('GET','/api/bootstrap');
     if(state.ownerToken!==token)return;
     state.settings=v.settings||{};
@@ -3313,10 +3330,17 @@ function zenoListMatchedConditions(h){
 }
 /* CHANGED: primary booking/phone CTA, optional website, compact navigation. */
 /* Clinically offered fields and declared focus are distinct. */
+function zenoHospitalFocusEntries(h){
+ const saved=state.hospitalSpecialties||{};
+ const hasHospitalChoice=Object.prototype.hasOwnProperty.call(saved,h.id);
+ const rows=hasHospitalChoice?saved[h.id]:(h.declaredSpecialties||[]).map(keyword=>({keyword,status:'병원 안내'}));
+ return (Array.isArray(rows)?rows:[]).filter(item=>item&&typeof item.keyword==='string'&&item.keyword.trim()).slice(0,3);
+}
 function zenoDeclaredSpecialtyLine(h){
- if(!Array.isArray(h.careFields))return '';
- const focus=(h.declaredSpecialties||[]).filter(Boolean).slice(0,1);
- return '<span class="zeno-search-fact">'+(focus.length?'대표 특화 · '+e(focus[0]):'특화 분야 확인 필요')+'</span>';
+ const fields=[...new Set([...(h.careFields||[]),...(h.publishedCareFields||[]),...(h.officialSpecialties||[]),...(h.cats||[])].filter(x=>x&&x!=='일반'))];
+ const focus=zenoHospitalFocusEntries(h).map(row=>row.keyword);
+ return (fields.length?'<span class="zeno-search-fact">진료과목 · '+e(fields.slice(0,3).join(' · '))+(fields.length>3?' 외 '+(fields.length-3)+'개':'')+'</span>':'')
+  +(focus.length?'<span class="zeno-search-fact">대표 특화 · '+e(focus.join(' · '))+'</span>':'');
 }
 function zenoCareSource(h){
  for(const value of [h.specialtyEvidenceUrl,h.publishedCareUrl]){
@@ -3343,7 +3367,7 @@ function zenoDetailDepartments(h, services){
  };
  add(h.careFields,h.careVerificationStatus==='needs-naver-check'?published:verified);
  add(h.officialSpecialties,verified);
- add(h.declaredSpecialties,verified);
+ 
  add(h.publishedCareFields,h.publishedCareUrl&&!zenoCareSource(h)?reported:published);
  /* Unverified submitted specialties are not displayed. */
  // Keep legacy category evidence visible even when another confirmed specialty exists.
@@ -3375,9 +3399,18 @@ function zenoDetailDepartments(h, services){
    +(noData?'<p class="zeno-detail-dept-note">확인된 진료 분야가 없습니다. 병원에 전화로 문의해 주세요.</p>':'')
    +zenoCareSourceLink(h);
 }
+function zenoRepresentativeSpecialtySection(h){
+ const rows=zenoHospitalFocusEntries(h);
+ const saved=Object.prototype.hasOwnProperty.call(state.hospitalSpecialties||{},h.id);
+ const tags=rows.length?'<div class="tags">'+rows.map(row=>'<span class="tag">'+e(row.keyword)+'</span>').join('')+'</div>':'<p class="desc">등록된 대표 특화가 없습니다.</p>';
+ const verified=rows.length&&rows.every(row=>row.status==='확인됨');
+ return '<section class="section zeno-detail-focus"><h3>우리 병원 대표 특화</h3>'+tags
+  +'<p class="zeno-detail-dept-note">'+(saved?'병원 직접 등록':'등록된 병원 안내')+' · '+(verified?'네이버 안내 확인 기록':'네이버 안내 확인 여부 별도')+' · 전문의 자격 표시가 아닙니다.</p></section>';
+}
 function zenoClinicalFallbackMarkup(h,services){
  if(Array.isArray(h.careFields)&&h.careFields.length)return '';
- return '<div class="section zeno-detail-departments"><h3>'+(h.id==='pub006'?'진료과목':'진료 분야')+'</h3>'+zenoDetailDepartments(h,services)+'</div>';
+ return '<section class="section zeno-detail-departments"><h3>진료 가능 과목</h3>'+zenoDetailDepartments(h,services)+'</section>'
+  +zenoRepresentativeSpecialtySection(h);
 }
 function zenoDetailPriceSummary(h,s){
  const rows=Array.isArray(s.prices)&&s.prices.length?s.prices.map(x=>
@@ -3388,38 +3421,21 @@ function zenoDetailPriceSummary(h,s){
  +'<p class="zeno-detail-disclaimer">진료 내용·금액·현재 수용 여부는 방문 전 병원에 확인해 주세요.</p>';
 }
 function zenoProvidedClinicalProfile(h){
- if(!Array.isArray(h.careFields))return '';
- if(h.id==='pub006'){
-  // 2026-11-14: user-supplied NAVER Place > Info > 진료 및 서비스.
-  const chips=values=>'<div class="tags">'+(values||[]).map(x=>'<span class="tag">'+e(x)+'</span>').join('')+'</div>';
-  return '<div class="zeno-clinic-profile">'
-   +'<div class="section"><h3>진료과목 ('+h.careFields.length+'개)</h3>'+chips(h.careFields)+'</div>'
-   +'<div class="section"><h3>주요 진료 대상</h3>'+chips(h.officialCompanionSpecies)+'</div>'
-   +'<div class="section"><h3>부가서비스</h3>'+chips(h.facilitiesServices)+'</div>'
-   +'<p class="desc">네이버 플레이스 정보 탭 · 사용자 제공 화면 (2026-11-14) · 실제 진료 가능 여부는 병원에 확인</p></div>';
- }
- const tags=arr=>'<div class="tags">'+arr.map(x=>'<span class="tag">'+e(x)+'</span>').join('')+'</div>';
- if(h.id==='pub008'){
-  // Complete NAVER Place clinical profile — do not collapse the 11 visible specialties.
-  return '<div class="zeno-clinic-profile">'
-   +'<div class="section"><h3>대표 중점 진료</h3>'+tags(['심장 진료'])
-   +'<p class="desc">병원 네이버 소개에 하이엔드 초음파 장비를 활용한 심장 진료 안내 · 전문의 자격과 별도 센터 인증은 미확인</p></div>'
-   +'<div class="section"><h3>진료과목 ('+h.careFields.length+'개)</h3>'+tags(h.careFields)+'</div>'
-   +'<div class="section"><h3>주요 진료 대상</h3>'+tags(h.officialCompanionSpecies)+'</div>'
-   +'<div class="section"><h3>편의시설·서비스</h3>'+tags(h.facilitiesServices)+'</div>'
-   +'<p class="desc">네이버 플레이스 정보 탭 · 사용자 제공 화면 (2026-11-14) · 실제 진료 가능 여부는 병원에 확인</p></div>';
- }
- const focus=h.declaredSpecialties||[],fields=h.careFields,extra=h.id==='pub046'?[]:fields.slice(4);
+ if(!Array.isArray(h.careFields)||!h.careFields.length)return '';
+ const tags=arr=>'<div class="tags">'+[...new Set(arr||[])].map(x=>'<span class="tag">'+e(x)+'</span>').join('')+'</div>';
+ const fields=[...new Set(h.careFields)];
+ const species=[...new Set([...(h.officialCompanionSpecies||[]),...(h.id==='pub046'?(h.publishedExoticSpecies||[]):[])])];
  return '<div class="zeno-clinic-profile">'
-  +'<div class="section"><h3>대표 특화진료'+(h.specialtyVerificationStatus==='needs-naver-check'?' · 네이버 확인 대기':'')+'</h3>'+(focus.length?tags(focus.slice(0,1)):'<p class="desc">대표 특화진료 확인 필요</p>')+'</div>'
-  +(focus.length>1?'<div class="section"><h3>그 외 병원 안내 특화분야</h3>'+tags(focus.slice(1))+'</div>':'')
-  +(h.id==='pub046'?'<div class="section"><h3>주요 진료 대상 (7종)</h3>'+tags([...new Set([...(h.officialCompanionSpecies||[]),...(h.publishedExoticSpecies||[])])])+'</div>':'')
-  +'<div class="section"><h3>진료 분야'+(h.careVerificationStatus==='needs-naver-check'?' · 네이버 확인 대기':'')+'</h3>'+tags(h.id==='pub046'?fields:fields.slice(0,4))+(extra.length?'<details class="zeno-care-more"><summary>전체 보기 ('+fields.length+'개)</summary>'+tags(extra)+'</details>':'')+'</div>'
-  +((h.focusedCare||[]).length?'<div class="section"><h3>중점 안내 진료 · 특화 여부 확인 필요</h3>'+tags(h.focusedCare)+'</div>':'')
-  +((h.detailedCare||[]).length?'<div class="section"><h3>세부 진료</h3>'+tags(h.detailedCare)+'</div>':'')
-  +((h.facilitiesServices||[]).length?'<div class="section"><h3>시설·서비스</h3>'+tags(h.facilitiesServices)+'</div>':'')
+  +'<section class="section zeno-detail-departments"><h3>진료 가능 과목 ('+fields.length+'개)</h3>'+tags(fields)
+  +(h.careVerificationStatus==='needs-naver-check'?'<p class="zeno-detail-dept-note">일부 진료과목은 네이버 최신 확인이 필요합니다.</p>':'')+'</section>'
+  +zenoRepresentativeSpecialtySection(h)
+  +(h.id==='pub008'?'<section class="section"><h3>심장 진료 안내</h3>'+tags(['심장 진료'])+'<p class="desc">네이버 병원 소개의 심장 진료 안내이며 별도 전문의 자격 인증을 뜻하지 않습니다.</p></section>':'')
+  +(species.length?'<section class="section"><h3>주요 진료 대상</h3>'+tags(species)+'</section>':'')
+  +((h.focusedCare||[]).length?'<section class="section"><h3>중점 안내 진료 · 특화 여부 별도</h3>'+tags(h.focusedCare)+'</section>':'')
+  +((h.detailedCare||[]).length?'<section class="section"><h3>세부 진료</h3>'+tags(h.detailedCare)+'</section>':'')
+  +((h.facilitiesServices||[]).length?'<section class="section"><h3>시설·서비스</h3>'+tags(h.facilitiesServices)+'</section>':'')
   +(h.careNotice?'<p class="zeno-care-caution">'+e(h.careNotice)+'</p>':'')
-  +'<p class="desc">'+e(h.careSource||'제공받은 병원 정보')+' · 방문 전 확인</p>'
+  +'<p class="desc">'+e(h.careSource||'등록된 병원 안내')+' · 실제 진료 가능 여부는 방문 전 병원에 확인해 주세요.</p>'
   +zenoCareSourceLink(h)+'</div>';
 }
 function zenoProvidedHours(h){
@@ -3514,24 +3530,15 @@ function zenoFocusAliasMatch(value,department){
 }
 function zenoSpecialtyFocus(h){
  if(!zenoClinicalFocusEnabled())return null;
- const department=state.specialty;
- if(department==='내과'&&zenoInternalFocus(h))return zenoInternalFocus(h);
- const declared=(h.declaredSpecialties||[]).filter(x=>zenoFocusAliasMatch(x,department));
- const snippet=String((h.specialtySnippets||{})[department]||'');
- // A focus assertion must be explicit; 'focus to be confirmed' is not evidence.
- const explicit=!/특화 (여부|확인) 필요|특화 여부 (별도 )?확인|특화.{0,8}미확인/.test(snippet)&&
-  /특화진료|특화 병원|특화센터|치과전문동물병원|진료에 특화|진료에 집중/.test(snippet);
- if(!declared.length&&!explicit)return null;
- const naverPending=h.specialtyVerificationStatus==='needs-naver-check'||Boolean((h.specialtyEvidenceUrl||h.publishedCareUrl)&&!zenoCareSource(h));
- const source=naverPending?'':zenoCareSource(h);
- const text=naverPending
-  ?'대표 특화 분류 요청을 반영했습니다. 네이버 병원 직접 안내의 특화 문구는 별도 확인이 필요합니다.'
-  :declared.length
-  ?'병원 정보에 대표 특화분야로 등록된 '+declared.join(' · ')+' 안내입니다.'
-  :snippet;
- return {status:naverPending?'pending':'hospital',fields:declared.length?declared:[department],checkedAt:naverPending?'':(h.checkedAt||''),
-  evidence:[{kind:naverPending?'네이버 검증 대기':declared.length?'대표 특화분야 등록':'병원 공개 소개',text,url:source}],
-  note:naverPending?'네이버 공개 자료 직접 검증 전이므로 검증 완료 또는 전문의 자격으로 표시하지 않습니다.':'등록·공개된 특화진료 정보이며 수의사 전문의 자격 또는 독립적인 전문병원 인증을 의미하지 않습니다.'};
+ const matched=zenoHospitalFocusEntries(h).filter(row=>zenoFocusAliasMatch(row.keyword,state.specialty));
+ if(!matched.length)return null;
+ const saved=Object.prototype.hasOwnProperty.call(state.hospitalSpecialties||{},h.id);
+ const confirmed=matched.every(row=>row.status==='확인됨');
+ const pending=!saved&&h.specialtyVerificationStatus==='needs-naver-check';
+ const status=confirmed?'confirmed':pending?'pending':'hospital';
+ return {status,fields:matched.map(row=>row.keyword),checkedAt:confirmed?(matched[0].lastCheckedAt||h.checkedAt||''):'',
+  evidence:[{kind:confirmed?'네이버 병원 안내 확인':saved?'병원 직접 등록':'기존 병원 안내',text:matched.map(row=>row.keyword).join(' · ')+' 분야를 대표 특화로 등록한 정보입니다.',url:confirmed?zenoCareSource(h):''}],
+  note:'중점 진료를 안내하는 항목이며 국가 공인 전문의 자격 또는 독립적인 전문병원 인증을 의미하지 않습니다.'};
 }
 function zenoInternalEvidenceBlock(h){
  if(h?.id==='pub008'&&zenoClinicalFocusEnabled()&&state.specialty==='심장·호흡기'){
@@ -3540,7 +3547,7 @@ function zenoInternalEvidenceBlock(h){
    +'<p>심장 관련 진료 안내이며 호흡기 특화 여부나 수의사 전문의 자격은 확인되지 않았습니다.</p>'
    +'<p>네이버 안내 확인일 2026-11-14</p></section>';
  }
- const f=zenoClinicalFocusEnabled()?zenoSpecialtyFocus(h):(!state.specialty?zenoInternalFocus(h):null);if(!f)return '';
+ const f=zenoClinicalFocusEnabled()?zenoSpecialtyFocus(h):null;if(!f)return '';
  const dept=zenoClinicalFocusEnabled()?state.specialty:'내과';
  return '<section class="zeno-internal-evidence"><h3>'+e(dept)+' 특화 · '+e(f.status==='confirmed'?'확인됨':f.status==='pending'?'네이버 확인 대기':'병원 안내')+'</h3>'
  +'<p>주요 분야 · '+e(f.fields.join(' · '))+'</p><ul>'
@@ -3579,7 +3586,7 @@ function zenoSearchHospitalCard(h){
  const map='<a class="zeno-card-action" href="'+e(zenoNaverPhotoUrl(h))+'" target="_blank" rel="noopener noreferrer" aria-label="'+e(h.name)+' 위치">위치</a>';
  const details='<button type="button" class="zeno-card-action zeno-card-detail" data-action="details" data-id="'+e(h.id)+'"'+(fee?' data-fee-direct="true"':'')+'>'+(fee?'진료비':'상세')+'</button>';
  return '<article class="directory-item zeno-hospital-card zeno-search-card"><button type="button" class="directory-main" data-action="details" data-id="'+e(h.id)+'" aria-label="'+e(h.name)+' 병원 상세">'
-  +photoHtml+'<span class="directory-text"><strong>'+e(h.name)+'</strong><span class="directory-region">'+e(h.region||'')+'</span>'
+  +photoHtml+'<span class="directory-text"><strong>'+e(h.name)+'</strong><span class="directory-region">'+e(h.region||'')+'</span>'+zenoDeclaredSpecialtyLine(h)
   +'<span class="zeno-search-status '+status.kind+'">'+e(status.text)+'</span>'
   +'<span class="zeno-search-hours">'+e(timeLine)+'</span>'
   +(tagsHtml?'<span class="zeno-search-tags">'+tagsHtml+'</span>':'')
@@ -3655,7 +3662,7 @@ function zenoSpecialtyOrigin(h){
  if(s==='특수동물')return (h.officialExoticSpecies||[]).length?'official':(h.publishedExoticSpecies||[]).length?'public':(hs(h.id).services||[]).some(x=>['토끼','햄스터','기니피그','조류','파충류'].includes(x))?'demo':'';
  const matches=value=>zenoCareLabelMatches(value,s);
  // A specialty focus and routine treatment share the same search, not the same evidence label.
- if((h.declaredSpecialties||[]).some(matches)||(h.officialSpecialties||[]).some(matches))return 'official';
+ if(zenoHospitalFocusEntries(h).some(row=>matches(row.keyword))||(h.officialSpecialties||[]).some(matches))return 'official';
  if((hs(h.id).services||[]).some(matches))return 'demo';
  // Include all departments that ZENO has actually registered, including composite
  // labels (e.g. 신장·비뇨기과), without treating a free-text hospital name as evidence.
@@ -3667,7 +3674,7 @@ function zenoSpecialtyOrigin(h){
 function zenoSpecialtyNameOnly(h){return zenoSpecialtyOrigin(h)==='name';}
 function filteredHospitals(){
  const query=zenoWaitingQuery(state.query);
- let list=HOSPITALS.filter(h=>!query.text||[h.name,...(h.aliases||[]),h.address,...(h.tags||[]),...(h.cats||[]),...(h.officialSpecialties||[]),...(h.publishedCareFields||[]),...(h.declaredSpecialties||[]),...(h.careFields||[]),...(h.focusedCare||[]),...(h.detailedCare||[]),...(h.publishedExoticSpecies||[]),...Object.keys(h.specialtySnippets||{})].join(' ').toLowerCase().replace(/\s+/g,'').includes(query.text));
+ let list=HOSPITALS.filter(h=>!query.text||[h.name,...(h.aliases||[]),h.address,...(h.tags||[]),...(h.cats||[]),...(h.officialSpecialties||[]),...(h.publishedCareFields||[]),...zenoHospitalFocusEntries(h).map(row=>row.keyword),...(h.careFields||[]),...(h.focusedCare||[]),...(h.detailedCare||[]),...(h.publishedExoticSpecies||[]),...Object.keys(h.specialtySnippets||{})].join(' ').toLowerCase().replace(/\s+/g,'').includes(query.text));
  if(state.searchRegion)list=list.filter(h=>String(h.region||'').includes(state.searchRegion)||String(h.address||'').includes(state.searchRegion));
  const fs=zenoActiveFilters();
  if(fs.includes('24시'))list=list.filter(h=>Boolean(h.is24));
@@ -4839,7 +4846,7 @@ async function start(){
  }finally{zenoStartPending=false}
 }
 render();start();
-const ZENO_OWNER_UI_REVISION='20261115-search-fees-mobile-v45';
+const ZENO_OWNER_UI_REVISION='20261115-clinical-fields-before-focus-v46';
 let zenoLastUIVersionCheck=0;
 let zenoUIVersionChecking=false;
 async function zenoCheckOwnerUIRevision(force=false){
