@@ -605,11 +605,22 @@ async function api(method,path,data,admin=false){
 
 let zenoRefreshTask=null,zenoRefreshFailures=0,zenoDeferredPaint=false;
 function zenoRefreshStamp(){
- return JSON.stringify([state.ownerToken,state.hospitalToken,state.local,state.serverReady,state.settings,state.bookings,state.questions,state.reviews,state.owner,state.pets,state.records,state.favorites,state.hospitalBookings,state.hospitalQuestions,state.hChangeRequests,state.appError,state.profileLoaded]);
+ return JSON.stringify([state.ownerToken,state.hospitalToken,state.local,state.serverReady,state.settings,state.bookings,state.questions,state.reviews,state.owner,state.pets,state.records,state.favorites,state.hospitalBookings,state.hospitalQuestions,state.hChangeRequests,state.hSpecialtyKeywords,state.appError,state.profileLoaded]);
+}
+const editedHospitalForms=new WeakSet();
+function rememberHospitalEdit(event){
+ const form=event.target.form;
+ if(APP_MODE==='hospital'&&form)editedHospitalForms.add(form);
+}
+document.addEventListener('input',rememberHospitalEdit);
+document.addEventListener('change',rememberHospitalEdit);
+function hasHospitalDraft(){
+ return Array.from(document.querySelectorAll('#app form')).some(form=>editedHospitalForms.has(form));
 }
 function zenoRefreshPaint(before,page){
  if(!zenoDeferredPaint&&zenoRefreshStamp()===before)return;
  const active=document.activeElement;
+ if(hasHospitalDraft()){zenoDeferredPaint=true;return;}
  if(active&&active.closest&&active.closest('#app')&&/^(INPUT|TEXTAREA|SELECT)$/.test(active.tagName)){zenoDeferredPaint=true;return;}
  const y=window.scrollY;
  const root=document.getElementById('app');
@@ -1135,7 +1146,7 @@ async function zenoCheckHospitalUIRevision(force=false){
   if(!response.ok)return;
   const data=await response.json();
   if(!data?.hospital||data.hospital===ZENO_HOSPITAL_UI_REVISION)return;
-  if(document.hidden||state.modal||state.hDetailBookingId||document.activeElement?.closest('form'))return;
+  if(document.hidden||hasHospitalDraft()||state.modal||state.hDetailBookingId||document.activeElement?.closest('form'))return;
   window.location.replace('/hospital?ui='+encodeURIComponent(data.hospital));
  }catch(error){/* Keep current form state if temporarily offline. */}
  finally{zenoHospitalVersionBusy=false}
