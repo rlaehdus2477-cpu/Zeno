@@ -2621,6 +2621,40 @@ input::placeholder,textarea::placeholder{font-family:inherit;letter-spacing:-.00
 }
 </style>
 
+<style id="zeno-owner-search-compact-20261115">
+.zeno-search-topbar h1{font-size:18px!important;font-weight:650!important}
+.zeno-search-page .zeno-filter-rail{overflow:visible!important;min-width:0;margin-top:8px!important}
+.zeno-search-page .zeno-filter-rail>.filters{display:block!important;overflow:visible!important;width:100%!important;padding:0!important}
+.zeno-search-page .zeno-filter-main{display:flex;gap:7px;align-items:stretch;min-width:0;width:100%}
+.zeno-search-page .zeno-filter-rail .filters.zeno-filter-primary{display:flex!important;flex:1 1 auto!important;flex-wrap:nowrap!important;overflow-x:auto!important;overflow-y:hidden!important;min-width:0!important;max-width:100%!important;gap:6px!important;padding:2px 0 6px!important;scrollbar-width:none}
+.zeno-search-page .zeno-filter-primary::-webkit-scrollbar{display:none}
+.zeno-search-page .zeno-filter-more{position:relative;flex:0 0 auto}
+.zeno-search-page .zeno-filter-more summary{display:flex;align-items:center;justify-content:center;min-height:40px;border:1px solid #dce5ed;background:#fff;border-radius:10px;padding:8px 12px;color:#526476;cursor:pointer;font-size:13px;font-weight:600;list-style:none}
+.zeno-search-page .zeno-filter-more summary::-webkit-details-marker{display:none}
+.zeno-search-page .zeno-filter-extras{position:absolute;right:0;top:calc(100% + 6px);z-index:20;display:flex;flex-wrap:wrap;gap:7px;padding:10px;width:min(340px,calc(100vw - 48px));border-radius:11px;border:1px solid #dce5ed;background:#fff;box-shadow:0 8px 24px rgba(20,40,60,.12)}
+.zeno-search-page .zeno-filter-selected{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0}
+.zeno-search-page .zeno-filter-selected-chip{border:1px solid #bad4ed;background:#edf5ff;color:#246ba9;border-radius:8px;font-size:12px;padding:6px 10px;min-height:32px}
+.zeno-search-page .zeno-filter-rail .filter{min-height:38px!important;font-size:13px!important;white-space:nowrap!important;padding:8px 11px!important;border-radius:10px!important;font-weight:550!important;flex:0 0 auto!important}
+.zeno-search-page .zeno-results-bar{margin:9px 0 8px!important}
+.zeno-search-page .zeno-results-bar h2{font-size:16px!important;font-weight:650!important}
+.zeno-search-page .zeno-search-card .directory-text>strong{font-size:16px!important;font-weight:650!important}
+.zeno-search-page .zeno-hospital-card.zeno-search-card{padding:11px 12px!important;gap:9px!important}
+.zeno-search-page .zeno-search-card .zeno-card-actions{display:grid!important;grid-template-columns:1fr 1fr 1.5fr!important;gap:7px!important}
+.zeno-search-page .zeno-search-card .zeno-card-actions.has-book{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+.zeno-search-page .zeno-search-card .zeno-card-action{min-height:44px!important;font-size:13px!important;font-weight:600!important}
+.zeno-search-page .zeno-search-card .zeno-card-detail.primary{background:#2679c5!important;border-color:#2679c5!important;color:#fff!important}
+.zeno-search-page .zeno-waiting-pending{margin:12px 0;border:1px solid #e1e7ec;border-radius:11px;padding:0 12px}
+.zeno-search-page .zeno-waiting-pending summary{cursor:pointer;min-height:44px;padding:12px 0;color:#526779;font-size:13px;font-weight:600}
+.zeno-search-page .zeno-waiting-pending>p,.zeno-search-page .zeno-waiting-empty{color:#657587;font-size:12px;line-height:1.6}
+@media(max-width:750px){
+ .zeno-search-page .searchrow{display:grid!important;grid-template-columns:minmax(0,1fr) 58px!important}
+ .zeno-search-page .searchrow .btn{width:58px!important;min-width:58px!important;padding:8px 4px!important;min-height:44px!important;font-size:13px!important}
+ .zeno-search-page .zeno-search-card .directory-main{grid-template-columns:62px minmax(0,1fr)!important;gap:10px!important}
+ .zeno-search-page .zeno-search-card .directory-photo,.zeno-search-page .zeno-search-card .directory-placeholder{width:62px!important;min-width:62px!important;height:62px!important}
+}
+html.dark .zeno-search-page .zeno-filter-extras,html[data-theme="dark"] .zeno-search-page .zeno-filter-extras{background:#1b2633;border-color:#435063}
+</style>
+
 <style id="zeno-saved-hospitals-20261115">
 /* Small independent cards for My Pets. Do not change search and booking layouts. */
 .zeno-pets-page .zeno-saved-hospitals .section-title{margin-bottom:12px}
@@ -3625,7 +3659,8 @@ function zenoSearchHospitalCard(h){
  const photoHtml=photo?'<img class="directory-photo'+(photo.isLogo||photo.fit==='contain'?' directory-logo':'')+'" loading="lazy" referrerpolicy="no-referrer" src="'+e(photo.url)+'" alt="'+e(h.name)+' 사진" onerror="this.style.visibility=\'hidden\'">':'<span class="directory-photo directory-placeholder" aria-hidden="true">'+zenoNavIcon('search')+'</span>';
  const status=zenoSearchClinicStatus(h);
  const week=zenoWeeklyData(h),today=week[zenoTodayName()];
- const timeLine=today?'오늘 '+String(today).replace('24시간 진료 안내','24시간 운영 안내'):(h.is24?'24시간 운영 안내':'운영시간 상세 확인');
+ const rawTimeLine=today?'오늘 '+String(today).replace('24시간 진료 안내','24시간 운영 안내'):(h.is24?'24시간 운영 안내':'운영시간 상세 확인');
+  const timeLine=((/휴진|휴무/.test(status.text)&&/휴진|휴무/.test(rawTimeLine))||(/24시간/.test(status.text)&&/24시간/.test(rawTimeLine)))?'':rawTimeLine;
  const clinical=state.page==='search'&&zenoClinicalFocusEnabled();
  const origin=state.specialty?zenoSpecialtyOrigin(h):'';
  const focus=clinical?zenoSpecialtyFocus(h):null;
@@ -3650,11 +3685,11 @@ function zenoSearchHospitalCard(h){
  const eligible=h.linked&&(state.specialty==='특수동물'?Boolean((h.officialExoticSpecies||[]).length):(!state.specialty||state.specialty==='일반 진료'||(h.officialSpecialties||[]).some(x=>zenoCareAliases(state.specialty).includes(x))||(hs(h.id).services||[]).some(x=>zenoCareAliases(state.specialty).includes(x))));
  const book=eligible?'<button class="zeno-card-action primary" type="button" data-action="book" data-id="'+e(h.id)+'">예약 요청</button>':'';
  const map='<a class="zeno-card-action" href="'+e(zenoNaverPhotoUrl(h))+'" target="_blank" rel="noopener noreferrer" aria-label="'+e(h.name)+' 위치">위치</a>';
- const details='<button type="button" class="zeno-card-action zeno-card-detail" data-action="details" data-id="'+e(h.id)+'"'+(fee?' data-fee-direct="true"':'')+'>'+(fee?'진료비':'상세')+'</button>';
+ const details='<button type="button" class="zeno-card-action zeno-card-detail'+(book?'':' primary')+'" data-action="details" data-id="'+e(h.id)+'"'+(fee?' data-fee-direct="true"':'')+'>'+(fee?'진료비 보기':'상세 보기')+'</button>';
  return '<article class="directory-item zeno-hospital-card zeno-search-card"><button type="button" class="directory-main" data-action="details" data-id="'+e(h.id)+'" aria-label="'+e(h.name)+' 병원 상세">'
   +photoHtml+'<span class="directory-text"><strong>'+e(h.name)+'</strong><span class="directory-region">'+e(h.region||'')+'</span>'+zenoDeclaredSpecialtyLine(h)
   +'<span class="zeno-search-status '+status.kind+'">'+e(status.text)+'</span>'
-  +'<span class="zeno-search-hours">'+e(timeLine)+'</span>'
+  +(timeLine?'<span class="zeno-search-hours">'+e(timeLine)+'</span>':'')
   +(tagsHtml?'<span class="zeno-search-tags">'+tagsHtml+'</span>':'')
   +'</span></button><div class="zeno-card-actions'+(book?' has-book':'')+'">'+book+call+map+details+'</div></article>';
 }
@@ -3684,10 +3719,12 @@ function hospitalResults(items){
   const history=items.filter(h=>zenoCatWaitingTier(h)===2);
   const pending=items.filter(h=>zenoCatWaitingTier(h)===1);
   const section=(label,rows)=>rows.length?'<h3 class="zeno-result-group">'+e(label)+' · '+rows.length+'곳</h3>'+group(rows):'';
-  return '<p class="zeno-waiting-caution" style="font-size:13px;color:#647587;line-height:1.6;margin:12px 0">총 '+items.length+'곳은 이전 확인 대상도 포함한 수입니다. 네이버 확인 전에는 고양이 대기실이 있다고 단정할 수 없습니다.</p>'
-   +section('네이버 병원 소개에서 대기실 분리 확인',naver)
-   +section('이전 확인 기록 · 네이버 최신 재확인 필요',history)
-   +section('대기실 유무 네이버 확인 필요',pending);
+  const unverified=history.length+pending.length;
+  const confirmed=naver.length?section('네이버에서 대기실 분리 확인',naver):'<p class="zeno-waiting-empty">현재 조건에서 네이버 확인된 고양이 대기실 정보가 없습니다.</p>';
+  const awaiting=unverified?'<details class="zeno-waiting-pending"><summary>이전 기록·확인 대기 '+unverified+'곳 보기</summary><p>아래 병원은 대기실이 확인된 결과가 아닙니다. 네이버에서 최신 정보를 확인해 주세요.</p>'
+   +section('이전 기록 · 재확인 필요',history)
+   +section('대기실 유무 미확인',pending)+'</details>':'';
+  return confirmed+awaiting;
  }
  if(state.page==='search'&&zenoHasFilter('강아지 피어프리·스트레스 케어')&&!state.specialty){
   const cats=zenoHasFilter('고양이 친화');
@@ -3873,6 +3910,9 @@ function searchPage(){
  const inquiryCount=clinical?results.filter(h=>zenoSpecialtyOrigin(h)==='inquiry').length:0;
  const focusCount=clinical?results.filter(h=>Boolean(zenoSpecialtyFocus(h))).length:0;
  const resultCount=clinical?(state.internalFocusOnly?focusCount:registeredCount):results.length;
+ const waitingOnly=zenoHasFilter('고양이 대기실')&&!state.specialty;
+ const verifiedWaitingCount=waitingOnly?results.filter(h=>zenoCatWaitingTier(h)===3).length:0;
+ const resultsHeading=waitingOnly?'고양이 대기실 확인 '+verifiedWaitingCount+'곳':(state.specialty==='특수동물'?'검색 결과 ':clinical?(e(state.specialty)+(state.internalFocusOnly?' 특화 ':' 진료 ')):'청주 병원 ')+resultCount+'곳';
  const internalNote=clinical?'<p class="zeno-clinical-legend">'+(inquiryCount?'추가 전화 확인 '+inquiryCount+'곳 · ':'')+'특화는 병원 공개 안내 기준이며 전문의 자격을 뜻하지 않습니다.</p>':'';
  const focusChip=clinical?'<button type="button" class="zeno-internal-only" data-action="internal-focus-only" aria-pressed="'+(state.internalFocusOnly?'true':'false')+'">특화만 보기'+(state.internalFocusOnly?' ✓':'')+'</button>':'';
  const exotic=state.specialty==='특수동물'?'<section class="zeno-exotic-top" aria-labelledby="zeno-exotic-title">'
@@ -3884,12 +3924,17 @@ function searchPage(){
  const specialtyChip=state.specialty&&state.specialty!=='특수동물'?'<button type="button" class="zeno-selected-care-chip" data-action="clear-specialty" aria-label="'+e(state.specialty)+' 진료 분야 선택 해제">'+e(state.specialty)+' <span aria-hidden="true">×</span></button>':'';
  const reset=(state.query||fs.length||state.specialty||state.searchRegion)?'<button class="zeno-search-reset" type="button" data-action="clear-search">조건 초기화</button>':'';
  const regionChip=state.searchRegion?'<button type="button" class="zeno-selected-care-chip" data-action="clear-home-region-filter" aria-label="'+e(state.searchRegion)+' 지역 필터 해제">'+e(state.searchRegion)+' <span aria-hidden="true">×</span></button>':'';
- const chips=['전체','야간','24시','고양이 친화','고양이 대기실','강아지 피어프리·스트레스 케어','연결 병원','즐겨찾기'].map(x=>'<button type="button" class="filter '+((x==='전체'?!fs.length&&!state.specialty&&!state.query:fs.includes(x))?'active':'')+'" aria-pressed="'+(x==='전체'?!fs.length&&!state.specialty&&!state.query:fs.includes(x))+'" data-action="filter" data-value="'+x+'">'+(x==='24시'?'24시간':x==='야간'?'야간 진료':x==='연결 병원'?'예약 요청 가능':x==='즐겨찾기'?'저장한 병원':x)+'</button>').join('');
+ const quick=['전체','야간','24시','고양이 대기실'],more=['고양이 친화','강아지 피어프리·스트레스 케어','연결 병원','즐겨찾기'];
+ const lbl=x=>x==='24시'?'24시간':x==='야간'?'야간 진료':x==='연결 병원'?'예약 요청 가능':x==='즐겨찾기'?'저장한 병원':x;
+ const chip=x=>'<button type="button" class="filter '+(fs.includes(x)?'active':'')+'" data-action="filter" data-value="'+e(x)+'">'+e(lbl(x))+'</button>';
+ const selected=more.filter(x=>fs.includes(x));
+ const chips='<div class="zeno-filter-main"><div class="filters zeno-filter-primary">'+quick.map(chip).join('')+'</div><details class="zeno-filter-more"><summary>필터 '+(selected.length?selected.length:'')+'</summary><div class="zeno-filter-extras">'+more.map(chip).join('')+'</div></details></div>'
+  +(selected.length?'<div class="zeno-filter-selected">'+selected.map(x=>'<button type="button" class="zeno-filter-selected-chip" data-action="filter" data-value="'+e(x)+'">'+e(lbl(x))+' ×</button>').join('')+'</div>':'');
  return '<header class="zeno-search-topbar">'+zenoBrandLogo()+'<h1>병원 찾기</h1></header><section class="zeno-search-page">'
  +'<div class="zeno-search-module"><div class="searchrow"><input type="search" class="search" id="hospital-search" aria-label="병원명·동네·시설 검색" placeholder="병원명·동네·시설 검색" value="'+e(state.query)+'"><button class="btn" data-action="search-apply">검색</button></div>'
  +'<div class="zeno-filter-rail"><div class="filters" role="group" aria-label="병원 조건 필터">'+chips+'</div></div></div>'
  +exotic
- +'<div class="zeno-results-bar"><div class="zeno-results-bar-leading"><h2 aria-live="polite">'+(state.specialty==='특수동물'?'검색 결과 ':clinical?(e(state.specialty)+(state.internalFocusOnly?' 특화 ':' 진료 ')):'청주 병원 ')+resultCount+'곳</h2>'+regionChip+specialtyChip+'</div><div class="zeno-results-bar-tools">'+focusChip+reset+'<button class="zeno-search-emergency-link" type="button" data-nav="emergency">야간·24시간 안내</button></div></div>'
+ +'<div class="zeno-results-bar"><div class="zeno-results-bar-leading"><h2 aria-live="polite">'+resultsHeading+'</h2>'+regionChip+specialtyChip+'</div><div class="zeno-results-bar-tools">'+focusChip+reset+'<button class="zeno-search-emergency-link" type="button" data-nav="emergency">야간·24시간 안내</button></div></div>'
  +internalNote
  +hospitalResults(results)
  +'<div class="zeno-price-inline zeno-price-after-results"><span>병원별 진료비와 추가비용 보기</span><button type="button" data-nav="prices">가격 비교</button></div>'
@@ -4709,6 +4754,19 @@ if(a==='service-remove'){let services=(hs(state.activeHospital).services||[]).fi
 });
 document.addEventListener('keydown',ev=>{if(ev.key==='Escape'&&state.homeCarePickerOpen){state.homeCarePickerOpen=false;state.homeCarePickerQuery='';render();return}if(ev.key==='Escape'&&state.modal)zenoCloseModal();if(ev.key==='Enter'&&document.activeElement?.id==='hospital-search'){applyHospitalQuery(document.activeElement.value);render()}});
 /* Filter the picker in place to preserve Korean IME composition and input focus. */
+let zenoSearchTypingTimer=0;
+document.addEventListener('input',ev=>{
+ if(ev.target?.id!=='hospital-search'||state.page!=='search'||ev.isComposing)return;
+ const input=ev.target,query=input.value;
+ clearTimeout(zenoSearchTypingTimer);
+ zenoSearchTypingTimer=setTimeout(()=>{
+  if(state.page!=='search'||document.getElementById('hospital-search')!==input)return;
+  const caret=input.selectionStart??query.length,end=input.selectionEnd??query.length;
+  applyHospitalQuery(query);render();
+  const fresh=document.getElementById('hospital-search');
+  if(fresh){fresh.focus({preventScroll:true});if(fresh.value===query)try{fresh.setSelectionRange(Math.min(caret,fresh.value.length),Math.min(end,fresh.value.length))}catch{}}
+ },300);
+});
 document.addEventListener('input',ev=>{
  if(ev.target?.id!=='zeno-care-search'||!state.homeCarePickerOpen)return;
  state.homeCarePickerQuery=ev.target.value;
