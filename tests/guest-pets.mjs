@@ -55,7 +55,7 @@ assert.equal(legacy.pets[0].name,'이전 등록 아이');
 let recovered=vm.runInContext('zenoImportDeviceProfile(zenoLegacyDeviceProfile())',context);
 assert.equal(recovered.success,true,'Legacy device data import must succeed');
 vm.runInContext('zenoApplyGuestProfile()',context);
-assert.deepEqual(state.pets.map(x=>x.name).sort(),['별이','이전 등록 아이'].sort(),
+assert.equal(JSON.stringify(state.pets.map(x=>x.name).sort()),JSON.stringify(['별이','이전 등록 아이'].sort()),
  'Recovering older pets must preserve already registered guest pets');
 assert.equal(state.records.length,2,'Both old and current records must survive');
 recovered=vm.runInContext('zenoImportDeviceProfile(zenoLegacyDeviceProfile())',context);
