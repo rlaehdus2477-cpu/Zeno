@@ -2400,13 +2400,13 @@ function zenoCfc(h){const c=ZENO_CFC[h?.id];return c?.status==='pending'?null:(c
 function zenoCfcBadge(h){
  const c=zenoCfc(h);if(!c)return '';
  const listed=c.status==='listed', criteria=c.status==='criteria', pending=c.status==='pending';
- const label=listed?'CFC 고양이 친화 · Gold':criteria?'Gold 기준 충족 · 병원 안내':pending?'Gold 관련 네이버 확인 필요':'Gold 표기 · 갱신 미확인';
+ const label=listed?'CFC 고양이 친화 · Gold':criteria?'Gold 기준 충족 · 병원 안내':pending?'Gold 관련 네이버 확인 필요':'ISFM 고양이 친화 동물병원(CFC) · Gold 표기';
  const tooltip=listed?'공식 명단 조사 기록 등재 · 현재 유효기간은 별도 확인 필요':criteria?'병원이 Gold 수준 기준 충족을 안내함 · 공식 인증과 다름':pending?'네이버 확인 필요 · 병원·인증기관 근거 확인 중':'외부 인증 표기 · 최신 갱신 미확인';
  return '<span class="zeno-cfc-badge '+(listed?'listed':'unconfirmed')+'" title="'+e(tooltip)+'"><span class="zeno-cfc-glyph" aria-hidden="true">CFC</span>'+e(label)+'</span>';
 }
 function zenoCfcSummary(h){
  const c=zenoCfc(h);if(!c)return '';
- return '<div class="zeno-cfc-summary">'+zenoCfcBadge(h)+'<button type="button" data-action="detail-tab" data-value="intro">'+(c.status==='pending'?'확인 필요 확인 상태':'표시 근거 보기')+'</button></div>';
+ return '<div class="zeno-cfc-summary">'+zenoCfcBadge(h)+(c.status==='reported'||c.status==='listed'?'<small>현재 유효 여부 미확인</small>':'')+'<button type="button" data-action="detail-tab" data-value="intro">'+(c.status==='pending'?'확인 필요 확인 상태':'표시 근거 보기')+'</button></div>';
 }
 function zenoCfcDetail(h){
  const c=zenoCfc(h);if(!c)return '';
@@ -3073,6 +3073,20 @@ function zenoDeclaredSpecialtyLine(h){
  const focus=(h.declaredSpecialties||[]).filter(Boolean).slice(0,1);
  return '<span class="zeno-search-fact">'+(focus.length?'대표 특화 · '+e(focus[0]):'특화 분야 확인 필요')+'</span>';
 }
+function zenoCareSource(h){
+ for(const value of [h.specialtyEvidenceUrl,h.publishedCareUrl]){
+  try{
+   const url=new URL(value);
+   if(url.protocol==='https:' && /(^|\.)naver\.com$/.test(url.hostname))return url.href;
+  }catch{}
+ }
+ return '';
+}
+function zenoCareSourceLink(h){
+ const source=zenoCareSource(h);
+ const url=source||'https://map.naver.com/p/search/'+encodeURIComponent(h.name+' '+h.address);
+ return '<a class="zeno-dept-source-link" target="_blank" rel="noopener noreferrer" href="'+e(url)+'">'+(source?'네이버 진료 안내 보기':'네이버에서 병원 찾기')+'</a>';
+}
 function zenoDetailDepartments(h, services){
  const seen=new Set(), verified=[], published=[], reported=[], hospitalProvided=[];
  const add=(items,target)=>{
@@ -3085,7 +3099,7 @@ function zenoDetailDepartments(h, services){
  add(h.careFields,h.careVerificationStatus==='needs-naver-check'?published:verified);
  add(h.officialSpecialties,verified);
  add(h.declaredSpecialties,verified);
- add(h.publishedCareFields,published);
+ add(h.publishedCareFields,h.publishedCareUrl&&!zenoCareSource(h)?reported:published);
  /* Unverified submitted specialties are not displayed. */
  // Keep legacy category evidence visible even when another confirmed specialty exists.
  // Legacy fields are not presented as hospital-confirmed evidence.
@@ -3109,10 +3123,12 @@ function zenoDetailDepartments(h, services){
  return (verified.length?chips(verified):'')
    +group(published,'공개 안내 · 실제 진료 여부 확인')
    +group(legacy,'기존 분류 · 진료 여부 추가 확인')
-   +group(reported,'확인 필요 · 병원 확인 필요')
+   +group(reported.filter(x=>!['슬개골탈구','외과수술','노령동물','야간응급진료'].includes(x)),'진료과목 · 네이버 확인 대기')
+   +group(reported.filter(x=>['슬개골탈구','외과수술'].includes(x)),'세부 진료 · 네이버 확인 대기')
+   +group(reported.filter(x=>x==='노령동물'),'진료 대상 · 네이버 확인 대기')
    +group(hospitalProvided,'병원 입력 정보')
    +(noData?'<p class="zeno-detail-dept-note">확인된 진료 분야가 없습니다. 병원에 전화로 문의해 주세요.</p>':'')
-   +((h.specialtyEvidenceUrl||h.publishedCareUrl)?'<a class="zeno-dept-source-link" target="_blank" rel="noopener noreferrer" href="'+e(h.specialtyEvidenceUrl||h.publishedCareUrl)+'">진료 분야 근거 보기</a>':'');
+   +zenoCareSourceLink(h);
 }
 function zenoClinicalFallbackMarkup(h,services){
  if(Array.isArray(h.careFields)&&h.careFields.length)return '';
@@ -3159,7 +3175,7 @@ function zenoProvidedClinicalProfile(h){
   +((h.facilitiesServices||[]).length?'<div class="section"><h3>시설·서비스</h3>'+tags(h.facilitiesServices)+'</div>':'')
   +(h.careNotice?'<p class="zeno-care-caution">'+e(h.careNotice)+'</p>':'')
   +'<p class="desc">'+e(h.careSource||'제공받은 병원 정보')+' · 방문 전 확인</p>'
-  +((h.specialtyEvidenceUrl||h.publishedCareUrl)?'<a class="zeno-dept-source-link" href="'+e(h.specialtyEvidenceUrl||h.publishedCareUrl)+'" target="_blank" rel="noopener noreferrer">진료 분야 근거 보기</a>':'')+'</div>';
+  +zenoCareSourceLink(h)+'</div>';
 }
 function zenoProvidedHours(h){
  if(!h.careSchedule)return '';
@@ -3258,8 +3274,8 @@ function zenoSpecialtyFocus(h){
  const explicit=!/특화 (여부|확인) 필요|특화 여부 (별도 )?확인|특화.{0,8}미확인/.test(snippet)&&
   /특화진료|특화 병원|특화센터|치과전문동물병원|진료에 특화|진료에 집중/.test(snippet);
  if(!declared.length&&!explicit)return null;
- const naverPending=h.specialtyVerificationStatus==='needs-naver-check';
- const source=naverPending?'':(h.specialtyEvidenceUrl||h.publishedCareUrl||'');
+ const naverPending=h.specialtyVerificationStatus==='needs-naver-check'||Boolean((h.specialtyEvidenceUrl||h.publishedCareUrl)&&!zenoCareSource(h));
+ const source=naverPending?'':zenoCareSource(h);
  const text=naverPending
   ?'대표 특화 분류 요청을 반영했습니다. 네이버 병원 직접 안내의 특화 문구는 별도 확인이 필요합니다.'
   :declared.length
@@ -3455,6 +3471,12 @@ function zenoHomeSmallIcon(name){
  return '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+(paths[name]||paths.next)+'</svg>';
 }
 /* CHANGED: schedule-based cards, never hardcoded live reception. */
+function zenoEmergencyCardNote(h){
+ const info=h.linked?hs(h.id):null;
+ const labels={available:'응급 문의 가능',busy:'응급 혼잡',unavailable:'응급 수용 어려움'};
+ if(info?.updatedAt&&labels[info.emergencyStatus])return labels[info.emergencyStatus]+' · '+dateTime(info.updatedAt)+' 병원 입력';
+ return '응급 접수 전화 확인';
+}
 function zenoHomeOperatingRail(){
  const region=state.homeArea==='청주 전체'?'':state.homeArea.replace('청주 ','');
  const list=HOSPITALS.filter(h=>!region||String(h.region||'').includes(region));
@@ -3464,10 +3486,10 @@ function zenoHomeOperatingRail(){
  const cards=open.map(h=>{
   const p=(Array.isArray(h.photos)?h.photos:[]).find(x=>x.approved===true&&x.url);
   const img=p?'<img src="'+e(p.url)+'" alt="" class="'+(p.isLogo||p.fit==='contain'?'is-logo':'')+'" loading="lazy">':'';
-  const badge=h.is24?'24시간 운영 안내':zenoNightHours(h)?'야간':'진료시간';
-  return '<button type="button" class="zeno-v10-open-card" data-action="details" data-id="'+e(h.id)+'"><span class="zeno-v10-mini-photo">'+zenoNavIcon('search')+img+'</span><span style="flex:1;min-width:0"><strong>'+e(h.name)+'</strong><small>'+e(String(h.region||'').split('·').pop().trim())+'</small><span class="zeno-v10-hospital-badges"><span class="zeno-v10-badge'+(badge==='진료시간'?' is-open':' danger')+'">'+badge+'</span></span></span></button>';
+  const badge=h.is24?'24시간 운영':zenoNightHours(h)?'야간':'진료시간';
+  return '<button type="button" class="zeno-v10-open-card" data-action="details" data-id="'+e(h.id)+'"><span class="zeno-v10-mini-photo">'+zenoNavIcon('search')+img+'</span><span style="flex:1;min-width:0"><strong>'+e(h.name)+'</strong><small>'+e(String(h.region||'').split('·').pop().trim())+'</small><span class="zeno-v10-hospital-badges"><span class="zeno-v10-badge'+(badge==='진료시간'?' is-open':' danger')+'">'+badge+'</span></span><small>'+e(zenoEmergencyCardNote(h))+'</small></span></button>';
  }).join('');
- return '<section class="zeno-v10-open-section"><h2>지금 진료 중인 병원</h2><p class="zeno-open-note">공개 시간표 기준 · 방문 전 전화 확인</p>'+(open.length?'<div class="zeno-v10-open-rail">'+cards+'</div>':'<p class="zeno-v10-empty">공개 시간표 기준 진료 중인 병원을 확인할 수 없어요.</p>')+'</section><p class="zeno-v10-stats">청주 병원 '+list.length+'곳 · 야간 진료 '+night+'곳 · 24시간 응급 '+urgent+'곳</p>';
+ return '<section class="zeno-v10-open-section"><h2>시간표상 지금 문 여는 병원</h2><p class="zeno-open-note">공개 시간표 기준 · 방문 전 전화 확인</p>'+(open.length?'<div class="zeno-v10-open-rail">'+cards+'</div>':'<p class="zeno-v10-empty">공개 시간표 기준 진료 중인 병원을 확인할 수 없어요.</p>')+'</section><p class="zeno-v10-stats">청주 병원 '+list.length+'곳 · 야간 진료 '+night+'곳 · 24시간 응급 '+urgent+'곳</p>';
 }
 
 function zenoSymptomPage(){
@@ -3504,7 +3526,8 @@ function home(){
  +zenoNavIcon('search')+'<input id="home-hospital-search" name="homeQuery" type="search" autocomplete="off" placeholder="증상, 병원명, 진료과목 검색" value="'+e(state.query)+'"></form></section>'
  +zenoHomeOperatingRail()
   +'<section class="zeno-v10-care" aria-label="진료 분야로 찾기"><div class="zeno-v10-section-heading"><h2>진료 분야</h2><button type="button" data-action="show-all-hospitals">전체 병원 보기</button></div>'
- +'<button type="button" class="zeno-care-picker-trigger" data-action="home-care-open" aria-haspopup="dialog" aria-expanded="'+state.homeCarePickerOpen+'"><span>진료 분야 선택</span><span aria-hidden="true">›</span></button>'
+ +'<div class="zeno-care-picker-grid">'+[['내과','내과'],['외과','외과'],['치과·구강','치과'],['피부·귀','피부과']].map(([value,label])=>'<button type="button" class="zeno-care-picker-option" data-action="specialty" data-value="'+e(value)+'">'+e(label)+'</button>').join('')+'</div>'
+ +'<button type="button" class="zeno-care-picker-trigger" data-action="home-care-open" aria-haspopup="dialog" aria-expanded="'+state.homeCarePickerOpen+'"><span>전체 과목</span><span aria-hidden="true">›</span></button>'
  +'<button type="button" class="zeno-care-exotic-link" data-action="specialty" data-value="특수동물"><span><strong>특수동물 진료</strong><small>토끼 · 조류 · 파충류 등 진료 가능한 병원</small></span><span aria-hidden="true">›</span></button></section>'
  +'<button type="button" class="zeno-v10-symptom-btn" data-nav="symptoms"><span class="zeno-v10-help-icon">'+zenoHomeSmallIcon('help')+'</span><span><strong>어떤 진료인지 잘 모르겠어요</strong><small>증상을 보고 진료 분야를 찾아보세요.</small></span>'+zenoHomeSmallIcon('next')+'</button>'
  +'<section class="zeno-v10-quick" aria-label="빠르게 병원 찾기"><h2>필요한 진료 빠르게 찾기</h2>'
@@ -3513,7 +3536,7 @@ function home(){
  +'<button type="button" class="zeno-v10-cat" data-action="cat-waiting-shortcut"><span class="zeno-v10-shortcut-icon cat">'+zenoNavIcon('pets')+'</span><span><strong>고양이 전용 대기실</strong><small>고양이를 위한 별도 공간 확인</small></span>'+zenoHomeSmallIcon('next')+'</button></section>'
  +zenoHomeBookingPreview()
  +'<div class="zeno-v10-links"><button type="button" data-nav="pets">'+zenoNavIcon('pets')+'내 아이 기록</button><button type="button" data-nav="qa">'+zenoNavIcon('qa')+'병원 질문·답변</button><button type="button" data-nav="prices">'+zenoNavIcon('search')+'진료비 비교</button></div>'
- +'<p class="zeno-v10-footnote">병원 사정에 따라 정보가 변경될 수 있어요.</p>'+picker+'</div>';
+ +picker+'</div>';
 }
 function searchPage(){
  const results=filteredHospitals(),fs=zenoActiveFilters();
