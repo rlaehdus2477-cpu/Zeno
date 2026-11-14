@@ -113,6 +113,19 @@ jobs:
               if(!sw.includes("url.pathname.startsWith('/api/')")||!sw.includes("fetch(request,{cache:'no-store'})"))throw Error('PWA refresh rules are missing for installed Galaxy apps');
               const hospital=await (await get('/hospital?ui='+nonce)).text();
               for(const expected of ['예약','24시 청주이음동물의료센터','영상의학','종양 수술']){if(!hospital.includes(expected))throw Error('Production hospital UI missing: '+expected);}
+              // Verify both views contain the same complete Koryo and Daom records.
+              for(const [id,name,expected] of [
+                ['pub038','고려동물메디컬센터','"declaredSpecialties":["암센터"]'],
+                ['pub016','24시청주다옴동물의료센터','"careVerificationStatus":"needs-naver-check"']
+              ]){
+                for(const [view,html] of [['owner',owner],['hospital',hospital]]){
+                  const start=html.indexOf('{"id":"'+id+'"');
+                  const end=html.indexOf('},{"id":"',start+12);
+                  if(start<0||end<=start)throw Error(view+' missing hospital '+name);
+                  const record=html.slice(start,end);
+                  if(!record.includes('"name":"'+name+'"')||!record.includes(expected)||!record.includes('"careFields":'))throw Error(view+' incomplete clinic profile '+name);
+                }
+              }
               const revision=await (await get('/api/ui-version?ui='+nonce)).json();
               if(revision?.owner!==expectedOwnerRevision)throw Error('Owner UI version not deployed: '+JSON.stringify(revision)+' expected '+expectedOwnerRevision);
               if(!owner.includes("const ZENO_OWNER_UI_REVISION='"+expectedOwnerRevision+"'"))throw Error('Owner page revision not synchronized with Worker: '+expectedOwnerRevision);
