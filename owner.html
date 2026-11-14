@@ -2587,7 +2587,7 @@ function zenoImportDeviceProfile(incoming){
  }catch(error){
   // If the mobile device has a tight storage quota, preserve text records,
   // and leave cloud originals intact. Never clear the existing guest snapshot.
-  const withoutPhotos={...merge,pets:merge.pets.map(p=>{const copy={...p};if(/^data:image\\//.test(String(copy.photoUrl||'')))delete copy.photoUrl;return copy})};
+  const withoutPhotos={...merge,pets:merge.pets.map(p=>{const copy={...p};if(/^data:image\//.test(String(copy.photoUrl||'')))delete copy.photoUrl;return copy})};
   try{
    localStorage.setItem(ZENO_GUEST_PROFILE_KEY,JSON.stringify(withoutPhotos));
    return {success:true,photos:false,count:withoutPhotos.pets.length};
