@@ -3332,7 +3332,7 @@ function zenoListMatchedConditions(h){
 /* Clinically offered fields and declared focus are distinct. */
 function zenoHospitalFocusEntries(h){
  const saved=state.hospitalSpecialties||{};
- const hasHospitalChoice=Object.prototype.hasOwnProperty.call(saved,h.id);
+ const hasHospitalChoice=Array.isArray(saved[h.id])&&saved[h.id].length>0;
  const rows=hasHospitalChoice?saved[h.id]:(h.declaredSpecialties||[]).map(keyword=>({keyword,status:'병원 안내'}));
  return (Array.isArray(rows)?rows:[]).filter(item=>item&&typeof item.keyword==='string'&&item.keyword.trim()).slice(0,3);
 }
@@ -3401,7 +3401,7 @@ function zenoDetailDepartments(h, services){
 }
 function zenoRepresentativeSpecialtySection(h){
  const rows=zenoHospitalFocusEntries(h);
- const saved=Object.prototype.hasOwnProperty.call(state.hospitalSpecialties||{},h.id);
+ const saved=Array.isArray((state.hospitalSpecialties||{})[h.id])&&(state.hospitalSpecialties||{})[h.id].length>0;
  const tags=rows.length?'<div class="tags">'+rows.map(row=>'<span class="tag">'+e(row.keyword)+'</span>').join('')+'</div>':'<p class="desc">등록된 대표 특화가 없습니다.</p>';
  const verified=rows.length&&rows.every(row=>row.status==='확인됨');
  return '<section class="section zeno-detail-focus"><h3>우리 병원 대표 특화</h3>'+tags
@@ -3532,7 +3532,7 @@ function zenoSpecialtyFocus(h){
  if(!zenoClinicalFocusEnabled())return null;
  const matched=zenoHospitalFocusEntries(h).filter(row=>zenoFocusAliasMatch(row.keyword,state.specialty));
  if(!matched.length)return null;
- const saved=Object.prototype.hasOwnProperty.call(state.hospitalSpecialties||{},h.id);
+ const saved=Array.isArray((state.hospitalSpecialties||{})[h.id])&&(state.hospitalSpecialties||{})[h.id].length>0;
  const confirmed=matched.every(row=>row.status==='확인됨');
  const pending=!saved&&h.specialtyVerificationStatus==='needs-naver-check';
  const status=confirmed?'confirmed':pending?'pending':'hospital';
