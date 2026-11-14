@@ -523,7 +523,17 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 .hi-inbox input,.hi-inbox textarea,.hi-sheet input,.hi-sheet textarea{font-size:16px}
 @media(prefers-color-scheme:dark){.hi-inbox-row,.hi-sheet-section,.hi-group,.hi-summary{color:#f4f7fb}}
 html.dark .hi-inbox-row,html.dark .hi-sheet-section,html.dark .hi-group,html[data-theme="dark"] .hi-inbox-row,html[data-theme="dark"] .hi-sheet-section,html[data-theme="dark"] .hi-group{color:#f4f7fb}
-</style></head><body><div id="app" class="app"></div><script>
+</style><style>
+.hi-specialty-keywords select,.hi-specialty-keywords input,.hi-specialty-keywords button,.hi-keyword-recheck button{min-height:48px}
+.hi-specialty-keywords .field{margin-top:12px}
+.hi-keyword-statuses{margin-top:14px;padding-top:6px;border-top:1px solid var(--line)}
+.hi-keyword-statuses p{font-size:14px;line-height:1.55;margin:9px 0;color:var(--text)}
+.hi-keyword-recheck{padding:14px 0;border-bottom:1px solid var(--line)}
+.hi-keyword-recheck p{margin:0 0 12px;line-height:1.5;font-size:14px}
+.hi-keyword-recheck-actions{display:flex;flex-wrap:wrap;gap:8px}
+.hi-keyword-recheck-actions button{flex:1;min-width:120px}
+</style>
+</head><body><div id="app" class="app"></div><script>
 'use strict';
 const APP_MODE='hospital';
 
@@ -551,7 +561,7 @@ const hospitalById=id=>HOSPITALS.find(x=>x.id===id);
 function defaultStore(){return {settings:Object.fromEntries(['soo','naeum','tnd'].map(id=>[id,{status:'available',updatedAt:null,notice:'',services:[],prices:[],emergency:false}])),bookings:[],questions:[],reviews:[]}}
 function localGet(){try{return {...defaultStore(),...JSON.parse(localStorage.getItem(STOREKEY)||'{}')}}catch{return defaultStore()}}
 function localSet(x){localStorage.setItem(STOREKEY,JSON.stringify(x));window.dispatchEvent(new Event('zeno-refresh'))}
-const state={ownerToken:localStorage.getItem('zeno-owner-auth')||'',owner:null,authMode:'login',serverReady:false,profileLoaded:false,profileSaving:false,page:APP_MODE==='hospital'?'hospital':'home',filter:'전체',query:'',specialty:'',exoticSpecies:'',detail:null,modal:null,local:true,settings:{},bookings:[],questions:[],reviews:[],hospitalBookings:[],hospitalQuestions:[],activeHospital:sessionStorage.getItem('zeno-h-hospital')||'soo',hospitalToken:sessionStorage.getItem('zeno-h-token')||'',adminToken:sessionStorage.getItem('zeno-admin-token')||'',pets:JSON.parse(localStorage.getItem('zeno-pets-v2')||'[]'),records:JSON.parse(localStorage.getItem('zeno-records-v2')||'[]'),favorites:JSON.parse(localStorage.getItem('zeno-favorites-v2')||'[]'),viewH:'soo',hTab:'bookings',appError:'',loading:false,adminStats:null,bookingTab:'전체',hDemoMode:false,hNewCount:0,hAlertReady:false,hSeenIds:[],hLastHospital:'',hChangeRequests:[]};
+const state={ownerToken:localStorage.getItem('zeno-owner-auth')||'',owner:null,authMode:'login',serverReady:false,profileLoaded:false,profileSaving:false,page:APP_MODE==='hospital'?'hospital':'home',filter:'전체',query:'',specialty:'',exoticSpecies:'',detail:null,modal:null,local:true,settings:{},bookings:[],questions:[],reviews:[],hospitalBookings:[],hospitalQuestions:[],activeHospital:sessionStorage.getItem('zeno-h-hospital')||'soo',hospitalToken:sessionStorage.getItem('zeno-h-token')||'',adminToken:sessionStorage.getItem('zeno-admin-token')||'',pets:JSON.parse(localStorage.getItem('zeno-pets-v2')||'[]'),records:JSON.parse(localStorage.getItem('zeno-records-v2')||'[]'),favorites:JSON.parse(localStorage.getItem('zeno-favorites-v2')||'[]'),viewH:'soo',hTab:'bookings',appError:'',loading:false,adminStats:null,bookingTab:'전체',hDemoMode:false,hNewCount:0,hAlertReady:false,hSeenIds:[],hLastHospital:'',hChangeRequests:[],hSpecialtyKeywords:[]};
 let toastTimer;
 function toast(message){let o=document.querySelector('.toast');if(o)o.remove();o=document.createElement('div');o.className='toast';o.textContent=message;document.body.appendChild(o);clearTimeout(toastTimer);toastTimer=setTimeout(()=>o.remove(),3200)}
 let profileSaveTimer;
@@ -660,7 +670,7 @@ async function refresh(force=false){
 async function loadHospital(draw=true){if(!state.hospitalToken)return;try{const x=await api('GET','/api/dashboard?hospitalId='+encodeURIComponent(state.activeHospital));const newBookings=x.bookings||[];
  if(state.hAlertReady&&state.hLastHospital===state.activeHospital){const fresh=newBookings.filter(b=>b.status==='pending'&&!state.hSeenIds.includes(b.id));if(fresh.length){state.hNewCount+=fresh.length;toast('새 예약 요청 '+fresh.length+'건이 도착했습니다.');}}
  state.hSeenIds=newBookings.map(b=>b.id);state.hAlertReady=true;state.hLastHospital=state.activeHospital;
- state.hospitalBookings=newBookings;state.hospitalQuestions=x.questions||[];state.hChangeRequests=x.changeRequests||[];state.settings[state.activeHospital]=x.settings||state.settings[state.activeHospital];if(draw)render()}catch(err){if(err.message.includes('401')||err.message.includes('권한')||err.message.includes('인증')){state.hospitalToken='';sessionStorage.removeItem('zeno-h-token')}if(draw){toast(err.message);render()}else throw err}}
+ state.hospitalBookings=newBookings;state.hospitalQuestions=x.questions||[];state.hChangeRequests=x.changeRequests||[];state.hSpecialtyKeywords=x.specialtyKeywords||[];state.settings[state.activeHospital]=x.settings||state.settings[state.activeHospital];if(draw)render()}catch(err){if(err.message.includes('401')||err.message.includes('권한')||err.message.includes('인증')){state.hospitalToken='';sessionStorage.removeItem('zeno-h-token')}if(draw){toast(err.message);render()}else throw err}}
 async function loadAdmin(draw=true){if(!state.adminToken)return;try{state.adminStats=await api('GET','/api/admin/stats',null,true);if(draw)render()}catch(err){toast(err.message);state.adminToken='';sessionStorage.removeItem('zeno-admin-token');if(draw)render()}}
 function navTo(p){if(APP_MODE==='hospital'&&p!=='hospital')return;if(APP_MODE==='owner'&&(p==='hospital'||p==='admin'))return;state.page=p;state.modal=null;window.scrollTo({top:0,behavior:'instant'});if(p==='hospital')loadHospital();else if(p==='admin')loadAdmin();render()}
 const HOSPITAL_SVG={
@@ -823,15 +833,37 @@ function hospitalLogin(){return `${topbar('동물병원용 ZENO','예약과 진�
 function hiEmergencyLabel(value){
  return ({available:'응급 문의 가능 · 시연',busy:'응급 혼잡 · 시연',unavailable:'응급 수용 어려움 · 시연',check:'응급 수용 미확인'})[value]||'응급 수용 미확인';
 }
-// 병원에서 선택한 강조 분야는 검증된 특화 진료와 별도로 검토 대기에 저장합니다.
+// 병원 등록 대표 특화는 진료 가능 과목과 분리해 키워드별 상태를 저장합니다.
 const HI_SPECIALTY_KEYWORDS=["내과","심장·호흡기","정형외과","외과","치과·구강","안과","피부·귀","비뇨기","건강검진·접종","중성화수술","영상의학","종양 진료","신경 진료","고양이 진료","특수동물","재활 진료"];
+function hiKeywordDateText(value){
+ const date=String(value||'').slice(0,10);
+ return /^\d{4}-\d{2}-\d{2}$/.test(date)?date.replace(/-/g,'.'):'확인일 미등록';
+}
+function hiKeywordDatePlusSix(value){
+ const parts=String(value||'').slice(0,10).split('-').map(Number);
+ if(parts.length!==3||!parts.every(Number.isInteger)||!parts[0])return '';
+ const first=new Date(Date.UTC(parts[0],parts[1]-1+6,1));
+ const lastDay=new Date(Date.UTC(first.getUTCFullYear(),first.getUTCMonth()+1,0)).getUTCDate();
+ const end=new Date(Date.UTC(first.getUTCFullYear(),first.getUTCMonth(),Math.min(parts[2],lastDay)));
+ return end.toISOString().slice(0,10);
+}
+function hiKeywordNeedsReview(rows){
+ const today=new Date(Date.now()+9*60*60*1000).toISOString().slice(0,10);
+ return rows.some(row=>{
+  const last=row.lastCheckedAt||row.savedAt||row.registeredAt;
+  const due=hiKeywordDatePlusSix(last);
+  return Boolean(due&&today>=due);
+ });
+}
 function hiSpecialtySettings(){
- const latest=(state.hChangeRequests||[]).find(x=>x.kind==='keywords');
- const selected=Array.isArray(latest?.payload?.keywords)?latest.payload.keywords:[];
+ const rows=Array.isArray(state.hSpecialtyKeywords)?state.hSpecialtyKeywords:[];
+ const selected=rows.map(x=>x.keyword).slice(0,3);
  const options=['',...HI_SPECIALTY_KEYWORDS];
  const fields=[0,1,2].map(i=>'<div class="field"><label for="hi-keyword-'+i+'">특화 키워드 '+(i+1)+'</label><select id="hi-keyword-'+i+'" name="keyword'+(i+1)+'">'+options.map(x=>'<option value="'+e(x)+'"'+(selected[i]===x?' selected':'')+'>'+(x?e(x):'선택 안 함')+'</option>').join('')+'</select></div>').join('');
- const last=latest?'<p class="desc" style="margin-top:12px">최근 제출 · '+selected.map(e).join(' · ')+' · '+(latest.status==='pending'?'확인 대기':latest.status==='rejected'?'반려':'검토 완료 (공개 별도)')+'</p>':'';
- return '<section class="hi-specialty-keywords"><div class="divider"></div><h3>우리 병원 대표 특화 <span style="font-size:13px;font-weight:500;color:var(--sub)">최대 3개</span></h3><p class="desc">병원이 강조하고 싶은 진료 분야를 선택해 주세요. 진료 가능 과목과 별도로 관리하며, 네이버 병원 직접 안내를 확인하기 전에는 보호자 앱의 검증된 특화 진료로 게시하지 않습니다.</p><form id="hospital-keywords">'+fields+'<div class="field"><label for="hi-keywords-source">네이버 병원 안내 링크 (선택)</label><input id="hi-keywords-source" name="sourceUrl" type="url" placeholder="https://map.naver.com/..." value="'+e(latest?.payload?.sourceUrl||'')+'"></div><button class="btn small" type="submit">대표 특화 저장 요청</button></form>'+last+'</section>';
+ const statuses=rows.length?'<div class="hi-keyword-statuses" aria-live="polite">'+rows.map(r=>'<p>'+e(r.keyword)+' · '+e(r.status==='확인됨'?'확인됨':'병원 안내')+' · '+hiKeywordDateText(r.status==='확인됨'?r.lastCheckedAt:r.savedAt)+' '+(r.status==='확인됨'?'확인':'저장')+'</p>').join('')+'</div>':'';
+ const overdue=hiKeywordNeedsReview(rows)?'<div class="hi-keyword-recheck"><p>등록한 대표 특화가 지금도 맞는지 확인해 주세요.</p><div class="hi-keyword-recheck-actions"><button type="button" class="btn secondary" data-action="hi-keywords-keep">그대로 유지</button><button type="button" class="btn secondary" data-action="hi-keywords-edit">수정하기</button></div></div>':'';
+ const evidence=rows.find(r=>r.evidenceUrl)?.evidenceUrl||'';
+ return overdue+'<section class="hi-specialty-keywords" id="hi-specialty-keywords"><div class="divider"></div><h3>우리 병원 대표 특화 <span style="font-size:13px;font-weight:500;color:var(--sub)">최대 3개</span></h3><p class="desc">강조하고 싶은 진료 분야를 최대 3개까지 선택해 주세요. 저장하면 보호자 앱에 \'병원 안내\'로 표시되고, 네이버 등 공개된 병원 안내와 일치하는지 확인되면 \'확인됨\'으로 바뀝니다.</p><form id="hospital-keywords">'+fields+'<div class="field"><label for="hi-keywords-source">네이버 병원 안내 링크 (선택 · 입력하면 확인이 빨라집니다)</label><input id="hi-keywords-source" name="sourceUrl" type="url" placeholder="https://map.naver.com/..." value="'+e(evidence)+'"></div><button class="btn" type="submit">대표 특화 저장</button></form>'+statuses+'</section>';
 }
 function hiChangeRequestPanel(h){
  const rows=(state.hChangeRequests||[]).slice(0,12);
@@ -935,7 +967,7 @@ if(a==='delete-record'){if(confirm('이 기록을 삭제하시겠습니까?')){s
 if(a==='ask'){openModal('ask');return}if(a==='point-calc'){openModal('point');return}if(a==='review'){openModal('review',id);return}
 if(a==='owner-cancel'){if(confirm('예약 요청을 취소하시겠습니까?'))await mutate('PATCH','/api/bookings/'+id,{status:'cancelled',side:'owner'},'예약 요청을 취소했습니다.');return}
 if(a==='owner-confirm'){if(confirm('병원이 제안한 시간으로 확정하시겠습니까?'))await mutate('PATCH','/api/bookings/'+id,{status:'confirmed',side:'owner'},'제안된 시간으로 확정했습니다.');return}
-if(a==='hospital-logout'){state.hDemoMode=false;state.hNewCount=0;state.hAlertReady=false;state.hSeenIds=[];state.hospitalToken='';sessionStorage.removeItem('zeno-h-token');sessionStorage.removeItem('zeno-h-hospital');state.hospitalBookings=[];state.hospitalQuestions=[];render();return}
+if(a==='hospital-logout'){state.hDemoMode=false;state.hNewCount=0;state.hAlertReady=false;state.hSeenIds=[];state.hospitalToken='';sessionStorage.removeItem('zeno-h-token');sessionStorage.removeItem('zeno-h-hospital');state.hospitalBookings=[];state.hospitalQuestions=[];state.hSpecialtyKeywords=[];render();return}
 if(a==='admin-logout'){state.adminToken='';sessionStorage.removeItem('zeno-admin-token');render();return}
 if(a==='h-tab'){state.hTab=val;state.hDetailBookingId=null;if(val==='bookings')state.hNewCount=0;render();return}
 /* CHANGED: no sample mode button. */
@@ -976,6 +1008,20 @@ if(a==='hospital-update'&&el.dataset.status==='confirmed'){const row=(state.hDem
 if(a==='hospital-update'){let label=STATUS[el.dataset.status]||'변경';if(el.dataset.status==='cancelled'||confirm('예약을 '+label+' 처리하시겠습니까?'))await mutate('PATCH','/api/bookings/'+id,{status:el.dataset.status,side:'hospital'},'예약 상태를 변경했습니다.');return}
 if(a==='propose'){state.hDetailBookingId=null;openModal('propose',id);return}
 if(a==='answer'){let answer=document.getElementById('answer-'+id)?.value.trim();if(!answer||answer.length<3){toast('답변을 3자 이상 입력해 주세요.');return}await mutate('PATCH','/api/questions/'+id,{answer},'답변을 저장했습니다.');return}
+if(a==='hi-keywords-keep'){
+ try{
+  const response=await api('PATCH','/api/hospital-specialties/keep',{});
+  state.hSpecialtyKeywords=response.specialtyKeywords||[];
+  render();toast('대표 특화 확인일을 갱신했습니다.');
+ }catch(err){toast(err.message)}
+ return;
+}
+if(a==='hi-keywords-edit'){
+ const field=document.getElementById('hi-keyword-0');
+ field?.scrollIntoView({behavior:'smooth',block:'center'});
+ field?.focus({preventScroll:true});
+ return;
+}
 if(a==='service-remove'){let services=(hs(state.activeHospital).services||[]).filter(x=>x!==val);await mutate('PATCH','/api/settings',{services},'진료 분야를 삭제했습니다.');return}
 });
 document.addEventListener('keydown',ev=>{if(ev.key==='Escape'&&(state.modal||state.hDetailBookingId)){state.modal=null;state.hDetailBookingId=null;render()}if(ev.key==='Enter'&&document.activeElement?.id==='hospital-search'){state.query=document.activeElement.value.trim();render()}});
@@ -1013,7 +1059,7 @@ if(id==='hospital-keywords'){
  if(new Set(keywords).size!==keywords.length){toast('서로 다른 키워드를 선택해 주세요.');return}
  const sourceUrl=val(d.sourceUrl);
  if(sourceUrl&&!/^https:\/\/(?:[a-z0-9-]+\.)*(?:naver\.com|naver\.me)(?:\/|$)/i.test(sourceUrl)){toast('네이버 병원 안내 주소만 입력할 수 있습니다.');return}
- await mutate('POST','/api/hospital-change-requests',{kind:'keywords',keywords,sourceUrl},'대표 특화 키워드를 검토 대기로 저장했습니다.');return;
+ await mutate('PUT','/api/hospital-specialties',{keywords,sourceUrl},'대표 특화를 저장했습니다.');return;
 }
 if(id==='hospital-service'){const services=[...new Set([...(hs(state.activeHospital).services||[]),val(d.service)])];await mutate('PATCH','/api/settings',{services},'진료 분야를 저장했습니다.');return}
 if(id==='hospital-fee-request'){
@@ -1077,7 +1123,7 @@ render();start();
 
 /* Shared version check for Galaxy Chrome and iPad Safari / installed PWA.
    Never reload while a booking sheet, modal or editable form is active. */
-const ZENO_HOSPITAL_UI_REVISION='20261114-seohyeon-naver-v16';
+const ZENO_HOSPITAL_UI_REVISION='20261114-hospital-keyword-status-v17';
 let zenoHospitalVersionBusy=false,zenoHospitalVersionLast=0;
 async function zenoCheckHospitalUIRevision(force=false){
  if(zenoHospitalVersionBusy||document.hidden||state.modal||state.hDetailBookingId||document.activeElement?.closest('form'))return;

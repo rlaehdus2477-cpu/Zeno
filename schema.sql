@@ -97,3 +97,20 @@ CREATE TABLE IF NOT EXISTS hospital_change_requests (
  reviewed_at TEXT
 );
 CREATE INDEX IF NOT EXISTS hospital_change_requests_by_hospital ON hospital_change_requests(hospital_id,created_at DESC);
+
+-- Separately stored, hospital-declared representative specialties.
+-- Status changes to '확인됨' are never performed by the hospital app.
+CREATE TABLE IF NOT EXISTS hospital_specialty_keywords (
+ hospital_id TEXT NOT NULL,
+ keyword TEXT NOT NULL,
+ position INTEGER NOT NULL,
+ status TEXT NOT NULL DEFAULT '병원 안내' CHECK(status IN ('병원 안내','확인됨')),
+ evidence_url TEXT NOT NULL DEFAULT '',
+ registered_at TEXT NOT NULL,
+ saved_at TEXT NOT NULL,
+ last_checked_at TEXT NOT NULL,
+ is_active INTEGER NOT NULL DEFAULT 1 CHECK(is_active IN (0,1)),
+ PRIMARY KEY(hospital_id,keyword)
+);
+CREATE INDEX IF NOT EXISTS hospital_specialty_keywords_active
+ ON hospital_specialty_keywords(hospital_id,is_active,position);
