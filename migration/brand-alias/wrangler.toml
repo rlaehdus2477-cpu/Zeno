@@ -1,0 +1,8 @@
+# Deploy this Worker only in a separate new Cloudflare Free account.
+# Cloudflare assigns zeno.<new-account-subdomain>.workers.dev automatically.
+# Keep the existing account, Worker, D1 and GitHub production deploy unchanged.
+name = "zeno"
+main = "worker.js"
+compatibility_date = "2026-11-14"
+compatibility_flags = ["global_fetch_strictly_public"]
+workers_dev = true
