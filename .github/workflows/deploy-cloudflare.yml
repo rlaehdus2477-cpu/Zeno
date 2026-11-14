@@ -148,7 +148,10 @@ jobs:
                 const may=waiting.find(h=>h.id==='pub029');
                 const narae=waiting.find(h=>h.id==='pub028');
                 if(!may?.catWaiting?.naverVerified||!narae?.catWaiting?.visited)throw Error(view+' cat waiting evidence level missing');
-                if(waiting.filter(h=>h.catWaiting.verificationStatus==='needs-naver-check').length!==11)throw Error(view+' waiting-room NAVER review candidates missing');
+                const unverified=waiting.filter(h=>h.catWaiting.verificationStatus==='needs-naver-check');
+                const tnd=waiting.find(h=>h.id==='tnd');
+                if(!tnd?.catWaiting?.naverVerified||!tnd?.catWaiting?.separate)throw Error(view+' T&D NAVER cat waiting-room confirmation is missing');
+                if(unverified.length!==10)throw Error(view+' waiting-room NAVER review candidates count '+unverified.length+' (expected 10 after T&D confirmation)');
                 if(html.includes('보호자 제보'))throw Error(view+' old guardian-report wording has returned');
               }
               const sw=await (await get('/sw.js?ui='+nonce)).text();
