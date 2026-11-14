@@ -103,6 +103,14 @@ jobs:
               const nonce=encodeURIComponent(expectedOwnerRevision)+'-'+attempt;
               const owner=await (await get('/owner?ui='+nonce)).text();
               for(const expected of ['ZENO','진료 분야로 찾기','특수동물','예약 요청','24시 청주이음동물의료센터','종양 수술','영상의학','수술 후 재활']){if(!owner.includes(expected))throw Error('Production owner UI missing: '+expected);}
+              // Check the exact hospital record delivered to installed Galaxy PWAs, not just the UI revision.
+              const dugeunStart=owner.indexOf('{"id":"pub008"');
+              const dugeunEnd=owner.indexOf('},{"id":"pub009"',dugeunStart);
+              if(dugeunStart<0||dugeunEnd<=dugeunStart)throw Error('Production owner UI missing Dugeun hospital record');
+              const dugeun=owner.slice(dugeunStart,dugeunEnd);
+              if(!dugeun.includes('"name":"두근동물병원"')||!dugeun.includes('"declaredSpecialties":["심장·호흡기"]'))throw Error('Dugeun cardiac specialty is not published in production owner UI');
+              const sw=await (await get('/sw.js?ui='+nonce)).text();
+              if(!sw.includes("url.pathname.startsWith('/api/')")||!sw.includes("fetch(request,{cache:'no-store'})"))throw Error('PWA refresh rules are missing for installed Galaxy apps');
               const hospital=await (await get('/hospital?ui='+nonce)).text();
               for(const expected of ['예약','24시 청주이음동물의료센터','영상의학','종양 수술']){if(!hospital.includes(expected))throw Error('Production hospital UI missing: '+expected);}
               const revision=await (await get('/api/ui-version?ui='+nonce)).json();
