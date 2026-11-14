@@ -2567,6 +2567,50 @@ function zenoGuestProfileSave(){
   toast(state.profileSaveError);
  }
 }
+/* Restore local profiles from older ZENO builds only by explicit user action.
+   A signed-in account remains private until the owner signs in again. */
+function zenoLegacyDeviceProfile(){
+ const read=key=>{try{const a=JSON.parse(localStorage.getItem(key)||'[]');return Array.isArray(a)?a:[]}catch{return []}};
+ return {pets:read('zeno-pets-v2'),records:read('zeno-records-v2'),favorites:read('zeno-favorites-v2')};
+}
+function zenoImportDeviceProfile(incoming){
+ const previous=zenoGuestProfileRead();
+ const combine=(left,right,key)=>{const used=new Set(left.map(x=>key(x)));return left.concat(right.filter(x=>{const k=key(x);if(!k||used.has(k))return false;used.add(k);return true}))};
+ const merge={
+  pets:combine(previous.pets,incoming.pets||[],x=>String(x?.id||'')),
+  records:combine(previous.records,incoming.records||[],x=>String(x?.id||'')),
+  favorites:[...new Set([...previous.favorites,...(incoming.favorites||[])])]
+ };
+ try{
+  localStorage.setItem(ZENO_GUEST_PROFILE_KEY,JSON.stringify(merge));
+  return {success:true,photos:true,count:merge.pets.length};
+ }catch(error){
+  // If the mobile device has a tight storage quota, preserve text records,
+  // and leave cloud originals intact. Never clear the existing guest snapshot.
+  const withoutPhotos={...merge,pets:merge.pets.map(p=>{const copy={...p};if(/^data:image\//.test(String(copy.photoUrl||'')))delete copy.photoUrl;return copy})};
+  try{
+   localStorage.setItem(ZENO_GUEST_PROFILE_KEY,JSON.stringify(withoutPhotos));
+   return {success:true,photos:false,count:withoutPhotos.pets.length};
+  }catch{
+   return {success:false,photos:false,count:previous.pets.length};
+  }
+ }
+}
+function zenoCopyAccountPetsToDevice(){
+ if(!state.ownerToken||!state.profileLoaded)return {success:false,reason:'계정 기록을 아직 불러오지 못했어요.'};
+ if(!state.pets.length)return {success:false,reason:'이 계정에 등록한 아이가 없어요.'};
+ const source={
+  pets:state.pets.map(p=>{
+   const copy={...p};
+   const photo=zenoPetPhotoSource(state.petPhotos[p.id]||p.photoUrl);
+   if(photo)copy.photoUrl=photo;
+   return copy;
+  }),
+  records:state.records,
+  favorites:state.favorites
+ };
+ return zenoImportDeviceProfile(source);
+}
 if(APP_MODE==='owner'&&!state.ownerToken)zenoApplyGuestProfile();
 let profileSaveTimer;
 let zenoProfileRevision=0;
@@ -3536,9 +3580,16 @@ function petsPage(){
    '</div><button type="button" class="zeno-record-delete-button" data-action="delete-record" data-id="'+e(r.id)+'">삭제</button>'+
    '</article>';
  }).join('');
+ const guestRestore=!state.ownerToken&&state.pets.length===0?
+  '<section class="section zeno-pet-recovery"><div class="panel" style="padding:16px;border:1px solid #dce7f2;box-shadow:none"><strong>이전에 등록한 아이가 안 보이세요?</strong><p class="desc" style="margin:8px 0 12px">계정에 저장했던 아이는 한 번 불러온 뒤 이 기기에 복사하면 로그인 없이 볼 수 있어요.</p><button type="button" class="btn secondary" data-action="recover-account-pets">기존 계정에서 아이 불러오기</button>'+
+  (zenoLegacyDeviceProfile().pets.length?'<button type="button" class="btn secondary" data-action="recover-legacy-pets" style="margin-top:8px">이 기기에 남아 있는 이전 기록 찾기</button>':'')+
+  '</div></section>':'';
+ const copyLocal=state.ownerToken&&state.pets.length?
+  '<section class="section zeno-pet-recovery"><div class="panel" style="padding:14px;border:1px solid #dce7f2;box-shadow:none"><strong>로그인 없이도 이 아이들을 보고 싶으세요?</strong><p class="desc" style="margin:8px 0 12px">아래 버튼을 누르면 아이·건강 기록·사진을 이 기기에 복사합니다. 이 기기를 다른 사람이 사용하면 기록을 볼 수 있어요.</p><button type="button" class="btn secondary" data-action="copy-account-pets-local">이 기기에 기록 복사하기</button></div></section>':'';
  return '<div class="zeno-pets-page">'+topbar('내 아이','')
   +'<p class="zeno-pet-save-note">'+(state.ownerToken?'등록한 아이와 건강 기록은 로그인한 제노 계정에 저장됩니다. 병원 진료 기록과 자동 연동되지는 않아요.':'로그인 없이 사용할 수 있어요. 등록한 아이·사진·건강 기록은 이 기기에만 저장되며, 기기 변경이나 앱 데이터 삭제 시 사라질 수 있습니다.')+'</p>'
   +(state.profileSaveError?'<div class="banner warning">'+e(state.profileSaveError)+' <button class="btn small" data-action="retry-profile">다시 저장</button></div>':state.profileSaving?'<p class="zeno-save-status" role="status">저장 중…</p>':'')
+  +guestRestore+copyLocal
   +'<section class="section zeno-pet-section"><div class="section-title"><h2>등록한 아이 '+state.pets.length+'마리</h2><button type="button" class="btn small zeno-pet-register" data-action="add-pet">아이 등록</button></div>'+
   '<div class="grid two zeno-pet-card-grid">'+(cards||'<div class="empty">등록한 아이가 없어요. 아이를 먼저 등록해 주세요.</div>')+'</div></section>'
   +'<section class="section zeno-record-section"><div class="section-title"><h2>건강 기록</h2></div>'+
@@ -4083,6 +4134,29 @@ if(a==='exotic'){if(val&&!EXOTIC.some(x=>x[0]===val))return;state.specialty='특
 if(a==='favorite'){if(!state.favorites.includes(id)&&state.favorites.length>=30){toast('병원은 최대 30곳까지 저장할 수 있어요.');return}state.favorites=state.favorites.includes(id)?state.favorites.filter(x=>x!==id):[...state.favorites,id];savePersonal();render();return}
 if(a==='retry-profile'){savePersonal();render();return}
 if(a==='pet-tab'){state.petTab=val;render();return}
+if(a==='recover-account-pets'){
+ if(state.ownerToken){toast('이미 로그인되어 있어요. 이 기기에 기록을 복사해 주세요.');return}
+ state.pendingGuestRestore=true;
+ state.pendingPage='pets';
+ navTo('login');return;
+}
+if(a==='recover-legacy-pets'){
+ if(state.ownerToken)return;
+ const old=zenoLegacyDeviceProfile();
+ if(!old.pets.length){toast('이 기기에서 이전 기록을 찾지 못했어요. 계정 기록이라면 로그인해 불러오세요.');return}
+ const result=zenoImportDeviceProfile(old);
+ if(!result.success){toast('기기의 저장 공간이 부족해 기록을 가져오지 못했어요.');return}
+ zenoApplyGuestProfile();
+ render();
+ toast(result.photos?'이 기기에 남은 아이 기록을 복원했어요.':'아이 기록은 복원했지만 사진은 저장 공간 때문에 제외했어요.');
+ return;
+}
+if(a==='copy-account-pets-local'){
+ const result=zenoCopyAccountPetsToDevice();
+ if(!result.success){toast(result.reason||'기기에 기록을 복사하지 못했어요. 저장 공간을 확인해 주세요.');return}
+ toast(result.photos?'이 기기에 기록을 복사했어요. 로그아웃 후에도 내 아이에서 볼 수 있어요.':'아이 기록은 복사했지만 저장 공간 때문에 사진은 제외했어요.');
+ return;
+}
 if(a==='pet-settings'){openModal('pet-settings',id);return}
 /* Signed-in photos use D1. Guest photos stay in device-local pet profiles. */
 if(a==='save-pet-photo'){
@@ -4238,6 +4312,12 @@ if(id==='owner-auth'){
   state.page=next?.type==='book'?'search':(state.pendingPage||(!zenoCanViewPage(state.page)&&state.page!=='login'?state.page:'home'));
   state.pendingPage='';
   await refresh();
+  if(state.pendingGuestRestore){
+   state.pendingGuestRestore=false;
+   const result=zenoCopyAccountPetsToDevice();
+   if(result.success)toast(result.photos?'기존 아이 기록을 이 기기에 복사했어요. 로그아웃 후에도 볼 수 있어요.':'기존 아이 기록을 복사했지만 사진은 저장 공간 때문에 제외했어요.');
+   else toast(result.reason||'기존 아이 기록을 기기에 복사하지 못했어요.');
+  }
   if(mode!=='register'||!out.recoveryCode){if(next?.type==='book')openModal('book',next.id);else render()}
   if(mode==='register'&&out.recoveryCode){state.afterRecoveryAction=next;state.recoveryCode=out.recoveryCode;openModal('recovery-code')}
   toast(mode==='register'?'회원가입했어요. 복구 코드를 안전하게 보관해 주세요.':'로그인했어요.');
@@ -4363,7 +4443,7 @@ async function start(){
  }finally{zenoStartPending=false}
 }
 render();start();
-const ZENO_OWNER_UI_REVISION='20261114-pets-guest-v38';
+const ZENO_OWNER_UI_REVISION='20261114-pets-restore-v39';
 let zenoLastUIVersionCheck=0;
 let zenoUIVersionChecking=false;
 async function zenoCheckOwnerUIRevision(force=false){
