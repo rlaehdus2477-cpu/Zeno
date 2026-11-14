@@ -2654,6 +2654,44 @@ input::placeholder,textarea::placeholder{font-family:inherit;letter-spacing:-.00
 }
 html.dark .zeno-search-page .zeno-filter-extras,html[data-theme="dark"] .zeno-search-page .zeno-filter-extras{background:#1b2633;border-color:#435063}
 </style>
+
+<style id="zeno-saved-hospitals-20261115">
+/* Small independent cards for My Pets. Do not change search and booking layouts. */
+.zeno-pets-page .zeno-saved-hospitals .section-title{margin-bottom:12px}
+.zeno-pets-page .zeno-saved-hospitals .section-title h2{font-size:18px!important;font-weight:700!important}
+.zeno-saved-total{font-size:13px!important;font-weight:500!important;color:#748294;margin-left:4px}
+.zeno-saved-list{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;min-width:0}
+.zeno-saved-card{box-sizing:border-box;min-width:0;width:100%;background:#fff;border:1px solid #e2e8ee;border-radius:12px;padding:15px;box-shadow:none;overflow:hidden}
+.zeno-saved-head{display:grid;grid-template-columns:64px minmax(0,1fr);gap:12px;align-items:start;min-width:0}
+.zeno-saved-photo{display:block;width:64px;height:64px;min-width:0;object-fit:cover;object-position:center;border-radius:9px;background:#f1f4f7}
+.zeno-saved-photo.zeno-saved-logo{object-fit:contain}
+.zeno-saved-photo-placeholder{display:grid;place-items:center;color:#97a8b8}
+.zeno-saved-photo-placeholder svg{width:25px;height:25px}
+.zeno-saved-info{display:flex;flex-direction:column;align-items:stretch;gap:5px;min-width:0}
+.zeno-saved-name{display:block;width:100%;min-height:25px;margin:0;padding:0;border:0;background:transparent;color:#263747;text-align:left;font-size:17px!important;line-height:1.35!important;font-weight:700!important;letter-spacing:-.025em;word-break:keep-all;overflow-wrap:anywhere;cursor:pointer}
+.zeno-saved-region{font-size:12px!important;color:#788694;line-height:1.4!important;word-break:keep-all}
+.zeno-saved-field{display:flex;flex-wrap:wrap;align-items:baseline;gap:3px 7px;min-width:0;font-size:13px!important;line-height:1.5!important;color:#34465a}
+.zeno-saved-label{flex:0 0 auto;color:#758394;font-size:12px!important;line-height:1.5!important;white-space:nowrap}
+.zeno-saved-value{min-width:0;font-size:13px!important;line-height:1.5!important;word-break:keep-all;overflow-wrap:break-word}
+.zeno-saved-count{white-space:nowrap;font-weight:600}
+.zeno-saved-examples{font-size:12px!important;line-height:1.45!important;color:#697a8b;overflow-wrap:break-word}
+.zeno-saved-note{display:block;margin-top:3px;font-size:11.5px!important;line-height:1.4!important;color:#687e90;word-break:keep-all;overflow-wrap:break-word}
+.zeno-saved-cfc{display:inline-block;align-self:flex-start;font-size:11px!important;line-height:1.35!important;padding:3px 6px;background:#f5f7f9;border:1px solid #e4e9ee;border-radius:5px;color:#607284;word-break:keep-all}
+.zeno-saved-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:13px;width:100%;min-width:0}
+.zeno-saved-actions.has-book{grid-template-columns:repeat(3,minmax(0,1fr))}
+.zeno-saved-action{box-sizing:border-box;display:flex;align-items:center;justify-content:center;width:100%;min-width:0;min-height:44px;padding:9px 5px;border:1px solid #dbe3eb;border-radius:9px;background:#fff;color:#324a63;text-decoration:none;text-align:center;font-size:13px!important;line-height:1.35!important;font-weight:600!important;box-shadow:none;word-break:keep-all}
+.zeno-saved-action.primary{color:#fff;background:#183b60;border-color:#183b60}
+.zeno-saved-action:focus-visible,.zeno-saved-name:focus-visible{outline:2px solid #2376e5;outline-offset:2px}
+@media(max-width:380px){
+ .zeno-saved-card{padding:12px}
+ .zeno-saved-head{grid-template-columns:56px minmax(0,1fr);gap:9px}
+ .zeno-saved-photo{width:56px;height:56px}
+ .zeno-saved-name{font-size:16px!important}
+}
+@media(min-width:751px){
+ .zeno-saved-list{grid-template-columns:repeat(auto-fit,minmax(min(100%,330px),1fr))}
+}
+</style>
 </head><body><div id="app" class="app"></div><script>
 'use strict';
 const APP_MODE='owner';
@@ -3503,6 +3541,34 @@ function hospitalCard(h){
 }
 
 
+
+/* Saved hospitals use separate compact cards, not the generic search renderer. */
+function zenoSavedHospitalCard(h){
+ const photo=(Array.isArray(h.photos)?h.photos:[]).find(p=>p&&p.approved===true&&p.url);
+ const photoHtml=photo?'<img class="zeno-saved-photo'+(photo.isLogo||photo.fit==='contain'?' zeno-saved-logo':'')+'" loading="lazy" referrerpolicy="no-referrer" src="'+e(photo.url)+'" alt="'+e(h.name)+' 사진" onerror="this.style.visibility=\'hidden\'">':'<span class="zeno-saved-photo zeno-saved-photo-placeholder" aria-hidden="true">'+zenoNavIcon('search')+'</span>';
+ // Use one primary source of fields to avoid double-counting aliases as different subjects.
+ const sourceFields=Array.isArray(h.publishedCareFields)&&h.publishedCareFields.length?h.publishedCareFields:Array.isArray(h.careFields)&&h.careFields.length?h.careFields:h.cats||[];
+ const fields=[...new Set(sourceFields.filter(v=>typeof v==='string'&&v.trim()&&!['일반','일반 진료'].includes(v)))];
+ const focuses=zenoHospitalFocusEntries(h).map(row=>row.keyword);
+ const status=zenoSearchClinicStatus(h);
+ const note=h.is24&&status.kind!=='direct'?'24시간 운영 표기 · 응급 접수 전화 확인':status.text;
+ const cfc=zenoCfc(h);
+ const cfcNote=cfc?(cfc.status==='listed'?'CFC 명단 조사 기록 · 유효 여부 확인 필요':cfc.status==='criteria'?'CFC Gold 기준 · 병원 안내':'CFC '+(cfc.grade||'')+' 표기 · 갱신 미확인'):'';
+ const phone=String(h.phone||'').trim(),validPhone=/^0[0-9 -]{8,15}$/.test(phone);
+ const book=h.linked?'<button type="button" class="zeno-saved-action primary" data-action="book" data-id="'+e(h.id)+'">예약하기</button>':'';
+ const call=validPhone?'<a class="zeno-saved-action" data-action="call-summary" data-id="'+e(h.id)+'" href="tel:'+e(phone.replace(/[^0-9]/g,''))+'">전화</a>':'';
+ const map='<a class="zeno-saved-action" href="'+e(zenoNaverPhotoUrl(h))+'" target="_blank" rel="noopener noreferrer" aria-label="'+e(h.name)+' 지도에서 보기">위치</a>';
+ return '<article class="zeno-saved-card"><div class="zeno-saved-head">'+photoHtml
+  +'<div class="zeno-saved-info"><button class="zeno-saved-name" type="button" data-action="details" data-id="'+e(h.id)+'">'+e(h.name)+'</button>'
+  +'<span class="zeno-saved-region">'+e(h.region||'')+'</span>'
+  +'<div class="zeno-saved-field"><span class="zeno-saved-label">진료과목</span><span class="zeno-saved-value">'+(fields.length?'<span class="zeno-saved-count">'+fields.length+'개</span>':'정보 확인 필요')+'</span></div>'
+  +(fields.length?'<span class="zeno-saved-examples">'+e(fields.slice(0,3).join(' · '))+(fields.length>3?' 등':'')+'</span>':'')
+  +(focuses.length?'<div class="zeno-saved-field"><span class="zeno-saved-label">대표 특화</span><span class="zeno-saved-value">'+e(focuses.join(' · '))+'</span></div>':'')
+  +(cfcNote?'<span class="zeno-saved-cfc">'+e(cfcNote)+'</span>':'')
+  +'<span class="zeno-saved-note">'+e(note)+'</span></div></div>'
+  +'<div class="zeno-saved-actions'+(book?' has-book':'')+'">'+book+call+map+'</div></article>';
+}
+
 /* Search-only card: verified facts, separate hospital input from inferred hours. */
 function zenoSearchClinicStatus(h){
  const updated=h.linked?hs(h.id):null;
@@ -4004,8 +4070,8 @@ function petsPage(){
   '<div class="zeno-pet-tabs"><button data-action="pet-tab" data-value="전체" class="'+(selected==='전체'?'active':'')+'">전체</button>'+
   state.pets.map(p=>'<button data-action="pet-tab" data-value="'+e(p.id)+'" class="'+(selected===p.id?'active':'')+'">'+e(p.name)+'</button>').join('')+
   '</div><div class="zeno-record-list">'+(recordCards||'<div class="empty">이 아이의 건강 기록이 아직 없어요.</div>')+'</div></section>'
-  +'<section class="section"><div class="section-title"><h2>저장한 병원</h2></div>'+
-  (state.favorites.length?hospitalResults(HOSPITALS.filter(h=>state.favorites.includes(h.id))):'<div class="empty"><strong>아직 저장한 병원이 없어요.</strong><p>병원 상세에서 ♡를 눌러 저장해 보세요.</p><button class="btn secondary small" data-nav="search">병원 찾기</button></div>')+
+  +'<section class="section zeno-saved-hospitals"><div class="section-title"><h2>저장한 병원 <span class="zeno-saved-total">'+state.favorites.length+'곳</span></h2></div>'+
+  (state.favorites.length?'<div class="zeno-saved-list">'+HOSPITALS.filter(h=>state.favorites.includes(h.id)).map(zenoSavedHospitalCard).join('')+'</div>':'<div class="empty"><strong>아직 저장한 병원이 없어요.</strong><p>병원 상세에서 ♡를 눌러 저장해 보세요.</p><button class="btn secondary small" data-nav="search">병원 찾기</button></div>')+
   '</section></div>';
 }
 function bookingCard(b,hospital=false){
@@ -4904,7 +4970,7 @@ async function start(){
  }finally{zenoStartPending=false}
 }
 render();start();
-const ZENO_OWNER_UI_REVISION='20261115-clinical-fields-before-focus-v46';
+const ZENO_OWNER_UI_REVISION='20261115-saved-hospital-mobile-cards-v47';
 let zenoLastUIVersionCheck=0;
 let zenoUIVersionChecking=false;
 async function zenoCheckOwnerUIRevision(force=false){
