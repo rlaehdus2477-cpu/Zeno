@@ -4688,6 +4688,19 @@ if(a==='service-remove'){let services=(hs(state.activeHospital).services||[]).fi
 });
 document.addEventListener('keydown',ev=>{if(ev.key==='Escape'&&state.homeCarePickerOpen){state.homeCarePickerOpen=false;state.homeCarePickerQuery='';render();return}if(ev.key==='Escape'&&state.modal)zenoCloseModal();if(ev.key==='Enter'&&document.activeElement?.id==='hospital-search'){applyHospitalQuery(document.activeElement.value);render()}});
 /* Filter the picker in place to preserve Korean IME composition and input focus. */
+let zenoSearchTypingTimer=0;
+document.addEventListener('input',ev=>{
+ if(ev.target?.id!=='hospital-search'||state.page!=='search'||ev.isComposing)return;
+ const input=ev.target,query=input.value;
+ clearTimeout(zenoSearchTypingTimer);
+ zenoSearchTypingTimer=setTimeout(()=>{
+  if(state.page!=='search'||document.getElementById('hospital-search')!==input)return;
+  const caret=input.selectionStart??query.length,end=input.selectionEnd??query.length;
+  applyHospitalQuery(query);render();
+  const fresh=document.getElementById('hospital-search');
+  if(fresh){fresh.focus({preventScroll:true});if(fresh.value===query)try{fresh.setSelectionRange(Math.min(caret,fresh.value.length),Math.min(end,fresh.value.length))}catch{}}
+ },300);
+});
 document.addEventListener('input',ev=>{
  if(ev.target?.id!=='zeno-care-search'||!state.homeCarePickerOpen)return;
  state.homeCarePickerQuery=ev.target.value;
