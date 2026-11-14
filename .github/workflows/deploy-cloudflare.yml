@@ -111,8 +111,11 @@ jobs:
               if(!dugeun.includes('"name":"두근동물병원"')||!dugeun.includes('"declaredSpecialties":["심장·호흡기"]'))throw Error('Dugeun cardiac specialty is not published in production owner UI');
               const sw=await (await get('/sw.js?ui='+nonce)).text();
               if(!sw.includes("url.pathname.startsWith('/api/')")||!sw.includes("fetch(request,{cache:'no-store'})"))throw Error('PWA refresh rules are missing for installed Galaxy apps');
+              // Never mark Galaxy production as updated while a guardian-report label remains.
+              if(owner.includes('제보'))throw Error('Guardian-report labels remain on live Galaxy owner app');
               const hospital=await (await get('/hospital?ui='+nonce)).text();
               for(const expected of ['예약','24시 청주이음동물의료센터','영상의학','종양 수술']){if(!hospital.includes(expected))throw Error('Production hospital UI missing: '+expected);}
+              if(hospital.includes('제보'))throw Error('Guardian-report labels remain on live hospital app');
               // Verify both views contain the same complete Koryo and Daom records.
               for(const [id,name,expected] of [
                 ['pub038','고려동물메디컬센터','"declaredSpecialties":["암센터"]'],
