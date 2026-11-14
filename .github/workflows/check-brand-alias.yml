@@ -1,0 +1,33 @@
+name: Check ZENO free brand-alias staging
+
+on:
+  pull_request:
+    paths:
+      - "migration/brand-alias/**"
+      - ".github/workflows/check-brand-alias.yml"
+  push:
+    branches: ["chore/brand-workers-dev-alias"]
+    paths:
+      - "migration/brand-alias/**"
+      - ".github/workflows/check-brand-alias.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  syntax:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Verify branded alias and read-only checks are valid JavaScript
+        run: |
+          node --check migration/brand-alias/worker.js
+          node --check migration/brand-alias/smoke.mjs
+      - name: Guard existing Cloudflare production config
+        run: |
+          grep -q 'name = "zeno"' wrangler.toml
+          grep -q 'zeno.rlaehdus2477.workers.dev' android/owner/src/kr/zeno/owner/OwnerActivity.java
+          grep -q 'zeno.rlaehdus2477.workers.dev' .github/workflows/deploy-cloudflare.yml
