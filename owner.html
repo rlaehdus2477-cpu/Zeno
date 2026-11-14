@@ -3065,6 +3065,18 @@ function zenoDetailDepartments(h, services){
  const chips=items=>'<div class="tags">'+items.map(x=>'<span class="tag">'+e(x)+'</span>').join('')+'</div>';
  const group=(items,label)=>items.length?'<div class="zeno-dept-secondary"><span class="zeno-dept-label">'+label+'</span>'+chips(items)+'</div>':'';
  const noData=!(verified.length||published.length||legacy.length||reported.length||hospitalProvided.length);
+ // 달동물병원: retain evidence levels but show all fields in one compact row.
+ // Legacy categories must never be promoted to verified medical services.
+ if(h.id==='pub006'){
+  const pending=[...new Set([...published,...legacy,...reported])];
+  const confirmedChips=verified.map(x=>'<span class="tag">'+e(x)+'</span>');
+  const pendingChips=pending.map(x=>'<span class="tag" title="진료 여부 확인 필요">'+e(x)+' <small style="font-size:10px;color:#738394">확인 필요</small></span>');
+  const providedChips=hospitalProvided.map(x=>'<span class="tag">'+e(x)+' <small style="font-size:10px;color:#738394">병원 입력</small></span>');
+  const row=[...confirmedChips,...pendingChips,...providedChips];
+  return (row.length?'<div class="tags">'+row.join('')+'</div>':'<p class="zeno-detail-dept-note">확인된 진료 분야가 없습니다. 병원에 전화로 문의해 주세요.</p>')
+    +(pending.length?'<p class="zeno-detail-dept-note">확인 필요 표시가 있는 진료는 방문 전 병원에 문의해 주세요.</p>':'')
+    +((h.specialtyEvidenceUrl||h.publishedCareUrl)?'<a class="zeno-dept-source-link" target="_blank" rel="noopener noreferrer" href="'+e(h.specialtyEvidenceUrl||h.publishedCareUrl)+'">진료 분야 근거 보기</a>':'');
+ }
  return (verified.length?chips(verified):'')
    +group(published,'공개 안내 · 실제 진료 여부 확인')
    +group(legacy,'기존 분류 · 진료 여부 추가 확인')
