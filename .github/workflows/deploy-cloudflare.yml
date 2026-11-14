@@ -108,7 +108,10 @@ jobs:
               const dugeunEnd=owner.indexOf('},{"id":"pub009"',dugeunStart);
               if(dugeunStart<0||dugeunEnd<=dugeunStart)throw Error('Production owner UI missing Dugeun hospital record');
               const dugeun=owner.slice(dugeunStart,dugeunEnd);
-              if(!dugeun.includes('"name":"두근동물병원"')||!dugeun.includes('"declaredSpecialties":["심장·호흡기"]'))throw Error('Dugeun cardiac specialty is not published in production owner UI');
+              for(const required of ['"careFields":["내과","피부과","안과","치과","예방의학과","영상의학과","외과","비뇨기과","정형외과","이비인후과","산과"]','"officialCompanionSpecies":["개","고양이"]']){
+                if(!dugeun.includes(required))throw Error('Production owner Dugeun NAVER profile incomplete: '+required);
+              }
+              if(!dugeun.includes('"name":"두근동물병원"')||!dugeun.includes('"declaredSpecialties":["심장"]'))throw Error('Dugeun cardiac specialty is not published in production owner UI');
               const sw=await (await get('/sw.js?ui='+nonce)).text();
               if(!sw.includes("url.pathname.startsWith('/api/')")||!sw.includes("fetch(request,{cache:'no-store'})"))throw Error('PWA refresh rules are missing for installed Galaxy apps');
               // Never mark Galaxy production as updated while a guardian-report label remains.
