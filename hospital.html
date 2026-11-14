@@ -850,7 +850,7 @@ function hiKeywordDatePlusSix(value){
 function hiKeywordNeedsReview(rows){
  const today=new Date(Date.now()+9*60*60*1000).toISOString().slice(0,10);
  return rows.some(row=>{
-  const last=[row.savedAt,row.lastCheckedAt,row.registeredAt].filter(Boolean).sort().at(-1);
+  const last=row.lastCheckedAt||row.savedAt||row.registeredAt;
   const due=hiKeywordDatePlusSix(last);
   return Boolean(due&&today>=due);
  });
