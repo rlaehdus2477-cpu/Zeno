@@ -2692,6 +2692,30 @@ html.dark .zeno-search-page .zeno-filter-extras,html[data-theme="dark"] .zeno-se
  .zeno-saved-list{grid-template-columns:repeat(auto-fit,minmax(min(100%,330px),1fr))}
 }
 </style>
+<style id="zeno-compact-cta-20261115">
+/* Search-only progressive disclosure: same primary action on every hospital card. */
+.zeno-search-page .zeno-hospital-card.zeno-search-card{padding:11px 12px!important;gap:8px!important}
+.zeno-search-page .zeno-search-card .directory-main{position:relative!important;grid-template-columns:54px minmax(0,1fr)!important;gap:10px!important;padding-right:17px!important;text-align:left!important}
+.zeno-search-page .zeno-search-card .directory-main::after{content:'›';position:absolute;top:0;right:0;color:#8796a6;font-size:23px;font-weight:400;line-height:1}
+.zeno-search-page .zeno-search-card .directory-photo,.zeno-search-page .zeno-search-card .directory-placeholder{width:54px!important;min-width:54px!important;height:56px!important}
+.zeno-search-page .zeno-search-card .directory-text{gap:4px!important;min-width:0!important}
+.zeno-search-page .zeno-search-card .directory-text>strong{font-size:16px!important;font-weight:650!important;line-height:1.35!important}
+.zeno-search-page .zeno-search-card .zeno-card-context{display:flex;align-items:baseline;flex-wrap:wrap;column-gap:8px;row-gap:1px;max-width:100%;line-height:1.4}
+.zeno-search-page .zeno-search-card .zeno-card-context .directory-region,.zeno-search-page .zeno-search-card .zeno-card-context .zeno-search-status{font-size:12px!important;line-height:1.4!important}
+.zeno-search-page .zeno-search-card .zeno-search-tags{margin-top:0!important;max-width:100%}
+.zeno-search-page .zeno-search-card .zeno-search-tag{font-size:11.5px!important;line-height:1.35!important;word-break:keep-all}
+.zeno-search-page .zeno-search-card .zeno-card-actions{display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:8px!important;margin:0!important;width:100%!important}
+.zeno-search-page .zeno-search-card .zeno-card-actions.has-book{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+.zeno-search-page .zeno-search-card .zeno-card-action{min-height:44px!important;font-size:13px!important;font-weight:600!important;border-radius:9px!important}
+.zeno-search-page .zeno-search-card .zeno-card-call{background:#2679c5!important;border-color:#2679c5!important;color:#fff!important}
+.zeno-search-page .zeno-search-card .zeno-card-call:disabled{background:#edf1f5!important;border-color:#e0e5eb!important;color:#768597!important;opacity:1!important}
+.zeno-search-page .zeno-search-card .zeno-card-book{background:#fff!important;border-color:#bed1e2!important;color:#27669a!important}
+@media(max-width:380px){
+ .zeno-search-page .zeno-search-card .directory-main{grid-template-columns:50px minmax(0,1fr)!important;gap:9px!important}
+ .zeno-search-page .zeno-search-card .directory-photo,.zeno-search-page .zeno-search-card .directory-placeholder{width:50px!important;min-width:50px!important;height:54px!important}
+ .zeno-search-page .zeno-search-card .zeno-card-actions.has-book{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+}
+</style>
 </head><body><div id="app" class="app"></div><script>
 'use strict';
 const APP_MODE='owner';
@@ -3658,43 +3682,37 @@ function zenoSearchHospitalCard(h){
  const photo=(Array.isArray(h.photos)?h.photos:[]).find(p=>p&&p.approved===true&&p.url);
  const photoHtml=photo?'<img class="directory-photo'+(photo.isLogo||photo.fit==='contain'?' directory-logo':'')+'" loading="lazy" referrerpolicy="no-referrer" src="'+e(photo.url)+'" alt="'+e(h.name)+' 사진" onerror="this.style.visibility=\'hidden\'">':'<span class="directory-photo directory-placeholder" aria-hidden="true">'+zenoNavIcon('search')+'</span>';
  const status=zenoSearchClinicStatus(h);
- const week=zenoWeeklyData(h),today=week[zenoTodayName()];
- const rawTimeLine=today?'오늘 '+String(today).replace('24시간 진료 안내','24시간 운영 안내'):(h.is24?'24시간 운영 안내':'운영시간 상세 확인');
-  const timeLine=((/휴진|휴무/.test(status.text)&&/휴진|휴무/.test(rawTimeLine))||(/24시간/.test(status.text)&&/24시간/.test(rawTimeLine)))?'':rawTimeLine;
  const clinical=state.page==='search'&&zenoClinicalFocusEnabled();
  const origin=state.specialty?zenoSpecialtyOrigin(h):'';
  const focus=clinical?zenoSpecialtyFocus(h):null;
- const fee=zenoPublishedFee(h.id);
  const waiting=zenoCatWaitingTier(h);
- const tags=[];
+ let context='';
  if(state.specialty){
-  if(focus)tags.push(state.specialty+' 특화 · '+(focus.status==='confirmed'?'확인 기록':'병원 안내'));
-  else if(origin==='inquiry')tags.push(state.specialty+' 진료 여부 전화 확인');
-  else if(origin==='official')tags.push(state.specialty+' 공식 진료 안내');
-  else tags.push(state.specialty+' 진료 항목 등록');
+  if(focus)context=state.specialty+' 대표 특화 · '+(focus.status==='confirmed'?'확인 기록':'병원 안내');
+  else if(origin==='inquiry')context=state.specialty+' 진료 여부 전화 확인';
+  else if(origin==='official')context=state.specialty+' 공식 진료 안내';
+  else context=state.specialty+' 진료 항목 등록';
+ }else if(zenoHasFilter('고양이 대기실')&&waiting){
+  context=waiting===3?'고양이 대기실 · 네이버 확인':waiting===2?'대기실 이전 기록 · 재확인':'대기실 유무 확인 필요';
+ }else if(zenoHasFilter('고양이 친화')&&zenoCfc(h)?.status==='listed'){
+  context='CFC 명단 조사 기록';
  }else{
   const specialty=(h.officialSpecialties||[])[0];
-  if(specialty)tags.push(specialty+' 진료 안내');
+  const field=(h.careFields||[]).find(x=>x&&x!=='일반');
+  if(specialty)context=specialty+' 진료 안내';
+  else if(field)context='진료과목 · '+field;
  }
- if(zenoHasFilter('고양이 대기실')&&waiting)tags.push(waiting===3?'고양이 대기실 · 네이버 확인':waiting===2?'대기실 이전 기록 · 재확인':'대기실 유무 확인 필요');
- if(zenoHasFilter('고양이 친화')&&zenoCfc(h)?.status==='listed')tags.push('CFC 명단 조사 기록');
- if(fee)tags.push('공개 진료비');
- const tagsHtml=tags.slice(0,3).map(label=>'<span class="zeno-search-tag">'+e(label)+'</span>').join('');
+ const contextHtml=context?'<span class="zeno-search-tags"><span class="zeno-search-tag">'+e(context)+'</span></span>':'';
  const phone=String(h.phone||'').trim(),validPhone=/^0[0-9 -]{8,15}$/.test(phone);
- const call=validPhone?'<a class="zeno-card-action" data-action="call-summary" data-id="'+e(h.id)+'" href="tel:'+e(phone.replace(/[^0-9]/g,''))+'">전화</a>':'';
+ // A direct tel: link avoids a second confirmation tap after choosing a specialty.
+ const call=validPhone?'<a class="zeno-card-action zeno-card-call" href="tel:'+e(phone.replace(/[^0-9]/g,''))+'" aria-label="'+e(h.name)+' 전화">전화</a>':'<button class="zeno-card-action zeno-card-call" type="button" disabled aria-label="전화번호 미확인" title="전화번호 미확인">전화</button>';
  const eligible=h.linked&&(state.specialty==='특수동물'?Boolean((h.officialExoticSpecies||[]).length):(!state.specialty||state.specialty==='일반 진료'||(h.officialSpecialties||[]).some(x=>zenoCareAliases(state.specialty).includes(x))||(hs(h.id).services||[]).some(x=>zenoCareAliases(state.specialty).includes(x))));
- const book=eligible?'<button class="zeno-card-action primary" type="button" data-action="book" data-id="'+e(h.id)+'">예약 요청</button>':'';
- const map='<a class="zeno-card-action" href="'+e(zenoNaverPhotoUrl(h))+'" target="_blank" rel="noopener noreferrer" aria-label="'+e(h.name)+' 위치">위치</a>';
- const details='<button type="button" class="zeno-card-action zeno-card-detail'+(book?'':' primary')+'" data-action="details" data-id="'+e(h.id)+'"'+(fee?' data-fee-direct="true"':'')+'>'+(fee?'진료비 보기':'상세 보기')+'</button>';
- return '<article class="directory-item zeno-hospital-card zeno-search-card"><button type="button" class="directory-main" data-action="details" data-id="'+e(h.id)+'" aria-label="'+e(h.name)+' 병원 상세">'
-  +photoHtml+'<span class="directory-text"><strong>'+e(h.name)+'</strong><span class="directory-region">'+e(h.region||'')+'</span>'+zenoDeclaredSpecialtyLine(h)
-  +'<span class="zeno-search-status '+status.kind+'">'+e(status.text)+'</span>'
-  +(timeLine?'<span class="zeno-search-hours">'+e(timeLine)+'</span>':'')
-  +(tagsHtml?'<span class="zeno-search-tags">'+tagsHtml+'</span>':'')
-  +'</span></button><div class="zeno-card-actions'+(book?' has-book':'')+'">'+book+call+map+details+'</div></article>';
+ const book=eligible?'<button class="zeno-card-action zeno-card-book" type="button" data-action="book" data-id="'+e(h.id)+'">예약 요청</button>':'';
+ // Details, published fees, hours and directions remain available by tapping the hospital row.
+ return '<article class="directory-item zeno-hospital-card zeno-search-card"><button type="button" class="directory-main" data-action="details" data-id="'+e(h.id)+'" aria-label="'+e(h.name)+' 상세 정보, 진료비, 운영시간 및 위치">'
+  +photoHtml+'<span class="directory-text"><strong>'+e(h.name)+'</strong><span class="zeno-card-context"><span class="directory-region">'+e(h.region||'')+'</span><span class="zeno-search-status '+status.kind+'">'+e(status.text)+'</span></span>'
+  +contextHtml+'</span></button><div class="zeno-card-actions'+(book?' has-book':'')+'">'+call+book+'</div></article>';
 }
-
-
 
 function zenoInternalHospitalResults(items){
  const department=e(state.specialty);
