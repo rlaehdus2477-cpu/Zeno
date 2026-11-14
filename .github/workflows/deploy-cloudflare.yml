@@ -44,6 +44,31 @@ jobs:
       - name: Install Wrangler
         run: npm install --no-audit --no-fund
 
+      - name: Synchronize current UI into embedded Cloudflare Worker
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          let worker=fs.readFileSync('worker.js','utf8');
+          const owner=fs.readFileSync('owner.html','utf8');
+          const version=owner.match(/const ZENO_OWNER_UI_REVISION\s*=\s*'([^']+)'/)?.[1];
+          if(!version)throw Error('Owner UI version must be defined before deployment');
+          for(const [filename,constant] of [['owner.html','OWNER_HTML'],['hospital.html','HOSPITAL_HTML']]){
+            const html=fs.readFileSync(filename,'utf8');
+            const prefix='const '+constant+' = ';
+            const offset=worker.indexOf(prefix);
+            if(offset<0)throw Error('Worker missing embedded view '+constant);
+            const start=offset+prefix.length;
+            const match=worker.slice(start).match(/^"(?:\\.|[^"\\])*"/);
+            if(!match)throw Error('Worker view '+constant+' is not a JSON string');
+            worker=worker.slice(0,start)+JSON.stringify(html)+worker.slice(start+match[0].length);
+            console.log('Embedded latest '+filename+' into Cloudflare Worker');
+          }
+          const revision=/const OWNER_UI_REVISION\s*=\s*'[^']+';/;
+          if(!revision.test(worker))throw Error('Worker UI revision constant missing');
+          worker=worker.replace(revision,"const OWNER_UI_REVISION = '"+version+"';");
+          fs.writeFileSync('worker.js',worker);
+          console.log('Worker UI revision synchronized: '+version);
+          NODE
       - name: Validate ZENO release JavaScript and embedded HTML
         run: |
           node --check worker.js
