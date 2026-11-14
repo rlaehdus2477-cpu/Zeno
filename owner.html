@@ -3209,7 +3209,8 @@ const ZENO_INTERNAL_FOCUS={
  pub047:{status:'hospital',fields:['신장·비뇨기','순환기·심장','내분비','소화기·피부·호흡기'],checkedAt:'2026-11-14',evidence:[{kind:'네이버 병원 진료과목',text:'사용자 제공 네이버 병원 안내 이미지에 ‘내과 전문 진료’로 명시돼 있으며 신장·비뇨기, 순환기·심장, 내분비, 소화기·피부·호흡기 항목이 안내되어 있습니다.'}],note:'병원이 직접 설명한 내과 중점 진료 기준이며, 수의사 전문의 자격이나 별도 전문병원 인증을 확인한 것은 아닙니다.'},
  central2026:{status:'hospital',fields:['심장','신장','내분비'],checkedAt:'2026-11-14',evidence:[{kind:'병원 네이버 소개',text:'대학병원 출신 대표원장 2인의 내과 전문 진료와 심장·신장·내분비·소화기 만성질환 관리에 관한 병원 자체 소개를 확인했습니다.'}],note:'병원 자체 안내 자료 기준이며 국가 인정 전문의 자격이나 별도 인증을 뜻하지 않습니다.'}
 };
-function zenoInternalFocus(h){if(h?.id==='pub006')return null; // No direct NAVER verification for Dal clinic focus.\n return ZENO_INTERNAL_FOCUS[h?.id]||null;}
+function zenoInternalFocus(h){if(h?.id==='pub006')return null; // No direct NAVER verification for Dal clinic focus.
+ return ZENO_INTERNAL_FOCUS[h?.id]||null;}
 
 /* Shared specialty evidence: only declared focus or explicit hospital-specialty wording qualifies.
    A general service listing alone never makes a hospital a 'focus' hospital. */
