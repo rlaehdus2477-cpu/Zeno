@@ -2529,13 +2529,50 @@ const hospitalById=id=>HOSPITALS.find(x=>x.id===id);
 function defaultStore(){return {settings:Object.fromEntries(['soo','naeum','tnd'].map(id=>[id,{status:'check',updatedAt:null,notice:'',services:[],prices:[],emergency:false}])),bookings:[],questions:[],reviews:[]}}
 function localGet(){try{return {...defaultStore(),...JSON.parse(localStorage.getItem(STOREKEY)||'{}')}}catch{return defaultStore()}}
 function localSet(x){localStorage.setItem(STOREKEY,JSON.stringify(x));window.dispatchEvent(new Event('zeno-refresh'))}
-const state={ownerToken:localStorage.getItem('zeno-owner-auth')||'',owner:null,authMode:'login',serverReady:false,profileLoaded:false,profileSaving:false,page:APP_MODE==='hospital'?'hospital':'home',internalFocusOnly:false,filter:'전체',query:'',specialty:'',exoticSpecies:'',detail:null,modal:null,local:true,settings:{},bookings:[],questions:[],reviews:[],hospitalBookings:[],hospitalQuestions:[],activeHospital:sessionStorage.getItem('zeno-h-hospital')||'soo',hospitalToken:sessionStorage.getItem('zeno-h-token')||'',adminToken:sessionStorage.getItem('zeno-admin-token')||'',pets:JSON.parse(localStorage.getItem('zeno-pets-v2')||'[]'),petPhotos:{},records:JSON.parse(localStorage.getItem('zeno-records-v2')||'[]'),favorites:JSON.parse(localStorage.getItem('zeno-favorites-v2')||'[]'),viewH:'soo',hTab:'bookings',appError:'',loading:false,adminStats:null,bookingTab:'전체',activeFilters:[],petTab:'전체',profileSaveError:'',authError:'',pendingAction:null,pendingPage:'',recoveryCode:'',afterRecoveryAction:null,authNotice:'',priceCategory:'초진 진찰료',healthCheckSpecies:'강아지',detailTab:'',symptomGuideOpen:false,symptomLabel:'',homeArea:'청주 전체',homeAreaOpen:false,homeShowAllCare:false,homeCarePickerOpen:false,homeCareSelection:'',homeCarePickerQuery:'',searchRegion:''};
+const state={ownerToken:localStorage.getItem('zeno-owner-auth')||'',owner:null,authMode:'login',serverReady:false,profileLoaded:false,profileSaving:false,page:APP_MODE==='hospital'?'hospital':'home',internalFocusOnly:false,filter:'전체',query:'',specialty:'',exoticSpecies:'',detail:null,modal:null,local:true,settings:{},bookings:[],questions:[],reviews:[],hospitalBookings:[],hospitalQuestions:[],activeHospital:sessionStorage.getItem('zeno-h-hospital')||'soo',hospitalToken:sessionStorage.getItem('zeno-h-token')||'',adminToken:sessionStorage.getItem('zeno-admin-token')||'',pets:[],petPhotos:{},records:[],favorites:[],viewH:'soo',hTab:'bookings',appError:'',loading:false,adminStats:null,bookingTab:'전체',activeFilters:[],petTab:'전체',profileSaveError:'',authError:'',pendingAction:null,pendingPage:'',recoveryCode:'',afterRecoveryAction:null,authNotice:'',priceCategory:'초진 진찰료',healthCheckSpecies:'강아지',detailTab:'',symptomGuideOpen:false,symptomLabel:'',homeArea:'청주 전체',homeAreaOpen:false,homeShowAllCare:false,homeCarePickerOpen:false,homeCareSelection:'',homeCarePickerQuery:'',searchRegion:''};
 let toastTimer;
 function toast(message){let o=document.querySelector('.toast');if(o)o.remove();o=document.createElement('div');o.className='toast';o.textContent=message;o.setAttribute('role','status');o.setAttribute('aria-live','polite');o.setAttribute('aria-atomic','true');document.body.appendChild(o);clearTimeout(toastTimer);toastTimer=setTimeout(()=>o.remove(),4500)}
+/* Guest "내 아이" data is device-local and intentionally separate from account data.
+   Never silently copy account records into a signed-out profile or send guest
+   health records to /api/profile without an explicit account action. */
+const ZENO_GUEST_PROFILE_KEY='zeno-guest-pet-profile-v1';
+function zenoGuestProfileRead(){
+ try{
+  const data=JSON.parse(localStorage.getItem(ZENO_GUEST_PROFILE_KEY)||'{}');
+  return {pets:Array.isArray(data.pets)?data.pets:[],
+          records:Array.isArray(data.records)?data.records:[],
+          favorites:Array.isArray(data.favorites)?data.favorites:[]};
+ }catch{return {pets:[],records:[],favorites:[]}}
+}
+function zenoApplyGuestProfile(){
+ if(state.ownerToken)return;
+ const data=zenoGuestProfileRead();
+ state.pets=data.pets;
+ state.records=data.records;
+ state.favorites=data.favorites;
+ state.petPhotos={};
+ state.petTab='전체';
+ state.profileLoaded=true;
+ state.profileSaving=false;
+ state.profileSaveError='';
+}
+function zenoGuestProfileSave(){
+ try{
+  localStorage.setItem(ZENO_GUEST_PROFILE_KEY,JSON.stringify({
+   pets:state.pets,records:state.records,favorites:state.favorites
+  }));
+  state.profileSaveError='';
+ }catch(err){
+  state.profileSaveError='이 기기에 저장하지 못했어요. 저장 공간을 확인해 주세요.';
+  toast(state.profileSaveError);
+ }
+}
+if(APP_MODE==='owner'&&!state.ownerToken)zenoApplyGuestProfile();
 let profileSaveTimer;
 let zenoProfileRevision=0;
 function savePersonal(){
- if(APP_MODE!=='owner'||!state.ownerToken)return;
+ if(APP_MODE!=='owner')return;
+ if(!state.ownerToken){zenoGuestProfileSave();return;}
  state.profileSaving=true;state.profileSaveError='';
  const revision=++zenoProfileRevision;
  clearTimeout(profileSaveTimer);
@@ -2568,7 +2605,7 @@ async function api(method,path,data,admin=false){
   throw Error(err&&err.name==='AbortError'?'서버 응답이 지연되고 있습니다. 다시 시도해 주세요.':'네트워크 연결을 확인한 뒤 다시 시도해 주세요.');
  }finally{clearTimeout(timeout)}
  const result=await r.json().catch(()=>({}));
- if(!r.ok){if(r.status===401&&APP_MODE==='owner'&&!['/api/auth/login','/api/auth/register'].includes(path)){state.ownerToken='';state.owner=null;localStorage.removeItem('zeno-owner-auth')}throw Error(result.error||'서버 요청 실패 ('+r.status+')')}
+ if(!r.ok){if(r.status===401&&APP_MODE==='owner'&&!['/api/auth/login','/api/auth/register'].includes(path)){state.ownerToken='';state.owner=null;localStorage.removeItem('zeno-owner-auth');zenoApplyGuestProfile()}throw Error(result.error||'서버 요청 실패 ('+r.status+')')}
  return result;
 }
 
@@ -2652,7 +2689,7 @@ async function loadHospital(draw=true){if(!state.hospitalToken)return;try{const 
 async function loadAdmin(draw=true){if(!state.adminToken)return;try{state.adminStats=await api('GET','/api/admin/stats',null,true);if(draw)render()}catch(err){toast(err.message);state.adminToken='';sessionStorage.removeItem('zeno-admin-token');if(draw)render()}}
 
 let zenoSearchScrollY=0,zenoNewSearch=false;
-const ZENO_PUBLIC_PAGES=['home','search','emergency','prices','more','symptoms'];
+const ZENO_PUBLIC_PAGES=['home','search','emergency','prices','more','symptoms','pets'];
 const zenoCanViewPage=p=>APP_MODE!=='owner'||!!state.ownerToken||ZENO_PUBLIC_PAGES.includes(p);
 function navTo(p,fromHistory=false){
  if(APP_MODE==='hospital'&&p!=='hospital')return;
@@ -3394,16 +3431,14 @@ function emergency(){
   +'<section class="zeno-emergency-group"><div class="section-title zeno-results-title"><h2>24시간 응급 진료 <span>'+always.length+'곳</span></h2></div><p class="zeno-catalog-note">응급 진료를 24시간 안내하는 병원입니다. 일반 진료시간은 병원마다 다릅니다.</p>'+hospitalResults(always)+'</section>'
   +'<section class="zeno-emergency-group"><div class="section-title zeno-results-title"><h2>야간 진료 <span>'+night.length+'곳</span></h2></div><p class="zeno-catalog-note">밤에 일정 시간까지 진료하는 병원입니다. 24시간 운영과는 다릅니다.</p>'+(night.length?hospitalResults(night):'<p class="zeno-night-empty">오늘 시간표 기준으로 표시할 야간 진료 병원이 없습니다.</p>')+'</section>';
 }
-function zenoMemorialKey(){return 'zeno-memorial-owner-'+(state.owner?.id||'signed-out');}
+function zenoMemorialKey(){return state.owner?.id?'zeno-memorial-owner-'+state.owner.id:'zeno-memorial-guest-v1';}
 function zenoMemorialGet(){
- if(!state.owner?.id)return {petIds:[],notes:[]};
  try{
   const d=JSON.parse(localStorage.getItem(zenoMemorialKey())||'{}');
   return {petIds:Array.isArray(d.petIds)?d.petIds:[],notes:Array.isArray(d.notes)?d.notes:[]};
  }catch{return {petIds:[],notes:[]}}
 }
 function zenoMemorialSet(d){
- if(!state.owner?.id)throw Error('로그인이 필요합니다.');
  localStorage.setItem(zenoMemorialKey(),JSON.stringify(d));
 }
 /* ZENO pet portrait upload (2026-11-08): local preview, downscale and EXIF-free encoded thumbnail.
@@ -3502,7 +3537,7 @@ function petsPage(){
    '</article>';
  }).join('');
  return '<div class="zeno-pets-page">'+topbar('내 아이','')
-  +'<p class="zeno-pet-save-note">등록한 아이와 건강 기록은 로그인한 제노 계정에 저장됩니다. 병원 진료 기록과 자동 연동되지는 않아요.</p>'
+  +'<p class="zeno-pet-save-note">'+(state.ownerToken?'등록한 아이와 건강 기록은 로그인한 제노 계정에 저장됩니다. 병원 진료 기록과 자동 연동되지는 않아요.':'로그인 없이 사용할 수 있어요. 등록한 아이·사진·건강 기록은 이 기기에만 저장되며, 기기 변경이나 앱 데이터 삭제 시 사라질 수 있습니다.')+'</p>'
   +(state.profileSaveError?'<div class="banner warning">'+e(state.profileSaveError)+' <button class="btn small" data-action="retry-profile">다시 저장</button></div>':state.profileSaving?'<p class="zeno-save-status" role="status">저장 중…</p>':'')
   +'<section class="section zeno-pet-section"><div class="section-title"><h2>등록한 아이 '+state.pets.length+'마리</h2><button type="button" class="btn small zeno-pet-register" data-action="add-pet">아이 등록</button></div>'+
   '<div class="grid two zeno-pet-card-grid">'+(cards||'<div class="empty">등록한 아이가 없어요. 아이를 먼저 등록해 주세요.</div>')+'</div></section>'
@@ -3972,7 +4007,7 @@ if(a==='close-modal'){zenoCloseModal();return}if(a==='modal-backdrop'){if(ev.tar
 if(a==='auth-mode'){state.authMode=val;state.authError='';if(val!=='login')state.authNotice='';render();return}
 if(a==='recovery-setup'){if(!state.ownerToken){navTo('login');return}openModal('recovery-setup');return}
 if(a==='copy-recovery-code'){const code=state.recoveryCode;if(!code)return;try{await navigator.clipboard.writeText(code);toast('복구 코드를 복사했어요. 안전하게 보관해 주세요.')}catch(err){const input=document.getElementById('zeno-recovery-code-value');if(input){input.focus();input.select();toast('복구 코드를 선택했습니다. 길게 눌러 복사해 주세요.')}}return}
-if(a==='owner-logout'){clearTimeout(profileSaveTimer);state.recoveryCode='';state.afterRecoveryAction=null;state.profileSaving=false;state.profileSaveError='';state.ownerToken='';state.page='home';state.owner=null;ownerId='';state.pets=[];state.petPhotos={};state.records=[];state.favorites=[];state.bookings=[];state.questions=[];state.reviews=[];state.authMode='login';localStorage.removeItem('zeno-owner-auth');render();return}
+if(a==='owner-logout'){clearTimeout(profileSaveTimer);state.recoveryCode='';state.afterRecoveryAction=null;state.profileSaving=false;state.profileSaveError='';state.ownerToken='';state.page='home';state.owner=null;ownerId='';state.pets=[];state.petPhotos={};state.records=[];state.favorites=[];state.bookings=[];state.questions=[];state.reviews=[];state.authMode='login';localStorage.removeItem('zeno-owner-auth');zenoApplyGuestProfile();render();return}
 if(a==='refresh'){await refresh(true);toast('최신 정보를 불러왔습니다.');return}
 if(a==='details'||a==='book'){if(a==='book'&&!state.ownerToken){state.pendingAction={type:'book',id};navTo('login');return}if(a==='details')state.detailTab=ev.target.closest('img.zeno-list-photo')?'photos':(ev.target.closest('.zeno-hours-card')?'hours':((zenoHasFilter('고양이 대기실')||zenoWaitingQuery(state.query).waiting||ev.target.closest('.zeno-list-condition')?.textContent.includes('대기실'))?'intro':state.specialty?'services':'hours'));openModal(a==='details'?'details':'book',id);return}
 if(a==='zeno-book-kind'||a==='zeno-book-service'){if(!state.modal||state.modal.type!=='book')return;const h=hospitalById(state.modal.id);if(!h)return;if(a==='zeno-book-kind'){if(!zenoBookingAnimals(h).includes(val))return;state.modal.kind=val;state.modal.service='';}else{if(!zenoBookingServices(h,state.modal.kind).some(x=>x[0]===val))return;state.modal.service=val;}render();return}
@@ -4049,14 +4084,15 @@ if(a==='favorite'){if(!state.favorites.includes(id)&&state.favorites.length>=30)
 if(a==='retry-profile'){savePersonal();render();return}
 if(a==='pet-tab'){state.petTab=val;render();return}
 if(a==='pet-settings'){openModal('pet-settings',id);return}
-/* Photo updates are owner-authenticated; keep a separate D1 row per pet. */
+/* Signed-in photos use D1. Guest photos stay in device-local pet profiles. */
 if(a==='save-pet-photo'){
  const pet=state.pets.find(p=>p.id===id),file=document.getElementById('zeno-edit-pet-photo')?.files?.[0];
  if(!pet||!file){toast('등록할 사진을 선택해 주세요.');return}
  const button=el;button.disabled=true;
  try{
   const image=await zenoCompressPetPhoto(file);
-  await api('PUT','/api/pet-photos/'+encodeURIComponent(pet.id),{image});
+  if(state.ownerToken)await api('PUT','/api/pet-photos/'+encodeURIComponent(pet.id),{image});
+  else{pet.photoUrl=image;savePersonal();}
   state.petPhotos[pet.id]=image;
   render();toast('아이 사진을 변경했어요.');
  }catch(err){toast('사진 저장 실패: '+err.message)}
@@ -4067,9 +4103,10 @@ if(a==='remove-pet-photo'){
  if(!state.pets.some(p=>p.id===id))return;
  const button=el;button.disabled=true;
  try{
-  await api('DELETE','/api/pet-photos/'+encodeURIComponent(id));
+  if(state.ownerToken)await api('DELETE','/api/pet-photos/'+encodeURIComponent(id));
   delete state.petPhotos[id];
   const pet=state.pets.find(p=>p.id===id);if(pet&&pet.photoUrl)delete pet.photoUrl;
+  if(!state.ownerToken)savePersonal();
   render();toast('프로필 사진을 삭제했어요.');
  }catch(err){toast('사진 삭제 실패: '+err.message)}
  finally{button.disabled=false}
@@ -4090,7 +4127,7 @@ if(a==='memorial-note'){
 if(a==='add-pet'){openModal('pet');return}if(a==='record'){openModal('record',id);return}
 if(a==='delete-pet'){
  if(confirm('아이 정보를 삭제하시겠습니까?')){
-  if(state.petPhotos[id]){
+  if(state.ownerToken&&state.petPhotos[id]){
    try{await api('DELETE','/api/pet-photos/'+encodeURIComponent(id))}
    catch(err){toast('아이 삭제 후 사진 정리가 필요할 수 있어요.')}
   }
@@ -4194,6 +4231,8 @@ if(id==='owner-auth'){
   if(mode==='register')payload.displayName=val(d.displayName);
   const out=await api('POST','/api/auth/'+mode,payload);
   state.ownerToken=out.token;state.owner=out.owner;ownerId=out.owner.id;state.profileLoaded=false;
+  // The guest profile remains device-local; do not merge into another account.
+  state.pets=[];state.records=[];state.petPhotos={};state.favorites=[];
   localStorage.setItem('zeno-owner-auth',out.token);
   const next=state.pendingAction;state.pendingAction=null;
   state.page=next?.type==='book'?'search':(state.pendingPage||(!zenoCanViewPage(state.page)&&state.page!=='login'?state.page:'home'));
@@ -4246,7 +4285,10 @@ if(id==='pet-form'){
   const photo=file?await zenoCompressPetPhoto(file):'';
   const pet={id:uid(),name:val(d.name),species:d.species,age:val(d.age),weight:val(d.weight)};
   state.pets.push(pet);
-  if(photo){
+  if(photo&&!state.ownerToken){
+   pet.photoUrl=photo;state.petPhotos[pet.id]=photo;
+   savePersonal();toast('아이와 프로필 사진을 이 기기에 저장했어요.');
+  }else if(photo){
    state.profileSaving=true;
    try{
     await api('PUT','/api/profile',{pets:state.pets,records:state.records,favorites:state.favorites});
@@ -4277,7 +4319,7 @@ if(id==='hospital-service'){const services=[...new Set([...(hs(state.activeHospi
 if(id==='hospital-prices'){let amount=Number(d.priceAmount);if(!Number.isFinite(amount)||amount<0||amount>1e7){toast('금액을 정확하게 입력해 주세요.');return}let s=hs(state.activeHospital),prices=[...(s.prices||[]),{label:val(d.priceLabel),amount}];await mutate('PATCH','/api/settings',{prices},'진료비 항목을 저장했습니다.');return}
 if(id==='review-form'){if(val(d.text).length<10){toast('후기를 10자 이상 입력해 주세요.');return}await mutate('POST','/api/reviews',{bookingId:d.bookingId,stars:Number(d.stars),text:val(d.text)},'후기를 등록했습니다.');return}
 });
-window.addEventListener('storage',ev=>{if([STOREKEY,'zeno-pets-v2','zeno-records-v2','zeno-favorites-v2'].includes(ev.key)){state.pets=JSON.parse(localStorage.getItem('zeno-pets-v2')||'[]');state.records=JSON.parse(localStorage.getItem('zeno-records-v2')||'[]');state.favorites=JSON.parse(localStorage.getItem('zeno-favorites-v2')||'[]');refresh()}});
+window.addEventListener('storage',ev=>{if(ev.key===ZENO_GUEST_PROFILE_KEY&&!state.ownerToken){zenoApplyGuestProfile();render()}else if(ev.key===STOREKEY){refresh()}});
 window.addEventListener('zeno-refresh',()=>{});
 let zenoStarted=false,zenoStartPending=false,zenoStartRetry=null,zenoStartFailures=0,zenoPollTimer=null;
 function zenoCanPoll(){return !document.hidden&&navigator.onLine!==false&&state.serverReady&&!!(APP_MODE==='hospital'?state.hospitalToken:state.ownerToken)}
@@ -4310,7 +4352,7 @@ async function start(){
   state.appError='';
   if(APP_MODE==='owner'&&state.ownerToken){
    try{const x=await api('GET','/api/auth/me');state.owner=x.owner;ownerId=x.owner.id}
-   catch(err){if(/인증|401|로그인/.test(err.message)){state.ownerToken='';state.owner=null;localStorage.removeItem('zeno-owner-auth')}}
+   catch(err){if(/인증|401|로그인/.test(err.message)){state.ownerToken='';state.owner=null;localStorage.removeItem('zeno-owner-auth');zenoApplyGuestProfile()}}
   }
   await refresh();
   zenoStarted=true;
@@ -4321,7 +4363,7 @@ async function start(){
  }finally{zenoStartPending=false}
 }
 render();start();
-const ZENO_OWNER_UI_REVISION='20261114-seohyeon-naver-v37';
+const ZENO_OWNER_UI_REVISION='20261114-pets-guest-v38';
 let zenoLastUIVersionCheck=0;
 let zenoUIVersionChecking=false;
 async function zenoCheckOwnerUIRevision(force=false){
