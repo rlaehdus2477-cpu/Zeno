@@ -2400,6 +2400,88 @@ html.dark .modal.zeno-hospital-detail,html[data-theme="dark"] .modal.zeno-hospit
 .mobilebar button[aria-current="page"] .ico{color:#3178e6!important}
 @media(max-width:380px){.care-shortcuts button span{width:42px;height:42px}.care-list-heading h2{line-height:1.35}}
 </style>
+
+<style id="zeno-owner-one-tap-legibility-20261115">
+/* One-tap detail tabs and readable fee/hours content on Galaxy/mobile; no hospital data changes. */
+.modal.zeno-hospital-detail .zeno-detail-tabs .zeno-detail-tab{
+  font-size:15.5px!important;line-height:1.4!important;font-weight:700!important;
+  min-height:50px!important;padding:13px 15px!important;white-space:nowrap;
+}
+.modal.zeno-hospital-detail .zeno-detail-panel{line-height:1.6!important}
+.modal.zeno-hospital-detail .zeno-detail-panel h3{
+  font-size:19px!important;line-height:1.45!important;font-weight:800!important;margin:14px 0 12px!important;
+}
+.modal.zeno-hospital-detail .zeno-detail-today strong{
+  font-size:17px!important;line-height:1.5!important;
+}
+.modal.zeno-hospital-detail .zeno-schedule-header{margin:10px 0 12px!important}
+.modal.zeno-hospital-detail .zeno-schedule-header h3{margin:0!important}
+.modal.zeno-hospital-detail .zeno-week-grid{margin:0 0 16px!important}
+.modal.zeno-hospital-detail .zeno-week-cell{padding:13px 15px!important;min-height:54px!important;gap:14px!important}
+.modal.zeno-hospital-detail .zeno-week-cell strong{font-size:15px!important;line-height:1.5!important;min-width:58px!important}
+.modal.zeno-hospital-detail .zeno-week-cell span{
+  font-size:16px!important;line-height:1.5!important;text-align:right!important;font-weight:650!important;word-break:keep-all!important;
+}
+.modal.zeno-hospital-detail .zeno-schedule-summary,
+.modal.zeno-hospital-detail .zeno-care-hours p{
+  font-size:15px!important;line-height:1.65!important;color:inherit;
+}
+.modal.zeno-hospital-detail .zeno-detail-panel .desc,
+.modal.zeno-hospital-detail .zeno-detail-panel .zeno-fee-help,
+.modal.zeno-hospital-detail .zeno-detail-panel .zeno-fee-report p{
+  font-size:14px!important;line-height:1.65!important;
+}
+.modal.zeno-hospital-detail .zeno-fee-detail-list{gap:0!important}
+.modal.zeno-hospital-detail .zeno-fee-line{
+  display:block!important;padding:16px 0!important;border-bottom:1px solid #e6ebf0!important;
+}
+.modal.zeno-hospital-detail .zeno-fee-main{
+  display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;
+}
+.modal.zeno-hospital-detail .zeno-fee-main span{font-size:16px!important;font-weight:700!important;line-height:1.55!important;color:inherit}
+.modal.zeno-hospital-detail .zeno-fee-main strong{
+  font-size:18px!important;line-height:1.45!important;font-weight:800!important;text-align:right!important;color:inherit;
+}
+.modal.zeno-hospital-detail .zeno-fee-note{
+  font-size:14px!important;line-height:1.65!important;color:#526879!important;margin:7px 0 0!important;overflow-wrap:anywhere;
+}
+.zeno-fee-intro{padding:13px 15px!important;margin-bottom:12px!important}
+.zeno-fee-intro strong{font-size:17px!important;line-height:1.45!important}
+.zeno-fee-intro p{font-size:14px!important;line-height:1.65!important}
+.zeno-fee-intro small{font-size:12.5px!important;line-height:1.55!important}
+.zeno-fee-care-grid{
+  display:flex!important;flex-wrap:nowrap!important;gap:8px!important;
+  overflow-x:auto!important;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;
+  padding:2px 2px 10px!important;scrollbar-width:thin;
+}
+.zeno-fee-care-grid .filter,.zeno-fee-choices .filter{
+  flex:0 0 auto!important;min-height:44px!important;padding:10px 13px!important;
+  font-size:14px!important;line-height:1.4!important;font-weight:700!important;
+}
+.zeno-fee-section{margin:9px 0 13px!important}
+.zeno-fee-section h2{font-size:16px!important;line-height:1.4!important;margin:0 0 8px!important}
+.zeno-fee-card{padding:15px!important;margin:9px 0!important}
+.zeno-fee-card .zeno-fee-top strong{font-size:16px!important;line-height:1.5!important}
+.zeno-fee-card .zeno-fee-amount{font-size:19px!important;line-height:1.4!important;font-weight:800!important}
+.zeno-fee-card>p,.zeno-fee-subhead p,.zeno-fee-disclaimer p{
+  font-size:14px!important;line-height:1.65!important;overflow-wrap:anywhere;
+}
+.zeno-fee-card .zeno-fee-top small,.zeno-fee-card>a,.zeno-fee-subhead small{
+  font-size:13px!important;line-height:1.5!important;
+}
+.zeno-fee-subhead h2{font-size:19px!important;line-height:1.45!important}
+.zeno-search-page .zeno-search-card .zeno-search-hours,
+.zeno-search-page .zeno-search-card .zeno-search-fact{
+  font-size:13px!important;line-height:1.55!important;white-space:normal!important;
+}
+@media(max-width:420px){
+ .modal.zeno-hospital-detail .zeno-fee-main{align-items:flex-start!important}
+ .modal.zeno-hospital-detail .zeno-fee-main strong{font-size:17px!important}
+ .modal.zeno-hospital-detail .zeno-week-cell span{font-size:15px!important}
+ .zeno-fee-card .zeno-fee-amount{font-size:18px!important}
+}
+</style>
+
 </head><body><div id="app" class="app"></div><script>
 'use strict';
 const APP_MODE='owner';
@@ -2882,7 +2964,7 @@ function zenoWeeklyHours(h){
  const rows=days.map(day=>`<div class='zeno-week-cell ${day===today?'zeno-hours-today':''} ${week[day]==='휴진'?'closed':''}'><strong>${day}${day===today?'<small>오늘</small>':''}</strong><span>${e(week[day]||'별도 확인')}</span></div>`).join('');
  const extra=['공휴일','점심시간','저녁시간'].filter(day=>week[day]).map(day=>`<div class='zeno-week-cell zeno-week-extra'><strong>${day}</strong><span>${e(week[day])}</span></div>`).join('');
  const fallback=!Object.keys(week).length&&h.hours&&!/진료시간 확인 필요/.test(h.hours)?`<p class='zeno-schedule-summary'>${e(h.hours)}</p>`:!Object.keys(week).length?'<p class="zeno-schedule-summary">등록된 요일별 시간표가 없습니다. 병원에 문의해 주세요.</p>':'';
- return `<div class='zeno-schedule-header'><h3>운영시간</h3></div><details class='zeno-week-details'><summary>요일별 시간 보기</summary><div class='zeno-week-grid' role='list' aria-label='요일별 진료시간'>${rows}${extra}</div></details>${fallback}`;
+ return `<div class='zeno-schedule-header'><h3>운영시간</h3></div>${Object.keys(week).length?`<div class='zeno-week-grid' role='list' aria-label='요일별 진료시간'>${rows}${extra}</div>`:''}${fallback}`;
 }
 function hospitalHoursBlock(h,detail=false){
  const week=zenoWeeklyData(h),day=zenoTodayName(),today=week[day],known=!!h.hours&&!/진료시간 확인 필요/.test(h.hours);
@@ -3927,7 +4009,7 @@ function zenoFeeAmount(min,max){return Number(min).toLocaleString('ko-KR')+(min=
 function zenoFeeHospitalMarkup(h){
  const v=zenoPublishedFee(h.id),r=zenoNeuterReport(h.id);
  if(!v&&!r)return '<p class="zeno-fee-help">확인된 공개 진료비가 없습니다. 정확한 비용은 병원에 문의해 주세요.</p>';
- return (v?'<div class="zeno-fee-detail-list">'+v.prices.map(p=>'<div class="zeno-fee-line"><span>'+e(p[0])+'<small>'+e(p[3])+'</small></span><strong>'+zenoFeeAmount(p[1],p[2])+'</strong></div>').join('')+'</div>'+(v.url?'<a class="zeno-fee-source" href="'+e(v.url)+'" target="_blank" rel="noopener noreferrer">병원 공식 가격표 보기</a>':'')+'<p class="zeno-fee-help">'+(v.url?'공식 홈페이지 확인일 ':'자료 등록일 ')+e(v.checked)+(v.source?' · '+e(v.source):'')+' · 실제 결제비용은 진료 조건에 따라 달라질 수 있습니다.</p>':'')
+ return (v?'<div class="zeno-fee-detail-list">'+v.prices.map(p=>'<article class="zeno-fee-line"><div class="zeno-fee-main"><span>'+e(p[0])+'</span><strong>'+zenoFeeAmount(p[1],p[2])+'</strong></div><p class="zeno-fee-note">'+e(p[3])+'</p></article>').join('')+'</div>'+(v.url?'<a class="zeno-fee-source" href="'+e(v.url)+'" target="_blank" rel="noopener noreferrer">병원 공식 가격표 보기</a>':'')+'<p class="zeno-fee-help">'+(v.url?'공식 홈페이지 확인일 ':'자료 등록일 ')+e(v.checked)+(v.source?' · '+e(v.source):'')+' · 실제 결제비용은 진료 조건에 따라 달라질 수 있습니다.</p>':'')
  +(r?'<div class="zeno-fee-report"><strong>중성화 수술 · 보호자 견적 사례 '+zenoFeeAmount(r.amount,r.amount)+'</strong><p>등록일: '+e(r.dates.join(' · '))+' (2건)</p><p>'+e(r.note)+' · 병원 공식 수술비가 아닙니다.</p><a href="'+e(r.url)+'" target="_blank" rel="noopener noreferrer">견적 사례 원문 보기</a></div>':'');
 }
 
@@ -3996,7 +4078,7 @@ function pricesPage(){
   :isNeuter?'중성화 게시가격 등록 '+new Set(rows.map(r=>r.id)).size+'곳'
   :'해당 비용 항목 공식 가격 '+rows.length+'곳';
  return topbar('진료비 비교','')
-  +'<div class="zeno-fee-intro"><strong>청주 동물병원 공개 진료비</strong><p>진료 분야를 선택하고 공개가격이 있는 검사·진찰 항목을 비교해 보세요. 분야별 전체 진료비와 개별 검사비는 다릅니다.</p><small>자료 등록 기준 2026.11.14 · '+amountNote+'</small></div>'
+  +'<div class="zeno-fee-intro"><strong>청주 동물병원 공개 진료비</strong><p>공개 진료비를 바로 확인할 수 있습니다. 항목을 선택하면 가격 목록이 바뀝니다. 실제 결제금액은 진료 조건에 따라 달라질 수 있습니다.</p><small>자료 등록 기준 2026.11.14 · '+amountNote+'</small></div>'
   +'<section class="zeno-fee-section"><h2>진료 분야</h2><div class="zeno-fee-care-grid" role="group" aria-label="진료 분야 선택">'+careChips+'</div></section>'
   +'<section class="zeno-fee-section"><h2>공개 진료비 항목</h2><div class="zeno-fee-choices" role="group" aria-label="비교할 가격 항목">'+priceChips+'</div></section>'
   +(noCarePrices?zenoFeeCareNoPriceMarkup(selected)
@@ -4139,7 +4221,7 @@ let zenoDetailScrollY=0;
 function openModal(type,id){
  zenoDetailScrollY=window.scrollY;
  if(type==='details'&&APP_MODE==='owner'){
-  state.detailTab='services';
+  if(!['hours','intro','photos','services','notices','fees'].includes(state.detailTab))state.detailTab='services';
   zenoSearchScrollY=zenoDetailScrollY;
   history.pushState({zenoDetailModal:true},'',location.href);
  }
