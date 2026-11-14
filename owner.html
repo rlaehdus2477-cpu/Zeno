@@ -2482,6 +2482,53 @@ html.dark .modal.zeno-hospital-detail,html[data-theme="dark"] .modal.zeno-hospit
 }
 </style>
 
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css">
+
+<style id="zeno-unified-human-ui-font-20261115">
+/* ZENO typography: human, calm Korean app UI. No copy/data/interaction changes. */
+:root{--zeno-ui-font:"Pretendard Variable",Pretendard,-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif}
+html,body,.app,button,input,select,textarea,option{
+ font-family:var(--zeno-ui-font)!important;
+ font-kerning:normal;
+}
+body{font-weight:400;letter-spacing:-.012em;line-height:1.55;text-rendering:optimizeLegibility;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{letter-spacing:-.012em;line-height:1.45}
+.content p,.content li,.content dd,.content small,.content label,.modal p,.modal small,.modal label{
+ word-break:keep-all;overflow-wrap:break-word;line-height:1.6;
+}
+.content h1,.content h2,.content h3,.modal h2,.modal h3,
+.zeno-home-v10 h2,.hi-page-heading h1,.hi-inbox-heading h2{
+ font-family:var(--zeno-ui-font)!important;
+ letter-spacing:-.025em!important;line-height:1.4;
+ font-weight:700;
+}
+.content button,.modal button,.hi-bottom-nav button,.mobilebar button{
+ font-family:var(--zeno-ui-font)!important;
+ letter-spacing:-.014em!important;
+}
+.content strong,.content b,.modal strong,.modal b{letter-spacing:-.017em}
+input::placeholder,textarea::placeholder{font-family:inherit;letter-spacing:-.008em}
+@media(max-width:750px){
+ body{line-height:1.58}
+ .content p,.content li,.modal p{line-height:1.65}
+}
+</style>
+
+<style id="zeno-owner-human-typography-20261115">
+/* Selective weights, not repetitive heavy headings. Preserve existing sizing and layout. */
+.zeno-home-v10 .care-launcher h2,.zeno-home-v10 .care-list-heading h2,
+.zeno-fee-subhead h2,.zeno-detail-panel h3{font-weight:700!important;letter-spacing:-.025em!important}
+.zeno-home-v10 .zeno-v10-open-card strong,.zeno-search-page .zeno-search-card strong,
+.zeno-hospital-card .directory-text>strong{font-weight:700!important;letter-spacing:-.018em!important}
+.zeno-fee-card .zeno-fee-amount,.zeno-fee-line .zeno-fee-main strong,
+.zeno-hospital-detail .zeno-week-cell span{font-variant-numeric:tabular-nums;font-weight:700!important}
+.zeno-detail-tabs .zeno-detail-tab{font-weight:600!important;letter-spacing:-.01em!important}
+.zeno-detail-tabs .zeno-detail-tab.active{font-weight:700!important}
+.zeno-home-v10 .care-shortcuts button,.zeno-fee-care-grid .filter,.zeno-fee-choices .filter{font-weight:600!important}
+.zeno-home-v10 .zeno-v10-open-card small,.zeno-search-page .zeno-search-card small{
+ letter-spacing:0!important;line-height:1.5!important;
+}
+</style>
 </head><body><div id="app" class="app"></div><script>
 'use strict';
 const APP_MODE='owner';
