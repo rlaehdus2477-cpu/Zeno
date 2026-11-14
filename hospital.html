@@ -582,6 +582,14 @@ input::placeholder,textarea::placeholder{font-family:inherit;letter-spacing:-.00
 .hi-sheet-section h3,.hi-detail-cell dt{font-weight:600!important;letter-spacing:-.012em!important}
 .hi-detail-cell dd,.hi-time-large{font-weight:600!important;letter-spacing:-.012em!important}
 </style>
+<style>
+@media(max-width:750px){
+ .hi-inbox .hi-filter-bar{grid-template-columns:minmax(0,1fr)!important}
+ .hi-inbox .hi-filter-chips{flex-wrap:wrap!important;gap:6px;overflow:visible!important}
+ .hi-inbox .hi-filter-chips button{min-height:44px!important;font-size:14px!important}
+ .hi-inbox .hi-sort-button{justify-self:end;min-height:44px}
+}
+</style>
 </head><body><div id="app" class="app"></div><script>
 'use strict';
 const APP_MODE='hospital';

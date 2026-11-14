@@ -2381,8 +2381,9 @@ html.dark .modal.zeno-hospital-detail,html[data-theme="dark"] .modal.zeno-hospit
 .care-launcher header,.care-list-heading{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .zeno-home-v10 .care-launcher h2,.zeno-home-v10 .care-list-heading h2{margin:0!important;font-size:19px!important;letter-spacing:-.045em}
 .care-launcher header button,.care-list-heading button{background:none;border:0;min-height:44px;color:var(--zh-muted);font-size:14px;white-space:nowrap}
-.care-shortcuts{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;margin:6px 0 18px}
-.care-shortcuts button{display:grid;justify-items:center;gap:8px;background:none;border:0;min-width:0;color:inherit;font-size:14px;font-weight:650;padding:4px 0}
+.care-shortcuts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:8px 0 14px}
+@media(min-width:680px){.care-shortcuts{grid-template-columns:repeat(6,minmax(0,1fr))}}
+.care-shortcuts button{display:grid;place-items:center;background:var(--zh-surface);border:1px solid var(--zh-line,currentColor);border-radius:10px;min-width:0;min-height:46px;color:inherit;font-size:14px;font-weight:600;padding:6px 3px;word-break:keep-all}
 .care-shortcuts button span{display:grid;place-items:center;width:48px;height:48px;border-radius:16px;background:color-mix(in srgb,#498aff 11%,var(--zh-surface));color:var(--zh-accent)}
 .care-shortcuts svg{width:24px;height:24px}
 .care-symptoms{width:100%;min-height:48px;border:0;border-radius:12px;display:flex;align-items:center;gap:10px;padding:0 14px;background:var(--zh-surface-alt);color:var(--zh-text);font-size:15px}
@@ -3865,8 +3866,9 @@ function zenoSymptomPage(){
 }
 function home(){
  const areas=['청주 전체','청주 상당구','청주 서원구','청주 흥덕구','청주 청원구'];
- const medicalFields=['일반 진료','내과','외과','치과·구강','안과','피부·귀','비뇨기','정형외과','심장·호흡기'];
+ const medicalFields=['일반 진료','내과','외과','치과·구강','안과','피부·귀','비뇨기','정형외과','심장·호흡기','특수동물'];
  const purposeFields=['중성화수술','건강검진·접종'];
+ const shortcutFields=[...medicalFields,...purposeFields];
  const pickerLabels={'치과·구강':'치과','중성화수술':'중성화수술','건강검진·접종':'건강검진·접종'};
  const query=(state.homeCarePickerQuery||'').replace(/\s+/g,'').toLowerCase();
  const matched=name=>!query||name.replace(/\s+/g,'').toLowerCase().includes(query)||(pickerLabels[name]||'').replace(/\s+/g,'').toLowerCase().includes(query);
@@ -3891,8 +3893,8 @@ function home(){
  +'<section class="zeno-v10-intro"><form id="home-search-form" class="zeno-v10-search" role="search"><label class="sr-only" for="home-hospital-search">증상, 병원명, 진료과목 검색</label>'
  +zenoNavIcon('search')+'<input id="home-hospital-search" name="homeQuery" type="search" autocomplete="off" placeholder="증상, 병원명, 진료과목 검색" value="'+e(state.query)+'"></form></section>'
 
- +'<section class="care-launcher" aria-label="진료 분야로 찾기"><header><h2>진료과목</h2><button data-action="home-care-open" aria-haspopup="dialog" aria-expanded="'+state.homeCarePickerOpen+'">전체 과목 ›</button></header>'
- +'<div class="care-shortcuts">'+[['내과','내과'],['외과','외과'],['치과·구강','치과'],['피부·귀','피부과'],['특수동물','특수동물']].map(([value,label])=>'<button type="button" data-action="specialty" data-value="'+e(value)+'"><span>'+zenoCareIcon(value)+'</span>'+e(label)+'</button>').join('')+'</div>'
+ +'<section class="care-launcher" aria-label="진료 분야로 찾기"><header><h2>진료과목</h2><button data-action="home-care-open" aria-haspopup="dialog" aria-expanded="'+state.homeCarePickerOpen+'">과목 검색 ›</button></header>'
+ +'<div class="care-shortcuts">'+shortcutFields.map(value=>'<button type="button" data-action="specialty" data-value="'+e(value)+'">'+e(pickerLabels[value]||value)+'</button>').join('')+'</div>'
  +'<button class="care-symptoms" data-nav="symptoms">'+zenoHomeSmallIcon('help')+'<strong>증상으로 진료과목 찾기</strong><span aria-hidden="true">›</span></button></section>'
  +zenoHomeOperatingRail()
  +'<section class="zeno-v10-quick" aria-label="빠르게 병원 찾기"><h2>조건별 병원 찾기</h2>'
