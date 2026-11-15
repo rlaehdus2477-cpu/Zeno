@@ -2754,7 +2754,8 @@ html:has(.zeno-search-page),html body:has(.zeno-search-page),html body:has(.zeno
 html body main.content:has(.zeno-search-page){padding-left:0!important;padding-right:0!important;padding-top:0!important}
 html body main.content:has(.zeno-search-page)>.banner{margin:10px 20px 0!important;width:auto!important;max-width:none!important}
 html body main.content .zeno-search-topbar{display:flex!important;align-items:center!important;gap:10px!important;padding:14px 20px 6px!important;margin:0!important;background:#fff!important;border:0!important}
-html body .zeno-search-topbar .zeno-global-brand{height:18px!important;width:auto!important;margin:0!important}
+html body main.content .zeno-search-topbar .zeno-global-brand{flex:none!important;height:20px!important;width:auto!important;max-width:96px!important;margin:0!important;padding:0!important;object-fit:contain!important}
+html body main.content .zeno-search-topbar h1{flex:none!important;padding:0!important;margin:0!important}
 html body .zeno-search-topbar h1{font-size:20px!important;font-weight:700!important;letter-spacing:-.02em!important;line-height:1.4!important;color:#191f28!important;margin:0!important}
 html body .zeno-search-page{padding:0!important;margin:0!important;background:#fff!important;gap:0!important}
 
@@ -2855,6 +2856,31 @@ html body .zeno-search-page .zeno-price-after-results button{border:0!important;
 :is(html.dark,html[data-theme="dark"]) body main.content .zeno-search-page .zeno-search-card .zeno-card-book{background:#2679c5!important;border-color:#2679c5!important;color:#fff!important}
 :is(html.dark,html[data-theme="dark"]) body:has(.zeno-search-page),:is(html.dark,html[data-theme="dark"]):has(.zeno-search-page){background:#17202b!important}
 :is(html.dark,html[data-theme="dark"]) body main.content .zeno-search-page .zeno-filter-more .zeno-filter-extras{border-color:#3a4656!important}
+
+/* 결과 줄: 선택 조건이 있을 때 자연스럽게 두 줄로 */
+html body .zeno-search-page .zeno-results-bar{flex-wrap:wrap!important;row-gap:8px!important}
+html body .zeno-search-page .zeno-results-bar-leading{flex:0 1 auto!important;flex-wrap:nowrap!important;gap:8px!important;max-width:100%!important}
+html body .zeno-search-page .zeno-results-bar-tools{margin-left:auto!important;align-items:center!important;width:auto!important;max-width:100%!important;flex:0 1 auto!important}
+html body .zeno-search-page .zeno-results-bar .zeno-selected-care-chip{flex:none!important;width:auto!important;height:28px!important;min-height:28px!important;display:inline-flex!important;align-items:center!important;gap:4px!important;padding:0 10px!important;margin:0!important;border:1px solid #b9d6f2!important;border-radius:14px!important;background:#eaf3fc!important;color:#1f63a8!important;font-size:13px!important;font-weight:600!important;position:static!important;white-space:nowrap!important}
+html body .zeno-search-page .zeno-results-bar .zeno-internal-only{flex:none!important;width:auto!important;height:28px!important;min-height:28px!important;display:inline-flex!important;align-items:center!important;padding:0 10px!important;margin:0!important;border:1px solid #e5e8eb!important;border-radius:14px!important;background:#fff!important;color:#4e5968!important;font-size:13px!important;font-weight:500!important;position:static!important;white-space:nowrap!important}
+html body .zeno-search-page .zeno-results-bar .zeno-internal-only[aria-pressed="true"]{background:#eaf3fc!important;border-color:#b9d6f2!important;color:#1f63a8!important;font-weight:600!important}
+/* 여백이 빠진 하위 블록 */
+html body .zeno-search-page>.zeno-clinical-legend{margin:4px 20px 0!important;padding:0!important;font-size:12px!important;line-height:1.5!important;color:#8b95a1!important;word-break:keep-all!important}
+html body .zeno-search-page>.zeno-internal-section,html body .zeno-search-page>.zeno-internal-inquiry,html body .zeno-search-page>.zeno-exotic-top{margin:0!important;padding:0!important;border:0!important;background:#fff!important;box-shadow:none!important;border-radius:0!important}
+html body .zeno-search-page>.zeno-internal-section>h3{margin:0!important;padding:24px 20px 4px!important;font-size:15px!important;font-weight:600!important;color:#191f28!important;line-height:1.4!important}
+html body .zeno-search-page>.zeno-internal-inquiry{border-top:8px solid #f2f4f6!important}
+html body .zeno-search-page>.zeno-internal-inquiry>summary{padding:16px 20px!important;font-size:15px!important;font-weight:600!important;color:#191f28!important;cursor:pointer}
+html body .zeno-search-page>.zeno-internal-inquiry>p{margin:0!important;padding:0 20px 4px!important;font-size:13px!important;color:#8b95a1!important}
+html body .zeno-search-page>.zeno-exotic-top{padding:16px 20px 4px!important}
+html body .zeno-search-page .zeno-search-card .zeno-search-tag{display:inline-flex!important;height:24px!important;align-items:center!important;padding:0 8px!important;border:0!important;border-radius:6px!important;background:#f2f4f6!important;color:#4e5968!important;font-size:12px!important;font-weight:500!important}
+html body .zeno-search-page .zeno-filter-rail .zeno-filter-more{display:flex!important;align-items:center!important}
+:is(html.dark,html[data-theme="dark"]) body main.content .zeno-search-page>.zeno-internal-section,:is(html.dark,html[data-theme="dark"]) body main.content .zeno-search-page>.zeno-internal-inquiry,:is(html.dark,html[data-theme="dark"]) body main.content .zeno-search-page>.zeno-exotic-top{background:#17202b!important;border-color:#222c38!important}
+:is(html.dark,html[data-theme="dark"]) body main.content .zeno-search-page>.zeno-internal-section>h3,:is(html.dark,html[data-theme="dark"]) body main.content .zeno-search-page>.zeno-internal-inquiry>summary{color:#f2f4f6!important}
+:is(html.dark,html[data-theme="dark"]) body main.content .zeno-search-page .zeno-search-card .zeno-search-tag{background:#243040!important;color:#c9d3de!important}
+:is(html.dark,html[data-theme="dark"]) body main.content .zeno-search-page .zeno-results-bar .zeno-internal-only{background:#17202b!important;border-color:#3a4656!important;color:#d1d6db!important}
+html body .zeno-search-page .zeno-result-group,html body .zeno-search-page>h3{margin:0!important;padding:24px 20px 4px!important;font-size:15px!important;font-weight:600!important;color:#191f28!important;line-height:1.4!important;background:none!important;border:0!important}
+:is(html.dark,html[data-theme="dark"]) body main.content .zeno-search-page .zeno-result-group{color:#f2f4f6!important}
+html body .zeno-search-page>.zeno-urgent-call{margin:16px 20px 0!important}
 </style>
 </head><body><div id="app" class="app"></div><script>
 'use strict';
