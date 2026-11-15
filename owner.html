@@ -3892,6 +3892,14 @@ function zenoHomeSummary(){
   +'<span>야간 진료 안내 <strong>'+night+'</strong>곳</span>'
   +'<span>24시간 운영 표기 <strong>'+allDay+'</strong>곳</span></div>';
 }
+/* Only explicitly recorded emergency statuses from linked hospitals appear here. */
+function zenoHomeEmergencyStatusNote(h){
+ if(!h.linked)return '';
+ const record=hs(h.id);
+ const labels={available:'응급 문의 가능',busy:'응급 혼잡',unavailable:'응급 수용 어려움'};
+ if(!record?.updatedAt||!Object.prototype.hasOwnProperty.call(labels,record.emergencyStatus))return '';
+ return '<small>'+e('병원 입력 · '+labels[record.emergencyStatus]+' · '+dateTime(record.updatedAt))+'</small>';
+}
 function zenoHomeOperatingRail(){
  const list=zenoHomeAreaHospitals();
  const open=list.filter(h=>{const kind=zenoPublishedClinicStatus(h).kind;return kind==='hours'||(kind==='guide'&&h.is24);}).slice(0,8);
@@ -3899,7 +3907,7 @@ function zenoHomeOperatingRail(){
   const p=(Array.isArray(h.photos)?h.photos:[]).find(x=>x.approved===true&&x.url);
   const img=p?'<img src="'+e(p.url)+'" alt="" class="'+(p.isLogo||p.fit==='contain'?'is-logo':'')+'" loading="lazy">':'';
   const badge=h.is24?'24시간 운영':zenoNightHours(h)?'야간 진료':'진료시간 안내';
-  return '<button type="button" class="zeno-v10-open-card" data-action="details" data-id="'+e(h.id)+'"><span class="zeno-v10-mini-photo">'+(img||zenoCareIcon('일반 진료'))+'</span><span class="zeno-home-rail-copy"><strong>'+e(h.name)+'</strong><small>'+e(String(h.region||'').split('·').pop().trim())+'</small><span class="zeno-v10-hospital-badges"><span class="zeno-v10-badge'+(badge==='진료시간 안내'?' is-open':'')+'">'+badge+'</span></span></span></button>';
+  return '<button type="button" class="zeno-v10-open-card" data-action="details" data-id="'+e(h.id)+'"><span class="zeno-v10-mini-photo">'+(img||zenoCareIcon('일반 진료'))+'</span><span class="zeno-home-rail-copy"><strong>'+e(h.name)+'</strong><small>'+e(String(h.region||'').split('·').pop().trim())+'</small><span class="zeno-v10-hospital-badges"><span class="zeno-v10-badge'+(badge==='진료시간 안내'?' is-open':'')+'">'+badge+'</span></span>'+zenoHomeEmergencyStatusNote(h)+'</span></button>';
  }).join('');
  return '<section class="zeno-v10-open-section"><div class="care-list-heading"><h2>지금 문 여는 병원</h2><button data-action="show-all-hospitals">전체 병원 ›</button></div><p class="zeno-open-note">등록된 운영시간 기준 · 실제 접수 여부 전화 확인</p>'
   +(open.length?'<div class="zeno-v10-open-rail" tabindex="0" role="region" aria-label="운영시간 기준 병원 가로 스크롤 목록">'+cards+'</div>':'<p class="zeno-v10-empty">현재 시간에 해당하는 등록 진료시간을 찾지 못했어요.</p>')+'</section>';
@@ -3944,8 +3952,8 @@ function home(){
  +'<button class="care-symptoms" data-nav="symptoms">'+zenoHomeSmallIcon('help')+'<strong>증상으로 진료과목 찾기</strong><span aria-hidden="true">›</span></button></section>'
  +zenoHomeOperatingRail()
  +'<section class="zeno-home-utilities" aria-label="조건별 병원 찾기"><h2>조건별 병원 찾기</h2><div class="zeno-home-utility-list">'
- +'<button type="button" class="zeno-home-utility-row" data-action="night-shortcut"><span class="zeno-home-utility-icon">'+zenoHomeSmallIcon('moon')+'</span><span class="zeno-home-utility-copy"><strong>야간 진료</strong><small>야간 진료시간 안내</small></span><span class="zeno-home-utility-chevron" aria-hidden="true">›</span></button>'
- +'<button type="button" class="zeno-home-utility-row" data-action="around-clock-shortcut"><span class="zeno-home-utility-icon">'+zenoHomeSmallIcon('urgent')+'</span><span class="zeno-home-utility-copy"><strong>24시간 진료 안내</strong><small>운영시간과 응급 안내 구분</small></span><span class="zeno-home-utility-chevron" aria-hidden="true">›</span></button>'
+ +'<button type="button" class="zeno-home-utility-row" data-action="night-shortcut"><span class="zeno-home-utility-icon">'+zenoHomeSmallIcon('moon')+'</span><span class="zeno-home-utility-copy"><strong>야간 진료</strong><small>밤 시간 진료가 안내된 병원</small></span><span class="zeno-home-utility-chevron" aria-hidden="true">›</span></button>'
+ +'<button type="button" class="zeno-home-utility-row" data-action="around-clock-shortcut"><span class="zeno-home-utility-icon">'+zenoHomeSmallIcon('urgent')+'</span><span class="zeno-home-utility-copy"><strong>24시간 운영 병원</strong><small>응급 접수는 전화로 확인</small></span><span class="zeno-home-utility-chevron" aria-hidden="true">›</span></button>'
  +'<button type="button" class="zeno-home-utility-row" data-action="cat-waiting-shortcut"><span class="zeno-home-utility-icon">'+zenoNavIcon('pets')+'</span><span class="zeno-home-utility-copy"><strong>고양이 전용 대기실</strong><small>분리된 공간이 안내된 병원</small></span><span class="zeno-home-utility-chevron" aria-hidden="true">›</span></button></div></section>'
  +zenoHomeBookingPreview()
  +'<nav class="zeno-home-service-links" aria-label="내 서비스"><button type="button" data-nav="pets">'+zenoNavIcon('pets')+'<span>내 아이 기록</span></button><button type="button" data-nav="qa">'+zenoNavIcon('qa')+'<span>질문·답변</span></button><button type="button" data-nav="prices">'+zenoNavIcon('search')+'<span>진료비 비교</span></button></nav>'
