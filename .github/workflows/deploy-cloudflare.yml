@@ -50,8 +50,11 @@ jobs:
           import fs from 'node:fs';
           let worker=fs.readFileSync('worker.js','utf8');
           const owner=fs.readFileSync('owner.html','utf8');
-          const version=owner.match(/const ZENO_OWNER_UI_REVISION\s*=\s*'([^']+)'/)?.[1];
-          if(!version)throw Error('Owner UI version must be defined before deployment');
+          const {createHash}=await import('node:crypto');
+          const version='owner-'+createHash('sha256').update(owner).digest('hex').slice(0,16);
+          const revisionLine=/const ZENO_OWNER_UI_REVISION\s*=\s*'[^']+';/;
+          if(!revisionLine.test(owner))throw Error('Owner UI revision missing');
+          fs.writeFileSync('owner.html',owner.replace(revisionLine,"const ZENO_OWNER_UI_REVISION='"+version+"';"));
           for(const [filename,constant] of [['owner.html','OWNER_HTML'],['hospital.html','HOSPITAL_HTML']]){
             const html=fs.readFileSync(filename,'utf8');
             const prefix='const '+constant+' = ';
