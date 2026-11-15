@@ -2748,6 +2748,24 @@ html.dark .zeno-search-page .zeno-filter-extras,html[data-theme="dark"] .zeno-se
  .zeno-home-v10 .zeno-v10-open-card{flex-basis:206px!important;min-width:206px!important;width:206px!important;max-width:206px!important}
 }
 </style>
+<style id="zeno-search-card-cleanup-20261116">
+/* 검색 카드 정리: 상태 문구는 보조 정보 톤, 라벨과 목록 구분, 전화 버튼 축소, 예약은 주요 행동 */
+.zeno-search-page .zeno-search-card .zeno-search-status{font-weight:500!important;color:#4e5968!important}
+.zeno-search-page .zeno-search-card .zeno-search-status.unknown{color:#8b95a1!important}
+.zeno-search-page .zeno-search-card .zeno-search-status.direct{color:#137457!important;font-weight:600!important}
+.zeno-search-page .zeno-search-card .zeno-search-status::before{content:'';display:inline-block;width:1px;height:10px;background:#d1d6db;margin-right:8px;vertical-align:-1px}
+.zeno-fact-label{display:inline-block;margin-right:6px;color:#4e5968;font-weight:600}
+.zeno-fact-more{white-space:nowrap}
+.zeno-search-fact.is-empty{color:#8b95a1!important}
+.zeno-search-page .zeno-search-card .zeno-card-action{min-height:40px!important;font-size:14px!important;font-weight:600!important;border-radius:8px!important}
+.zeno-search-page .zeno-search-card .zeno-card-call{background:#eef4fb!important;border:1px solid #eef4fb!important;color:#1f63a8!important}
+.zeno-search-page .zeno-search-card .zeno-card-actions.has-book .zeno-card-book{background:#2679c5!important;border-color:#2679c5!important;color:#fff!important}
+.zeno-search-page .zeno-search-card .zeno-initial-photo{display:flex!important;align-items:center;justify-content:center;background:#f2f4f6!important;border:0!important;color:#8b95a1;font-size:20px;font-weight:600}
+:is(html.dark,html[data-theme="dark"]) .zeno-fact-label{color:#c9d3de}
+:is(html.dark,html[data-theme="dark"]) .zeno-search-page .zeno-search-card .zeno-search-status{color:#c9d3de!important}
+:is(html.dark,html[data-theme="dark"]) .zeno-search-page .zeno-search-card .zeno-card-call{background:#22364b!important;border-color:#22364b!important;color:#cfe3f7!important}
+:is(html.dark,html[data-theme="dark"]) .zeno-search-page .zeno-search-card .zeno-initial-photo{background:#273341!important;color:#abb8c7}
+</style>
 </head><body><div id="app" class="app"></div><script>
 'use strict';
 const APP_MODE='owner';
@@ -3464,11 +3482,24 @@ function zenoHospitalFocusEntries(h){
  const rows=hasHospitalChoice?saved[h.id]:(h.declaredSpecialties||[]).map(keyword=>({keyword,status:'병원 안내'}));
  return (Array.isArray(rows)?rows:[]).filter(item=>item&&typeof item.keyword==='string'&&item.keyword.trim()).slice(0,3);
 }
-function zenoDeclaredSpecialtyLine(h, showAll=false){
- const fields=[...new Set([...(h.careFields||[]),...(h.publishedCareFields||[]),...(h.officialSpecialties||[]),...(h.cats||[])].filter(x=>x&&x!=='일반'))];
+/* Display-only normalization: the same department written two ways (네이버 원문 vs ZENO 분류) is shown once. */
+const ZENO_CARE_DISPLAY_ALIAS={'피부과':'피부·귀','피부':'피부·귀','피부귀':'피부·귀','치과':'치과·구강','구강':'치과·구강','비뇨기과':'비뇨기','신장·비뇨기':'비뇨기','건강검진':'건강검진·접종','예방접종':'건강검진·접종','백신접종':'건강검진·접종','예방의학과':'예방의학','영상의학과':'영상의학','중성화':'중성화수술','중성화 수술':'중성화수술','이비인후':'이비인후과'};
+function zenoDisplayCareFields(list){
+ const out=[];
+ for(const raw of list){
+  const v=String(raw||'').trim();
+  if(!v||v==='일반'||v==='일반진료'||v==='일반 진료')continue;
+  const parts=v==='예방의학 및 건강검진'?['예방의학','건강검진']:[v];
+  for(const part of parts){const c=ZENO_CARE_DISPLAY_ALIAS[part]||part;if(!out.includes(c))out.push(c);}
+ }
+ return out;
+}
+function zenoDeclaredSpecialtyLine(h, showAll=false, limit=3, showEmpty=false){
+ const fields=zenoDisplayCareFields([...(h.publishedCareFields||[]),...(h.careFields||[]),...(h.officialSpecialties||[]),...(h.cats||[])]);
  const focus=zenoHospitalFocusEntries(h).map(row=>row.keyword);
- return (fields.length?'<span class="zeno-search-fact">진료과목 · '+e((showAll?fields:fields.slice(0,3)).join(' · '))+(!showAll&&fields.length>3?' 외 '+(fields.length-3)+'개':'')+'</span>':'')
-  +(focus.length?'<span class="zeno-search-fact">대표 특화 · '+e(focus.join(' · '))+'</span>':'');
+ const label=t=>'<span class="zeno-fact-label">'+t+'</span>';
+ return (fields.length?'<span class="zeno-search-fact">'+label('진료과목')+e((showAll?fields:fields.slice(0,limit)).join(' · '))+(!showAll&&fields.length>limit?' <span class="zeno-fact-more">외 '+(fields.length-limit)+'개</span>':'')+'</span>':showEmpty?'<span class="zeno-search-fact is-empty">'+label('진료과목')+'네이버 확인 전</span>':'')
+  +(focus.length?'<span class="zeno-search-fact">'+label('대표 특화')+e(focus.join(' · '))+'</span>':'');
 }
 function zenoCareSource(h){
  for(const value of [h.specialtyEvidenceUrl,h.publishedCareUrl]){
@@ -3627,28 +3658,33 @@ function zenoSavedHospitalCard(h){
 
 /* Search-only card: verified facts, separate hospital input from inferred hours. */
 function zenoSearchClinicStatus(h){
+ // 병원이 직접 입력한 상태만 '병원 입력'으로 표시하고, 나머지는 등록된 시간표 기준 추정임을 같은 말투로 표시한다.
  const updated=h.linked?hs(h.id):null;
  if(updated?.updatedAt){
   const updatedMs=Date.parse(updated.updatedAt),fresh=Number.isFinite(updatedMs)&&Date.now()-updatedMs>=0&&Date.now()-updatedMs<30*60*1000;
-  if(fresh)return {text:'병원 입력 · '+(updated.status==='available'?'접수 가능 안내':updated.status==='busy'?'혼잡 안내':'접수 상태 확인 필요'),kind:'direct'};
-  return {text:'접수 상태 · 전화 재확인',kind:'unknown'};
+  if(fresh)return {text:'병원 입력 · '+(updated.status==='available'?'접수 가능':updated.status==='busy'?'혼잡':'접수 상태 확인 필요'),kind:'direct'};
  }
- if(h.emergency24&&!h.is24)return {text:'24시간 응급 안내 · 수용 확인 필요',kind:'schedule24'};
+ if(h.emergency24&&!h.is24)return {text:'24시간 응급 안내 · 수용 전화 확인',kind:'schedule24'};
  if(h.is24)return {text:'24시간 운영 안내 · 응급 수용 별도',kind:'schedule24'};
- if(h.careSchedule)return {text:'야간 진료 안내 · 운영 요일 확인',kind:'unknown'};
- const clock=zenoSeoulClock(),week=zenoWeeklyData(h);
+ const clock=zenoSeoulClock();
+ if(h.careSchedule){
+  const from=zenoScheduleSpan(h.careSchedule.day),to=zenoScheduleSpan(h.careSchedule.night);
+  if(!from)return {text:'진료시간 확인 필요',kind:'unknown'};
+  const end=to?to.end:from.end,within=clock.now>=from.start&&clock.now<end;
+  return {text:(within?'진료시간 내':'진료시간 외')+' · 요일 확인 필요',kind:'estimated'};
+ }
+ const week=zenoWeeklyData(h);
  const days=['일','월','화','수','목','금','토'];
  const prior=zenoScheduleSpan(week[days[(days.indexOf(clock.weekday)+6)%7]]);
  const today=week[clock.weekday],span=zenoScheduleSpan(today);
- if(!today)return {text:'오늘 진료시간 확인 필요',kind:'unknown'};
- if(/휴진|휴무/.test(today))return {text:'오늘 휴진 · 등록 시간표',kind:'estimated'};
- if(prior?.overnight&&clock.now<prior.end)return {text:'등록된 야간 진료시간 · 접수 확인',kind:'estimated'};
- if(!span)return {text:'오늘 진료시간 확인 필요',kind:'unknown'};
+ if(!today)return {text:'진료시간 확인 필요',kind:'unknown'};
+ if(/휴진|휴무/.test(today))return {text:'오늘 휴진 · 시간표 기준',kind:'estimated'};
+ if(prior?.overnight&&clock.now<prior.end)return {text:'진료시간 내 · 시간표 기준',kind:'estimated'};
+ if(!span)return {text:'진료시간 확인 필요',kind:'unknown'};
  const rest=zenoScheduleSpan(week['점심시간']||'');
- const isRest=rest&&!rest.overnight&&clock.now>=rest.start&&clock.now<rest.end;
- if(isRest)return {text:'휴게시간 안내 · 전화 확인',kind:'estimated'};
+ if(rest&&!rest.overnight&&clock.now>=rest.start&&clock.now<rest.end)return {text:'점심시간 · 시간표 기준',kind:'estimated'};
  const within=clock.now>=span.start&&(span.overnight||clock.now<span.end);
- return {text:(within?'등록된 진료시간 내':'등록된 진료시간 외')+' · 접수 확인',kind:'estimated'};
+ return {text:(within?'진료시간 내':'진료시간 외')+' · 시간표 기준',kind:'estimated'};
 }
 
 /* Show all existing CFC evidence in search cards without upgrading reports to certifications. */
@@ -3716,7 +3752,7 @@ function zenoInternalEvidenceBlock(h){
 }
 function zenoSearchHospitalCard(h){
  const photo=(Array.isArray(h.photos)?h.photos:[]).find(p=>p&&p.approved===true&&p.url);
- const photoHtml=photo?'<img class="directory-photo'+(photo.isLogo||photo.fit==='contain'?' directory-logo':'')+'" loading="lazy" referrerpolicy="no-referrer" src="'+e(photo.url)+'" alt="'+e(h.name)+' 사진" onerror="this.style.visibility=\'hidden\'">':'<span class="directory-photo directory-placeholder" aria-hidden="true">'+zenoNavIcon('search')+'</span>';
+ const photoHtml=photo?'<img class="directory-photo'+(photo.isLogo||photo.fit==='contain'?' directory-logo':'')+'" loading="lazy" referrerpolicy="no-referrer" src="'+e(photo.url)+'" alt="'+e(h.name)+' 사진" onerror="this.style.visibility=\'hidden\'">':'<span class="directory-photo directory-placeholder zeno-initial-photo" aria-hidden="true">'+e(String(h.name||'').trim().charAt(0))+'</span>';
  const status=zenoSearchClinicStatus(h);
  const clinical=state.page==='search'&&zenoClinicalFocusEnabled();
  const origin=state.specialty?zenoSpecialtyOrigin(h):'';
@@ -3739,7 +3775,7 @@ function zenoSearchHospitalCard(h){
  // Details, published fees, hours and directions remain available by tapping the hospital row.
  return '<article class="directory-item zeno-hospital-card zeno-search-card"><button type="button" class="directory-main" data-action="details" data-id="'+e(h.id)+'" aria-label="'+e(h.name)+' 상세 정보, 진료비, 운영시간 및 위치">'
   +photoHtml+'<span class="directory-text"><strong>'+e(h.name)+'</strong><span class="zeno-card-context"><span class="directory-region">'+e(h.region||'')+'</span><span class="zeno-search-status '+status.kind+'">'+e(status.text)+'</span></span>'
-  +zenoDeclaredSpecialtyLine(h,true)+contextHtml+'</span></button><div class="zeno-card-actions'+(book?' has-book':'')+'">'+call+book+'</div></article>';
+  +zenoDeclaredSpecialtyLine(h,false,3,true)+contextHtml+'</span></button><div class="zeno-card-actions'+(book?' has-book':'')+'">'+call+book+'</div></article>';
 }
 
 function zenoInternalHospitalResults(items){
