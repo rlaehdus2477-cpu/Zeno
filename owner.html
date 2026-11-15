@@ -3209,8 +3209,8 @@ function zenoDetailQuick(h){
 function zenoNaverEvidenceUrl(value){
  try{
   const url=new URL(value);
-  if(url.protocol!=='https:'||!/(^|\\.)naver\\.com$/.test(url.hostname))return '';
-  if(/^\\/p\\/search(?:\\/|$)/.test(url.pathname))return '';
+  if(url.protocol!=='https:'||!/(^|\.)naver\.com$/.test(url.hostname))return '';
+  if(/^\/p\/search(?:\/|$)/.test(url.pathname))return '';
   return url.href;
  }catch{return ''}
 }
