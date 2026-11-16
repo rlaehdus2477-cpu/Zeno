@@ -140,14 +140,14 @@ jobs:
                 if(!dugeun.includes(required))throw Error('Production owner Dugeun NAVER profile incomplete: '+required);
               }
               if(!dugeun.includes('"name":"두근동물병원"')||!dugeun.includes('"declaredSpecialties":["심장"]'))throw Error('Dugeun cardiac specialty is not published in production owner UI');
-              // Verify the 15 registered cat waiting rooms in both public applications.
+              // Verify the 17 registered cat waiting rooms in both public applications.
               for(const [view,html] of [['owner',owner],['hospital',await (await get('/hospital?ui='+nonce)).text()]]){
                 const start=html.indexOf('const HOSPITALS=');
                 const end=html.indexOf('];',start);
                 if(start<0||end<start)throw Error(view+' HOSPITALS data missing');
                 const records=JSON.parse(html.slice(start+'const HOSPITALS='.length,end+1));
                 const waiting=records.filter(h=>h.catWaiting);
-                if(waiting.length!==15)throw Error(view+' cat waiting room records count '+waiting.length+' (expected 15)');
+                if(waiting.length!==17)throw Error(view+' cat waiting room records count '+waiting.length+' (expected 17)');
                 const may=waiting.find(h=>h.id==='pub029');
                 const narae=waiting.find(h=>h.id==='pub028');
                 if(!may?.catWaiting?.naverVerified||!narae?.catWaiting?.verified)throw Error(view+' cat waiting record missing');
