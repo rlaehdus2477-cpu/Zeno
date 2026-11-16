@@ -3837,7 +3837,7 @@ function zenoFocusAliasMatch(value,department){
  // Surgery-focused labels already registered as representative care belong under the wider surgery group.
  // Do not infer specialisation from routine surgery or a general care category.
  if(department==='외과'){
-  const label=String(value||'').replace(/\\s+/g,'').toLowerCase();
+  const label=String(value||'').replace(/\s+/g,'').toLowerCase();
   if(['외과','일반외과','정형외과','고난도수술','수술센터','외과수술센터','외과수술','종양수술','신경외과'].includes(label))return true;
  }
  return zenoCareLabelMatches(value,department);
