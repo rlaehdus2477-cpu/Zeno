@@ -140,21 +140,21 @@ jobs:
                 if(!dugeun.includes(required))throw Error('Production owner Dugeun NAVER profile incomplete: '+required);
               }
               if(!dugeun.includes('"name":"두근동물병원"')||!dugeun.includes('"declaredSpecialties":["심장"]'))throw Error('Dugeun cardiac specialty is not published in production owner UI');
-              // Verify 14 historical waiting-room candidates without converting unverified records into facts.
+              // Verify the 15 registered cat waiting rooms in both public applications.
               for(const [view,html] of [['owner',owner],['hospital',await (await get('/hospital?ui='+nonce)).text()]]){
                 const start=html.indexOf('const HOSPITALS=');
                 const end=html.indexOf('];',start);
                 if(start<0||end<start)throw Error(view+' HOSPITALS data missing');
                 const records=JSON.parse(html.slice(start+'const HOSPITALS='.length,end+1));
                 const waiting=records.filter(h=>h.catWaiting);
-                if(waiting.length!==14)throw Error(view+' cat waiting room records count '+waiting.length+' (expected 14)');
+                if(waiting.length!==15)throw Error(view+' cat waiting room records count '+waiting.length+' (expected 15)');
                 const may=waiting.find(h=>h.id==='pub029');
                 const narae=waiting.find(h=>h.id==='pub028');
-                if(!may?.catWaiting?.naverVerified||!narae?.catWaiting?.visited)throw Error(view+' cat waiting evidence level missing');
+                if(!may?.catWaiting?.naverVerified||!narae?.catWaiting?.verified)throw Error(view+' cat waiting record missing');
                 const unverified=waiting.filter(h=>h.catWaiting.verificationStatus==='needs-naver-check');
                 const tnd=waiting.find(h=>h.id==='tnd');
                 if(!tnd?.catWaiting?.naverVerified||!tnd?.catWaiting?.separate)throw Error(view+' T&D NAVER cat waiting-room confirmation is missing');
-                if(unverified.length!==10)throw Error(view+' waiting-room NAVER review candidates count '+unverified.length+' (expected 10 after T&D confirmation)');
+                if(unverified.length!==0)throw Error(view+' cat waiting rooms still marked pending '+unverified.length);
                 if(html.includes('보호자 제보'))throw Error(view+' old guardian-report wording has returned');
               }
               const sw=await (await get('/sw.js?ui='+nonce)).text();
