@@ -4116,7 +4116,7 @@ function searchPage(){
  const focusCount=clinical?results.filter(h=>Boolean(zenoSpecialtyFocus(h))).length:0;
  const resultCount=clinical?(state.internalFocusOnly?focusCount:registeredCount):results.length;
  const waitingOnly=zenoHasFilter('고양이 대기실')&&!state.specialty;
- const verifiedWaitingCount=waitingOnly?results.filter(h=>zenoCatWaitingTier(h)===3).length:0;
+ const verifiedWaitingCount=waitingOnly?results.filter(h=>h.catWaiting?.verified).length:0;
  const resultsHeading=waitingOnly?'고양이 대기실 확인 '+verifiedWaitingCount+'곳':(state.specialty==='특수동물'?'검색 결과 ':clinical?(e(state.specialty)+(state.internalFocusOnly?' 특화 ':' 진료 ')):'청주 병원 ')+resultCount+'곳';
  const internalNote=clinical?'<p class="zeno-clinical-legend">'+(inquiryCount?'추가 전화 확인 '+inquiryCount+'곳 · ':'')+'특화는 병원 공개 안내 기준이며 전문의 자격을 뜻하지 않습니다.</p>':'';
  const focusChip=clinical?'<button type="button" class="zeno-internal-only" data-action="internal-focus-only" aria-pressed="'+(state.internalFocusOnly?'true':'false')+'">특화만 보기'+(state.internalFocusOnly?' ✓':'')+'</button>':'';
