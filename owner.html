@@ -5388,7 +5388,8 @@ async function start(){
   if(!zenoPollTimer)zenoPollTimer=setInterval(zenoPoll,25000);
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)zenoPoll()});
   window.addEventListener('online',()=>{if(!state.serverReady){start()}else zenoPoll()});
-  if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost'||location.hostname==='127.0.0.1'))navigator.serviceWorker.register('/sw.js').catch(()=>{});
+  // Native APK must not register a PWA worker that can preserve outdated HTML.
+  if(!new URLSearchParams(location.search).has('android_app')&&'serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost'||location.hostname==='127.0.0.1'))navigator.serviceWorker.register('/sw.js').catch(()=>{});
  }finally{zenoStartPending=false}
 }
 render();start();
@@ -5409,12 +5410,36 @@ async function zenoCheckOwnerUIRevision(force=false){
   if(document.hidden||state.modal||state.profileSaving||state.bookingSubmitting||document.activeElement?.closest('form'))return;
   // Never loop when an older browser cache keeps returning the same HTML after an update.
   if(new URLSearchParams(window.location.search).get('ui')===data.owner)return;
-  window.location.replace('/owner?ui='+encodeURIComponent(data.owner));
+  const nativeApp=new URLSearchParams(location.search).get('android_app');
+   const route=nativeApp?'/owner-native?android_app='+encodeURIComponent(nativeApp)+'&ui=':'/owner?ui=';
+   window.location.replace(route+encodeURIComponent(data.owner));
  }catch(error){/* Keep the existing page during network outages. */}
  finally{zenoUIVersionChecking=false}
 }
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)zenoCheckOwnerUIRevision(true)});
 window.addEventListener('pageshow',()=>zenoCheckOwnerUIRevision());
+/* The 1.2 APK can retain an older PWA controller even when HTTP cache is disabled.
+   Unregister it only in the native shell; never clear user data or login state. */
+if(new URLSearchParams(location.search).has('android_app')){
+ (async()=>{
+  try{
+   let removed=0;
+   if('serviceWorker' in navigator){
+    const registrations=await navigator.serviceWorker.getRegistrations();
+    for(const registration of registrations){
+     if(new URL(registration.scope).origin===location.origin&&await registration.unregister())removed++;
+    }
+   }
+   if('caches' in window){
+    for(const name of await caches.keys())if(/^zeno-pwa-assets-v/.test(name))await caches.delete(name);
+   }
+   if(removed&&location.pathname!=='/owner-native'&&!state.modal&&!state.bookingSubmitting){
+    location.replace('/owner-native?android_app='+encodeURIComponent(new URLSearchParams(location.search).get('android_app'))+'&swclean=1');
+   }
+  }catch(error){console.warn('Native service worker cleanup',error)}
+ })();
+}
+setTimeout(()=>zenoCheckOwnerUIRevision(true),1500);
 setInterval(()=>zenoCheckOwnerUIRevision(),180000);
 /* Guests and logged-in users see changed evening hours without a reload. */
 setInterval(()=>{if(document.hidden)return;if(state.page==='emergency'||(state.page==='search'&&zenoHasFilter('야간')))render();},60000);
