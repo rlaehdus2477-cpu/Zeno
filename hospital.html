@@ -389,6 +389,7 @@ label:has(input[type="checkbox"]){min-height:44px;align-items:center!important}
 .hi-heading-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap}
 .hi-heading-actions button{white-space:nowrap}
 .hi-new-alert{display:inline-flex;padding:4px 9px;border-radius:7px;background:#e4f6f1;color:#087c67;font-size:12px;font-weight:800}
+.hi-alert-toggle{margin-left:auto;min-height:32px;padding:0 12px;border:1px solid #d5dbe3;border-radius:8px;background:#fff;color:#33404f;font-size:13px;font-weight:600;cursor:pointer}.hi-alert-toggle.on{border-color:#bfe5da;background:#eef9f5;color:#087c67}
 .hi-no-booking{font-size:13px;color:#64798a;line-height:1.55;margin:12px 0}
 .hi-request-note,.hi-request-empty{font-size:13px;line-height:1.6;color:#657c8c}
 .hi-change-request{min-width:0}
@@ -728,9 +729,9 @@ async function refresh(force=false){
  try{return await task}finally{if(zenoRefreshTask===task)zenoRefreshTask=null}
 }
 async function loadHospital(draw=true){if(!state.hospitalToken)return;try{const x=await api('GET','/api/dashboard?hospitalId='+encodeURIComponent(state.activeHospital));const newBookings=x.bookings||[];
- if(state.hAlertReady&&state.hLastHospital===state.activeHospital){const fresh=newBookings.filter(b=>b.status==='pending'&&!state.hSeenIds.includes(b.id));if(fresh.length){state.hNewCount+=fresh.length;toast('새 예약 요청 '+fresh.length+'건이 도착했습니다.');}}
+ if(state.hAlertReady&&state.hLastHospital===state.activeHospital){const fresh=newBookings.filter(b=>b.status==='pending'&&!state.hSeenIds.includes(b.id));if(fresh.length){state.hNewCount+=fresh.length;toast('새 예약 요청 '+fresh.length+'건이 도착했습니다.');zenoHospitalAlert(fresh.length);}}
  state.hSeenIds=newBookings.map(b=>b.id);state.hAlertReady=true;state.hLastHospital=state.activeHospital;
- state.hospitalBookings=newBookings;state.hospitalQuestions=x.questions||[];state.hChangeRequests=x.changeRequests||[];state.hSpecialtyKeywords=x.specialtyKeywords||[];state.settings[state.activeHospital]=x.settings||state.settings[state.activeHospital];if(draw)render()}catch(err){if(err.message.includes('401')||err.message.includes('권한')||err.message.includes('인증')){state.hospitalToken='';sessionStorage.removeItem('zeno-h-token')}if(draw){toast(err.message);render()}else throw err}}
+ state.hospitalBookings=newBookings;state.hospitalQuestions=x.questions||[];state.hChangeRequests=x.changeRequests||[];state.hSpecialtyKeywords=x.specialtyKeywords||[];state.settings[state.activeHospital]=x.settings||state.settings[state.activeHospital];zenoHospitalTitle();if(draw)render()}catch(err){if(err.message.includes('401')||err.message.includes('권한')||err.message.includes('인증')){state.hospitalToken='';sessionStorage.removeItem('zeno-h-token')}if(draw){toast(err.message);render()}else throw err}}
 async function loadAdmin(draw=true){if(!state.adminToken)return;try{state.adminStats=await api('GET','/api/admin/stats',null,true);if(draw)render()}catch(err){toast(err.message);state.adminToken='';sessionStorage.removeItem('zeno-admin-token');if(draw)render()}}
 function navTo(p){if(APP_MODE==='hospital'&&p!=='hospital')return;if(APP_MODE==='owner'&&(p==='hospital'||p==='admin'))return;state.page=p;state.modal=null;window.scrollTo({top:0,behavior:'instant'});if(p==='hospital')loadHospital();else if(p==='admin')loadAdmin();render()}
 const HOSPITAL_SVG={
@@ -965,7 +966,7 @@ function hospitalPage(){
  const waiting=all.filter(b=>b.status==='pending').length; /* CHANGED */
  const unanswered=q.filter(x=>x.status!=='answered').length;
  const header='<header class="hi-page-heading"><div><h1>'+e(h.name)+'</h1><p>병원 관리자 · '+'접수된 예약'+'</p></div><div class="hi-heading-actions"><button class="hi-switch-hospital" type="button" data-action="hospital-logout">병원 전환</button></div></header>';
- const counts='<div class="hi-summary"><span>'+'예약'+' <strong>'+all.length+'</strong></span><i></i><span>확인 대기 <strong>'+waiting+'</strong></span><i></i><span>미답변 <strong>'+unanswered+'</strong></span>'+(state.hNewCount?'<span class="hi-new-alert">새 예약 '+state.hNewCount+'건</span>':'')+'</div>';
+ const counts='<div class="hi-summary"><span>'+'예약'+' <strong>'+all.length+'</strong></span><i></i><span>확인 대기 <strong>'+waiting+'</strong></span><i></i><span>미답변 <strong>'+unanswered+'</strong></span>'+(state.hNewCount?'<span class="hi-new-alert">새 예약 '+state.hNewCount+'건</span>':'')+zenoHospitalAlertButton()+'</div>';
  const chips='<div class="hi-filter-bar"><div class="hi-filter-chips">'+[['all','전체'],['waiting','확인 대기'],['awaiting','보호자 답변'],['confirmed','확정'],['closed','종료']].map(x=>'<button class="'+((state.hBookingFilter||'all')===x[0]?'selected':'')+'" data-action="booking-filter" data-value="'+x[0]+'" aria-pressed="'+String((state.hBookingFilter||'all')===x[0])+'">'+x[1]+'</button>').join('')+'</div><button class="hi-sort-button" data-action="booking-sort">'+hsIcon('filter',16)+(state.hSort==='urgency'?'긴급도순':'최신순')+'</button></div>';
  const inbox='<section class="hi-inbox"><header class="hi-inbox-heading"><h2>예약 관리</h2><span>'+shown.length+'건</span></header>'+(!live.length?'<p class="hi-no-booking">아직 접수된 예약 요청이 없습니다.</p>':'')+chips+hiInboxGroups(shown)+'</section>';
  const current=all.find(x=>x.id===state.hDetailBookingId);
@@ -1005,6 +1006,35 @@ function authScreen(){
  <small>현재는 창업 시범서비스입니다. 실제 진료 예약이 접수되지 않으며, 민감한 개인정보와 실제 진료 기록을 입력하지 마세요.</small>
  <a class="hosp-switch" href="/hospital">병원 담당자이신가요? 병원용 열기 →</a></div></div>`;
 }
+/* 병원 새 예약 알림: 소리 · 브라우저 알림 · 탭 제목. 켜기 버튼을 누른 기기에서만 소리/알림이 나갑니다. */
+const ZENO_H_BASE_TITLE=document.title,ZENO_H_ALERT_KEY='zeno-h-alerts';
+let zenoHAudio=null;
+function zenoHospitalAlertsOn(){try{return localStorage.getItem(ZENO_H_ALERT_KEY)==='on'}catch{return false}}
+function zenoHospitalAudio(){try{if(!zenoHAudio){const C=window.AudioContext||window.webkitAudioContext;if(!C)return null;zenoHAudio=new C()}if(zenoHAudio.state==='suspended')zenoHAudio.resume().catch(()=>{});return zenoHAudio}catch{return null}}
+function zenoHospitalBeep(){const ctx=zenoHospitalAudio();if(!ctx)return;try{const t=ctx.currentTime;[[880,0],[1175,0.22]].forEach(([f,d])=>{const o=ctx.createOscillator(),g=ctx.createGain();o.type='sine';o.frequency.value=f;g.gain.setValueAtTime(0.0001,t+d);g.gain.exponentialRampToValueAtTime(0.25,t+d+0.02);g.gain.exponentialRampToValueAtTime(0.0001,t+d+0.18);o.connect(g).connect(ctx.destination);o.start(t+d);o.stop(t+d+0.2)})}catch{}}
+function zenoHospitalTitle(){const n=(state.hospitalBookings||[]).filter(b=>b.status==='pending').length;document.title=state.hospitalToken&&n?'('+n+') 확인 대기 · '+ZENO_H_BASE_TITLE:ZENO_H_BASE_TITLE}
+function zenoHospitalAlert(count){
+ if(!zenoHospitalAlertsOn())return;
+ zenoHospitalBeep();
+ try{
+  if('Notification' in window&&Notification.permission==='granted'&&(document.hidden||!document.hasFocus())){
+   const n=new Notification('ZENO 새 예약 요청',{body:'새 예약 요청 '+count+'건이 도착했습니다. 확인 대기 목록을 확인해 주세요.',tag:'zeno-new-booking',icon:'/icon-192.png'});
+   n.onclick=()=>{window.focus();n.close()};
+  }
+ }catch{}
+}
+async function zenoHospitalAlertToggle(){
+ if(zenoHospitalAlertsOn()){try{localStorage.removeItem(ZENO_H_ALERT_KEY)}catch{}toast('새 예약 알림을 껐습니다.');return}
+ try{localStorage.setItem(ZENO_H_ALERT_KEY,'on')}catch{}
+ zenoHospitalAudio();
+ let perm='unsupported';
+ try{if('Notification' in window)perm=Notification.permission==='default'?await Notification.requestPermission():Notification.permission}catch{}
+ zenoHospitalBeep();
+ toast(perm==='granted'?'새 예약 알림을 켰습니다. 소리와 브라우저 알림으로 알려 드립니다.':'새 예약 알림을 켰습니다. 브라우저 알림이 허용되지 않아 소리로만 알려 드립니다.');
+}
+function zenoHospitalAlertButton(){const on=zenoHospitalAlertsOn();return '<button type="button" class="hi-alert-toggle'+(on?' on':'')+'" data-action="hospital-alert-toggle" aria-pressed="'+on+'">'+(on?'알림 켜짐':'새 예약 알림 켜기')+'</button>'}
+/* 브라우저는 클릭 전에는 소리를 막으므로, 알림을 켜 둔 기기에서는 첫 클릭 때 소리 장치를 준비합니다. */
+document.addEventListener('pointerdown',()=>{if(zenoHospitalAlertsOn())zenoHospitalAudio()},{once:true,capture:true});
 function render(){if(APP_MODE==='owner'&&!state.ownerToken){document.getElementById('app').innerHTML=authScreen();return;}if(APP_MODE==='hospital')state.page='hospital';else if(state.page==='hospital'||state.page==='admin')state.page='home';const body=state.page==='home'?home():state.page==='search'?searchPage():state.page==='emergency'?emergency():state.page==='pets'?petsPage():state.page==='bookings'?bookingsPage():state.page==='qa'?qaPage():state.page==='membership'?membership():state.page==='prices'?pricesPage():state.page==='hospital'?hospitalPage():state.page==='more'?morePage():adminPage();document.getElementById('app').innerHTML=`${nav()}<main class="content">${state.appError?`<div class="banner warning">서버 오류: ${e(state.appError)}</div>`:''}${body}${footer()}</main>${renderModal()}`;}
 function openModal(type,id){state.modal={type,id};render()}
 async function afterMutation(p=''){try{await refresh(true);if(p)toast(p)}catch(err){toast(err.message)}}
@@ -1027,7 +1057,8 @@ if(a==='delete-record'){if(confirm('이 기록을 삭제하시겠습니까?')){s
 if(a==='ask'){openModal('ask');return}if(a==='point-calc'){openModal('point');return}if(a==='review'){openModal('review',id);return}
 if(a==='owner-cancel'){if(confirm('예약 요청을 취소하시겠습니까?'))await mutate('PATCH','/api/bookings/'+id,{status:'cancelled',side:'owner'},'예약 요청을 취소했습니다.');return}
 if(a==='owner-confirm'){if(confirm('병원이 제안한 시간으로 확정하시겠습니까?'))await mutate('PATCH','/api/bookings/'+id,{status:'confirmed',side:'owner'},'제안된 시간으로 확정했습니다.');return}
-if(a==='hospital-logout'){state.hDemoMode=false;state.hNewCount=0;state.hAlertReady=false;state.hSeenIds=[];state.hospitalToken='';sessionStorage.removeItem('zeno-h-token');sessionStorage.removeItem('zeno-h-hospital');state.hospitalBookings=[];state.hospitalQuestions=[];state.hSpecialtyKeywords=[];render();return}
+if(a==='hospital-alert-toggle'){await zenoHospitalAlertToggle();render();return}
+if(a==='hospital-logout'){document.title=ZENO_H_BASE_TITLE;state.hDemoMode=false;state.hNewCount=0;state.hAlertReady=false;state.hSeenIds=[];state.hospitalToken='';sessionStorage.removeItem('zeno-h-token');sessionStorage.removeItem('zeno-h-hospital');state.hospitalBookings=[];state.hospitalQuestions=[];state.hSpecialtyKeywords=[];render();return}
 if(a==='admin-logout'){state.adminToken='';sessionStorage.removeItem('zeno-admin-token');render();return}
 if(a==='h-tab'){state.hTab=val;state.hDetailBookingId=null;if(val==='bookings')state.hNewCount=0;render();return}
 /* CHANGED: no sample mode button. */
@@ -1139,7 +1170,7 @@ setInterval(()=>{
 window.addEventListener('storage',ev=>{if([STOREKEY,'zeno-pets-v2','zeno-records-v2','zeno-favorites-v2'].includes(ev.key)){state.pets=JSON.parse(localStorage.getItem('zeno-pets-v2')||'[]');state.records=JSON.parse(localStorage.getItem('zeno-records-v2')||'[]');state.favorites=JSON.parse(localStorage.getItem('zeno-favorites-v2')||'[]');refresh()}});
 window.addEventListener('zeno-refresh',()=>{});
 let zenoStarted=false,zenoStartPending=false,zenoStartRetry=null,zenoStartFailures=0,zenoPollTimer=null;
-function zenoCanPoll(){return !document.hidden&&navigator.onLine!==false&&state.serverReady&&!!(APP_MODE==='hospital'?state.hospitalToken:state.ownerToken)}
+function zenoCanPoll(){return (APP_MODE==='hospital'||!document.hidden)&&navigator.onLine!==false&&state.serverReady&&!!(APP_MODE==='hospital'?state.hospitalToken:state.ownerToken)}
 function zenoPoll(){
  if(!zenoCanPoll())return;
  refresh().catch(err=>console.warn('ZENO background sync:',err));
