@@ -99,6 +99,13 @@ jobs:
           }
           NODE
 
+      - name: Booking flow tests (local D1 only, blocks deploy on failure)
+        # Runs the built Worker with wrangler dev --local and fake test secrets.
+        # No Cloudflare token is passed here, so this step cannot touch production.
+        run: node tests/booking-flow.mjs
+        env:
+          NO_PROXY: "127.0.0.1,localhost"
+
       - name: Deploy existing Worker and D1 binding
         id: deploy
         run: |
