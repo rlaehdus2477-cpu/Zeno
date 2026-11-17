@@ -1227,6 +1227,8 @@ async function zenoCheckHospitalUIRevision(force=false){
   const data=await response.json();
   if(!data?.hospital||data.hospital===ZENO_HOSPITAL_UI_REVISION)return;
   if(document.hidden||hasHospitalDraft()||state.modal||state.hDetailBookingId||document.activeElement?.closest('form'))return;
+  // Never loop: if this page was already reloaded for this revision, stay.
+  if(new URLSearchParams(window.location.search).get('ui')===data.hospital)return;
   window.location.replace('/hospital?ui='+encodeURIComponent(data.hospital));
  }catch(error){/* Keep current form state if temporarily offline. */}
  finally{zenoHospitalVersionBusy=false}

@@ -55,6 +55,13 @@ jobs:
           const revisionLine=/const ZENO_OWNER_UI_REVISION\s*=\s*'[^']+';/;
           if(!revisionLine.test(owner))throw Error('Owner UI revision missing');
           fs.writeFileSync('owner.html',owner.replace(revisionLine,"const ZENO_OWNER_UI_REVISION='"+version+"';"));
+          // Hospital page and Worker must report the same UI revision, or the
+          // hospital page reloads itself forever.
+          const hospitalSrc=fs.readFileSync('hospital.html','utf8');
+          const hospitalVersion='hospital-'+createHash('sha256').update(hospitalSrc).digest('hex').slice(0,16);
+          const hospitalLine=/const ZENO_HOSPITAL_UI_REVISION\s*=\s*'[^']+';/;
+          if(!hospitalLine.test(hospitalSrc))throw Error('Hospital UI revision missing');
+          fs.writeFileSync('hospital.html',hospitalSrc.replace(hospitalLine,"const ZENO_HOSPITAL_UI_REVISION='"+hospitalVersion+"';"));
           for(const [filename,constant] of [['owner.html','OWNER_HTML'],['hospital.html','HOSPITAL_HTML']]){
             const html=fs.readFileSync(filename,'utf8');
             const prefix='const '+constant+' = ';
@@ -69,6 +76,9 @@ jobs:
           const revision=/const OWNER_UI_REVISION\s*=\s*'[^']+';/;
           if(!revision.test(worker))throw Error('Worker UI revision constant missing');
           worker=worker.replace(revision,"const OWNER_UI_REVISION = '"+version+"';");
+          const hospitalRevision=/const HOSPITAL_UI_REVISION\s*=\s*'[^']+';/;
+          if(!hospitalRevision.test(worker))throw Error('Worker hospital UI revision constant missing');
+          worker=worker.replace(hospitalRevision,"const HOSPITAL_UI_REVISION = '"+hospitalVersion+"';");
           // Existing 1.2 APK loads /owner?android_app=1.2: redirect it to a fresh
           // path not intercepted by older service workers which only controlled /owner.
           const ownerRoute="if(['/owner','/owner/','/owner.html'].includes(path))return new Response(OWNER_HTML";
@@ -77,7 +87,7 @@ jobs:
           worker=worker.replace(ownerRoute,legacyRedirect+"if(['/owner','/owner/','/owner.html','/owner-compact','/owner-native'].includes(path))return new Response(OWNER_HTML");
           if(!worker.includes("if(['/owner','/owner/','/owner.html','/owner-compact','/owner-native'].includes(path))return new Response(OWNER_HTML"))throw Error('Native route missing from built Worker');
           fs.writeFileSync('worker.js',worker);
-          console.log('Worker UI revision synchronized: '+version);
+          console.log('Worker UI revision synchronized: '+version+' / '+hospitalVersion);
           NODE
       - name: Validate ZENO release JavaScript and embedded HTML
         run: |
@@ -92,6 +102,11 @@ jobs:
             const scripts=[...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)].map(m=>m[1]).filter(Boolean);
             if(!scripts.length)throw Error(name+' has no inline JavaScript');
             for(const [i,code] of scripts.entries())new vm.Script(code,{filename:name+'#script'+i});
+            if(name==='hospital.html'){
+              const page=html.match(/const ZENO_HOSPITAL_UI_REVISION='([^']+)'/)?.[1];
+              const served=worker.match(/const HOSPITAL_UI_REVISION\s*=\s*'([^']+)'/)?.[1];
+              if(!page||page!==served)throw Error('Hospital UI revision mismatch (page '+page+' / worker '+served+'): hospital page would reload forever');
+            }
             if(name==='owner.html'){
               if(!html.includes('function zenoVisitAt(')||!html.includes('function zenoHomeBookingPreview('))throw Error('Home/booking helpers are missing');
               if(!html.includes('병원 확인 대기'))throw Error('Booking status copy is missing');
