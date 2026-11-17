@@ -2781,12 +2781,10 @@ html body .zeno-search-page .zeno-search-card .directory-text>strong{font-size:1
 html body .zeno-search-page .zeno-search-card .zeno-card-context{display:flex!important;flex-wrap:wrap!important;align-items:center!important;column-gap:0!important;row-gap:2px!important;font-size:13px!important;line-height:1.45!important}
 html body .zeno-search-page .zeno-search-card .directory-region{font-size:13px!important;color:#6b7684!important;font-weight:400!important}
 html body .zeno-search-page .zeno-search-card .zeno-search-status{font-size:13px!important;font-weight:400!important;color:#6b7684!important}
-html body .zeno-search-page .zeno-search-card .zeno-card-context{margin-left:-14px!important;clip-path:inset(0 0 0 14px)}
-html body .zeno-search-page .zeno-search-card .zeno-card-context .directory-region::before{content:'';display:inline-block;width:2px;height:2px;border-radius:50%;background:#b0b8c1;margin:0 6px;vertical-align:middle}
 html body .zeno-search-page .zeno-search-card .zeno-search-status::before{content:'';display:inline-block;width:2px;height:2px;border-radius:50%;background:#b0b8c1;margin:0 6px;vertical-align:middle}
 html body .zeno-search-page .zeno-search-card .zeno-search-status.unknown{color:#8b95a1!important}
 html body .zeno-search-page .zeno-search-card .zeno-search-status.is-open{color:#137457!important;font-weight:500!important}
-html body .zeno-search-page .zeno-search-card .zeno-search-status.schedule24{color:#4e5968!important}
+html body .zeno-search-page .zeno-search-card .zeno-search-status.schedule24{color:#6b7684!important}
 html body .zeno-search-page .zeno-search-card .zeno-search-fact{display:block!important;font-size:13px!important;line-height:1.5!important;color:#4e5968!important;font-weight:400!important;word-break:keep-all!important;margin:0!important}
 html body .zeno-fact-label{display:inline-block;margin-right:6px;color:#8b95a1;font-weight:400}
 html body .zeno-fact-item{white-space:nowrap}
@@ -2916,14 +2914,55 @@ html body .zeno-search-page .zeno-search-card .zeno-card-call:disabled{
 </style>
 <style>
 @media(max-width:750px){
-#app .zeno-search-page .zeno-search-card{display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;align-items:center!important;gap:6px!important;padding:10px 0!important}
+#app .zeno-search-page .zeno-search-card{display:grid!important;grid-template-columns:minmax(0,1fr) 68px!important;align-items:center!important;gap:6px!important;padding:10px 0!important}
 #app .zeno-search-page .zeno-search-card .directory-main{grid-template-columns:40px minmax(0,1fr)!important;gap:9px!important;padding:0!important}
 #app .zeno-search-page .zeno-search-card .directory-main::after{display:none!important}
 #app .zeno-search-page .zeno-search-card .zeno-thumb{width:40px!important;height:40px!important;min-width:0!important}
 #app .zeno-search-page .zeno-search-card .directory-text{min-width:0!important;gap:2px!important}
 #app .zeno-search-page .zeno-search-card .zeno-search-fact{display:block!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;line-height:1.35!important}
 #app .zeno-search-page .zeno-search-card .zeno-card-actions{display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:3px!important;width:auto!important;max-width:none!important;margin:0!important;padding:0!important}
-#app .zeno-search-page .zeno-search-card .zeno-card-action{width:auto!important;min-width:44px!important;min-height:44px!important;height:44px!important;padding:0 6px!important}
+#app .zeno-search-page .zeno-search-card .zeno-card-action{width:100%!important;min-width:44px!important;min-height:44px!important;height:44px!important;padding:0 6px!important}
+}
+
+/* 2026-11-17 병원 찾기 카드 가독성·대칭: 글씨 크게·진하게, 왼쪽 사진과 오른쪽 버튼을 같은 높이(위)에 맞춤 */
+@media(max-width:750px){
+#app .zeno-search-page .zeno-search-card{grid-template-columns:minmax(0,1fr)!important;align-items:start!important;row-gap:10px!important;padding:16px 0!important}
+#app .zeno-search-page .zeno-search-card .directory-main{grid-template-columns:64px minmax(0,1fr)!important;gap:12px!important;align-items:start!important}
+#app .zeno-search-page .zeno-search-card .zeno-thumb{width:64px!important;height:64px!important;border-radius:12px!important}
+#app .zeno-search-page .zeno-search-card .directory-text{gap:3px!important}
+#app .zeno-search-page .zeno-search-card .directory-text strong{font-size:16px!important;font-weight:600!important;line-height:1.35!important;color:#191f28!important}
+#app .zeno-search-page .zeno-search-card .zeno-card-context,#app .zeno-search-page .zeno-search-card .directory-region,#app .zeno-search-page .zeno-search-card .zeno-search-status,#app .zeno-search-page .zeno-search-card .zeno-search-fact{font-size:14px!important;line-height:1.45!important}
+#app .zeno-search-page .zeno-search-card .directory-region,#app .zeno-search-page .zeno-search-card .zeno-search-status,#app .zeno-search-page .zeno-search-card .zeno-search-status.unknown,#app .zeno-search-page .zeno-search-card .zeno-search-status.schedule24{color:#4e5968!important}
+#app .zeno-search-page .zeno-search-card .zeno-search-status.is-open{color:#137457!important}
+#app .zeno-search-page .zeno-search-card .directory-region,#app .zeno-search-page .zeno-search-card .zeno-search-status{word-break:keep-all!important;overflow-wrap:normal!important}
+#app .zeno-search-page .zeno-search-card .zeno-nowrap{white-space:nowrap!important}
+#app .zeno-search-page .zeno-search-card .zeno-search-fact{max-width:100%!important;min-width:0!important;box-sizing:border-box!important;white-space:normal!important;overflow:visible!important;text-overflow:clip!important;word-break:keep-all!important}
+#app .zeno-search-page .zeno-search-card .zeno-card-context{display:block!important}
+#app .zeno-search-page .zeno-search-card .zeno-card-context>span{display:inline!important}
+#app .zeno-search-page .zeno-search-card .zeno-search-fact{color:#333d4b!important}
+#app .zeno-search-page .zeno-search-card .zeno-fact-label,#app .zeno-search-page .zeno-search-card .zeno-fact-more{color:#6b7684!important}
+#app .zeno-search-page .zeno-search-card .zeno-search-tag{font-size:13px!important;height:26px!important}
+#app .zeno-search-page .zeno-search-card .zeno-card-actions{flex-direction:row!important;align-self:start!important;gap:8px!important;margin:0 0 0 76px!important}
+#app .zeno-search-page .zeno-search-card .zeno-card-actions .zeno-card-action{width:84px!important;flex:none!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;text-decoration:none!important}
+#app .zeno-search-page .zeno-search-card .zeno-card-action{height:36px!important;min-height:36px!important;font-size:13px!important;font-weight:600!important;letter-spacing:-.2px!important;border-radius:8px!important;padding:0 8px!important;white-space:nowrap!important}
+}
+
+/* 2026-11-17 병원 찾기 화면 정돈: 결과 요약줄·도구·구역 제목·카드 구분선을 앱 수준으로 */
+@media(max-width:750px){
+#app .zeno-search-page .zeno-results-bar{display:grid!important;grid-template-columns:1fr!important;gap:10px!important;padding:20px 20px 0!important}
+#app .zeno-search-page .zeno-results-bar-leading{display:flex!important;align-items:center!important;gap:8px!important;min-width:0!important}
+#app .zeno-search-page .zeno-results-bar-leading h2{font-size:17px!important;font-weight:700!important;color:#191f28!important;margin:0!important;line-height:1.4!important}
+#app .zeno-search-page .zeno-selected-care-chip{height:30px!important;padding:0 10px!important;font-size:14px!important;font-weight:600!important;border-radius:15px!important}
+#app .zeno-search-page .zeno-results-bar-tools{display:flex!important;justify-content:flex-start!important;margin:0!important;gap:8px!important;overflow-x:auto!important;scrollbar-width:none!important}
+#app .zeno-search-page .zeno-results-bar-tools>button{flex:none!important;height:32px!important;padding:0 12px!important;border:1px solid #e5e8eb!important;border-radius:16px!important;background:#fff!important;color:#4e5968!important;font-size:13px!important;font-weight:500!important}
+#app .zeno-search-page .zeno-results-bar-tools>button[aria-pressed="true"]{border-color:#2679c5!important;color:#2679c5!important;background:#eef5fd!important}
+#app .zeno-search-page>.zeno-clinical-legend{margin:10px 20px 0!important;font-size:12px!important;color:#8b95a1!important}
+#app .zeno-search-page .zeno-internal-section{margin-top:12px!important;border-top:8px solid #f2f4f6!important;padding-top:0!important}
+#app .zeno-search-page .zeno-internal-section h3,#app .zeno-search-page .zeno-result-group{font-size:16px!important;font-weight:700!important;color:#191f28!important;margin:18px 20px 0!important;padding:0!important}
+#app .zeno-search-page .zeno-results-bar-tools>button{margin:0!important}
+#app .zeno-search-page .zeno-search-card{border-bottom:1px solid #f2f4f6!important}
+#app .zeno-search-page .zeno-search-card:last-child{border-bottom:0!important}
+#app .zeno-search-page .zeno-search-card .zeno-search-tag{background:#f4f6f9!important;color:#4e5968!important;font-size:12px!important;height:24px!important;font-weight:500!important}
 }
 </style></head><body><div id="app" class="app"></div><script>
 'use strict';
@@ -3930,7 +3969,8 @@ function zenoSearchHospitalCard(h){
  const focus=clinical?zenoSpecialtyFocus(h):null;
  const waiting=zenoCatWaitingTier(h);
  const tags=[];
- if(state.specialty){
+ // 일반 진료는 모든 병원에 해당해 칩이 정보를 더하지 않으므로 표시하지 않는다 ('일반 진료 진료 항목 등록' 중복 문구 방지).
+ if(state.specialty&&state.specialty!=='일반 진료'){
   if(focus)tags.push(state.specialty+' 대표 특화 · '+(focus.status==='confirmed'?'확인 기록':'병원 안내'));
   else if(origin==='inquiry')tags.push(state.specialty+' 진료 여부 전화 확인');
   else if(origin==='official')tags.push(state.specialty+' 공식 진료 안내');
@@ -3943,10 +3983,11 @@ function zenoSearchHospitalCard(h){
  const call=validPhone?'<a class="zeno-card-action zeno-card-call" data-action="call-summary" data-id="'+e(h.id)+'" href="tel:'+e(phone.replace(/[^0-9]/g,''))+'" aria-label="'+e(h.name)+' 전화">전화</a>':'<button class="zeno-card-action zeno-card-call" type="button" disabled aria-label="전화번호 미확인" title="전화번호 미확인">전화</button>';
  const eligible=h.linked&&(state.specialty==='특수동물'?Boolean((h.officialExoticSpecies||[]).length):(!state.specialty||state.specialty==='일반 진료'||(h.officialSpecialties||[]).some(x=>zenoCareAliases(state.specialty).includes(x))||(hs(h.id).services||[]).some(x=>zenoCareAliases(state.specialty).includes(x))));
  const book=eligible?'<button class="zeno-card-action zeno-card-book" type="button" data-action="book" data-id="'+e(h.id)+'">예약 요청</button>':'';
+ const route=h.address?'<a class="zeno-card-action zeno-card-call zeno-card-route" href="'+e(zenoNaverPhotoUrl(h))+'" target="_blank" rel="noopener noreferrer" aria-label="'+e(h.name)+' 길찾기 (네이버 지도)">길찾기</a>':'';
  // Details, published fees, hours and directions remain available by tapping the hospital row.
  return '<article class="directory-item zeno-hospital-card zeno-search-card"><button type="button" class="directory-main" data-action="details" data-id="'+e(h.id)+'" aria-label="'+e(h.name)+' 상세 정보, 진료비, 운영시간 및 위치">'
-  +photoHtml+'<span class="directory-text"><strong>'+e(h.name)+'</strong><span class="zeno-card-context"><span class="directory-region">'+e(h.region||'')+'</span><span class="zeno-search-status '+status.kind+'">'+e(status.text)+'</span></span>'
-  +zenoDeclaredSpecialtyLine(h,false,2,true)+contextHtml+'</span></button><div class="zeno-card-actions'+(book?' has-book':'')+'">'+call+book+'</div></article>';
+  +photoHtml+'<span class="directory-text"><strong>'+e(h.name)+'</strong><span class="zeno-card-context"><span class="directory-region">'+e(h.region||'')+'</span><span class="zeno-search-status '+status.kind+'">'+String(status.text).split(' · ').map(part=>'<span class="zeno-nowrap">'+e(part)+'</span>').join(' · ')+'</span></span>'
+  +zenoDeclaredSpecialtyLine(h,false,2,true)+contextHtml+'</span></button><div class="zeno-card-actions'+(book?' has-book':'')+'">'+call+route+book+'</div></article>';
 }
 
 function zenoInternalHospitalResults(items){
