@@ -2943,7 +2943,7 @@ html body .zeno-search-page .zeno-search-card .zeno-card-call:disabled{
 #app .zeno-search-page .zeno-search-card .zeno-fact-label,#app .zeno-search-page .zeno-search-card .zeno-fact-more{color:#6b7684!important}
 #app .zeno-search-page .zeno-search-card .zeno-search-tag{font-size:13px!important;height:26px!important}
 #app .zeno-search-page .zeno-search-card .zeno-card-actions{flex-direction:row!important;align-self:start!important;gap:8px!important;margin:0 0 0 76px!important}
-#app .zeno-search-page .zeno-search-card .zeno-card-actions .zeno-card-action{width:96px!important;flex:none!important}
+#app .zeno-search-page .zeno-search-card .zeno-card-actions .zeno-card-action{width:84px!important;flex:none!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;text-decoration:none!important}
 #app .zeno-search-page .zeno-search-card .zeno-card-action{height:36px!important;min-height:36px!important;font-size:13px!important;font-weight:600!important;letter-spacing:-.2px!important;border-radius:8px!important;padding:0 8px!important;white-space:nowrap!important}
 }
 
@@ -3983,10 +3983,11 @@ function zenoSearchHospitalCard(h){
  const call=validPhone?'<a class="zeno-card-action zeno-card-call" data-action="call-summary" data-id="'+e(h.id)+'" href="tel:'+e(phone.replace(/[^0-9]/g,''))+'" aria-label="'+e(h.name)+' 전화">전화</a>':'<button class="zeno-card-action zeno-card-call" type="button" disabled aria-label="전화번호 미확인" title="전화번호 미확인">전화</button>';
  const eligible=h.linked&&(state.specialty==='특수동물'?Boolean((h.officialExoticSpecies||[]).length):(!state.specialty||state.specialty==='일반 진료'||(h.officialSpecialties||[]).some(x=>zenoCareAliases(state.specialty).includes(x))||(hs(h.id).services||[]).some(x=>zenoCareAliases(state.specialty).includes(x))));
  const book=eligible?'<button class="zeno-card-action zeno-card-book" type="button" data-action="book" data-id="'+e(h.id)+'">예약 요청</button>':'';
+ const route=h.address?'<a class="zeno-card-action zeno-card-call zeno-card-route" href="'+e(zenoNaverPhotoUrl(h))+'" target="_blank" rel="noopener noreferrer" aria-label="'+e(h.name)+' 길찾기 (네이버 지도)">길찾기</a>':'';
  // Details, published fees, hours and directions remain available by tapping the hospital row.
  return '<article class="directory-item zeno-hospital-card zeno-search-card"><button type="button" class="directory-main" data-action="details" data-id="'+e(h.id)+'" aria-label="'+e(h.name)+' 상세 정보, 진료비, 운영시간 및 위치">'
   +photoHtml+'<span class="directory-text"><strong>'+e(h.name)+'</strong><span class="zeno-card-context"><span class="directory-region">'+e(h.region||'')+'</span><span class="zeno-search-status '+status.kind+'">'+String(status.text).split(' · ').map(part=>'<span class="zeno-nowrap">'+e(part)+'</span>').join(' · ')+'</span></span>'
-  +zenoDeclaredSpecialtyLine(h,false,2,true)+contextHtml+'</span></button><div class="zeno-card-actions'+(book?' has-book':'')+'">'+call+book+'</div></article>';
+  +zenoDeclaredSpecialtyLine(h,false,2,true)+contextHtml+'</span></button><div class="zeno-card-actions'+(book?' has-book':'')+'">'+call+route+book+'</div></article>';
 }
 
 function zenoInternalHospitalResults(items){
