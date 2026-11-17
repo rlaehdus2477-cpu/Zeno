@@ -2912,7 +2912,18 @@ html body .zeno-search-page .zeno-search-card .zeno-card-call:disabled{
  background:#273341!important;border-color:#475668!important;color:#9eacba!important;
 }
 </style>
-</head><body><div id="app" class="app"></div><script>
+<style>
+@media(max-width:750px){
+#app .zeno-search-page .zeno-search-card{display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;align-items:center!important;gap:6px!important;padding:10px 0!important}
+#app .zeno-search-page .zeno-search-card .directory-main{grid-template-columns:40px minmax(0,1fr)!important;gap:9px!important;padding:0!important}
+#app .zeno-search-page .zeno-search-card .directory-main::after{display:none!important}
+#app .zeno-search-page .zeno-search-card .zeno-thumb{width:40px!important;height:40px!important;min-width:0!important}
+#app .zeno-search-page .zeno-search-card .directory-text{min-width:0!important;gap:2px!important}
+#app .zeno-search-page .zeno-search-card .zeno-search-fact{display:block!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;line-height:1.35!important}
+#app .zeno-search-page .zeno-search-card .zeno-card-actions{display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:3px!important;width:auto!important;max-width:none!important;margin:0!important;padding:0!important}
+#app .zeno-search-page .zeno-search-card .zeno-card-action{width:auto!important;min-width:44px!important;min-height:44px!important;height:44px!important;padding:0 6px!important}
+}
+</style></head><body><div id="app" class="app"></div><script>
 'use strict';
 const APP_MODE='owner';
 
@@ -3928,7 +3939,7 @@ function zenoSearchHospitalCard(h){
  // Details, published fees, hours and directions remain available by tapping the hospital row.
  return '<article class="directory-item zeno-hospital-card zeno-search-card"><button type="button" class="directory-main" data-action="details" data-id="'+e(h.id)+'" aria-label="'+e(h.name)+' 상세 정보, 진료비, 운영시간 및 위치">'
   +photoHtml+'<span class="directory-text"><strong>'+e(h.name)+'</strong><span class="zeno-card-context"><span class="directory-region">'+e(h.region||'')+'</span><span class="zeno-search-status '+status.kind+'">'+e(status.text)+'</span></span>'
-  +zenoDeclaredSpecialtyLine(h,false,3,true)+contextHtml+'</span></button><div class="zeno-card-actions'+(book?' has-book':'')+'">'+call+book+'</div></article>';
+  +zenoDeclaredSpecialtyLine(h,false,2,true)+contextHtml+'</span></button><div class="zeno-card-actions'+(book?' has-book':'')+'">'+call+book+'</div></article>';
 }
 
 function zenoInternalHospitalResults(items){
@@ -5374,7 +5385,7 @@ async function start(){
  }finally{zenoStartPending=false}
 }
 render();start();
-const ZENO_OWNER_UI_REVISION='20261117-search-compact-v50';
+const ZENO_OWNER_UI_REVISION='20261117-search-compact-v51';
 let zenoLastUIVersionCheck=0;
 let zenoUIVersionChecking=false;
 async function zenoCheckOwnerUIRevision(force=false){
