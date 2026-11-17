@@ -2781,6 +2781,8 @@ html body .zeno-search-page .zeno-search-card .directory-text>strong{font-size:1
 html body .zeno-search-page .zeno-search-card .zeno-card-context{display:flex!important;flex-wrap:wrap!important;align-items:center!important;column-gap:0!important;row-gap:2px!important;font-size:13px!important;line-height:1.45!important}
 html body .zeno-search-page .zeno-search-card .directory-region{font-size:13px!important;color:#6b7684!important;font-weight:400!important}
 html body .zeno-search-page .zeno-search-card .zeno-search-status{font-size:13px!important;font-weight:400!important;color:#6b7684!important}
+html body .zeno-search-page .zeno-search-card .zeno-card-context{margin-left:-14px!important;clip-path:inset(0 0 0 14px)}
+html body .zeno-search-page .zeno-search-card .zeno-card-context .directory-region::before{content:'';display:inline-block;width:2px;height:2px;border-radius:50%;background:#b0b8c1;margin:0 6px;vertical-align:middle}
 html body .zeno-search-page .zeno-search-card .zeno-search-status::before{content:'';display:inline-block;width:2px;height:2px;border-radius:50%;background:#b0b8c1;margin:0 6px;vertical-align:middle}
 html body .zeno-search-page .zeno-search-card .zeno-search-status.unknown{color:#8b95a1!important}
 html body .zeno-search-page .zeno-search-card .zeno-search-status.is-open{color:#137457!important;font-weight:500!important}
@@ -3652,7 +3654,12 @@ function zenoDisplayCareFields(list){
  return out;
 }
 function zenoDeclaredSpecialtyLine(h, showAll=false, limit=3, showEmpty=false){
- const fields=zenoDisplayCareFields([...(h.publishedCareFields||[]),...(h.careFields||[]),...(h.officialSpecialties||[]),...(h.cats||[])]);
+ let fields=zenoDisplayCareFields([...(h.publishedCareFields||[]),...(h.careFields||[]),...(h.officialSpecialties||[]),...(h.cats||[])]);
+ // 진료 분야로 검색했을 때는 선택한 분야를 진료과목 맨 앞에 보여 준다 (표시 순서만 변경).
+ if(state.page==='search'&&state.specialty){
+  const wanted=new Set(zenoCareAliases(state.specialty).map(x=>ZENO_CARE_DISPLAY_ALIAS[x]||x));
+  fields=[...fields.filter(x=>wanted.has(x)),...fields.filter(x=>!wanted.has(x))];
+ }
  const focus=zenoHospitalFocusEntries(h).map(row=>row.keyword);
  const label=t=>'<span class="zeno-fact-label">'+t+'</span>';
  return (fields.length?'<span class="zeno-search-fact">'+label('진료과목')+(showAll?fields:fields.slice(0,limit)).map(x=>'<span class="zeno-fact-item">'+e(x)+'</span>').join(' · ')+(!showAll&&fields.length>limit?' <span class="zeno-fact-more">외 '+(fields.length-limit)+'개</span>':'')+'</span>':showEmpty?'<span class="zeno-search-fact is-empty">'+label('진료과목')+'네이버 확인 전</span>':'')
