@@ -2942,6 +2942,24 @@ html body .zeno-search-page .zeno-search-card .zeno-card-call:disabled{
 #app .zeno-search-page .zeno-search-card .zeno-card-actions{align-self:start!important;gap:6px!important}
 #app .zeno-search-page .zeno-search-card .zeno-card-action{height:36px!important;min-height:36px!important;font-size:14px!important;font-weight:600!important;border-radius:8px!important;padding:0 4px!important}
 }
+
+/* 2026-11-17 병원 찾기 화면 정돈: 결과 요약줄·도구·구역 제목·카드 구분선을 앱 수준으로 */
+@media(max-width:750px){
+#app .zeno-search-page .zeno-results-bar{display:grid!important;grid-template-columns:1fr!important;gap:10px!important;padding:20px 20px 0!important}
+#app .zeno-search-page .zeno-results-bar-leading{display:flex!important;align-items:center!important;gap:8px!important;min-width:0!important}
+#app .zeno-search-page .zeno-results-bar-leading h2{font-size:17px!important;font-weight:700!important;color:#191f28!important;margin:0!important;line-height:1.4!important}
+#app .zeno-search-page .zeno-selected-care-chip{height:30px!important;padding:0 10px!important;font-size:14px!important;font-weight:600!important;border-radius:15px!important}
+#app .zeno-search-page .zeno-results-bar-tools{display:flex!important;justify-content:flex-start!important;margin:0!important;gap:8px!important;overflow-x:auto!important;scrollbar-width:none!important}
+#app .zeno-search-page .zeno-results-bar-tools>button{flex:none!important;height:32px!important;padding:0 12px!important;border:1px solid #e5e8eb!important;border-radius:16px!important;background:#fff!important;color:#4e5968!important;font-size:13px!important;font-weight:500!important}
+#app .zeno-search-page .zeno-results-bar-tools>button[aria-pressed="true"]{border-color:#2679c5!important;color:#2679c5!important;background:#eef5fd!important}
+#app .zeno-search-page>.zeno-clinical-legend{margin:10px 20px 0!important;font-size:12px!important;color:#8b95a1!important}
+#app .zeno-search-page .zeno-internal-section{margin-top:12px!important;border-top:8px solid #f2f4f6!important;padding-top:0!important}
+#app .zeno-search-page .zeno-internal-section h3,#app .zeno-search-page .zeno-result-group{font-size:16px!important;font-weight:700!important;color:#191f28!important;margin:18px 20px 0!important;padding:0!important}
+#app .zeno-search-page .zeno-results-bar-tools>button{margin:0!important}
+#app .zeno-search-page .zeno-search-card{border-bottom:1px solid #f2f4f6!important}
+#app .zeno-search-page .zeno-search-card:last-child{border-bottom:0!important}
+#app .zeno-search-page .zeno-search-card .zeno-search-tag{background:#f4f6f9!important;color:#4e5968!important;font-size:12px!important;height:24px!important;font-weight:500!important}
+}
 </style></head><body><div id="app" class="app"></div><script>
 'use strict';
 const APP_MODE='owner';
