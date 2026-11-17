@@ -1,0 +1,32 @@
+name: Test ZENO booking flow
+
+on:
+  pull_request:
+    paths:
+      - "worker.js"
+      - "owner.html"
+      - "hospital.html"
+      - "schema.sql"
+      - "wrangler.toml"
+      - "package.json"
+      - "tests/booking-flow.mjs"
+      - ".github/workflows/test-booking-flow.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  booking-flow:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install Wrangler
+        run: npm install --no-audit --no-fund
+      - name: Booking flow tests (local D1 only)
+        run: node tests/booking-flow.mjs
+        env:
+          NO_PROXY: "127.0.0.1,localhost"
