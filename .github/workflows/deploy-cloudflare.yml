@@ -69,6 +69,7 @@ jobs:
           const revision=/const OWNER_UI_REVISION\s*=\s*'[^']+';/;
           if(!revision.test(worker))throw Error('Worker UI revision constant missing');
           worker=worker.replace(revision,"const OWNER_UI_REVISION = '"+version+"';");
+          worker=worker.replace("['/owner','/owner/','/owner.html']", "['/owner','/owner/','/owner.html','/owner-compact']");
           fs.writeFileSync('worker.js',worker);
           console.log('Worker UI revision synchronized: '+version);
           NODE
