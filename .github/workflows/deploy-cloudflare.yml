@@ -132,11 +132,13 @@ jobs:
               const owner=await (await get('/owner?ui='+nonce)).text();
               for(const expected of ['ZENO','진료 분야로 찾기','특수동물','예약 요청','24시 청주이음동물의료센터','종양 수술','영상의학','수술 후 재활']){if(!owner.includes(expected))throw Error('Production owner UI missing: '+expected);}
               // Check the ordinary owner URL that installed apps open as well.
-              const mobileOwner=await (await get('/owner')).text();
+              for(const mobilePath of ['/owner','/owner?android_app=1.2','/owner?ui='+encodeURIComponent(expectedOwnerRevision)]){
+                const mobileOwner=await (await get(mobilePath)).text();
               if(!mobileOwner.includes("const ZENO_OWNER_UI_REVISION='"+expectedOwnerRevision+"'") ||
                  !mobileOwner.includes('#app .zeno-search-page .zeno-search-card .zeno-card-actions') ||
                  !mobileOwner.includes('zenoDeclaredSpecialtyLine(h,false,2,true)+contextHtml')){
-                throw Error('Public owner URL still serves the previous hospital list');
+                  throw Error(mobilePath+' still serves the previous hospital list');
+                }
               }
               // Check the exact hospital record delivered to installed Galaxy PWAs, not just the UI revision.
               const dugeunStart=owner.indexOf('{"id":"pub008"');
