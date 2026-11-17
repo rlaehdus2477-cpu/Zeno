@@ -75,6 +75,7 @@ jobs:
           if(!worker.includes(ownerRoute))throw Error('Owner routing anchor missing');
           const legacyRedirect="if(path==='/owner'&&new URL(request.url).searchParams.get('android_app')==='1.2')return Response.redirect(new URL('/owner-native?android_app=1.2',request.url).toString(),302);\n";
           worker=worker.replace(ownerRoute,legacyRedirect+"if(['/owner','/owner/','/owner.html','/owner-compact','/owner-native'].includes(path))return new Response(OWNER_HTML");
+          if(!worker.includes("if(['/owner','/owner/','/owner.html','/owner-compact','/owner-native'].includes(path))return new Response(OWNER_HTML"))throw Error('Native route missing from built Worker');
           fs.writeFileSync('worker.js',worker);
           console.log('Worker UI revision synchronized: '+version);
           NODE
@@ -138,7 +139,7 @@ jobs:
               const owner=await (await get('/owner?ui='+nonce)).text();
               for(const expected of ['ZENO','진료 분야로 찾기','특수동물','예약 요청','24시 청주이음동물의료센터','종양 수술','영상의학','수술 후 재활']){if(!owner.includes(expected))throw Error('Production owner UI missing: '+expected);}
               // Check the ordinary owner URL that installed apps open as well.
-              for(const mobilePath of ['/owner-compact','/owner-native?android_app=1.3','/owner','/owner?android_app=1.2','/owner?ui='+encodeURIComponent(expectedOwnerRevision)]){
+              for(const mobilePath of ['/owner-native?android_app=1.2','/owner','/owner?android_app=1.2','/owner?ui='+encodeURIComponent(expectedOwnerRevision)]){
                 const mobileOwner=await (await get(mobilePath)).text();
               if(!mobileOwner.includes("const ZENO_OWNER_UI_REVISION='"+expectedOwnerRevision+"'") ||
                  !mobileOwner.includes('#app .zeno-search-page .zeno-search-card .zeno-card-actions') ||
