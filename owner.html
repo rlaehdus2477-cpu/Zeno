@@ -2694,32 +2694,7 @@ html.dark .zeno-search-page .zeno-filter-extras,html[data-theme="dark"] .zeno-se
  .zeno-saved-list{grid-template-columns:repeat(auto-fit,minmax(min(100%,330px),1fr))}
 }
 </style>
-<style id="zeno-compact-cta-20261115">
-/* Search-only progressive disclosure: same primary action on every hospital card. */
-.zeno-search-page .zeno-hospital-card.zeno-search-card{padding:11px 12px!important;gap:8px!important}
-.zeno-search-page .zeno-search-card .directory-main{position:relative!important;grid-template-columns:54px minmax(0,1fr)!important;gap:10px!important;padding-right:17px!important;text-align:left!important}
-.zeno-search-page .zeno-search-card .directory-main::after{content:'›';position:absolute;top:0;right:0;color:#8796a6;font-size:23px;font-weight:400;line-height:1}
-.zeno-search-page .zeno-search-card .directory-photo,.zeno-search-page .zeno-search-card .directory-placeholder{width:54px!important;min-width:54px!important;height:56px!important}
-.zeno-search-page .zeno-search-card .directory-text{gap:4px!important;min-width:0!important}
-.zeno-search-page .zeno-search-card .directory-text>strong{font-size:16px!important;font-weight:650!important;line-height:1.35!important}
-.zeno-search-page .zeno-search-card .zeno-card-context{display:flex;align-items:baseline;flex-wrap:wrap;column-gap:8px;row-gap:1px;max-width:100%;line-height:1.4}
-.zeno-search-page .zeno-search-card .zeno-card-context .directory-region,.zeno-search-page .zeno-search-card .zeno-card-context .zeno-search-status{font-size:12px!important;line-height:1.4!important}
-.zeno-search-page .zeno-search-card .zeno-search-tags{margin-top:0!important;max-width:100%}
-.zeno-search-page .zeno-search-card .zeno-search-tag{font-size:11.5px!important;line-height:1.35!important;word-break:keep-all}
-.zeno-search-page .zeno-search-card .zeno-card-actions{display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:8px!important;margin:0!important;width:100%!important}
-.zeno-search-page .zeno-search-card .zeno-card-actions.has-book{grid-template-columns:repeat(2,minmax(0,1fr))!important}
-.zeno-search-page .zeno-search-card .zeno-card-action{min-height:44px!important;font-size:13px!important;font-weight:600!important;border-radius:9px!important}
-.zeno-search-page .zeno-search-card .zeno-card-call{background:#2679c5!important;border-color:#2679c5!important;color:#fff!important}
-.zeno-search-page .zeno-search-card .zeno-card-call:disabled{background:#edf1f5!important;border-color:#e0e5eb!important;color:#768597!important;opacity:1!important}
-.zeno-search-page .zeno-search-card .zeno-card-book{background:#fff!important;border-color:#bed1e2!important;color:#27669a!important}
-:is(html.dark,html[data-theme="dark"]) .zeno-search-page .zeno-search-card .zeno-card-book{background:#1d2937!important;border-color:#68798f!important;color:#f4f7fb!important}
-:is(html.dark,html[data-theme="dark"]) .zeno-search-page .zeno-search-card .zeno-card-call:disabled{background:#273341!important;border-color:#475668!important;color:#abb8c7!important}
-@media(max-width:380px){
- .zeno-search-page .zeno-search-card .directory-main{grid-template-columns:50px minmax(0,1fr)!important;gap:9px!important}
- .zeno-search-page .zeno-search-card .directory-photo,.zeno-search-page .zeno-search-card .directory-placeholder{width:50px!important;min-width:50px!important;height:54px!important}
- .zeno-search-page .zeno-search-card .zeno-card-actions.has-book{grid-template-columns:repeat(2,minmax(0,1fr))!important}
-}
-</style>
+
 
 <style id="zeno-home-hierarchy-fix-20261115">
 /* A small summary directly after search, independent from the open-now rail. */
@@ -2883,6 +2858,59 @@ html body .zeno-search-page .zeno-filter-rail .zeno-filter-more{display:flex!imp
 html body .zeno-search-page .zeno-result-group,html body .zeno-search-page>h3{margin:0!important;padding:24px 20px 4px!important;font-size:15px!important;font-weight:600!important;color:#191f28!important;line-height:1.4!important;background:none!important;border:0!important}
 :is(html.dark,html[data-theme="dark"]) body main.content .zeno-search-page .zeno-result-group{color:#f2f4f6!important}
 html body .zeno-search-page>.zeno-urgent-call{margin:16px 20px 0!important}
+</style>
+<style id="zeno-search-card-galaxy-20261117">
+/* Hospital search only: do not let an unbookable hospital expand its call action across the full card. */
+html body .zeno-search-page .zeno-hospital-card.zeno-search-card{
+ padding:12px 0!important;
+}
+html body .zeno-search-page .zeno-search-card .directory-text>strong{
+ font-size:16px!important;font-weight:650!important;line-height:1.35!important;
+}
+html body .zeno-search-page .zeno-search-card .zeno-search-fact{
+ display:-webkit-box!important;-webkit-box-orient:vertical;-webkit-line-clamp:2;
+ overflow:hidden!important;max-height:3em;line-height:1.5!important;
+ word-break:keep-all!important;overflow-wrap:break-word!important;
+}
+html body .zeno-search-page .zeno-search-card .zeno-card-actions,
+html body .zeno-search-page .zeno-search-card .zeno-card-actions.has-book{
+ display:flex!important;flex-wrap:wrap!important;align-items:center!important;
+ justify-content:flex-start!important;gap:8px!important;
+ width:calc(100% - 72px)!important;max-width:calc(100% - 72px)!important;
+ margin:8px 0 0 72px!important;padding:0!important;
+}
+html body .zeno-search-page .zeno-search-card .zeno-card-action{
+ box-sizing:border-box!important;display:inline-flex!important;flex:0 0 auto!important;
+ width:auto!important;min-width:86px!important;height:44px!important;
+ min-height:44px!important;padding:0 15px!important;border-radius:8px!important;
+ font-size:13px!important;line-height:1.35!important;font-weight:600!important;
+ white-space:nowrap!important;overflow-wrap:normal!important;
+}
+html body .zeno-search-page .zeno-search-card .zeno-card-call{
+ color:#2679c5!important;background:#fff!important;border:1px solid #bad3ea!important;
+}
+html body .zeno-search-page .zeno-search-card .zeno-card-book{
+ color:#fff!important;background:#2679c5!important;border:1px solid #2679c5!important;
+}
+html body .zeno-search-page .zeno-search-card .zeno-card-call:disabled{
+ color:#9ca7b2!important;background:#f6f8fa!important;border-color:#e5e8eb!important;
+}
+@media(max-width:360px){
+ html body .zeno-search-page .zeno-search-card .zeno-card-actions,
+ html body .zeno-search-page .zeno-search-card .zeno-card-actions.has-book{
+  width:calc(100% - 62px)!important;max-width:calc(100% - 62px)!important;
+  margin-left:62px!important;
+ }
+}
+:is(html.dark,html[data-theme="dark"]) body main.content .zeno-search-page .zeno-search-card .zeno-card-call{
+ background:#243040!important;border-color:#526376!important;color:#d5e6f7!important;
+}
+:is(html.dark,html[data-theme="dark"]) body main.content .zeno-search-page .zeno-search-card .zeno-card-book{
+ background:#2679c5!important;border-color:#2679c5!important;color:#fff!important;
+}
+:is(html.dark,html[data-theme="dark"]) body main.content .zeno-search-page .zeno-search-card .zeno-card-call:disabled{
+ background:#273341!important;border-color:#475668!important;color:#9eacba!important;
+}
 </style>
 </head><body><div id="app" class="app"></div><script>
 'use strict';
@@ -5346,7 +5374,7 @@ async function start(){
  }finally{zenoStartPending=false}
 }
 render();start();
-const ZENO_OWNER_UI_REVISION='20261115-central-fees-v49';
+const ZENO_OWNER_UI_REVISION='20261117-search-compact-v50';
 let zenoLastUIVersionCheck=0;
 let zenoUIVersionChecking=false;
 async function zenoCheckOwnerUIRevision(force=false){
