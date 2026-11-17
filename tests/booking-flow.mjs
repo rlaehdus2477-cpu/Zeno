@@ -106,8 +106,15 @@ async function main() {
   const naeumLogin = await api('POST', '/api/login', {body: {hospitalId: 'naeum', pin: PINS.naeum}});
   if (sooLogin.status !== 200 || naeumLogin.status !== 200) throw new Error('병원 로그인 실패: ' + JSON.stringify([sooLogin, naeumLogin]));
   const SOO = sooLogin.data.token, NAEUM = naeumLogin.data.token;
-  const ownerBookings = async t => (await api('GET', '/api/bootstrap', {token: t})).data?.bookings || [];
-  const sooBookings = async () => (await api('GET', '/api/dashboard?hospitalId=soo', {token: SOO})).data?.bookings || [];
+  // 조회가 실패했는데 "예약 없음"으로 오인하지 않도록, 200 응답과 배열 형태를 반드시 확인합니다.
+  const listOrThrow = (r, label) => {
+    if (r.status !== 200 || !Array.isArray(r.data?.bookings)) {
+      throw new Error(`${label} 조회 실패: ${r.status} ${JSON.stringify(r.data)}`);
+    }
+    return r.data.bookings;
+  };
+  const ownerBookings = async t => listOrThrow(await api('GET', '/api/bootstrap', {token: t}), '보호자 예약');
+  const sooBookings = async () => listOrThrow(await api('GET', '/api/dashboard?hospitalId=soo', {token: SOO}), '병원 예약');
 
   let b1, b2, b3, b4;
 
@@ -179,9 +186,8 @@ async function main() {
   });
 
   await check(8, '병원 분리: 나음 병원은 수동물병원 예약을 보거나 바꿀 수 없음', async () => {
-    const n = await api('GET', '/api/dashboard?hospitalId=naeum', {token: NAEUM});
-    expect(n.status === 200, `나음 dashboard 응답 ${n.status}`);
-    expect(!findBooking(n.data?.bookings, b1), '나음 화면에 수동물병원 예약이 보임');
+    const nList = listOrThrow(await api('GET', '/api/dashboard?hospitalId=naeum', {token: NAEUM}), '나음 병원 예약');
+    expect(!findBooking(nList, b1), '나음 화면에 수동물병원 예약이 보임');
     const other = await api('GET', '/api/dashboard?hospitalId=soo', {token: NAEUM});
     expect(other.status === 401, `나음 토큰으로 수동물병원 dashboard 조회 → ${other.status} (401이어야 함)`);
     const p = await api('PATCH', `/api/bookings/${b1}`, {token: NAEUM, body: {status: 'rejected'}});
