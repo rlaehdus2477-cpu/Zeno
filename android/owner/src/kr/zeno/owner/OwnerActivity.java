@@ -345,11 +345,13 @@ public final class OwnerActivity extends Activity {
     }
 
     private void reportNativeCoordinates(JSONObject data) {
-        if (web == null || !isOwnerUrl(Uri.parse(web.getUrl()))) return;
+        // The geocoder worker must never call WebView methods off the UI thread.
+        final WebView target = web;
+        if (target == null) return;
         String encoded = JSONObject.quote(data.toString());
-        web.post(() -> {
-            if (web != null && isOwnerUrl(Uri.parse(web.getUrl()))) {
-                web.evaluateJavascript("window.zenoNearbyAndroidReport && window.zenoNearbyAndroidReport(" + encoded + ")", null);
+        target.post(() -> {
+            if (web == target && target.getUrl() != null && isOwnerUrl(Uri.parse(target.getUrl()))) {
+                target.evaluateJavascript("window.zenoNearbyAndroidReport && window.zenoNearbyAndroidReport(" + encoded + ")", null);
             }
         });
     }
@@ -365,9 +367,13 @@ public final class OwnerActivity extends Activity {
 
         @JavascriptInterface
         public void resolveHospitalAddresses(String data) {
-            if (web == null || !isOwnerUrl(Uri.parse(web.getUrl()))) return;
             if (data == null || data.length() > 20000) return;
-            geocoderPool.execute(() -> {
+            final WebView target = web;
+            if (target == null) return;
+            // @JavascriptInterface is called on WebView's bridge thread, NOT the UI thread.
+            target.post(() -> {
+                if (web != target || target.getUrl() == null || !isOwnerUrl(Uri.parse(target.getUrl()))) return;
+                geocoderPool.execute(() -> {
                 try {
                     JSONArray rows = new JSONArray(data);
                     if (rows.length() < 1 || rows.length() > 100) throw new Exception("병원 주소 목록을 확인해 주세요.");
@@ -382,6 +388,16 @@ public final class OwnerActivity extends Activity {
                         String address = row == null ? "" : row.optString("address", "").trim();
                         if (!id.matches("[a-zA-Z0-9_-]{1,40}") || !address.contains("청주") || address.length() > 200) {
                             missing++;
+                            // Always send the final completion callback, even when the last record is invalid.
+                            if (i + 1 == rows.length()) {
+                                JSONObject progress = new JSONObject();
+                                progress.put("coordinates", locations);
+                                progress.put("processed", i + 1);
+                                progress.put("total", rows.length());
+                                progress.put("missing", missing);
+                                progress.put("done", true);
+                                reportNativeCoordinates(progress);
+                            }
                             continue;
                         }
                         String key = id + "|" + address;
@@ -431,6 +447,7 @@ public final class OwnerActivity extends Activity {
                         reportNativeCoordinates(fail);
                     } catch (Exception ignored) {}
                 }
+                });
             });
         }
     }
