@@ -141,3 +141,30 @@ CREATE TABLE IF NOT EXISTS hospital_geo_cache (
  lon REAL,
  updated_at TEXT NOT NULL
 );
+
+-- 수의사 Q&A (2026-11-18): 공개 질문 + 제휴 병원 수의사 답변. 기존 questions(진료 전 질문)와 별개.
+CREATE TABLE IF NOT EXISTS vetqa_questions (
+  id TEXT PRIMARY KEY,
+  owner_id TEXT NOT NULL,
+  title TEXT NOT NULL,
+  body TEXT NOT NULL,
+  species TEXT NOT NULL,
+  field TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'open',
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS vetqa_questions_created ON vetqa_questions(status,created_at DESC);
+CREATE INDEX IF NOT EXISTS vetqa_questions_owner ON vetqa_questions(owner_id,created_at DESC);
+CREATE TABLE IF NOT EXISTS vetqa_answers (
+  id TEXT PRIMARY KEY,
+  question_id TEXT NOT NULL,
+  hospital_id TEXT NOT NULL,
+  vet_name TEXT NOT NULL DEFAULT '',
+  body TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'visible',
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  UNIQUE(question_id,hospital_id)
+);
+CREATE INDEX IF NOT EXISTS vetqa_answers_question ON vetqa_answers(question_id,created_at);
