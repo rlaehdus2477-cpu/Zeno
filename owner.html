@@ -4407,9 +4407,9 @@ function searchPage(){
  const regionChip=state.searchRegion?'<button type="button" class="zeno-selected-care-chip" data-action="clear-home-region-filter" aria-label="'+e(state.searchRegion)+' 지역 필터 해제">'+e(state.searchRegion)+' <span aria-hidden="true">×</span></button>':'';
  const quick=['전체','야간','24시','고양이 대기실'],more=['내 주변','고양이 친화','강아지 피어프리·스트레스 케어','연결 병원','즐겨찾기'];
  const lbl=x=>x==='24시'?'24시간':x==='야간'?'야간 진료':x==='연결 병원'?'예약 요청 가능':x==='즐겨찾기'?'저장한 병원':x;
- const chip=x=>'<button type="button" class="filter '+(fs.includes(x)?'active':'')+'" aria-pressed="'+String(fs.includes(x))+'" '+(x==='내 주변'?'data-action="nearby-toggle"'+(state.nearbyBusy?' disabled aria-busy="true"':''):'data-action="filter" data-value="'+e(x)+'"')+'>'+(x==='내 주변'&&state.nearbyBusy?'<span id="zeno-nearby-loading">병원 위치 확인 중 '+(state.nearbyProcessed||0)+'/'+(state.nearbyTotal||HOSPITALS.length)+'</span>':e(lbl(x)))+'</button>';
+ const chip=x=>'<button type="button" class="filter '+(fs.includes(x)?'active':'')+'" aria-pressed="'+String(fs.includes(x))+'" '+(x==='내 주변'?'data-action="nearby-toggle"'+(state.nearbyBusy?' disabled aria-busy="true"':''):'data-action="filter" data-value="'+e(x)+'"')+'>'+(x==='내 주변'&&state.nearbyBusy?'위치 확인 중…':e(lbl(x)))+'</button>';
  const selected=more.filter(x=>fs.includes(x));
- const nearbyNote=fs.includes('내 주변')?'<p class="zeno-nearby-note">현재 위치 기준 직선거리 5km 이내 · 가까운 순'+(state.nearbyMissing?' · 좌표 미확인 병원 '+state.nearbyMissing+'곳 제외':'')+'</p>':'';
+ const nearbyNote=state.nearbyBusy?'<p class="zeno-nearby-note" role="status" id="zeno-nearby-loading">병원 위치 확인 중 '+(state.nearbyProcessed||0)+'/'+(state.nearbyTotal||HOSPITALS.length)+'</p>':fs.includes('내 주변')?'<p class="zeno-nearby-note">현재 위치 기준 병원 주소 추정 직선거리 5km 이내 · 가까운 순'+(state.nearbyMissing?' · 좌표 미확인 병원 '+state.nearbyMissing+'곳 제외':'')+'</p>':'';
  const chips='<div class="zeno-filter-main"><div class="filters zeno-filter-primary">'+quick.map(chip).join('')+'</div><details class="zeno-filter-more"><summary>필터 '+(selected.length?selected.length:'')+'</summary><div class="zeno-filter-extras">'+more.map(chip).join('')+'</div></details></div>'
   +(selected.length?'<div class="zeno-filter-selected">'+selected.map(x=>'<button type="button" class="zeno-filter-selected-chip" data-action="'+(x==='내 주변'?'nearby-toggle':'filter')+'" data-value="'+e(x)+'">'+e(lbl(x))+' ×</button>').join('')+'</div>':'');
  return '<header class="zeno-search-topbar">'+zenoBrandLogo()+'<h1>병원 찾기</h1></header><section class="zeno-search-page">'
@@ -5617,7 +5617,7 @@ async function start(){
  }finally{zenoStartPending=false}
 }
 render();start();
-const ZENO_OWNER_UI_REVISION='20261118-galaxy-nearby-v54';
+const ZENO_OWNER_UI_REVISION='20261118-galaxy-nearby-v55';
 let zenoLastUIVersionCheck=0;
 let zenoUIVersionChecking=false;
 async function zenoCheckOwnerUIRevision(force=false){
