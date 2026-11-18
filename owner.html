@@ -2968,6 +2968,13 @@ html body .zeno-search-page .zeno-search-card .zeno-card-call:disabled{
 #app .zeno-search-page .zeno-search-card:last-child{border-bottom:0!important}
 #app .zeno-search-page .zeno-search-card .zeno-search-tag{background:#f4f6f9!important;color:#4e5968!important;font-size:12px!important;height:24px!important;font-weight:500!important}
 }
+</style><style id="zeno-home-polish-20261118">
+/* Home polish: status text without chip background, calmer headings, even section spacing. */
+#app .zeno-home-v10 .zeno-v10-open-card .zeno-v10-badge.is-open{background:transparent!important;padding:0!important;border:0!important;color:#086ad1!important;font-weight:600!important}
+#app .zeno-home-v10 .care-launcher h2,#app .zeno-home-v10 .care-list-heading h2,#app .zeno-home-v10 .zeno-home-utilities h2{font-size:17px!important;font-weight:700!important;line-height:1.4!important;letter-spacing:-.02em!important}
+#app .zeno-home-v10 .zeno-home-hospital-summary{gap:4px 6px!important}
+#app .zeno-home-v10 .zeno-home-summary-dot{color:var(--zh-line-strong,#B8C2CE)}
+#app .zeno-home-v10 .care-launcher{margin-top:12px!important}
 </style></head><body><div id="app" class="app"></div><script>
 'use strict';
 const APP_MODE='owner';
@@ -3081,8 +3088,8 @@ const SYMPTOM_GUIDE=[
 ];
 const CARE_SVG={
  '일반 진료':"<path d=\"M11 2v2\" /><path d=\"M5 2v2\" /><path d=\"M5 3H4a2 2 0 0 0-2 2v4a6 6 0 0 0 12 0V5a2 2 0 0 0-2-2h-1\" /><path d=\"M8 15a6 6 0 0 0 12 0v-3\" /><circle cx=\"20\" cy=\"10\" r=\"2\" />",
- '내과':"<path d=\"M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.49 5.49 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5\" /><path d=\"M3.22 13H9.5l.5-1 2 4.5 2-7 1.5 3.5h5.27\" />",
- '피부·귀':"<path d=\"M6 8.5a6.5 6.5 0 1 1 13 0c0 6-6 6-6 10a3.5 3.5 0 1 1-7 0\" /><path d=\"M15 8.5a2.5 2.5 0 0 0-5 0v1a2 2 0 1 1 0 4\" />",
+ '내과':"<path d=\"m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z\" /><path d=\"m8.5 8.5 7 7\" />",
+ '피부·귀':"<path d=\"M3 17c3-1.5 6-1.5 9 0s6 1.5 9 0\" /><path d=\"M3 21h18\" /><path d=\"M7 16.4c-.4-3 .2-6 2.2-9\" /><path d=\"M12 17c0-4.2.9-8.2 3.2-11.5\" /><path d=\"M17 16.4c0-3 .8-5.6 2.6-7.6\" />",
  '안과':"<path d=\"M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0\" /><circle cx=\"12\" cy=\"12\" r=\"3\" />",
  '치과·구강':"<path d=\"M12 5.5c-1.074 -.586 -2.583 -1.5 -4 -1.5c-2.1 0 -4 1.247 -4 5c0 4.899 1.056 8.41 2.671 10.537c.573 .756 1.97 .521 2.567 -.236c.398 -.505 .819 -1.439 1.262 -2.801c.292 -.771 .892 -1.504 1.5 -1.5c.602 0 1.21 .737 1.5 1.5c.443 1.362 .864 2.295 1.262 2.8c.597 .759 2 .993 2.567 .237c1.615 -2.127 2.671 -5.637 2.671 -10.537c0 -3.74 -1.908 -5 -4 -5c-1.423 0 -2.92 .911 -4 1.5\" /><path d=\"M12 5.5l3 1.5\" />",
  '정형외과':"<path d=\"M17 10c.7-.7 1.69 0 2.5 0a2.5 2.5 0 1 0 0-5 .5.5 0 0 1-.5-.5 2.5 2.5 0 1 0-5 0c0 .81.7 1.8 0 2.5l-7 7c-.7.7-1.69 0-2.5 0a2.5 2.5 0 0 0 0 5c.28 0 .5.22.5.5a2.5 2.5 0 1 0 5 0c0-.81-.7-1.8 0-2.5Z\" />",
@@ -4131,7 +4138,7 @@ function zenoHomeSmallIcon(name){
   'chevron':'<path d="m6 9 6 6 6-6"/>',
   'bell':'<path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/>',
   'moon':'<path d="M20 14.5A8.5 8.5 0 0 1 9.5 4 8.5 8.5 0 1 0 20 14.5Z"/>',
-  'urgent':'<path d="M12 3v3M4.8 6l2 2M19.2 6l-2 2M5 14h14l-2-7H7l-2 7ZM3 18h18"/><path d="M10 10h4"/>',
+  'urgent':'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
   'next':'<path d="m9 18 6-6-6-6"/>',
   'help':'<circle cx="12" cy="12" r="9"/><path d="M9.7 9a2.5 2.5 0 1 1 4 2c-1.2 1-1.7 1.5-1.7 2.5M12 17h.01"/>'
  };
@@ -4147,9 +4154,11 @@ function zenoHomeSummary(){
  const night=list.filter(h=>!zeno24HourEmergency(h)&&zenoNightHours(h)).length;
  const allDay=list.filter(h=>h.is24).length;
  return '<div class="zeno-home-hospital-summary" role="note" aria-label="선택 지역 병원 정보">'
-  +'<span>등록 병원 <strong>'+list.length+'</strong>곳</span>'
-  +'<span>야간 진료 안내 <strong>'+night+'</strong>곳</span>'
-  +'<span>24시간 운영 표기 <strong>'+allDay+'</strong>곳</span></div>';
+  +'<span>'+e(state.homeArea==='청주 전체'?'청주':String(state.homeArea||'청주').replace('청주 ',''))+' 병원 <strong>'+list.length+'</strong>곳</span>'
+  +'<span class="zeno-home-summary-dot" aria-hidden="true">·</span>'
+  +'<span>야간 진료 <strong>'+night+'</strong>곳</span>'
+  +'<span class="zeno-home-summary-dot" aria-hidden="true">·</span>'
+  +'<span>24시간 <strong>'+allDay+'</strong>곳</span></div>';
 }
 /* Only explicitly recorded emergency statuses from linked hospitals appear here. */
 function zenoHomeEmergencyStatusNote(h){
@@ -4190,17 +4199,29 @@ function zenoHomeWithinPublishedHours(h,date=new Date()){
  if(rest&&clock.now>=rest.start&&(rest.overnight||clock.now<rest.end))return false;
  return true;
 }
+/* Home rail label: today's published closing time, never an emergency claim. */
+function zenoHomeOpenLabel(h,date=new Date()){
+ const clock=zenoSeoulClock(date),week=zenoWeeklyData(h);
+ const days=['일','월','화','수','목','금','토'],dayIndex=days.indexOf(clock.weekday);
+ if(dayIndex<0)return '진료 중';
+ const today=zenoScheduleSpan(String(week[clock.weekday]||'').replace(/\([^)]*\)/g,'').trim());
+ const prior=zenoScheduleSpan(week[days[(dayIndex+6)%7]]);
+ const end=(prior?.overnight&&clock.now<prior.end)?prior.end:(today?today.end:null);
+ if(end===null)return '진료 중';
+ const hh=String(Math.floor(end/60)).padStart(2,'0'),mm=String(end%60).padStart(2,'0');
+ return '진료 중 · '+hh+':'+mm+'까지';
+}
 function zenoHomeOperatingRail(){
  const list=zenoHomeAreaHospitals();
  const open=list.filter(h=>zenoHomeWithinPublishedHours(h));
  const cards=open.map(h=>{
   const p=(Array.isArray(h.photos)?h.photos:[]).find(x=>x.approved===true&&x.url);
   const img=p?'<img src="'+e(p.url)+'" alt="" class="'+(p.isLogo||p.fit==='contain'?'is-logo':'')+'" loading="lazy">':'';
-  const badge=h.is24?'24시간 운영시간 내':'진료시간 내';
+  const badge=h.is24?'24시간 운영':zenoHomeOpenLabel(h);
   return '<button type="button" class="zeno-v10-open-card" data-action="details" data-id="'+e(h.id)+'"><span class="zeno-v10-mini-photo">'+(img||zenoCareIcon('일반 진료'))+'</span><span class="zeno-home-rail-copy"><strong>'+e(h.name)+'</strong><small>'+e(String(h.region||'').split('·').pop().trim())+'</small><span class="zeno-v10-hospital-badges"><span class="zeno-v10-badge is-open">'+badge+'</span></span>'+zenoHomeEmergencyStatusNote(h)+'</span></button>';
  }).join('');
  const more='<button type="button" class="zeno-v10-open-more" data-action="show-all-hospitals" aria-label="전체 병원 목록으로 이동"><strong>더 많은 병원 찾기</strong><small>운영시간 미확인 병원도 살펴보기</small><span aria-hidden="true">전체 병원 ›</span></button>';
- return '<section class="zeno-v10-open-section"><div class="care-list-heading"><h2>지금 문 여는 병원</h2><button data-action="show-all-hospitals">전체 병원 ›</button></div><p class="zeno-open-note">네이버 등록 운영시간 기준 · 실제 운영·접수 여부 전화 확인</p>'
+ return '<section class="zeno-v10-open-section"><div class="care-list-heading"><h2>지금 진료 중인 병원</h2><button data-action="show-all-hospitals">전체 병원 ›</button></div><p class="zeno-open-note">운영시간 기준 · 실제 접수는 전화 확인</p>'
   +(open.length?'<div class="zeno-v10-open-rail" tabindex="0" role="region" aria-label="운영시간 기준 병원 가로 스크롤 목록">'+cards+more+'</div>':'<p class="zeno-v10-empty">현재 시간에 해당하는 등록 진료시간을 찾지 못했어요.</p>')+'</section>';
 }
 
