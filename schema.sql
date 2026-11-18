@@ -132,3 +132,12 @@ CREATE TABLE IF NOT EXISTS hospital_specialty_evidence (
   approved_at TEXT,
   PRIMARY KEY(hospital_id,keyword)
 );
+
+-- Cached coordinates from NAVER Maps Geocoding; never stores a guardian's GPS.
+CREATE TABLE IF NOT EXISTS hospital_geo_cache (
+ hospital_id TEXT PRIMARY KEY,
+ address TEXT NOT NULL,
+ lat REAL,
+ lon REAL,
+ updated_at TEXT NOT NULL
+);
