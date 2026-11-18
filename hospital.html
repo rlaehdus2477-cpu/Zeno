@@ -637,6 +637,15 @@ input::placeholder,textarea::placeholder{font-family:inherit;letter-spacing:-.00
 #app .hi-preview-list div{display:grid;grid-template-columns:96px minmax(0,1fr);gap:8px;align-items:center;font-size:14px}
 #app .hi-preview-list dt{color:#667085;font-weight:600}
 #app .hi-preview-list dd{margin:0;color:#202833}
+/* 상단 요약: 필터와 같은 이름·같은 기준의 건수, 문의는 구분 */
+#app .hi-summary.hi-summary-v2{display:flex!important;flex-wrap:wrap!important;align-items:center!important;justify-content:space-between!important;gap:10px 12px!important}
+#app .hi-summary-counts{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px;min-width:0}
+#app .hi-summary-counts span{white-space:nowrap;font-size:14px;color:#475467}
+#app .hi-summary-counts strong{font-size:18px;font-weight:700;color:#202833;margin-left:3px}
+#app .hi-summary-v2 .hi-summary-qa{white-space:nowrap;font-size:14px;color:#475467;margin-right:auto}
+#app .hi-summary-v2 .hi-summary-qa strong{font-size:18px;font-weight:700;color:#202833;margin-left:3px}
+@media(max-width:699px){#app .hi-summary-counts{flex:1 1 100%}}
+@media(min-width:700px){#app .hi-summary-v2 .hi-summary-qa{padding-left:14px;border-left:1px solid #D0D5DD}}
 /* 진료비 관리 메뉴: 기본 글자색 (초록은 성공·확정 전용) */
 #app .hi-fee-edit summary,#app .hi-request-more summary{color:#202833!important}
 </style>
@@ -973,9 +982,13 @@ function hiDetailSheet(b){
  +'<footer class="hi-sheet-buttons">'+hospitalBookingButtons(b)+'</footer></section></div>';
 }
 function hsBookingCard(b){return hiInboxRow(b)}
+/* 필터와 상단 요약 숫자가 같은 기준을 쓰도록 한 곳에서 정의 */
+function hiFilterMatch(b,f){
+ return f==='all'||(f==='waiting'&&['pending','accepted'].includes(b.status))||(f==='awaiting'&&b.status==='suggested')||(f==='confirmed'&&['confirmed','in_progress'].includes(b.status))||(f==='closed'&&['done','cancelled','rejected'].includes(b.status));
+}
 function hsFilterBookings(all){
  const f=state.hBookingFilter||'all';
- const rows=all.filter(b=>f==='all'||(f==='waiting'&&['pending','accepted'].includes(b.status))||(f==='awaiting'&&b.status==='suggested')||(f==='confirmed'&&['confirmed','in_progress'].includes(b.status))||(f==='closed'&&['done','cancelled','rejected'].includes(b.status)));
+ const rows=all.filter(b=>hiFilterMatch(b,f));
  const rank={high:0,normal:1,low:2};
  return rows.sort((a,b)=>state.hSort==='urgency'?(rank[hsRisk(a).level]-rank[hsRisk(b).level]||String(b.createdAt||'').localeCompare(String(a.createdAt||''))):String(b.createdAt||'').localeCompare(String(a.createdAt||'')));
 }
@@ -1078,11 +1091,11 @@ function hospitalPage(){
  if(!state.hospitalToken)return hospitalLogin();
  const h=hospitalById(state.activeHospital),s=hs(h.id),q=state.hospitalQuestions||[],live=state.hospitalBookings||[];
  const all=live,shown=hsFilterBookings(all); /* CHANGED */
- const waiting=all.filter(b=>['pending','accepted'].includes(b.status)).length; /* pending·accepted = 병원 차례 */
+ const waiting=all.filter(b=>hiFilterMatch(b,'waiting')).length,awaiting=all.filter(b=>hiFilterMatch(b,'awaiting')).length,confirmedCount=all.filter(b=>hiFilterMatch(b,'confirmed')).length;
  const unanswered=q.filter(x=>x.status!=='answered').length;
  const header='<header class="hi-page-heading hi-page-heading-inline"><h1 title="'+e(h.name)+'">'+e(h.name)+'</h1><button class="hi-switch-hospital" type="button" data-action="hospital-logout">병원 전환</button></header>';
  const tabTitle=x=>'<header class="hi-inbox-heading hi-tab-heading"><h2>'+x+'</h2></header>';
- const counts='<div class="hi-summary"><span>'+'예약'+' <strong>'+all.length+'</strong></span><i></i><span>처리 필요 <strong>'+waiting+'</strong></span><i></i><span>미답변 <strong>'+unanswered+'</strong></span>'+(state.hNewCount?'<span class="hi-new-alert">새 예약 '+state.hNewCount+'건</span>':'')+zenoHospitalAlertButton()+'</div>';
+ const counts='<div class="hi-summary hi-summary-v2"><div class="hi-summary-counts"><span>처리 필요 <strong>'+waiting+'</strong></span><span>보호자 응답 대기 <strong>'+awaiting+'</strong></span><span>예약 확정 <strong>'+confirmedCount+'</strong></span></div><span class="hi-summary-qa">미답변 문의 <strong>'+unanswered+'</strong></span>'+(state.hNewCount?'<span class="hi-new-alert">새 예약 '+state.hNewCount+'건</span>':'')+zenoHospitalAlertButton()+'</div>';
  const chips='<div class="hi-filter-bar"><div class="hi-filter-chips">'+[['all','전체'],['waiting','처리 필요'],['awaiting','보호자 응답 대기'],['confirmed','예약 확정'],['closed','종료']].map(x=>'<button class="'+((state.hBookingFilter||'all')===x[0]?'selected':'')+'" data-action="booking-filter" data-value="'+x[0]+'" aria-pressed="'+String((state.hBookingFilter||'all')===x[0])+'">'+x[1]+'</button>').join('')+'</div><button class="hi-sort-button" data-action="booking-sort">'+hsIcon('filter',16)+(state.hSort==='urgency'?'긴급도순':'최신순')+'</button></div>';
  const inbox='<section class="hi-inbox"><header class="hi-inbox-heading"><h2>예약 관리</h2><span>'+shown.length+'건</span></header>'+(!live.length?'<p class="hi-no-booking">아직 접수된 예약 요청이 없습니다.</p>':'')+chips+hiInboxGroups(shown)+'</section>';
  const current=all.find(x=>x.id===state.hDetailBookingId);
