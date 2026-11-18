@@ -124,7 +124,7 @@ async function reviewSpecialtyEvidence(db,data){
  const hospitalId=clean(data.hospitalId,20),keyword=clean(data.keyword,30),decision=clean(data.decision,10),reviewNote=clean(data.reviewNote,300);
  assert(IDS.has(hospitalId),'병원을 확인해 주세요.');
  assert(['approve','reject'].includes(decision),'승인 또는 반려를 선택해 주세요.');
- if(decision==='reject')assert(reviewNote.length>=2,'반려 사유를 입력해 주세요.');
+ if(decision==='reject')assert(reviewNote.length>=2,'보류 사유를 입력해 주세요.');
  await ensureHospitalSpecialtyEvidence(db);await ensureHospitalSpecialtyKeywords(db);
  const ev=await db.prepare('SELECT * FROM hospital_specialty_evidence WHERE hospital_id=? AND keyword=?').bind(hospitalId,keyword).first();
  assert(ev,'제출된 근거가 없습니다.',404);
