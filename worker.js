@@ -353,7 +353,7 @@ if(path==='/api/public/hospital-coordinates'&&method==='GET'){
  assert(env.NAVER_MAPS_CLIENT_ID&&env.NAVER_MAPS_CLIENT_SECRET,'내 주변 검색을 위한 네이버 지도 설정이 아직 완료되지 않았습니다.',503);
  if(url.searchParams.get('check')==='1')return json({ready:true});
  if(!zenoGeoBuildTask)zenoGeoBuildTask=zenoPublicHospitalCoordinates(env).finally(()=>{zenoGeoBuildTask=null});
- return await zenoGeoBuildTask;
+ return (await zenoGeoBuildTask).clone();
 }
 /* CHANGED: non-authenticated hospital status endpoint exposes only hospital-entered public fields. */
 /* Public read-only view of hospital-selected representative specialties. */
