@@ -3481,7 +3481,7 @@ async function loadHospital(draw=true){if(!state.hospitalToken)return;try{const 
 async function loadAdmin(draw=true){if(!state.adminToken)return;try{state.adminStats=await api('GET','/api/admin/stats',null,true);if(draw)render()}catch(err){toast(err.message);state.adminToken='';sessionStorage.removeItem('zeno-admin-token');if(draw)render()}}
 
 let zenoSearchScrollY=0,zenoNewSearch=false;
-const ZENO_PUBLIC_PAGES=['home','search','emergency','prices','more','symptoms','pets','vetqa'];
+const ZENO_PUBLIC_PAGES=['home','search','emergency','prices','more','symptoms','vetqa','pets'];
 const zenoCanViewPage=p=>APP_MODE!=='owner'||!!state.ownerToken||ZENO_PUBLIC_PAGES.includes(p);
 function navTo(p,fromHistory=false){
  if(APP_MODE==='hospital'&&p!=='hospital')return;
