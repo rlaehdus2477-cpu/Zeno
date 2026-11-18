@@ -3801,17 +3801,59 @@ async function zenoLoadNearbyCoordinates(){
  }
  throw Error('병원 위치 확인이 완료되지 않았습니다. 잠시 후 다시 시도해 주세요.');
 }
+async function zenoReadNearbyPosition(){
+ // Galaxy APK: native location avoids WebView permission inconsistencies.
+ if(window.ZenoNearbyAndroid&&typeof window.ZenoNearbyAndroid.requestCurrentLocation==='function'){
+  return await new Promise((resolve,reject)=>{
+   const timeout=setTimeout(()=>{
+    if(window.zenoNearbyAndroidLocationReport===report)window.zenoNearbyAndroidLocationReport=null;
+    const error=Error('현재 위치 확인 시간이 초과되었습니다. 다시 시도해 주세요.');
+    error.code=3;
+    reject(error);
+   },22000);
+   const report=raw=>{
+    let data;
+    try{data=typeof raw==='string'?JSON.parse(raw):raw}catch{return}
+    if(!data||typeof data!=='object')return;
+    clearTimeout(timeout);
+    if(window.zenoNearbyAndroidLocationReport===report)window.zenoNearbyAndroidLocationReport=null;
+    if(data.error){
+     const error=Error(String(data.error));
+     error.code=Number(data.code)||2;
+     reject(error);
+     return;
+    }
+    const lat=Number(data.lat),lon=Number(data.lon);
+    if(!Number.isFinite(lat)||!Number.isFinite(lon)){
+     const error=Error('현재 위치 좌표를 확인하지 못했습니다.');
+     error.code=2;
+     reject(error);
+     return;
+    }
+    resolve({coords:{latitude:lat,longitude:lon,accuracy:Number(data.accuracy)||null}});
+   };
+   window.zenoNearbyAndroidLocationReport=report;
+   try{window.ZenoNearbyAndroid.requestCurrentLocation()}
+   catch(error){
+    clearTimeout(timeout);
+    if(window.zenoNearbyAndroidLocationReport===report)window.zenoNearbyAndroidLocationReport=null;
+    reject(error);
+   }
+  });
+ }
+ return await new Promise((resolve,reject)=>navigator.geolocation.getCurrentPosition(resolve,reject,{enableHighAccuracy:false,maximumAge:120000,timeout:12000}));
+}
 async function zenoToggleNearby(){
  if(state.nearbyBusy)return;
  if(zenoHasFilter('내 주변')){
   state.activeFilters=zenoActiveFilters().filter(x=>x!=='내 주변');state.filter='전체';render();return;
  }
- if(!navigator.geolocation||!window.isSecureContext){toast('내 주변 검색은 위치 기능을 지원하는 보안 연결에서 이용할 수 있어요.');return}
+ if(!(window.ZenoNearbyAndroid&&typeof window.ZenoNearbyAndroid.requestCurrentLocation==='function')&&(!navigator.geolocation||!window.isSecureContext)){toast('내 주변 검색은 위치 기능을 지원하는 보안 연결에서 이용할 수 있어요.');return}
  state.nearbyBusy=true;render();
  try{
   // Galaxy's native geocoder does not need a NAVER Maps API key.
   if(!window.ZenoNearbyAndroid)await zenoNearbyGeoRequest(true);
-  const position=await new Promise((resolve,reject)=>navigator.geolocation.getCurrentPosition(resolve,reject,{enableHighAccuracy:false,maximumAge:120000,timeout:12000}));
+  const position=await zenoReadNearbyPosition();
   const lat=Number(position.coords.latitude),lon=Number(position.coords.longitude);
   if(!Number.isFinite(lat)||!Number.isFinite(lon))throw Error('현재 위치를 확인하지 못했습니다.');
   state.nearbyPosition={lat,lon};
@@ -5713,7 +5755,7 @@ async function start(){
  }finally{zenoStartPending=false}
 }
 render();start();
-const ZENO_OWNER_UI_REVISION='20261118-personal-backup-v56';
+const ZENO_OWNER_UI_REVISION='20261118-galaxy-native-location-v57';
 let zenoLastUIVersionCheck=0;
 let zenoUIVersionChecking=false;
 async function zenoCheckOwnerUIRevision(force=false){
