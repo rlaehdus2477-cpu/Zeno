@@ -1,6 +1,19 @@
 package kr.zeno.owner;
 
 import android.app.Activity;
+import android.Manifest;
+import android.content.pm.PackageManager;
+import android.content.SharedPreferences;
+import android.location.Address;
+import android.location.Geocoder;
+import android.webkit.GeolocationPermissions;
+import android.webkit.JavascriptInterface;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import java.util.List;
+import java.util.Locale;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.graphics.Bitmap;
@@ -25,8 +38,12 @@ import android.widget.Toast;
 
 public final class OwnerActivity extends Activity {
     private static final String HOST = "zeno.rlaehdus2477.workers.dev";
-    private static final String HOME = "https://" + HOST + "/owner?android_app=1.2";
+    private static final String HOME = "https://" + HOST + "/owner?android_app=1.3";
     private static final int PHOTO = 1;
+    private static final int GEO_PERMISSION = 42;
+    private final ExecutorService geocoderPool = Executors.newSingleThreadExecutor();
+    private GeolocationPermissions.Callback pendingGeolocation;
+    private String pendingGeolocationOrigin;
     private static final int SURFACE = Color.rgb(248, 250, 252);
     private WebView web;
     private LinearLayout offline;
@@ -57,11 +74,15 @@ public final class OwnerActivity extends Activity {
 
         WebSettings settings = web.getSettings();
         settings.setJavaScriptEnabled(true);
+        settings.setGeolocationEnabled(true);
         settings.setDomStorageEnabled(true);
         settings.setDefaultTextEncodingName("UTF-8");
         // The live ZENO UI is served by Cloudflare. Never reuse an obsolete WebView HTTP cache.
         settings.setCacheMode(WebSettings.LOAD_NO_CACHE);
         web.clearCache(true);
+        // Only our HTTPS origin is allowed in this WebView. The bridge never receives
+        // the pet owner's GPS: Android geocodes already-listed clinic addresses only.
+        web.addJavascriptInterface(new NearbyHospitalGeocoder(), "ZenoNearbyAndroid");
         settings.setUseWideViewPort(true);
         settings.setLoadWithOverviewMode(true);
         settings.setTextZoom(100);
@@ -107,6 +128,28 @@ public final class OwnerActivity extends Activity {
             }
         });
         web.setWebChromeClient(new WebChromeClient() {
+            @Override public void onGeolocationPermissionsShowPrompt(String origin,
+                                                                     GeolocationPermissions.Callback callback) {
+                if (!("https://" + HOST).equalsIgnoreCase(origin)) {
+                    callback.invoke(origin, false, false);
+                    return;
+                }
+                if (checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+                        || checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                    callback.invoke(origin, true, false);
+                    return;
+                }
+                pendingGeolocation = callback;
+                pendingGeolocationOrigin = origin;
+                requestPermissions(new String[]{
+                        Manifest.permission.ACCESS_FINE_LOCATION,
+                        Manifest.permission.ACCESS_COARSE_LOCATION
+                }, GEO_PERMISSION);
+            }
+
+            @Override public void onGeolocationPermissionsHidePrompt() {
+                // Android permission result is resolved by onRequestPermissionsResult.
+            }
             @Override public boolean onShowFileChooser(WebView view, ValueCallback<Uri[]> result,
                                                         FileChooserParams params) {
                 if (pendingPhoto != null) pendingPhoto.onReceiveValue(null);
@@ -171,6 +214,101 @@ public final class OwnerActivity extends Activity {
         if (state == null || web.restoreState(state) == null) web.loadUrl(HOME);
     }
 
+    @Override public void onRequestPermissionsResult(int request, String[] permissions, int[] grants) {
+        super.onRequestPermissionsResult(request, permissions, grants);
+        if (request != GEO_PERMISSION || pendingGeolocation == null) return;
+        boolean allowed = checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+                || checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+        pendingGeolocation.invoke(pendingGeolocationOrigin, allowed, false);
+        pendingGeolocation = null;
+        pendingGeolocationOrigin = null;
+    }
+
+    private void reportNativeCoordinates(JSONObject data) {
+        if (web == null || !isOwnerUrl(Uri.parse(web.getUrl()))) return;
+        String encoded = JSONObject.quote(data.toString());
+        web.post(() -> {
+            if (web != null && isOwnerUrl(Uri.parse(web.getUrl()))) {
+                web.evaluateJavascript("window.zenoNearbyAndroidReport && window.zenoNearbyAndroidReport(" + encoded + ")", null);
+            }
+        });
+    }
+
+    // Geocode only the existing hospital addresses supplied by our own ZENO page.
+    // No device GPS coordinates are ever passed to this bridge or a remote server.
+    private final class NearbyHospitalGeocoder {
+        @JavascriptInterface
+        public void resolveHospitalAddresses(String data) {
+            if (web == null || !isOwnerUrl(Uri.parse(web.getUrl()))) return;
+            if (data == null || data.length() > 20000) return;
+            geocoderPool.execute(() -> {
+                try {
+                    JSONArray rows = new JSONArray(data);
+                    if (rows.length() < 1 || rows.length() > 100) throw new Exception("병원 주소 목록을 확인해 주세요.");
+                    if (!Geocoder.isPresent()) throw new Exception("휴대폰 주소 위치 변환 서비스를 사용할 수 없습니다.");
+                    Geocoder coder = new Geocoder(OwnerActivity.this, Locale.KOREA);
+                    SharedPreferences cache = getSharedPreferences("zeno_hospital_geo_v1", MODE_PRIVATE);
+                    JSONObject locations = new JSONObject();
+                    int missing = 0;
+                    for (int i = 0; i < rows.length(); i++) {
+                        JSONObject row = rows.optJSONObject(i);
+                        String id = row == null ? "" : row.optString("id", "");
+                        String address = row == null ? "" : row.optString("address", "").trim();
+                        if (!id.matches("[a-zA-Z0-9_-]{1,40}") || !address.contains("청주") || address.length() > 200) {
+                            missing++;
+                            continue;
+                        }
+                        String key = id + "|" + address;
+                        String saved = cache.getString(key, "");
+                        double lat = Double.NaN, lon = Double.NaN;
+                        if (!saved.isEmpty()) {
+                            try {
+                                String[] parts = saved.split(",");
+                                lat = Double.parseDouble(parts[0]);
+                                lon = Double.parseDouble(parts[1]);
+                            } catch (Exception ignored) {}
+                        }
+                        if (!Double.isFinite(lat) || !Double.isFinite(lon)) {
+                            String query = address.replaceAll("\\s*\\([^)]*\\).*", "").trim();
+                            try {
+                                List<Address> found = coder.getFromLocationName(query, 1, 35.9, 126.9, 37.0, 128.2);
+                                if (found != null && !found.isEmpty()) {
+                                    lat = found.get(0).getLatitude();
+                                    lon = found.get(0).getLongitude();
+                                }
+                            } catch (Exception ignored) { /* Do not guess a location. */ }
+                        }
+                        if (Double.isFinite(lat) && Double.isFinite(lon)
+                                && lat > 35.9 && lat < 37.0 && lon > 126.9 && lon < 128.2) {
+                            JSONObject position = new JSONObject();
+                            position.put("lat", lat);
+                            position.put("lon", lon);
+                            locations.put(id, position);
+                            if (saved.isEmpty()) cache.edit().putString(key, lat + "," + lon).apply();
+                        } else {
+                            missing++;
+                        }
+                        if ((i + 1) % 5 == 0 || i + 1 == rows.length()) {
+                            JSONObject progress = new JSONObject();
+                            progress.put("coordinates", locations);
+                            progress.put("processed", i + 1);
+                            progress.put("total", rows.length());
+                            progress.put("missing", missing);
+                            progress.put("done", i + 1 == rows.length());
+                            reportNativeCoordinates(progress);
+                        }
+                    }
+                } catch (Exception error) {
+                    try {
+                        JSONObject fail = new JSONObject();
+                        fail.put("error", error.getMessage() == null ? "주소 좌표 확인에 실패했습니다." : error.getMessage());
+                        reportNativeCoordinates(fail);
+                    } catch (Exception ignored) {}
+                }
+            });
+        }
+    }
+
     private boolean isOwnerUrl(Uri uri) {
         return "https".equalsIgnoreCase(uri.getScheme()) && HOST.equalsIgnoreCase(uri.getHost());
     }
@@ -223,6 +361,11 @@ public final class OwnerActivity extends Activity {
 
     @Override protected void onDestroy() {
         finishPhoto(null);
+        geocoderPool.shutdownNow();
+        if (pendingGeolocation != null) {
+            pendingGeolocation.invoke(pendingGeolocationOrigin, false, false);
+            pendingGeolocation = null;
+        }
         if (web != null) {
             web.stopLoading();
             web.destroy();
