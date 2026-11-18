@@ -3020,11 +3020,11 @@ html.dark .zeno-search-page .zeno-nearby-note,html[data-theme="dark"] .zeno-sear
 </style><style id="zeno-tabbar-v2">
 /* 2026-11-18: 실제 앱 같은 하단 탭바 (토스·당근 방식) — 마지막에 두어 이전 규칙을 덮습니다. */
 @media(max-width:750px){
-html body .mobilebar{display:flex!important;align-items:stretch!important;justify-content:space-around!important;position:fixed!important;left:0!important;right:0!important;bottom:0!important;z-index:40!important;gap:0!important;min-height:0!important;height:auto!important;padding:4px max(4px,env(safe-area-inset-right)) calc(4px + env(safe-area-inset-bottom)) max(4px,env(safe-area-inset-left))!important;background:rgba(255,255,255,.94)!important;-webkit-backdrop-filter:saturate(180%) blur(16px);backdrop-filter:saturate(180%) blur(16px);border-top:.5px solid rgba(0,0,0,.12)!important;box-shadow:none!important}
-html body .mobilebar button{flex:1 1 0!important;min-width:0!important;min-height:50px!important;padding:5px 0 3px!important;margin:0!important;gap:2px!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important;color:#8b95a1!important;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;transition:transform .12s ease}
+html body .mobilebar{display:flex!important;align-items:stretch!important;justify-content:space-around!important;position:fixed!important;left:0!important;right:0!important;bottom:0!important;z-index:40!important;gap:0!important;min-height:0!important;height:auto!important;padding:4px max(4px,env(safe-area-inset-right)) calc(4px + env(safe-area-inset-bottom)) max(4px,env(safe-area-inset-left))!important;background:#fff!important;-webkit-backdrop-filter:none;backdrop-filter:none;border-top:1px solid #eef0f3!important;box-shadow:none!important}
+html body .mobilebar button{flex:1 1 0!important;min-width:0!important;min-height:50px!important;padding:5px 0 3px!important;margin:0!important;gap:2px!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important;color:#9aa4b0!important;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;transition:transform .12s ease}
 html body .mobilebar button:active{transform:scale(.92)}
 html body .mobilebar button .ico{display:flex!important;align-items:center!important;justify-content:center!important;width:26px!important;height:26px!important;min-height:0!important;color:inherit!important}
-html body .mobilebar button .ico svg{width:24px!important;height:24px!important}
+html body .mobilebar button .ico svg{width:22px!important;height:22px!important}
 html body .mobilebar button b{font-size:11px!important;font-weight:500!important;line-height:1.2!important;letter-spacing:-.1px!important;white-space:nowrap!important;color:inherit!important}
 html body .mobilebar button.active,html body .mobilebar button[aria-current="page"]{color:#191f28!important}
 html body .mobilebar button.active b,html body .mobilebar button[aria-current="page"] b{font-weight:700!important}
@@ -3527,7 +3527,7 @@ const ZENO_TAB_ICONS={
 function zenoTabIcon(name,active){
  const set=ZENO_TAB_ICONS[name];
  if(!set)return zenoNavIcon(name);
- return active?'<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" aria-hidden="true">'+set[1]+'</svg>':'<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+set[0]+'</svg>';
+ return '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="'+(active?'2':'1.6')+'" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+set[0]+'</svg>';
 }
 function zenoNavIcon(name){
  const paths={
