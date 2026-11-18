@@ -5,6 +5,9 @@ import android.Manifest;
 import android.content.pm.PackageManager;
 import android.content.SharedPreferences;
 import android.location.Address;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.location.Geocoder;
 import android.webkit.GeolocationPermissions;
 import android.webkit.JavascriptInterface;
@@ -20,6 +23,9 @@ import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.SystemClock;
 import android.os.Message;
 import android.view.Gravity;
 import android.view.View;
@@ -38,9 +44,14 @@ import android.widget.Toast;
 
 public final class OwnerActivity extends Activity {
     private static final String HOST = "zeno.rlaehdus2477.workers.dev";
-    private static final String HOME = "https://" + HOST + "/owner?android_app=1.3";
+    private static final String HOME = "https://" + HOST + "/owner?android_app=1.4";
     private static final int PHOTO = 1;
     private static final int GEO_PERMISSION = 42;
+    private static final int NATIVE_GEO_PERMISSION = 43;
+    private final Handler locationHandler = new Handler(Looper.getMainLooper());
+    private LocationManager nearbyLocationManager;
+    private LocationListener nearbyLocationListener;
+    private Runnable nearbyLocationTimeout;
     private final ExecutorService geocoderPool = Executors.newSingleThreadExecutor();
     private GeolocationPermissions.Callback pendingGeolocation;
     private String pendingGeolocationOrigin;
@@ -216,12 +227,121 @@ public final class OwnerActivity extends Activity {
 
     @Override public void onRequestPermissionsResult(int request, String[] permissions, int[] grants) {
         super.onRequestPermissionsResult(request, permissions, grants);
+        if (request == NATIVE_GEO_PERMISSION) {
+            if (hasNearbyLocationPermission()) beginNativeNearbyLocation();
+            else finishNativeNearbyLocation(null, "ZENO에서 위치 사용을 허용해 주세요.", 1);
+            return;
+        }
         if (request != GEO_PERMISSION || pendingGeolocation == null) return;
-        boolean allowed = checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
-                || checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+        boolean allowed = hasNearbyLocationPermission();
         pendingGeolocation.invoke(pendingGeolocationOrigin, allowed, false);
         pendingGeolocation = null;
         pendingGeolocationOrigin = null;
+    }
+
+    private boolean hasNearbyLocationPermission() {
+        return checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+                || checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+    }
+
+    // Galaxy WebView can reject navigator.geolocation even when the Android
+    // permission is granted. Read the location directly on the device instead.
+    private void beginNativeNearbyLocation() {
+        if (web == null || web.getUrl() == null || !isOwnerUrl(Uri.parse(web.getUrl()))) return;
+        if (!hasNearbyLocationPermission()) {
+            requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION}, NATIVE_GEO_PERMISSION);
+            return;
+        }
+        if (nearbyLocationListener != null) return;
+        nearbyLocationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
+        if (nearbyLocationManager == null) {
+            finishNativeNearbyLocation(null, "휴대폰의 위치 서비스를 사용할 수 없습니다.", 2);
+            return;
+        }
+
+        final Location[] recent = new Location[1];
+        final boolean fine = checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED;
+        for (String provider : new String[]{LocationManager.NETWORK_PROVIDER, LocationManager.GPS_PROVIDER}) {
+            if (LocationManager.GPS_PROVIDER.equals(provider) && !fine) continue;
+            try {
+                if (!nearbyLocationManager.isProviderEnabled(provider)) continue;
+                Location candidate = nearbyLocationManager.getLastKnownLocation(provider);
+                if (candidate != null && candidate.hasAccuracy() && candidate.getAccuracy() <= 1500f
+                        && SystemClock.elapsedRealtimeNanos() - candidate.getElapsedRealtimeNanos() >= 0
+                        && SystemClock.elapsedRealtimeNanos() - candidate.getElapsedRealtimeNanos() <= 120000000000L
+                        && (recent[0] == null || candidate.getAccuracy() < recent[0].getAccuracy())) {
+                    recent[0] = candidate;
+                }
+            } catch (SecurityException | IllegalArgumentException ignored) {
+                // Try other available providers.
+            }
+        }
+        if (recent[0] != null) {
+            finishNativeNearbyLocation(recent[0], null, 0);
+            return;
+        }
+
+        nearbyLocationListener = new LocationListener() {
+            @Override public void onLocationChanged(Location location) {
+                if (location != null && (!location.hasAccuracy() || location.getAccuracy() <= 2000f))
+                    finishNativeNearbyLocation(location, null, 0);
+            }
+            @Override public void onStatusChanged(String provider, int status, Bundle extras) {}
+            @Override public void onProviderEnabled(String provider) {}
+            @Override public void onProviderDisabled(String provider) {}
+        };
+        boolean listening = false;
+        for (String provider : new String[]{LocationManager.NETWORK_PROVIDER, LocationManager.GPS_PROVIDER}) {
+            if (LocationManager.GPS_PROVIDER.equals(provider) && !fine) continue;
+            try {
+                if (!nearbyLocationManager.isProviderEnabled(provider)) continue;
+                nearbyLocationManager.requestLocationUpdates(provider, 0L, 0f,
+                        nearbyLocationListener, Looper.getMainLooper());
+                listening = true;
+            } catch (SecurityException | IllegalArgumentException ignored) {
+                // Provider unavailable; the other provider may still succeed.
+            }
+        }
+        if (!listening) {
+            finishNativeNearbyLocation(null, "휴대폰 위치 서비스 또는 위치 제공자를 확인해 주세요.", 2);
+            return;
+        }
+        nearbyLocationTimeout = () -> finishNativeNearbyLocation(null,
+                "휴대폰 위치를 아직 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.", 3);
+        locationHandler.postDelayed(nearbyLocationTimeout, 18000);
+    }
+
+    private void stopNativeNearbyLocation() {
+        if (nearbyLocationTimeout != null) {
+            locationHandler.removeCallbacks(nearbyLocationTimeout);
+            nearbyLocationTimeout = null;
+        }
+        if (nearbyLocationManager != null && nearbyLocationListener != null) {
+            try { nearbyLocationManager.removeUpdates(nearbyLocationListener); }
+            catch (SecurityException ignored) {}
+        }
+        nearbyLocationListener = null;
+    }
+
+    private void finishNativeNearbyLocation(Location location, String error, int code) {
+        stopNativeNearbyLocation();
+        if (web == null || web.getUrl() == null || !isOwnerUrl(Uri.parse(web.getUrl()))) return;
+        try {
+            JSONObject body = new JSONObject();
+            if (location != null) {
+                body.put("lat", location.getLatitude());
+                body.put("lon", location.getLongitude());
+                if (location.hasAccuracy()) body.put("accuracy", location.getAccuracy());
+            } else {
+                body.put("error", error == null ? "위치를 확인하지 못했습니다." : error);
+                body.put("code", code);
+            }
+            // Coordinates stay within the local ZENO WebView. Do not send to a server.
+            web.evaluateJavascript("window.zenoNearbyAndroidLocationReport && window.zenoNearbyAndroidLocationReport("
+                    + JSONObject.quote(body.toString()) + ")", null);
+        } catch (Exception ignored) {}
     }
 
     private void reportNativeCoordinates(JSONObject data) {
@@ -237,6 +357,12 @@ public final class OwnerActivity extends Activity {
     // Geocode only the existing hospital addresses supplied by our own ZENO page.
     // No device GPS coordinates are ever passed to this bridge or a remote server.
     private final class NearbyHospitalGeocoder {
+        @JavascriptInterface
+        public void requestCurrentLocation() {
+            if (web == null) return;
+            web.post(() -> beginNativeNearbyLocation());
+        }
+
         @JavascriptInterface
         public void resolveHospitalAddresses(String data) {
             if (web == null || !isOwnerUrl(Uri.parse(web.getUrl()))) return;
@@ -362,6 +488,7 @@ public final class OwnerActivity extends Activity {
     @Override protected void onDestroy() {
         finishPhoto(null);
         geocoderPool.shutdownNow();
+        stopNativeNearbyLocation();
         if (pendingGeolocation != null) {
             pendingGeolocation.invoke(pendingGeolocationOrigin, false, false);
             pendingGeolocation = null;
