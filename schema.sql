@@ -114,3 +114,21 @@ CREATE TABLE IF NOT EXISTS hospital_specialty_keywords (
 );
 CREATE INDEX IF NOT EXISTS hospital_specialty_keywords_active
  ON hospital_specialty_keywords(hospital_id,is_active,position);
+
+CREATE TABLE IF NOT EXISTS hospital_specialty_evidence (
+  hospital_id TEXT NOT NULL,
+  keyword TEXT NOT NULL,
+  evidence_type TEXT NOT NULL,
+  issuer TEXT NOT NULL DEFAULT '',
+  url TEXT NOT NULL,
+  note TEXT NOT NULL DEFAULT '',
+  review_status TEXT NOT NULL DEFAULT 'pending' CHECK(review_status IN ('pending','approved','rejected')),
+  review_note TEXT NOT NULL DEFAULT '',
+  submitted_at TEXT NOT NULL,
+  reviewed_at TEXT,
+  approved_type TEXT NOT NULL DEFAULT '',
+  approved_issuer TEXT NOT NULL DEFAULT '',
+  approved_url TEXT NOT NULL DEFAULT '',
+  approved_at TEXT,
+  PRIMARY KEY(hospital_id,keyword)
+);

@@ -83,7 +83,81 @@ function hospitalKeywordRow(row){
 }
 const hospitalKeywordInsertSQL="INSERT INTO hospital_specialty_keywords (hospital_id,keyword,position,status,evidence_url,registered_at,saved_at,last_checked_at,is_active) VALUES (?,?,?,'병원 안내',?,?,?,?,1) ON CONFLICT(hospital_id,keyword) DO UPDATE SET position=excluded.position,saved_at=excluded.saved_at,last_checked_at=excluded.last_checked_at,is_active=1,evidence_url=CASE WHEN hospital_specialty_keywords.status='확인됨' THEN hospital_specialty_keywords.evidence_url WHEN excluded.evidence_url<>'' THEN excluded.evidence_url ELSE hospital_specialty_keywords.evidence_url END";
 const hospitalKeywordNaverUrl=/^https:\/\/(?:[a-z0-9-]+\.)*(?:naver\.com|naver\.me)(?:\/|$)/i;
-async function getHospitalSpecialtyKeywords(db,hospitalId){
+
+// 대표 특화 근거: 병원이 키워드별로 근거(링크)를 제출하고, 제노 관리자가 승인해야 '확인됨'이 된다.
+const HOSPITAL_EVIDENCE_TYPES=new Set(['외부 기관 인증','학회 자격','전문 장비','해당 분야 경력','네이버 병원 소개','기타']);
+const HOSPITAL_EVIDENCE_CREATE_SQL="CREATE TABLE IF NOT EXISTS hospital_specialty_evidence (hospital_id TEXT NOT NULL, keyword TEXT NOT NULL, evidence_type TEXT NOT NULL, issuer TEXT NOT NULL DEFAULT '', url TEXT NOT NULL, note TEXT NOT NULL DEFAULT '', review_status TEXT NOT NULL DEFAULT 'pending' CHECK(review_status IN ('pending','approved','rejected')), review_note TEXT NOT NULL DEFAULT '', submitted_at TEXT NOT NULL, reviewed_at TEXT, approved_type TEXT NOT NULL DEFAULT '', approved_issuer TEXT NOT NULL DEFAULT '', approved_url TEXT NOT NULL DEFAULT '', approved_at TEXT, PRIMARY KEY(hospital_id,keyword))";
+let zenoSpecialtyEvidenceInit=null;
+function ensureHospitalSpecialtyEvidence(db){
+ if(!zenoSpecialtyEvidenceInit)zenoSpecialtyEvidenceInit=db.prepare(HOSPITAL_EVIDENCE_CREATE_SQL).run().catch(err=>{zenoSpecialtyEvidenceInit=null;throw err});
+ return zenoSpecialtyEvidenceInit;
+}
+/* 공개되는 근거는 항상 '마지막으로 승인된 근거'(approved_*)뿐이다. 새로 제출된 근거는 승인 전까지 공개되지 않는다. */
+function hospitalApprovedEvidence(row){
+ return row&&row.approved_url?{type:row.approved_type,issuer:row.approved_issuer||'',url:row.approved_url,approvedAt:row.approved_at||''}:null;
+}
+function hospitalEvidenceRow(row,mode){
+ if(!row)return null;
+ if(mode==='public')return hospitalApprovedEvidence(row);
+ return {type:row.evidence_type,issuer:row.issuer||'',url:row.url,note:row.note||'',reviewStatus:row.review_status,reviewNote:row.review_note||'',submittedAt:row.submitted_at,reviewedAt:row.reviewed_at||'',approved:hospitalApprovedEvidence(row)};
+}
+async function attachHospitalEvidence(db,hospitalId,rows,mode){
+ await ensureHospitalSpecialtyEvidence(db);
+ const found=await db.prepare('SELECT * FROM hospital_specialty_evidence WHERE hospital_id=?').bind(hospitalId).all();
+ const byKey=Object.fromEntries((found.results||[]).map(r=>[r.keyword,r]));
+ return rows.map(r=>{
+  const row=byKey[r.keyword],approved=hospitalApprovedEvidence(row);
+  if(mode==='public'){
+   // 키워드가 '확인됨'이면 반드시 승인된 근거와 함께, 승인된 근거가 없으면 '병원 안내'로만 공개
+   if(r.status==='확인됨'&&!row)return {...r,evidence:null}; // 이 기능 이전에 확인된 키워드는 기존 값 유지
+   const ok=r.status==='확인됨'&&approved;
+   return {...r,status:ok?'확인됨':'병원 안내',evidenceUrl:ok?approved.url:'',evidence:ok?approved:null};
+  }
+  return {...r,evidence:hospitalEvidenceRow(row,mode)};
+ });
+}
+async function submitHospitalSpecialtyEvidence(db,hospitalId,data){
+ const keyword=clean(data.keyword,30),type=clean(data.type,20),issuer=clean(data.issuer,60),url=clean(data.url,300),note=clean(data.note,300);
+ await ensureHospitalSpecialtyKeywords(db);
+ const active=await db.prepare('SELECT keyword FROM hospital_specialty_keywords WHERE hospital_id=? AND keyword=? AND is_active=1').bind(hospitalId,keyword).first();
+ assert(active,'먼저 대표 특화로 저장된 키워드에만 근거를 제출할 수 있습니다.');
+ assert(HOSPITAL_EVIDENCE_TYPES.has(type),'근거 종류를 선택해 주세요.');
+ assert(/^https:\/\/[^\s]+$/i.test(url),'근거 링크는 https:// 로 시작하는 주소로 입력해 주세요.');
+ await ensureHospitalSpecialtyEvidence(db);
+ const at=new Date().toISOString();
+ await db.prepare("INSERT INTO hospital_specialty_evidence(hospital_id,keyword,evidence_type,issuer,url,note,review_status,review_note,submitted_at,reviewed_at) VALUES(?,?,?,?,?,?,'pending','',?,NULL) ON CONFLICT(hospital_id,keyword) DO UPDATE SET evidence_type=excluded.evidence_type,issuer=excluded.issuer,url=excluded.url,note=excluded.note,review_status='pending',review_note='',submitted_at=excluded.submitted_at,reviewed_at=NULL").bind(hospitalId,keyword,type,issuer,url,note,at).run();
+ return getHospitalSpecialtyKeywords(db,hospitalId,'private');
+}
+async function listPendingSpecialtyEvidence(db){
+ await ensureHospitalSpecialtyEvidence(db);await ensureHospitalSpecialtyKeywords(db);
+ const rows=await db.prepare("SELECT e.*,k.status AS keyword_status,k.is_active FROM hospital_specialty_evidence e LEFT JOIN hospital_specialty_keywords k ON k.hospital_id=e.hospital_id AND k.keyword=e.keyword ORDER BY CASE e.review_status WHEN 'pending' THEN 0 ELSE 1 END, e.submitted_at DESC LIMIT 100").all();
+ return (rows.results||[]).map(r=>({hospitalId:r.hospital_id,keyword:r.keyword,keywordStatus:r.keyword_status==='확인됨'?'확인됨':'병원 안내',active:r.is_active===1,...hospitalEvidenceRow(r,'private')}));
+}
+async function reviewSpecialtyEvidence(db,data){
+ const hospitalId=clean(data.hospitalId,20),keyword=clean(data.keyword,30),decision=clean(data.decision,10),reviewNote=clean(data.reviewNote,300);
+ assert(IDS.has(hospitalId),'병원을 확인해 주세요.');
+ assert(['approve','reject'].includes(decision),'승인 또는 반려를 선택해 주세요.');
+ if(decision==='reject')assert(reviewNote.length>=2,'보류 사유를 입력해 주세요.');
+ await ensureHospitalSpecialtyEvidence(db);await ensureHospitalSpecialtyKeywords(db);
+ const ev=await db.prepare('SELECT * FROM hospital_specialty_evidence WHERE hospital_id=? AND keyword=?').bind(hospitalId,keyword).first();
+ assert(ev,'제출된 근거가 없습니다.',404);
+ assert(ev.review_status==='pending','이미 검토된 근거입니다. 병원이 다시 제출하면 검토할 수 있습니다.',409);
+ const at=new Date().toISOString(),today=hospitalKeywordToday();
+ const status=decision==='approve'?'approved':'rejected';
+ await db.batch([
+  decision==='approve'
+   ?db.prepare('UPDATE hospital_specialty_evidence SET review_status=?,review_note=?,reviewed_at=?,approved_type=evidence_type,approved_issuer=issuer,approved_url=url,approved_at=? WHERE hospital_id=? AND keyword=?').bind(status,reviewNote,at,at,hospitalId,keyword)
+   :db.prepare('UPDATE hospital_specialty_evidence SET review_status=?,review_note=?,reviewed_at=? WHERE hospital_id=? AND keyword=?').bind(status,reviewNote,at,hospitalId,keyword),
+  decision==='approve'
+   ?db.prepare("UPDATE hospital_specialty_keywords SET status='확인됨',evidence_url=?,last_checked_at=? WHERE hospital_id=? AND keyword=?").bind(ev.url,today,hospitalId,keyword)
+   // 새 근거 보류: 이전에 승인된 근거가 있으면 그 확인은 유지, 없으면 '병원 안내'
+   :ev.approved_url
+    ?db.prepare("UPDATE hospital_specialty_keywords SET status='확인됨',evidence_url=? WHERE hospital_id=? AND keyword=?").bind(ev.approved_url,hospitalId,keyword)
+    :db.prepare("UPDATE hospital_specialty_keywords SET status='병원 안내',evidence_url='' WHERE hospital_id=? AND keyword=?").bind(hospitalId,keyword)
+ ]);
+ return {hospitalId,keyword,reviewStatus:status};
+}
+async function getHospitalSpecialtyKeywords(db,hospitalId,mode='private'){
  await ensureHospitalSpecialtyKeywords(db);
  let found=await db.prepare('SELECT * FROM hospital_specialty_keywords WHERE hospital_id=? AND is_active=1 ORDER BY position').bind(hospitalId).all();
  if(!(found.results||[]).length){
@@ -101,7 +175,7 @@ async function getHospitalSpecialtyKeywords(db,hospitalId){
    }
   }
  }
- return (found.results||[]).map(hospitalKeywordRow);
+ return attachHospitalEvidence(db,hospitalId,(found.results||[]).map(hospitalKeywordRow),mode);
 }
 async function saveHospitalSpecialtyKeywords(db,hospitalId,keywords,sourceUrl){
  const valid=Array.isArray(keywords)&&keywords.length>=1&&keywords.length<=3&&keywords.every(x=>typeof x==='string'&&HOSPITAL_KEYWORD_OPTIONS.has(x))&&new Set(keywords).size===keywords.length;
@@ -224,7 +298,7 @@ const db=env.DB;let data={};if(['POST','PATCH','PUT'].includes(method)){
 /* CHANGED: non-authenticated hospital status endpoint exposes only hospital-entered public fields. */
 /* Public read-only view of hospital-selected representative specialties. */
 if(path==='/api/public/hospital-specialties'&&method==='GET'){
- const pairs=await Promise.all([...IDS].map(async id=>[id,await getHospitalSpecialtyKeywords(db,id)]));
+ const pairs=await Promise.all([...IDS].map(async id=>[id,await getHospitalSpecialtyKeywords(db,id,'public')]));
  return json({hospitals:Object.fromEntries(pairs)});
 }
 if(path==='/api/public/hospital-status'&&method==='GET'){
@@ -354,6 +428,19 @@ if(path==='/api/dashboard'&&method==='GET'){
 
 
 // Logged-in hospitals can save or reconfirm only their own keywords.
+if(path==='/api/hospital-specialties/evidence'&&method==='POST'){
+ const session=await verify(request.headers.get('Authorization'),env.SESSION_SECRET);
+ assert(session?.role==='hospital'&&IDS.has(session.hospitalId),'병원 담당자 로그인이 필요합니다.',401);
+ return json({specialtyKeywords:await submitHospitalSpecialtyEvidence(db,session.hospitalId,data)});
+}
+if(path==='/api/admin/specialty-evidence'&&method==='GET'){
+ await checkAdmin(request,env);
+ return json({evidence:await listPendingSpecialtyEvidence(db)});
+}
+if(path==='/api/admin/specialty-evidence'&&method==='PATCH'){
+ await checkAdmin(request,env);
+ return json(await reviewSpecialtyEvidence(db,data));
+}
 if(path==='/api/hospital-specialties'&&method==='PUT'){
  const session=await verify(request.headers.get('Authorization'),env.SESSION_SECRET);
  assert(session?.role==='hospital'&&IDS.has(session.hospitalId),'병원 담당자 로그인이 필요합니다.',401);
