@@ -4,6 +4,8 @@ on:
   pull_request:
     paths:
       - "android/owner/**"
+      - "owner.html"
+      - "tests/test-nearby-location.cjs"
       - ".github/workflows/test-owner-apk.yml"
   workflow_dispatch:
 
@@ -15,6 +17,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Nearby location regression test
+        run: node tests/test-nearby-location.cjs
       - uses: actions/setup-java@v4
         with:
           distribution: temurin

@@ -3763,13 +3763,15 @@ async function zenoLoadNearbyCoordinates(){
     if(window.zenoNearbyAndroidReport===report)window.zenoNearbyAndroidReport=null;
     if(error)reject(error);else resolve();
    };
+   // Keep partial progress separate from completed coordinates. A failed run must be retryable.
+   let pendingCoordinates=null;
    const report=raw=>{
     let data;
     try{data=typeof raw==='string'?JSON.parse(raw):raw}catch{return}
     if(!data||typeof data!=='object')return;
     if(data.error){finish(Error(String(data.error)));return}
     if(data.coordinates&&typeof data.coordinates==='object'){
-     state.nearbyCoordinates=data.coordinates;
+     pendingCoordinates=data.coordinates;
      state.nearbyMissing=Number(data.missing)||0;
      state.nearbyProcessed=Number(data.processed)||0;
      state.nearbyTotal=Number(data.total)||HOSPITALS.length;
@@ -3777,10 +3779,11 @@ async function zenoLoadNearbyCoordinates(){
      if(node)node.textContent='병원 위치 확인 중 '+state.nearbyProcessed+'/'+state.nearbyTotal;
     }
     if(data.done){
-     if(!Object.keys(state.nearbyCoordinates||{}).length){
+     if(!Object.keys(pendingCoordinates||{}).length){
       finish(Error('이 기기에서 좌표를 확인할 수 있는 동물병원이 없습니다. 기존 검색은 그대로 이용할 수 있어요.'));
       return;
      }
+     state.nearbyCoordinates=pendingCoordinates;
      finish();
     }
    };
@@ -3857,7 +3860,7 @@ async function zenoToggleNearby(){
   const lat=Number(position.coords.latitude),lon=Number(position.coords.longitude);
   if(!Number.isFinite(lat)||!Number.isFinite(lon))throw Error('현재 위치를 확인하지 못했습니다.');
   state.nearbyPosition={lat,lon};
-  if(!state.nearbyCoordinates)await zenoLoadNearbyCoordinates();
+  if(!state.nearbyCoordinates||!Object.keys(state.nearbyCoordinates).length)await zenoLoadNearbyCoordinates();
   state.searchRegion='';
   state.activeFilters=[...zenoActiveFilters().filter(x=>x!=='내 주변'),'내 주변'];state.filter='전체';
   toast('내 위치 기준 5km 이내 병원을 가까운 순으로 표시합니다.');
@@ -5755,7 +5758,7 @@ async function start(){
  }finally{zenoStartPending=false}
 }
 render();start();
-const ZENO_OWNER_UI_REVISION='20261118-galaxy-native-location-v57';
+const ZENO_OWNER_UI_REVISION='20261118-galaxy-nearby-thread-fix-v58';
 let zenoLastUIVersionCheck=0;
 let zenoUIVersionChecking=false;
 async function zenoCheckOwnerUIRevision(force=false){
