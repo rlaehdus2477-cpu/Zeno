@@ -1,4 +1,4 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="kr.zeno.hospital" android:versionCode="2" android:versionName="1.1">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="kr.zeno.hospital" android:versionCode="3" android:versionName="1.2">
     <uses-sdk android:minSdkVersion="26" android:targetSdkVersion="35" />
     <uses-permission android:name="android.permission.INTERNET" />
     <application android:label="제노 동물병원용" android:icon="@drawable/zeno_hospital"

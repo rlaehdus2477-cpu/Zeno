@@ -7,6 +7,8 @@ on:
       - "worker.js"
       - "owner.html"
       - "hospital.html"
+      - "manifest-hospital.webmanifest"
+      - "assets/hospital-icon-approved.webp.b64"
       - "wrangler.toml"
       - "package.json"
       - ".github/workflows/deploy-cloudflare.yml"
@@ -44,6 +46,24 @@ jobs:
       - name: Install Wrangler
         run: npm install --no-audit --no-fund
 
+      - name: Render approved hospital PWA icons from selected image
+        shell: bash
+        run: |
+          python3 -m pip install --quiet pillow
+          python3 - <<'PY'
+          import base64, io
+          from pathlib import Path
+          from PIL import Image
+          b64 = Path('assets/hospital-icon-approved.webp.b64').read_text().strip()
+          raw = base64.b64decode(b64, validate=True)
+          img = Image.open(io.BytesIO(raw)).convert('RGBA')
+          if img.size != (256, 256):
+              raise ValueError('Unexpected approved hospital icon dimensions')
+          for size in (192, 512):
+              img.resize((size, size), Image.Resampling.LANCZOS).save(
+                  f'/tmp/zeno-hospital-icon-{size}.png', optimize=True)
+          PY
+
       - name: Synchronize current UI into embedded Cloudflare Worker
         run: |
           node --input-type=module <<'NODE'
@@ -73,6 +93,25 @@ jobs:
             worker=worker.slice(0,start)+JSON.stringify(html)+worker.slice(start+match[0].length);
             console.log('Embedded latest '+filename+' into Cloudflare Worker');
           }
+          // Keep the installed Galaxy PWA icon and APK artwork in sync with the approved asset.
+          function replaceEmbedded(name,value){
+            const prefix='const '+name+' = ';
+            const pos=worker.indexOf(prefix);
+            if(pos<0)throw Error('Missing Worker icon/manifest constant: '+name);
+            const start=pos+prefix.length;
+            const match=worker.slice(start).match(/^"(?:\\.|[^"\\])*"/);
+            if(!match)throw Error('Invalid Worker string constant: '+name);
+            worker=worker.slice(0,start)+JSON.stringify(value)+worker.slice(start+match[0].length);
+          }
+          replaceEmbedded('HOSPITAL_MANIFEST',fs.readFileSync('manifest-hospital.webmanifest','utf8').trim());
+          for(const size of [192,512]){
+            replaceEmbedded('HOSPITAL_MINT_PNG'+size,fs.readFileSync('/tmp/zeno-hospital-icon-'+size+'.png').toString('base64'));
+          }
+          const oldIconRoute="if(path==='/icon-hospital-mint-512-v5.png')";
+          if(!worker.includes(oldIconRoute))throw Error('Hospital icon route anchor missing');
+          worker=worker.replace(oldIconRoute,
+            "if(path==='/icon-hospital-mint-512-v6.png')return binary(HOSPITAL_MINT_PNG512,'image/png'); "+
+            "if(path==='/icon-hospital-mint-192-v6.png')return binary(HOSPITAL_MINT_PNG192,'image/png'); "+oldIconRoute);
           const revision=/const OWNER_UI_REVISION\s*=\s*'[^']+';/;
           if(!revision.test(worker))throw Error('Worker UI revision constant missing');
           worker=worker.replace(revision,"const OWNER_UI_REVISION = '"+version+"';");
@@ -96,6 +135,13 @@ jobs:
           import fs from 'node:fs';
           import vm from 'node:vm';
           const worker=fs.readFileSync('worker.js','utf8');
+          for(const size of [192,512]){
+            const iconName='/icon-hospital-mint-'+size+'-v6.png';
+            if(!worker.includes(iconName))throw Error('Approved hospital icon route missing: '+iconName);
+            const expected=fs.readFileSync('/tmp/zeno-hospital-icon-'+size+'.png').toString('base64');
+            if(!worker.includes('const HOSPITAL_MINT_PNG'+size+' = '+JSON.stringify(expected)+';'))throw Error('Approved hospital icon payload mismatch: '+size);
+          }
+          if(!worker.includes('const HOSPITAL_MANIFEST = '+JSON.stringify(fs.readFileSync('manifest-hospital.webmanifest','utf8').trim())+';'))throw Error('Hospital manifest payload mismatch');
           for(const [name,constant] of [['owner.html','OWNER_HTML'],['hospital.html','HOSPITAL_HTML']]){
             const html=fs.readFileSync(name,'utf8');
             if(!worker.includes('const '+constant+' = '+JSON.stringify(html)+';'))throw Error(name+' is not synchronized with the deployed Worker');
