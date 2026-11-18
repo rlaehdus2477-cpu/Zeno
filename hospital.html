@@ -577,7 +577,8 @@ input::placeholder,textarea::placeholder{font-family:inherit;letter-spacing:-.00
 #app .hi-row-request{font-size:13px;color:#667085;margin-top:4px}
 #app .hi-row-proposal{font-size:15px;font-weight:700;color:#2567A9}
 #app .hi-status-badge{white-space:nowrap!important}
-#app .hi-status-badge.hi-st-pending,#app .hi-status-badge.hi-st-accepted{border-color:#2567A9!important;color:#2567A9!important;background:#fff!important}
+#app .hi-status-badge.hi-st-pending{border-color:#2567A9!important;color:#fff!important;background:#2567A9!important}
+#app .hi-status-badge.hi-st-accepted{border-color:#9DB9DA!important;color:#2567A9!important;background:#EEF4FF!important}
 #app .hi-status-badge.hi-st-suggested{border-color:#D0D5DD!important;color:#475467!important;background:#F2F4F7!important}
 #app .hi-status-badge.hi-st-confirmed{border-color:#A6D8BD!important;color:#0F7A43!important;background:#EDF8F2!important}
 #app .hi-urgent-label{font-size:12px;font-weight:700;color:#B42318;border:1px solid #F3B6AF;background:#FEF3F2;border-radius:6px;padding:3px 6px;white-space:nowrap}
@@ -865,7 +866,7 @@ function hiSlotMs(b){if(!b.date||!b.time)return NaN;return new Date(b.date+'T'+b
 function hiPastSlot(b){const ms=hiSlotMs(b);return Number.isFinite(ms)&&ms<Date.now()}
 function hiStatus(b){
  if(b.status==='done')return '진료 완료';
- return ({pending:'병원 확인 대기',accepted:'병원 확정 대기',suggested:'보호자 응답 대기',confirmed:'예약 확정',in_progress:'진료 중',cancelled:'취소됨',rejected:'거절됨'})[b.status]||'병원 확인 대기';
+ return ({pending:'새 예약 요청',accepted:'접수됨 · 확정 필요',suggested:'보호자 응답 대기',confirmed:'예약 확정',in_progress:'진료 중',cancelled:'취소됨',rejected:'거절됨'})[b.status]||'새 예약 요청';
 }
 /* Emphasis only for real urgency. b.urgency==='high' is an explicit guardian flag; keyword match is a symptom mention. */
 function hiUrgency(b){
