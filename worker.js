@@ -336,6 +336,24 @@ async function zenoPublicHospitalCoordinates(env){
  return json({coordinates:positions,complete:ready===total,missing:unresolved,total});
 }
 
+/* 수의사 Q&A (2026-11-18): 보호자가 공개로 질문하고, 예약 가능한 제휴 병원(IDS) 수의사가 답합니다.
+   기존 '진료 전 질문'(questions 테이블)과는 별개입니다. 보호자 신원은 공개 응답에 넣지 않습니다. */
+const VETQA_SPECIES=new Set(['강아지','고양이','특수동물','기타']);
+const VETQA_FIELDS=new Set(['일반','내과','외과','피부·귀','안과','치과·구강','정형외과','행동·문제행동','영양·식이','예방접종·건강검진','기타']);
+let zenoVetqaInit=null;
+function ensureVetqa(db){
+ if(!zenoVetqaInit)zenoVetqaInit=db.batch([
+  db.prepare("CREATE TABLE IF NOT EXISTS vetqa_questions (id TEXT PRIMARY KEY,owner_id TEXT NOT NULL,title TEXT NOT NULL,body TEXT NOT NULL,species TEXT NOT NULL,field TEXT NOT NULL,status TEXT NOT NULL DEFAULT 'open',created_at TEXT NOT NULL,updated_at TEXT NOT NULL)"),
+  db.prepare("CREATE INDEX IF NOT EXISTS vetqa_questions_created ON vetqa_questions(status,created_at DESC)"),
+  db.prepare("CREATE INDEX IF NOT EXISTS vetqa_questions_owner ON vetqa_questions(owner_id,created_at DESC)"),
+  db.prepare("CREATE TABLE IF NOT EXISTS vetqa_answers (id TEXT PRIMARY KEY,question_id TEXT NOT NULL,hospital_id TEXT NOT NULL,vet_name TEXT NOT NULL DEFAULT '',body TEXT NOT NULL,status TEXT NOT NULL DEFAULT 'visible',created_at TEXT NOT NULL,updated_at TEXT NOT NULL,UNIQUE(question_id,hospital_id))"),
+  db.prepare("CREATE INDEX IF NOT EXISTS vetqa_answers_question ON vetqa_answers(question_id,created_at)")
+ ]).catch(err=>{zenoVetqaInit=null;throw err});
+ return zenoVetqaInit;
+}
+const vetqaQuestion=(r,full=false)=>({id:r.id,title:r.title,body:full?r.body:String(r.body||'').slice(0,140),species:r.species,field:r.field,answerCount:Number(r.answer_count||0),lastAnsweredAt:r.last_answered_at||null,createdAt:r.created_at});
+const vetqaAnswer=r=>({id:r.id,questionId:r.question_id,hospitalId:r.hospital_id,vetName:r.vet_name||'',body:r.body,createdAt:r.created_at,updatedAt:r.updated_at});
+const VETQA_LIST_SQL="SELECT q.*,(SELECT COUNT(*) FROM vetqa_answers a WHERE a.question_id=q.id AND a.status='visible') AS answer_count,(SELECT MAX(a.created_at) FROM vetqa_answers a WHERE a.question_id=q.id AND a.status='visible') AS last_answered_at FROM vetqa_questions q";
 async function handler(request,env){const url=new URL(request.url),path=url.pathname,method=request.method;
 if(path==='/api/ping'&&method==='GET'){
  const configured=!!(env.DB&&env.SESSION_SECRET&&env.HOSPITAL_SOO_PIN&&env.HOSPITAL_NAEUM_PIN&&env.HOSPITAL_TND_PIN);
@@ -396,6 +414,73 @@ if(path==='/api/public/hospital-status'&&method==='GET'){
   settings[row.hospital_id]={status:row.status,services,updatedAt:row.updated_at};
  }
  return json({settings,asOf:now()});
+}
+if(path==='/api/public/vetqa'&&method==='GET'){
+ await ensureVetqa(db);
+ const where=["q.status='open'"],args=[];
+ const sp=clean(url.searchParams.get('species'),10);if(sp&&VETQA_SPECIES.has(sp)){where.push('q.species=?');args.push(sp)}
+ const fd=clean(url.searchParams.get('field'),20);if(fd&&VETQA_FIELDS.has(fd)){where.push('q.field=?');args.push(fd)}
+ const term=clean(url.searchParams.get('q'),40).replace(/[\\%_]/g,m=>'\\'+m);
+ if(term){where.push("(q.title LIKE ? ESCAPE '\\' OR q.body LIKE ? ESCAPE '\\')");args.push('%'+term+'%','%'+term+'%')}
+ const rows=await db.prepare(VETQA_LIST_SQL+' WHERE '+where.join(' AND ')+' ORDER BY q.created_at DESC LIMIT 60').bind(...args).all();
+ return json({questions:(rows.results||[]).map(r=>vetqaQuestion(r))});
+}
+if(/^\/api\/public\/vetqa\/[A-Za-z0-9-]{8,60}$/.test(path)&&method==='GET'){
+ await ensureVetqa(db);
+ const id=path.split('/')[4];
+ const q=await db.prepare("SELECT * FROM vetqa_questions WHERE id=? AND status='open'").bind(id).first();
+ assert(q,'질문을 찾을 수 없습니다.',404);
+ const a=await db.prepare("SELECT * FROM vetqa_answers WHERE question_id=? AND status='visible' ORDER BY created_at").bind(id).all();
+ const answers=(a.results||[]).filter(r=>IDS.has(r.hospital_id)).map(vetqaAnswer);
+ return json({question:{...vetqaQuestion({...q,answer_count:answers.length},true)},answers});
+}
+if(path==='/api/vetqa'&&method==='POST'){
+ const sess=await checkOwner(request,env);await ensureVetqa(db);
+ const title=clean(data.title,80),body=clean(data.body,1500),species=clean(data.species,10),field=clean(data.field,20);
+ assert(title.length>=5,'제목을 5자 이상 입력해 주세요.');
+ assert(body.length>=10,'질문 내용을 10자 이상 입력해 주세요.');
+ assert(VETQA_SPECIES.has(species),'반려동물 종류를 골라 주세요.');
+ assert(VETQA_FIELDS.has(field),'진료 분야를 골라 주세요.');
+ const since=new Date(Date.now()-864e5).toISOString();
+ const recent=await db.prepare('SELECT COUNT(*) n FROM vetqa_questions WHERE owner_id=? AND created_at>?').bind(sess.ownerId,since).first();
+ assert(Number(recent?.n||0)<5,'질문은 하루 5개까지 올릴 수 있어요.',429);
+ const t=now(),row={id:crypto.randomUUID(),title,body,species,field,created_at:t};
+ await db.prepare("INSERT INTO vetqa_questions(id,owner_id,title,body,species,field,status,created_at,updated_at) VALUES(?,?,?,?,?,?,'open',?,?)").bind(row.id,sess.ownerId,title,body,species,field,t,t).run();
+ return json(vetqaQuestion({...row,answer_count:0},true),201);
+}
+if(path==='/api/vetqa/mine'&&method==='GET'){
+ const sess=await checkOwner(request,env);await ensureVetqa(db);
+ const rows=await db.prepare(VETQA_LIST_SQL+" WHERE q.owner_id=? AND q.status='open' ORDER BY q.created_at DESC LIMIT 100").bind(sess.ownerId).all();
+ return json({questions:(rows.results||[]).map(r=>vetqaQuestion(r))});
+}
+if(/^\/api\/vetqa\/[A-Za-z0-9-]{8,60}$/.test(path)&&method==='DELETE'){
+ const sess=await checkOwner(request,env);await ensureVetqa(db);
+ const id=path.split('/')[3];
+ const q=await db.prepare("SELECT * FROM vetqa_questions WHERE id=? AND status='open'").bind(id).first();
+ assert(q&&q.owner_id===sess.ownerId,'질문을 찾을 수 없습니다.',404);
+ const n=await db.prepare("SELECT COUNT(*) n FROM vetqa_answers WHERE question_id=? AND status='visible'").bind(id).first();
+ assert(Number(n?.n||0)===0,'답변이 달린 질문은 삭제할 수 없어요.',409);
+ await db.prepare("UPDATE vetqa_questions SET status='deleted',updated_at=? WHERE id=?").bind(now(),id).run();
+ return json({ok:true});
+}
+if(path==='/api/hospital/vetqa'&&method==='GET'){
+ const id=url.searchParams.get('hospitalId');validateHospital(id);await checkHospital(request,env,id);await ensureVetqa(db);
+ const rows=await db.prepare(VETQA_LIST_SQL+" WHERE q.status='open' ORDER BY q.created_at DESC LIMIT 100").all();
+ const mine=await db.prepare("SELECT * FROM vetqa_answers WHERE hospital_id=? AND status='visible'").bind(id).all();
+ const byQ=Object.fromEntries((mine.results||[]).map(r=>[r.question_id,vetqaAnswer(r)]));
+ return json({questions:(rows.results||[]).map(r=>({...vetqaQuestion(r,true),myAnswer:byQ[r.id]||null}))});
+}
+if(/^\/api\/hospital\/vetqa\/[A-Za-z0-9-]{8,60}\/answer$/.test(path)&&method==='PUT'){
+ const hid=clean(data.hospitalId,20);validateHospital(hid);await checkHospital(request,env,hid);await ensureVetqa(db);
+ const qid=path.split('/')[4];
+ const q=await db.prepare("SELECT id FROM vetqa_questions WHERE id=? AND status='open'").bind(qid).first();
+ assert(q,'질문을 찾을 수 없습니다.',404);
+ const body=clean(data.body,2000),vetName=clean(data.vetName,20);
+ assert(body.length>=10,'답변을 10자 이상 입력해 주세요.');
+ const t=now(),aid=crypto.randomUUID();
+ await db.prepare("INSERT INTO vetqa_answers(id,question_id,hospital_id,vet_name,body,status,created_at,updated_at) VALUES(?,?,?,?,?,'visible',?,?) ON CONFLICT(question_id,hospital_id) DO UPDATE SET vet_name=excluded.vet_name,body=excluded.body,status='visible',updated_at=excluded.updated_at").bind(aid,qid,hid,vetName,body,t,t).run();
+ const row=await db.prepare('SELECT * FROM vetqa_answers WHERE question_id=? AND hospital_id=?').bind(qid,hid).first();
+ return json(vetqaAnswer(row));
 }
 if(path==='/api/bootstrap'&&method==='GET'){const session=await checkOwner(request,env);let owner=session.ownerId;await ensureOwnerPetPhotoTable(db);await ensureHospitalOps(db);const [settings,bookings,questions,reviews]=await Promise.all([db.prepare('SELECT s.*,o.emergency_status,o.updated_at AS emergency_updated_at FROM hospital_settings s LEFT JOIN hospital_operational_status o ON o.hospital_id=s.hospital_id').all(),db.prepare('SELECT * FROM bookings WHERE owner_id=? ORDER BY created_at DESC LIMIT 150').bind(owner).all(),db.prepare('SELECT * FROM questions WHERE owner_id=? ORDER BY created_at DESC LIMIT 120').bind(owner).all(),db.prepare('SELECT * FROM reviews WHERE owner_id=? ORDER BY created_at DESC LIMIT 120').bind(owner).all()]);const ss=Object.fromEntries([...IDS].map(id=>[id,DEFAULT()]));for(const x of(settings.results||[]))ss[x.hospital_id]=savedSettings(x);const user=await db.prepare('SELECT id,username,display_name,profile_json FROM owners WHERE id=?').bind(owner).first();const photoRows=await db.prepare('SELECT pet_id,image_data FROM owner_pet_photos WHERE owner_id=? LIMIT 20').bind(owner).all();const petPhotos=Object.fromEntries((photoRows.results||[]).map(p=>[p.pet_id,p.image_data]));assert(user,'사용자 계정을 찾을 수 없습니다.',401);return json({profile:profileParse(user.profile_json),petPhotos,owner:{id:user.id,username:user.username,displayName:user.display_name},settings:ss,bookings:(bookings.results||[]).map(booking),questions:(questions.results||[]).map(question),reviews:(reviews.results||[]).map(review)})}
 

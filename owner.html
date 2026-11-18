@@ -2986,6 +2986,37 @@ html.dark .zeno-search-page .zeno-nearby-note,html[data-theme="dark"] .zeno-sear
 .zeno-personal-backup{display:flex;flex-direction:column;gap:10px}
 .zeno-personal-backup textarea{font-family:monospace;font-size:12px;line-height:1.5;width:100%;max-width:100%;resize:vertical;padding:10px;border:1px solid #cad6e4;border-radius:9px;min-height:80px}
 .zeno-personal-backup .desc{font-size:13px;line-height:1.6}
+</style><style id="zeno-vetqa-ui">
+.zeno-vq-intro,.zeno-vq-note{font-size:14px;line-height:1.6;color:var(--sub);margin:4px 0 14px}
+.zeno-vq-search{display:flex;gap:8px;margin:0 0 12px}.zeno-vq-search input{flex:1;min-width:0;border:1px solid var(--line);border-radius:10px;padding:11px 14px;min-height:46px;background:#fff}
+.zeno-vq-ask{margin:0 0 14px}
+.zeno-vq-tabs{margin:4px 0 12px}
+.zeno-vq-list{display:flex;flex-direction:column;border-top:1px solid var(--line)}
+.zeno-vq-item{display:flex;flex-direction:column;gap:4px;width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--line);padding:14px 2px;color:var(--text)}
+.zeno-vq-item strong{font-size:16px;line-height:1.4;font-weight:650}
+.zeno-vq-meta{font-size:13px;color:var(--sub)}
+.zeno-vq-body{font-size:14px;line-height:1.5;color:var(--sub);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.zeno-vq-foot{display:flex;justify-content:space-between;font-size:13px;color:var(--sub);margin-top:2px}
+.zeno-vq-answered{color:#0b8a62;font-weight:650}.zeno-vq-waiting{color:var(--sub)}
+.zeno-vq-back{background:none;border:0;color:var(--blue);font-weight:650;font-size:15px;padding:6px 0;margin-bottom:8px}
+.zeno-vq-question{padding:4px 0 16px;border-bottom:1px solid var(--line)}
+.zeno-vq-question h2{font-size:20px;line-height:1.4;margin:6px 0 10px}
+.zeno-vq-question p{font-size:15px;line-height:1.65;margin:0 0 12px}
+.zeno-vq-answers-title{font-size:16px;margin:18px 0 8px}
+.zeno-vq-answer{border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin:0 0 10px;background:#fff}
+.zeno-vq-answer header{display:flex;flex-direction:column;gap:2px;margin-bottom:8px}.zeno-vq-answer header strong{font-size:15px}.zeno-vq-answer header span{font-size:13px;color:var(--sub)}
+.zeno-vq-answer p{font-size:15px;line-height:1.65;margin:0 0 8px}.zeno-vq-answer small{display:block;font-size:12.5px;color:var(--sub)}
+.zeno-vq-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.zeno-vq-actions .btn{flex:1;min-width:88px}
+.zeno-vq-form h3{margin:0 0 10px}.zeno-vq-emergency{margin:0 0 12px;font-size:14px}.zeno-vq-emergency .link{padding:0;font-size:inherit}
+.zeno-vq-loading{color:var(--sub);font-size:14px;padding:16px 0}
+.zeno-home-vetqa,.zeno-pets-bookings{margin:22px 0}
+.zeno-home-vetqa header,.zeno-pets-bookings header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.zeno-home-vetqa h2,.zeno-pets-bookings h2{font-size:18px;margin:0}
+.zeno-home-vetqa header button,.zeno-pets-bookings header button{background:none;border:0;color:var(--sub);font-size:14px}
+.zeno-home-vetqa .zeno-vq-list{margin-bottom:10px}
+.zeno-home-vetqa .care-symptoms svg{width:20px;height:20px;flex:none;color:var(--blue)}
+.zeno-pets-booking-next{display:flex;flex-direction:column;align-items:flex-start;gap:3px;width:100%;text-align:left;border:1px solid var(--line);border-radius:12px;padding:14px 16px;background:#fff;color:var(--text)}
+.zeno-pets-booking-next strong{font-size:16px}.zeno-pets-booking-next span{font-size:14px;color:var(--sub)}.zeno-pets-booking-next small{font-size:13px;color:var(--blue)}
 </style></head><body><div id="app" class="app"></div><script>
 'use strict';
 const APP_MODE='owner';
@@ -3369,6 +3400,8 @@ function zenoRefreshPaint(before,page){
  if(root)requestAnimationFrame(()=>{root.style.minHeight=previousMinHeight});
 }
 document.addEventListener('focusout',()=>{if(zenoDeferredPaint)setTimeout(()=>zenoRefreshPaint('',state.page),0)});
+/* 수의사 Q&A 작성 중 다시 그려져도 입력 내용이 사라지지 않게 보관합니다. */
+['input','change'].forEach(t=>document.addEventListener(t,ev=>{const el=ev.target;if(!el||!el.name||!el.closest||!el.closest('#vetqa-form'))return;if(['species','field','title','body'].includes(el.name))zenoVq().draft[el.name]=String(el.value||'')}));
 /* CHANGED: public hospital-operated intake status for nonlogged-in visitors. */
 async function zenoLoadPublicHospitalSettings(){
  try{
@@ -3448,7 +3481,7 @@ async function loadHospital(draw=true){if(!state.hospitalToken)return;try{const 
 async function loadAdmin(draw=true){if(!state.adminToken)return;try{state.adminStats=await api('GET','/api/admin/stats',null,true);if(draw)render()}catch(err){toast(err.message);state.adminToken='';sessionStorage.removeItem('zeno-admin-token');if(draw)render()}}
 
 let zenoSearchScrollY=0,zenoNewSearch=false;
-const ZENO_PUBLIC_PAGES=['home','search','emergency','prices','more','symptoms','pets'];
+const ZENO_PUBLIC_PAGES=['home','search','emergency','prices','more','symptoms','vetqa','pets'];
 const zenoCanViewPage=p=>APP_MODE!=='owner'||!!state.ownerToken||ZENO_PUBLIC_PAGES.includes(p);
 function navTo(p,fromHistory=false){
  if(APP_MODE==='hospital'&&p!=='hospital')return;
@@ -3461,6 +3494,7 @@ function navTo(p,fromHistory=false){
  if(APP_MODE==='owner'&&!fromHistory&&p!==from)history.pushState({zenoPage:p},'',location.href);
  window.scrollTo({top:0,behavior:'instant'});
  if(p==='hospital')loadHospital();else if(p==='admin')loadAdmin();
+ if(APP_MODE==='owner'&&(p==='vetqa'||p==='home'))zenoVetqaLoad();
  render();
  if(restore&&zenoSearchScrollY>0)window.scrollTo({left:0,top:zenoSearchScrollY,behavior:'instant'});
  zenoNewSearch=false;
@@ -3478,6 +3512,7 @@ function zenoNavIcon(name){
  bookings:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18M8 15l3 3 5-5"/>',
  more:'<path d="M4 7h16M4 12h16M4 17h16"/>',
  qa:'<path d="M4 4h16v13H8l-4 4zM8 9h8M8 13h6"/>',
+ vetqa:'<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.4 2.3c-.6.3-.9.8-.9 1.4V14M12 17h.01"/>',
  membership:'<circle cx="12" cy="12" r="9"/><path d="M9 12h6M12 9v6"/>',
  prices:'<path d="M6 4h12M6 8h12M7 12h10M9 17l3 4 3-4"/>'
  };
@@ -3486,14 +3521,14 @@ function zenoNavIcon(name){
 function nav(){
  const menu=APP_MODE==='hospital'?
  [['bookings','예약 관리'],['emergency','진료 상태'],['qa','문의 답변'],['more','병원 정보']]:
- [['home','홈'],['search','병원 찾기'],['emergency','응급 진료'],['pets','내 아이'],['bookings','내 예약'],['qa','내 질문'],/* CHANGED: unreleased points navigation hidden. */['prices','진료비 비교'],['more','더 보기']];
+ [['home','홈'],['search','병원 찾기'],['vetqa','수의사 Q&A'],['emergency','응급 진료'],['pets','내 아이'],['bookings','내 예약'],['qa','진료 전 질문'],/* CHANGED: unreleased points navigation hidden. */['prices','진료비 비교'],['more','더 보기']];
  const item=(m,mobile=false)=>APP_MODE==='hospital'?
  '<button class="'+(mobile?'':'navlink ')+(state.hTab===m[0]?'active':'')+'" data-action="h-tab" data-value="'+e(m[0])+'"><span class="ico">'+zenoNavIcon(m[0])+'</span><b>'+e(m[1])+'</b></button>':
- '<button class="'+(mobile?'':'navlink ')+(state.page===m[0]?'active':'')+'" data-nav="'+e(m[0])+'"'+(state.page===m[0]?' aria-current="page"':'')+'><span class="ico">'+zenoNavIcon(m[0])+'</span><b>'+e(m[1])+'</b></button>';
+ '<button class="'+(mobile?'':'navlink ')+(state.page===m[0]?'active':'')+'" data-nav="'+e(m[0])+'"'+(state.page===m[0]?' aria-current="page"':'')+'><span class="ico">'+zenoNavIcon(m[0])+'</span><b>'+e(mobile&&m[0]==='vetqa'?'Q&A':m[1])+'</b></button>';
  return '<aside class="sidebar"><div class="brand"><img class="original-logo" alt="ZENO" src="/brand-wordmark-v3.webp"></div>'
  +'<p class="side-caption">'+(APP_MODE==='hospital'?'병원 운영':'보호자 서비스')+'</p><nav>'+menu.map(m=>item(m)).join('')+'</nav>'
  +'<div class="sidelow"><strong>ZENO</strong>'+(APP_MODE==='owner'?state.ownerToken?'<button class="btn secondary small full" data-action="owner-logout">로그아웃</button>':'<button class="btn secondary small full" data-nav="login">로그인</button>':'')+'</div></aside>'
- +'<div class="mobilebar">'+(APP_MODE==='hospital'?menu:menu.filter(m=>['home','search','bookings','pets','more'].includes(m[0]))).map(m=>item(m,true)).join('')+'</div>';
+ +'<div class="mobilebar">'+(APP_MODE==='hospital'?menu:menu.filter(m=>['home','search','vetqa','pets','more'].includes(m[0]))).map(m=>item(m,true)).join('')+'</div>';
 }
 
 function connected(h){return !!h.linked}
@@ -4500,6 +4535,7 @@ function home(){
  +'<section class="care-launcher" aria-label="진료 분야로 찾기"><header><h2>진료과목</h2><button data-action="home-care-open" aria-haspopup="dialog" aria-expanded="'+state.homeCarePickerOpen+'">전체 과목 ›</button></header>'
  +'<div class="care-shortcuts">'+[['내과','내과'],['외과','외과'],['치과·구강','치과'],['피부·귀','피부과'],['특수동물','특수동물']].map(([value,label])=>'<button type="button" data-action="specialty" data-value="'+e(value)+'"><span>'+zenoCareIcon(value)+'</span>'+e(label)+'</button>').join('')+'</div>'
  +'<button class="care-symptoms" data-nav="symptoms">'+zenoHomeSmallIcon('help')+'<strong>증상으로 진료과목 찾기</strong><span aria-hidden="true">›</span></button></section>'
+ +zenoHomeVetqa()
  +'<section class="zeno-home-utilities" aria-label="조건별 병원 찾기"><h2>조건별 병원 찾기</h2><div class="zeno-home-utility-list">'
  +'<button type="button" class="zeno-home-utility-row" data-action="night-shortcut"><span class="zeno-home-utility-icon">'+zenoHomeSmallIcon('moon')+'</span><span class="zeno-home-utility-copy"><strong>야간 진료</strong><small>밤 시간 진료가 안내된 병원</small></span><span class="zeno-home-utility-chevron" aria-hidden="true">›</span></button>'
  +'<button type="button" class="zeno-home-utility-row" data-action="around-clock-shortcut"><span class="zeno-home-utility-icon">'+zenoHomeSmallIcon('urgent')+'</span><span class="zeno-home-utility-copy"><strong>24시간 운영 병원</strong><small>응급 접수는 전화로 확인</small></span><span class="zeno-home-utility-chevron" aria-hidden="true">›</span></button>'
@@ -4670,6 +4706,7 @@ function petsPage(){
   '<section class="section zeno-pet-recovery"><div class="panel" style="padding:14px;border:1px solid #dce7f2;box-shadow:none"><strong>로그인 없이도 이 아이들을 보고 싶으세요?</strong><p class="desc" style="margin:8px 0 12px">아래 버튼을 누르면 아이·건강 기록·사진을 이 기기에 복사합니다. 이 기기를 다른 사람이 사용하면 기록을 볼 수 있어요.</p><button type="button" class="btn secondary" data-action="copy-account-pets-local">이 기기에 기록 복사하기</button></div></section>':'';
  const backupCard='<section class="section"><div class="panel" style="padding:14px;border:1px solid #dce7f2"><strong>앱 교체 전 기록 보관</strong><p class="desc">앱을 삭제하기 전에 기기에 있는 아이·추모 기록을 백업하세요.</p><button type="button" class="btn secondary" data-action="open-backup">백업 · 복원</button></div></section>';
  return '<div class="zeno-pets-page">'+topbar('내 아이','')
+  +zenoPetsBookingSummary()
   +'<p class="zeno-pet-save-note">'+(state.ownerToken?'등록한 아이와 건강 기록은 로그인한 제노 계정에 저장됩니다. 병원 진료 기록과 자동 연동되지는 않아요.':'로그인 없이 사용할 수 있어요. 등록한 아이·사진·건강 기록은 이 기기에만 저장되며, 기기 변경이나 앱 데이터 삭제 시 사라질 수 있습니다.')+'</p>'
   +(state.profileSaveError?'<div class="banner warning">'+e(state.profileSaveError)+' <button class="btn small" data-action="retry-profile">다시 저장</button></div>':state.profileSaving?'<p class="zeno-save-status" role="status">저장 중…</p>':'')
   +guestRestore+copyLocal+backupCard
@@ -4714,7 +4751,7 @@ function bookingsPage(){
 }
 function qaPage(){
  const list=[...state.questions].sort((a,b)=>String(b.updatedAt||b.createdAt||'').localeCompare(String(a.updatedAt||a.createdAt||'')));
- return topbar('내 질문','')
+ return topbar('진료 전 질문','예약한 병원에 내원 전 1:1로 묻는 비공개 질문')
  +'<div class="section"><p class="zeno-qa-identity"><strong>답변 주체</strong> · 제휴 병원 계정의 담당자입니다. 수의사 자격과 답변 시간은 확인되지 않았어요.</p><div class="section-title"><h2>질문 '+list.length+'개</h2><button class="btn small" data-action="ask">질문하기</button></div>'
  +(list.length?'<div class="grid two">'+list.map(q=>{
  const answered=q.status==='answered'&&!!q.answer;
@@ -4723,6 +4760,85 @@ function qaPage(){
  +(answered?'<details><summary>병원 답변 보기</summary><p class="preline">'+e(q.answer)+'</p><small>의료진 자격 별도 확인 필요</small></details>':'')+'</article>';
  }).join('')+'</div>':'<div class="empty"><strong>아직 질문이 없어요.</strong><p>궁금한 점이 있다면 질문을 남겨보세요.</p></div>')
  +'<p class="zeno-disclaimer">병원 계정에서 작성한 답변이며 수의사 자격은 별도 확인이 필요합니다. 응급 진료를 대신하지 않습니다.</p></div>';
+}
+/* 수의사 Q&A (2026-11-18): 공개 질문 · 예약 가능한 제휴 병원 수의사 답변. '진료 전 질문'(qa)과 별개입니다. */
+const ZENO_VETQA_SPECIES=['강아지','고양이','특수동물','기타'];
+const ZENO_VETQA_FIELDS=['일반','내과','외과','피부·귀','안과','치과·구강','정형외과','행동·문제행동','영양·식이','예방접종·건강검진','기타'];
+function zenoVq(){if(!state.vetqa)state.vetqa={list:[],mine:[],loaded:false,loading:false,error:'',q:'',species:'전체',tab:'all',openId:null,detail:null,detailLoading:false,composing:false,saving:false,draft:{}};return state.vetqa}
+async function zenoVetqaLoad(){
+ const v=zenoVq();if(v.loading)return;v.loading=true;v.error='';
+ try{
+  const qs=new URLSearchParams();if(v.q)qs.set('q',v.q);if(v.species!=='전체')qs.set('species',v.species);
+  const r=await api('GET','/api/public/vetqa'+(qs.toString()?'?'+qs:''));
+  v.list=Array.isArray(r.questions)?r.questions:[];
+  if(state.ownerToken){const m=await api('GET','/api/vetqa/mine').catch(()=>null);v.mine=Array.isArray(m?.questions)?m.questions:[]}else v.mine=[];
+  v.loaded=true;
+ }catch(err){v.error=err.message||'질문을 불러오지 못했어요.'}
+ finally{v.loading=false;if(state.page==='vetqa'||state.page==='home')render()}
+}
+async function zenoVetqaOpen(id){
+ const v=zenoVq();v.openId=id;v.detail=null;v.detailLoading=true;v.composing=false;render();window.scrollTo({top:0,behavior:'instant'});
+ try{v.detail=await api('GET','/api/public/vetqa/'+encodeURIComponent(id))}
+ catch(err){toast(err.message);v.openId=null}
+ finally{v.detailLoading=false;render()}
+}
+function zenoVetqaDate(t){return t?new Date(t).toLocaleDateString('ko-KR',{month:'numeric',day:'numeric'}):''}
+function zenoVetqaCard(q){
+ const answered=q.answerCount>0;
+ return '<button type="button" class="zeno-vq-item" data-action="vetqa-open" data-id="'+e(q.id)+'"><span class="zeno-vq-meta">'+e(q.species)+' · '+e(q.field)+'</span><strong>'+e(q.title)+'</strong><span class="zeno-vq-body">'+e(q.body)+'</span><span class="zeno-vq-foot"><span class="'+(answered?'zeno-vq-answered':'zeno-vq-waiting')+'">'+(answered?'수의사 답변 '+q.answerCount+'개':'답변 대기')+'</span><span>'+e(zenoVetqaDate(q.createdAt))+'</span></span></button>';
+}
+function zenoVetqaDetail(){
+ const v=zenoVq();
+ if(v.detailLoading||!v.detail)return topbar('수의사 Q&A','')+'<p class="zeno-vq-loading" role="status">불러오는 중…</p>';
+ const q=v.detail.question,answers=v.detail.answers||[];
+ const mine=v.mine.some(x=>x.id===q.id);
+ return topbar('수의사 Q&A','')
+ +'<button type="button" class="zeno-vq-back" data-action="vetqa-back">‹ 목록으로</button>'
+ +'<article class="zeno-vq-question"><span class="zeno-vq-meta">'+e(q.species)+' · '+e(q.field)+' · '+e(zenoVetqaDate(q.createdAt))+'</span><h2>'+e(q.title)+'</h2><p class="preline">'+e(q.body)+'</p>'
+ +(mine&&!answers.length?'<button type="button" class="btn secondary small" data-action="vetqa-delete" data-id="'+e(q.id)+'">질문 삭제</button>':'')+'</article>'
+ +'<h3 class="zeno-vq-answers-title">수의사 답변 '+answers.length+'개</h3>'
+ +(answers.length?answers.map(a=>{const h=hospitalById(a.hospitalId);return '<article class="zeno-vq-answer"><header><strong>'+e(a.vetName?a.vetName+' 수의사':(h?.name||'제휴 병원'))+'</strong><span>'+e(a.vetName?(h?.name||'제휴 병원')+' · ':'')+e(zenoVetqaDate(a.updatedAt||a.createdAt))+'</span></header><p class="preline">'+e(a.body)+'</p><small>일반적인 안내이며, 정확한 진단은 내원 진료가 필요합니다.</small>'
+  +(h?'<div class="zeno-vq-actions"><button type="button" class="btn secondary small" data-action="details" data-id="'+e(h.id)+'">병원 보기</button>'+(h.phone?'<a class="btn secondary small" href="tel:'+e(String(h.phone).replace(/[^0-9]/g,''))+'">전화</a>':'')+(h.linked?'<button type="button" class="btn small" data-action="book" data-id="'+e(h.id)+'">예약</button>':'')+'</div>':'')+'</article>'}).join(''):'<div class="empty"><strong>아직 답변이 없어요.</strong><p>제휴 병원 수의사가 확인하면 답변이 달립니다.</p></div>')
+ +'<p class="zeno-disclaimer">답변은 일반적인 안내이며 진단·처방을 대신하지 않습니다. 증상이 심하거나 급하면 바로 병원에 전화해 주세요.</p>';
+}
+function zenoVetqaForm(){
+ const dr=zenoVq().draft||{};
+ const opt=(list,cur)=>list.map(x=>'<option value="'+e(x)+'"'+(cur===x?' selected':'')+'>'+e(x)+'</option>').join('');
+ return '<form id="vetqa-form" class="panel zeno-vq-form"><h3>수의사에게 질문하기</h3>'
+ +'<div class="banner warning zeno-vq-emergency">숨쉬기 힘들어함, 경련, 독성 물질 섭취, 심한 출혈은 질문을 기다리지 말고 <button type="button" class="link" data-nav="emergency">응급 진료</button>에서 바로 병원에 연락해 주세요.</div>'
+ +'<div class="formgrid"><div class="field"><label for="vq-species">반려동물</label><select id="vq-species" name="species" required><option value="">선택</option>'+opt(ZENO_VETQA_SPECIES,dr.species)+'</select></div><div class="field"><label for="vq-field">진료 분야</label><select id="vq-field" name="field" required><option value="">선택</option>'+opt(ZENO_VETQA_FIELDS,dr.field)+'</select></div></div>'
+ +'<div class="field"><label for="vq-title">제목</label><input id="vq-title" name="title" maxlength="80" required value="'+e(dr.title||'')+'" placeholder="예: 고양이가 이틀째 밥을 안 먹어요"></div>'
+ +'<div class="field"><label for="vq-body">내용</label><textarea id="vq-body" name="body" maxlength="1500" required placeholder="나이, 증상, 시작된 때, 먹는 약을 적어 주시면 더 정확한 답을 받을 수 있어요.">'+e(dr.body||'')+'</textarea></div>'
+ +'<p class="zeno-vq-note">질문은 모두에게 공개됩니다. 이름·전화번호·주소는 적지 말아 주세요. 답변은 예약 가능한 제노 제휴 병원 수의사가 합니다.</p>'
+ +'<div class="zeno-vq-actions"><button type="button" class="btn secondary" data-action="vetqa-cancel">취소</button><button class="btn" type="submit"'+(zenoVq().saving?' disabled':'')+'>질문 올리기</button></div></form>';
+}
+function vetqaPage(){
+ const v=zenoVq();
+ if(v.openId)return zenoVetqaDetail();
+ const tabs=['전체',...ZENO_VETQA_SPECIES.slice(0,3)];
+ const list=v.tab==='mine'?v.mine:v.list;
+ return topbar('수의사 Q&A','')
+ +'<p class="zeno-vq-intro">질문을 올리면 예약 가능한 제노 제휴 병원(수동물병원 · 24시청주나음동물메디컬 · 티앤디동물병원) 수의사가 답합니다.</p>'
+ +'<form id="vetqa-search" class="zeno-vq-search" role="search"><input name="q" value="'+e(v.q)+'" placeholder="증상, 궁금한 점 검색" aria-label="질문 검색"><button class="btn small" type="submit">검색</button></form>'
+ +(v.composing?zenoVetqaForm():'<button type="button" class="btn full zeno-vq-ask" data-action="vetqa-ask">수의사에게 질문하기</button>')
+ +'<div class="filters zeno-vq-tabs">'+tabs.map(x=>'<button type="button" class="filter '+(v.tab==='all'&&v.species===x?'active':'')+'" data-action="vetqa-species" data-value="'+e(x)+'">'+e(x)+'</button>').join('')+(state.ownerToken?'<button type="button" class="filter '+(v.tab==='mine'?'active':'')+'" data-action="vetqa-mine">내 질문</button>':'')+'</div>'
+ +(v.error?'<div class="banner warning">'+e(v.error)+' <button class="btn secondary small" data-action="vetqa-reload">다시 시도</button></div>':'')
+ +(!v.loaded&&v.loading?'<p class="zeno-vq-loading" role="status">불러오는 중…</p>':list.length?'<div class="zeno-vq-list">'+list.map(zenoVetqaCard).join('')+'</div>':'<div class="empty"><strong>'+(v.tab==='mine'?'아직 올린 질문이 없어요.':v.q?'검색 결과가 없어요.':'아직 질문이 없어요.')+'</strong><p>'+(v.q?'다른 단어로 찾아보거나 직접 질문해 보세요.':'첫 질문을 남겨 보세요.')+'</p></div>')
+ +'<p class="zeno-disclaimer">답변은 일반적인 안내이며 진단·처방을 대신하지 않습니다. 예약한 병원에 1:1로 묻고 싶다면 더 보기 › 진료 전 질문을 이용해 주세요.</p>';
+}
+function zenoHomeVetqa(){
+ const v=zenoVq();
+ const answered=v.list.filter(q=>q.answerCount>0).slice(0,2);
+ return '<section class="zeno-home-vetqa" aria-label="수의사 Q&A"><header><h2>수의사 Q&A</h2><button type="button" data-nav="vetqa">전체 보기 ›</button></header>'
+ +(answered.length?'<div class="zeno-vq-list">'+answered.map(zenoVetqaCard).join('')+'</div>':'')
+ +'<button type="button" class="care-symptoms" data-action="vetqa-ask">'+zenoNavIcon('vetqa')+'<strong>제휴 병원 수의사에게 질문하기</strong><span aria-hidden="true">›</span></button></section>';
+}
+function zenoPetsBookingSummary(){
+ if(!state.ownerToken)return '';
+ const active=state.bookings.filter(b=>['pending','accepted','suggested','confirmed','in_progress'].includes(b.status)).sort((a,b)=>zenoVisitAt(a).localeCompare(zenoVisitAt(b)));
+ const next=active[0],h=next?hospitalById(next.hospitalId):null;
+ return '<section class="zeno-pets-bookings" aria-label="내 예약"><header><h2>내 예약</h2><button type="button" data-nav="bookings">전체 보기 ›</button></header>'
+ +(next?'<button type="button" class="zeno-pets-booking-next" data-nav="bookings"><strong>'+e(h?.name||'병원')+'</strong><span>'+e(String(next.date||''))+' '+e(String(next.time||''))+' · '+e(next.petName||'')+'</span>'+(active.length>1?'<small>진행 중인 예약 '+active.length+'건</small>':'')+'</button>':'<p class="zeno-vq-note">진행 중인 예약이 없어요.</p>')+'</section>';
 }
 function membership(){
  const points=state.reviews.reduce((a,x)=>a+Number(x.points||0),0);
@@ -5173,7 +5289,8 @@ const ZENO_MORE_COPY=Object.freeze({
 });
 function morePage(){
  const items=[
-  ['qa','내 질문'],
+  ['bookings','내 예약'],
+  ['qa','진료 전 질문'],
   /* CHANGED: points nav hidden until billing is actually enabled. */
   ['pets','추모관']
  ];
@@ -5306,7 +5423,7 @@ function authScreen(){
  +'<a class="hosp-switch" href="/hospital">병원 담당자용 화면</a></div></div>';
 }
 
-function render(){const zenoBeforePaintY=window.scrollY;if(APP_MODE==='owner'&&!zenoCanViewPage(state.page)){document.getElementById('app').innerHTML=authScreen();return;}if(state.page==='login'){document.getElementById('app').innerHTML=authScreen();return;}if(APP_MODE==='hospital')state.page='hospital';else if(state.page==='hospital'||state.page==='admin')state.page='home';const body=state.page==='home'?home():state.page==='symptoms'?zenoSymptomPage():state.page==='search'?searchPage():state.page==='emergency'?emergency():state.page==='pets'?petsPage():state.page==='bookings'?bookingsPage():state.page==='qa'?qaPage():state.page==='membership'?membership():state.page==='prices'?pricesPage():state.page==='hospital'?hospitalPage():state.page==='more'?morePage():adminPage();document.getElementById('app').innerHTML=`${nav()}<main class="content">${state.appError?`<div class="banner warning">정보를 불러오지 못했어요. <button class="btn secondary small" data-action="refresh">다시 시도</button></div>`:''}${body}${footer()}</main>${renderModal()}`;requestAnimationFrame(zenoUpdateDetailHint);if(zenoBeforePaintY>0)window.scrollTo({left:0,top:zenoBeforePaintY,behavior:'instant'});}
+function render(){const zenoBeforePaintY=window.scrollY;if(APP_MODE==='owner'&&!zenoCanViewPage(state.page)){document.getElementById('app').innerHTML=authScreen();return;}if(state.page==='login'){document.getElementById('app').innerHTML=authScreen();return;}if(APP_MODE==='hospital')state.page='hospital';else if(state.page==='hospital'||state.page==='admin')state.page='home';const body=state.page==='home'?home():state.page==='symptoms'?zenoSymptomPage():state.page==='search'?searchPage():state.page==='emergency'?emergency():state.page==='pets'?petsPage():state.page==='bookings'?bookingsPage():state.page==='qa'?qaPage():state.page==='vetqa'?vetqaPage():state.page==='membership'?membership():state.page==='prices'?pricesPage():state.page==='hospital'?hospitalPage():state.page==='more'?morePage():adminPage();document.getElementById('app').innerHTML=`${nav()}<main class="content">${state.appError?`<div class="banner warning">정보를 불러오지 못했어요. <button class="btn secondary small" data-action="refresh">다시 시도</button></div>`:''}${body}${footer()}</main>${renderModal()}`;requestAnimationFrame(zenoUpdateDetailHint);if(zenoBeforePaintY>0)window.scrollTo({left:0,top:zenoBeforePaintY,behavior:'instant'});}
 function zenoUpdateDetailHint(){const tabs=document.querySelector('.zeno-detail-tabs'),hint=document.querySelector('.zeno-detail-swipe-hint');if(tabs&&hint)hint.hidden=tabs.scrollWidth<=tabs.clientWidth+1;}
 window.addEventListener('resize',zenoUpdateDetailHint);
 let zenoDetailScrollY=0;
@@ -5353,6 +5470,14 @@ window.addEventListener('popstate',()=>{
 async function afterMutation(p=''){try{await refresh(true);if(p)toast(p)}catch(err){toast(err.message)}}
 async function mutate(method,path,data,message){try{await api(method,path,data);state.modal=null;await afterMutation(message||'저장되었습니다.')}catch(err){toast(err.message)}}
 document.addEventListener('click',async ev=>{let n=ev.target.closest('[data-nav]');if(n){navTo(n.dataset.nav);return}let el=ev.target.closest('[data-action]');if(!el)return;const a=el.dataset.action,id=el.dataset.id,val=el.dataset.value;
+if(a==='vetqa-ask'){if(!state.ownerToken){toast('질문하려면 로그인해 주세요.');state.pendingPage='vetqa';navTo('login');return}const v=zenoVq();v.composing=true;v.openId=null;if(state.page!=='vetqa')navTo('vetqa');else render();setTimeout(()=>document.getElementById('vq-species')?.focus(),0);return}
+if(a==='vetqa-cancel'){const v=zenoVq();v.composing=false;v.draft={};render();return}
+if(a==='vetqa-open'){zenoVetqaOpen(id);return}
+if(a==='vetqa-back'){const v=zenoVq();v.openId=null;v.detail=null;render();return}
+if(a==='vetqa-species'){const v=zenoVq();v.tab='all';v.species=val||'전체';zenoVetqaLoad();render();return}
+if(a==='vetqa-mine'){const v=zenoVq();v.tab='mine';render();return}
+if(a==='vetqa-reload'){zenoVetqaLoad();return}
+if(a==='vetqa-delete'){if(!confirm('이 질문을 삭제할까요?'))return;try{await api('DELETE','/api/vetqa/'+encodeURIComponent(id));const v=zenoVq();v.openId=null;v.detail=null;toast('질문을 삭제했어요.');await zenoVetqaLoad()}catch(err){toast(err.message)}return}
 if(a==='detail-tab'){const dialog=el.closest('.modal'),selected=el.dataset.value;if(dialog){state.detailTab=selected;dialog.querySelectorAll('[data-detail-panel]').forEach(p=>{p.hidden=p.dataset.detailPanel!==selected});dialog.querySelectorAll('[data-action="detail-tab"]').forEach(b=>{const active=b.dataset.value===selected;b.classList.toggle('active',active);b.setAttribute('aria-selected',String(active))});const bar=dialog.querySelector('.zeno-detail-tabs');if(bar){const y=dialog.scrollTop+bar.getBoundingClientRect().top-dialog.getBoundingClientRect().top-54;dialog.scrollTop=Math.max(0,y);const tab=bar.querySelector('.zeno-detail-tab.active');if(tab){const x=tab.offsetLeft-bar.offsetLeft;bar.scrollLeft=Math.max(0,x-(bar.clientWidth-tab.offsetWidth)/2)}}}return}
 if(a==='close-modal'){zenoCloseModal();return}if(a==='modal-backdrop'){if(ev.target===el)zenoCloseModal();return}
 if(a==='auth-mode'){state.authMode=val;state.authError='';if(val!=='login')state.authNotice='';render();return}
@@ -5608,6 +5733,8 @@ document.addEventListener('change',ev=>{
  const save=container.querySelector('.zeno-pet-save-photo');if(save)save.hidden=false;
 });
 document.addEventListener('submit',async ev=>{let f=ev.target,id=f.id;if(!id)return;ev.preventDefault();let d=Object.fromEntries(new FormData(f).entries());const val=s=>String(s||'').trim();
+if(id==='vetqa-search'){const v=zenoVq();v.q=val(d.q).slice(0,40);v.tab='all';await zenoVetqaLoad();return}
+if(id==='vetqa-form'){const v=zenoVq();if(v.saving)return;const body={species:val(d.species),field:val(d.field),title:val(d.title),body:val(d.body)};if(body.title.length<5){toast('제목을 5자 이상 입력해 주세요.');return}if(body.body.length<10){toast('내용을 10자 이상 입력해 주세요.');return}v.saving=true;const sb=f.querySelector('[type=submit]');if(sb)sb.disabled=true;try{const q=await api('POST','/api/vetqa',body);v.composing=false;v.draft={};toast('질문을 올렸어요. 수의사 답변이 달리면 여기에서 확인할 수 있어요.');await zenoVetqaLoad();zenoVetqaOpen(q.id)}catch(err){toast(err.message);if(sb)sb.disabled=false}finally{v.saving=false}return}
 if(id==='home-search-form'){state.searchRegion=state.homeArea==='청주 전체'?'':state.homeArea.replace('청주 ','');state.specialty='';state.symptomLabel='';state.exoticSpecies='';state.filter='전체';state.activeFilters=[];applyHospitalQuery(val(d.homeQuery));zenoNewSearch=true;navTo('search');return}
 if(id==='owner-recovery-reset'){
  if(val(d.newPassword)!==val(d.confirmPassword)){state.authError='새 비밀번호가 서로 다릅니다.';render();return}
