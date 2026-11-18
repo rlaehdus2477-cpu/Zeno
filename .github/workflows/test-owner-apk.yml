@@ -6,6 +6,7 @@ on:
       - "android/owner/**"
       - "owner.html"
       - "tests/test-nearby-location.cjs"
+      - "tests/test-ipad-nearby.cjs"
       - ".github/workflows/test-owner-apk.yml"
   workflow_dispatch:
 
@@ -19,6 +20,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: Nearby location regression test
         run: node tests/test-nearby-location.cjs
+      - name: iPad Safari nearby regression test
+        run: node tests/test-ipad-nearby.cjs
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
