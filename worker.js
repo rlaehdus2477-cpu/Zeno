@@ -267,6 +267,30 @@ function zenoEnsureGeoCache(db){
  if(!zenoGeoCacheInit)zenoGeoCacheInit=db.prepare(ZENO_GEO_CACHE_TABLE).run().catch(err=>{zenoGeoCacheInit=null;throw err});
  return zenoGeoCacheInit;
 }
+/* '내 주변' 서버 좌표 변환용 병원 목록.
+   worker.js에는 HOSPITALS 상수가 없어(보호자 화면 owner.html에만 존재) ReferenceError로 500이 나던 문제를 고칩니다.
+   배포 시 owner.html이 OWNER_HTML로 그대로 삽입되므로, 같은 목록을 한 번만 읽어 id·주소만 사용합니다(별도 사본 없음). */
+let zenoGeoHospitalList=null;
+function zenoGeoHospitals(){
+ if(zenoGeoHospitalList)return zenoGeoHospitalList;
+ const marker='const HOSPITALS=',start=OWNER_HTML.indexOf(marker);
+ if(start<0)throw new HttpError('병원 주소 목록을 찾지 못했습니다.',500);
+ let depth=0,inString=false,escaped=false,end=-1;
+ for(let i=start+marker.length;i<OWNER_HTML.length;i++){
+  const c=OWNER_HTML[i];
+  if(inString){if(escaped)escaped=false;else if(c==='\\')escaped=true;else if(c==='"')inString=false;continue}
+  if(c==='"')inString=true;
+  else if(c==='['||c==='{')depth++;
+  else if(c===']'||c==='}'){depth--;if(depth===0){end=i+1;break}}
+ }
+ if(end<0)throw new HttpError('병원 주소 목록을 읽지 못했습니다.',500);
+ let parsed;
+ try{parsed=JSON.parse(OWNER_HTML.slice(start+marker.length,end))}catch{throw new HttpError('병원 주소 목록을 읽지 못했습니다.',500)}
+ const list=(Array.isArray(parsed)?parsed:[]).filter(h=>h&&typeof h.id==='string'&&typeof h.address==='string'&&h.address.trim()).map(h=>({id:h.id,address:h.address}));
+ if(!list.length)throw new HttpError('병원 주소 목록이 비어 있습니다.',500);
+ zenoGeoHospitalList=list;
+ return list;
+}
 function zenoGeoAddress(address){
  return String(address||'').replace(/\s*\([^)]*\).*/,'').replace(/[,，]\s*.*$/,'').trim();
 }
@@ -289,6 +313,7 @@ async function zenoNaverGeocodeHospital(h,env){
 async function zenoPublicHospitalCoordinates(env){
  const db=env.DB;
  await zenoEnsureGeoCache(db);
+ const HOSPITALS=zenoGeoHospitals();
  const before=(await db.prepare('SELECT hospital_id,address,lat,lon FROM hospital_geo_cache').all()).results||[];
  const seen=new Map(before.map(row=>[row.hospital_id,row]));
  const missing=HOSPITALS.filter(h=>{const old=seen.get(h.id);return !old||old.address!==zenoGeoAddress(h.address)});
