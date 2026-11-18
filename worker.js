@@ -301,7 +301,7 @@ async function zenoNaverGeocodeHospital(h,env){
  const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),12000);
  try{
   const res=await fetch(url.toString(),{headers:{Accept:'application/json','x-ncp-apigw-api-key-id':env.NAVER_MAPS_CLIENT_ID,'x-ncp-apigw-api-key':env.NAVER_MAPS_CLIENT_SECRET},signal:controller.signal});
-  if(!res.ok)throw new HttpError('네이버 지도 좌표 변환 요청이 실패했습니다. Maps API 설정을 확인해 주세요.',502);
+  if(!res.ok){let code='';try{const e=await res.json();code=String(e?.error?.errorCode||e?.errorCode||e?.error?.message||e?.errorMessage||'').slice(0,60)}catch{}throw new HttpError('네이버 지도 좌표 변환 요청이 실패했습니다. Maps API 설정을 확인해 주세요. (네이버 응답 '+res.status+(code?' · '+code:'')+')',502)}
   const data=await res.json();
   if(data.status!=='OK')throw new HttpError('네이버 지도 좌표 변환에 응답 오류가 발생했습니다.',502);
   const place=Array.isArray(data.addresses)?data.addresses[0]:null;
