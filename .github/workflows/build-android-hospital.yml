@@ -59,6 +59,7 @@ jobs:
       - name: Restore official mint hospital logo as launcher icon
         shell: bash
         run: |
+          mkdir -p android/hospital/res/drawable-nodpi
           python3 -m pip install --quiet cairosvg
           python3 -c "import cairosvg; cairosvg.svg2png(url='icon-hospital-mint.svg', write_to='android/hospital/res/drawable-nodpi/zeno_hospital.png', output_width=512, output_height=512)"
           test -s android/hospital/res/drawable-nodpi/zeno_hospital.png
