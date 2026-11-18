@@ -1,0 +1,95 @@
+name: Build ZENO Hospital Android APK
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "android/hospital/**"
+      - ".github/workflows/build-android-hospital.yml"
+  pull_request:
+    paths:
+      - "android/hospital/**"
+      - ".github/workflows/build-android-hospital.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: zeno-hospital-android-1-0-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Check out ZENO
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Install Android API 35 and build tools
+        shell: bash
+        run: |
+          SDKMANAGER="$(find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager | sort -V | tail -1)"
+          test -n "$SDKMANAGER"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" --install "platforms;android-35" "build-tools;35.0.0"
+          test -f "$ANDROID_HOME/platforms/android-35/android.jar"
+          test -x "$ANDROID_HOME/build-tools/35.0.0/apksigner"
+          echo "ANDROID_JAR=$ANDROID_HOME/platforms/android-35/android.jar" >> "$GITHUB_ENV"
+          echo "BUILD_TOOLS=$ANDROID_HOME/build-tools/35.0.0" >> "$GITHUB_ENV"
+
+      - name: Generate temporary test signing key
+        shell: bash
+        run: |
+          PASS="$(openssl rand -hex 24)"
+          echo "::add-mask::$PASS"
+          echo "ZENO_KEY_PASS=$PASS" >> "$GITHUB_ENV"
+          echo "ZENO_KEYSTORE=$RUNNER_TEMP/zeno-hospital-test.p12" >> "$GITHUB_ENV"
+          keytool -genkeypair -noprompt -storetype PKCS12 \
+            -keystore "$RUNNER_TEMP/zeno-hospital-test.p12" \
+            -storepass "$PASS" -keypass "$PASS" \
+            -alias hospital -keyalg RSA -keysize 3072 -validity 3650 \
+            -dname "CN=ZENO Hospital Test, OU=Development, O=ZENO, C=KR"
+
+      - name: Compile and sign hospital APK
+        shell: bash
+        run: |
+          bash android/hospital/build.sh "$GITHUB_WORKSPACE/ZENO-Hospital-1.0.apk"
+          "$BUILD_TOOLS/aapt" dump badging ZENO-Hospital-1.0.apk | head -15
+          test "$("$BUILD_TOOLS/aapt" dump badging ZENO-Hospital-1.0.apk | grep -c "package: name='kr.zeno.hospital'")" -eq 1
+          "$BUILD_TOOLS/apksigner" verify --verbose ZENO-Hospital-1.0.apk
+
+      - name: Upload test APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ZENO-Hospital-1.0-Android-APK
+          path: ZENO-Hospital-1.0.apk
+          if-no-files-found: error
+
+  publish:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: ZENO-Hospital-1.0-Android-APK
+      - name: Create public test APK release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          if gh release view hospital-android-v1.0 >/dev/null 2>&1; then
+            echo "Release already exists; retain its signing identity and published APK."
+          else
+            gh release create hospital-android-v1.0 ZENO-Hospital-1.0.apk \
+              --title "ZENO 동물병원용 Android 1.0 (갤럭시 테스트)" \
+              --notes "갤럭시 Android 8 이상용 병원 관리 테스트 APK. 기존 보호자용과 별도 앱(kr.zeno.hospital)입니다. Cloudflare /hospital을 WebView로 열며 실행 시 HTTP 캐시를 사용하지 않습니다. 예약/상태 관리 기능은 현재 운영 서버와 연결되며 기존 데이터베이스는 변경하지 않습니다. 웹 알림은 Android WebView의 OS 푸시 알림으로 보장되지 않으므로 앱 화면에서 예약을 확인해 주세요. Play Store 배포본이 아닙니다. 테스트용 임시 서명으로 추후 APK 교체 설치가 제한될 수 있습니다."
+          fi
