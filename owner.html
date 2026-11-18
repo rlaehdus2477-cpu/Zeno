@@ -4115,7 +4115,10 @@ function zenoHomeBookingPreview(){
  const [hhText,mm='00']=time.split(':'),hh=Number(hhText);
  const timeLabel=Number.isInteger(hh)&&hh>=0&&hh<=23?(hh<12?'오전 ':'오후 ')+(hh%12||12)+':'+mm:time;
  const h=hospitalById(booking.hospitalId);
- return '<section class="zeno-home-booking"><span class="zeno-mini-label">내 예약</span><button type="button" data-nav="bookings"><strong>'+e(booking.petName||'반려동물')+' · '+e(dateLabel)+' '+e(timeLabel)+' · '+e(STATUS[booking.status]||booking.status)+'</strong><small>'+e(h?.name||'예약 병원 확인')+'</small></button></section>';
+ // Home preview is a reservation shortcut, not the live treatment-status screen.
+ // Keep actual booking status unchanged in the reservation details and hospital workflow.
+ const homeStatus=booking.status==='in_progress'?'진료 예약':(STATUS[booking.status]||booking.status);
+ return '<section class="zeno-home-booking"><span class="zeno-mini-label">내 예약</span><button type="button" data-nav="bookings"><strong>'+e(booking.petName||'반려동물')+' · '+e(dateLabel)+' '+e(timeLabel)+' · '+e(homeStatus)+'</strong><small>'+e(h?.name||'예약 병원 확인')+'</small></button></section>';
 }
 
 function zenoHomeSmallIcon(name){
