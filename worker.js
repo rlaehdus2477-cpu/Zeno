@@ -86,22 +86,35 @@ const hospitalKeywordNaverUrl=/^https:\/\/(?:[a-z0-9-]+\.)*(?:naver\.com|naver\.
 
 // 대표 특화 근거: 병원이 키워드별로 근거(링크)를 제출하고, 제노 관리자가 승인해야 '확인됨'이 된다.
 const HOSPITAL_EVIDENCE_TYPES=new Set(['외부 기관 인증','학회 자격','전문 장비','해당 분야 경력','네이버 병원 소개','기타']);
-const HOSPITAL_EVIDENCE_CREATE_SQL="CREATE TABLE IF NOT EXISTS hospital_specialty_evidence (hospital_id TEXT NOT NULL, keyword TEXT NOT NULL, evidence_type TEXT NOT NULL, issuer TEXT NOT NULL DEFAULT '', url TEXT NOT NULL, note TEXT NOT NULL DEFAULT '', review_status TEXT NOT NULL DEFAULT 'pending' CHECK(review_status IN ('pending','approved','rejected')), review_note TEXT NOT NULL DEFAULT '', submitted_at TEXT NOT NULL, reviewed_at TEXT, PRIMARY KEY(hospital_id,keyword))";
+const HOSPITAL_EVIDENCE_CREATE_SQL="CREATE TABLE IF NOT EXISTS hospital_specialty_evidence (hospital_id TEXT NOT NULL, keyword TEXT NOT NULL, evidence_type TEXT NOT NULL, issuer TEXT NOT NULL DEFAULT '', url TEXT NOT NULL, note TEXT NOT NULL DEFAULT '', review_status TEXT NOT NULL DEFAULT 'pending' CHECK(review_status IN ('pending','approved','rejected')), review_note TEXT NOT NULL DEFAULT '', submitted_at TEXT NOT NULL, reviewed_at TEXT, approved_type TEXT NOT NULL DEFAULT '', approved_issuer TEXT NOT NULL DEFAULT '', approved_url TEXT NOT NULL DEFAULT '', approved_at TEXT, PRIMARY KEY(hospital_id,keyword))";
 let zenoSpecialtyEvidenceInit=null;
 function ensureHospitalSpecialtyEvidence(db){
  if(!zenoSpecialtyEvidenceInit)zenoSpecialtyEvidenceInit=db.prepare(HOSPITAL_EVIDENCE_CREATE_SQL).run().catch(err=>{zenoSpecialtyEvidenceInit=null;throw err});
  return zenoSpecialtyEvidenceInit;
 }
+/* 공개되는 근거는 항상 '마지막으로 승인된 근거'(approved_*)뿐이다. 새로 제출된 근거는 승인 전까지 공개되지 않는다. */
+function hospitalApprovedEvidence(row){
+ return row&&row.approved_url?{type:row.approved_type,issuer:row.approved_issuer||'',url:row.approved_url,approvedAt:row.approved_at||''}:null;
+}
 function hospitalEvidenceRow(row,mode){
  if(!row)return null;
- if(mode==='public')return row.review_status==='approved'?{type:row.evidence_type,issuer:row.issuer||'',url:row.url,reviewedAt:row.reviewed_at||''}:null;
- return {type:row.evidence_type,issuer:row.issuer||'',url:row.url,note:row.note||'',reviewStatus:row.review_status,reviewNote:row.review_note||'',submittedAt:row.submitted_at,reviewedAt:row.reviewed_at||''};
+ if(mode==='public')return hospitalApprovedEvidence(row);
+ return {type:row.evidence_type,issuer:row.issuer||'',url:row.url,note:row.note||'',reviewStatus:row.review_status,reviewNote:row.review_note||'',submittedAt:row.submitted_at,reviewedAt:row.reviewed_at||'',approved:hospitalApprovedEvidence(row)};
 }
 async function attachHospitalEvidence(db,hospitalId,rows,mode){
  await ensureHospitalSpecialtyEvidence(db);
  const found=await db.prepare('SELECT * FROM hospital_specialty_evidence WHERE hospital_id=?').bind(hospitalId).all();
  const byKey=Object.fromEntries((found.results||[]).map(r=>[r.keyword,r]));
- return rows.map(r=>({...r,evidence:hospitalEvidenceRow(byKey[r.keyword],mode)}));
+ return rows.map(r=>{
+  const row=byKey[r.keyword],approved=hospitalApprovedEvidence(row);
+  if(mode==='public'){
+   // 키워드가 '확인됨'이면 반드시 승인된 근거와 함께, 승인된 근거가 없으면 '병원 안내'로만 공개
+   if(r.status==='확인됨'&&!row)return {...r,evidence:null}; // 이 기능 이전에 확인된 키워드는 기존 값 유지
+   const ok=r.status==='확인됨'&&approved;
+   return {...r,status:ok?'확인됨':'병원 안내',evidenceUrl:ok?approved.url:'',evidence:ok?approved:null};
+  }
+  return {...r,evidence:hospitalEvidenceRow(row,mode)};
+ });
 }
 async function submitHospitalSpecialtyEvidence(db,hospitalId,data){
  const keyword=clean(data.keyword,30),type=clean(data.type,20),issuer=clean(data.issuer,60),url=clean(data.url,300),note=clean(data.note,300);
@@ -132,10 +145,15 @@ async function reviewSpecialtyEvidence(db,data){
  const at=new Date().toISOString(),today=hospitalKeywordToday();
  const status=decision==='approve'?'approved':'rejected';
  await db.batch([
-  db.prepare('UPDATE hospital_specialty_evidence SET review_status=?,review_note=?,reviewed_at=? WHERE hospital_id=? AND keyword=?').bind(status,reviewNote,at,hospitalId,keyword),
+  decision==='approve'
+   ?db.prepare('UPDATE hospital_specialty_evidence SET review_status=?,review_note=?,reviewed_at=?,approved_type=evidence_type,approved_issuer=issuer,approved_url=url,approved_at=? WHERE hospital_id=? AND keyword=?').bind(status,reviewNote,at,at,hospitalId,keyword)
+   :db.prepare('UPDATE hospital_specialty_evidence SET review_status=?,review_note=?,reviewed_at=? WHERE hospital_id=? AND keyword=?').bind(status,reviewNote,at,hospitalId,keyword),
   decision==='approve'
    ?db.prepare("UPDATE hospital_specialty_keywords SET status='확인됨',evidence_url=?,last_checked_at=? WHERE hospital_id=? AND keyword=?").bind(ev.url,today,hospitalId,keyword)
-   :db.prepare("UPDATE hospital_specialty_keywords SET status='병원 안내' WHERE hospital_id=? AND keyword=?").bind(hospitalId,keyword)
+   // 새 근거 보류: 이전에 승인된 근거가 있으면 그 확인은 유지, 없으면 '병원 안내'
+   :ev.approved_url
+    ?db.prepare("UPDATE hospital_specialty_keywords SET status='확인됨',evidence_url=? WHERE hospital_id=? AND keyword=?").bind(ev.approved_url,hospitalId,keyword)
+    :db.prepare("UPDATE hospital_specialty_keywords SET status='병원 안내',evidence_url='' WHERE hospital_id=? AND keyword=?").bind(hospitalId,keyword)
  ]);
  return {hospitalId,keyword,reviewStatus:status};
 }

@@ -1061,11 +1061,16 @@ function hiKeywordNeedsReview(rows){
 const HI_EVIDENCE_TYPES=['외부 기관 인증','학회 자격','전문 장비','해당 분야 경력','네이버 병원 소개','기타'];
 /* 대표 특화 키워드별 근거 상태와 제출 폼. 승인은 제노 관리자만 할 수 있다. */
 function hiKeywordEvidenceCard(r,i){
- const ev=r.evidence||null,st=r.status==='확인됨'&&(!ev||ev.reviewStatus!=='pending')?'approved':ev?ev.reviewStatus:'none';
- const badge={approved:['is-ok','ZENO 확인'],pending:['is-wait','병원 등록 · 확인 중'],rejected:['is-none','병원 등록 · 확인 보류'],none:['is-none','병원 등록']}[st]||['is-none','병원 등록'];
- const detail=st==='approved'&&ev?'<p class="hi-ev-line">근거 · '+e(ev.type)+(ev.issuer?' · '+e(ev.issuer):'')+'</p>'
-  :st==='pending'?'<p class="hi-ev-line">'+e(ev.type)+(ev.issuer?' · '+e(ev.issuer):'')+' · 제노가 확인하고 있습니다. 확인 전에도 \'병원 등록\' 상태는 유지됩니다.</p>'
-  :st==='rejected'?'<p class="hi-ev-line">확인 보류 사유 · '+e(ev.reviewNote||'사유 없음')+' · \'병원 등록\' 표시는 그대로 유지됩니다.</p>':'<p class="hi-ev-line">\'병원 등록\' 상태입니다. 근거를 제출하면(선택) 제노 확인 후 \'ZENO 확인\'이 붙습니다.</p>';
+ const ev=r.evidence||null,prev=ev?.approved||null;
+ /* 새 근거 상태(st)와 이전에 승인된 근거(prev)를 따로 보여 준다 */
+ const st=!ev?'none':ev.reviewStatus==='approved'?'approved':ev.reviewStatus;
+ const badge=prev
+  ?(st==='pending'?['is-ok','ZENO 확인 · 새 근거 확인 중']:st==='rejected'?['is-ok','ZENO 확인 · 새 근거 보류']:['is-ok','ZENO 확인'])
+  :({pending:['is-wait','병원 등록 · 확인 중'],rejected:['is-none','병원 등록 · 확인 보류'],none:['is-none','병원 등록']}[st]||['is-none','병원 등록']);
+ const prevLine=prev&&st!=='approved'?'<p class="hi-ev-line">현재 공개 중인 확인 근거 · '+e(prev.type)+(prev.issuer?' · '+e(prev.issuer):'')+'</p>':'';
+ const detail=prevLine+(st==='approved'&&ev?'<p class="hi-ev-line">근거 · '+e(ev.type)+(ev.issuer?' · '+e(ev.issuer):'')+'</p>'
+  :st==='pending'?'<p class="hi-ev-line">'+e(ev.type)+(ev.issuer?' · '+e(ev.issuer):'')+' · 새 근거를 제노가 확인하고 있습니다. '+(prev?'확인 전까지는 이전에 확인된 근거가 공개됩니다.':'확인 전에도 \'병원 등록\' 상태는 유지됩니다.')+'</p>'
+  :st==='rejected'?'<p class="hi-ev-line">확인 보류 사유 · '+e(ev.reviewNote||'사유 없음')+' · '+(prev?'이전에 확인된 근거는 그대로 공개됩니다.':'\'병원 등록\' 표시는 그대로 유지됩니다.')+'</p>':'<p class="hi-ev-line">\'병원 등록\' 상태입니다. 근거를 제출하면(선택) 제노 확인 후 \'ZENO 확인\'이 붙습니다.</p>');
  const label=st==='none'?'근거 제출 (선택)':st==='pending'?'근거 수정':'근거 다시 제출';
  const form='<details class="hi-ev-form"'+(st==='rejected'?' open':'')+'><summary>'+label+'</summary><form id="hospital-evidence-'+i+'"><input type="hidden" name="keyword" value="'+e(r.keyword)+'">'
   +'<div class="field"><label for="hi-ev-type-'+i+'">근거 종류</label><select id="hi-ev-type-'+i+'" name="type" required>'+HI_EVIDENCE_TYPES.map(x=>'<option'+(ev&&ev.type===x?' selected':'')+'>'+x+'</option>').join('')+'</select></div>'
@@ -1147,7 +1152,7 @@ function hiAdminEvidenceSection(){
  const item=(r,i)=>'<div class="hi-adm-ev"><div class="hi-ev-head"><strong>'+e(name(r.hospitalId))+' · '+e(r.keyword)+'</strong>'+(r.active?'':'<span class="hi-ev-badge is-none">현재 미사용 키워드</span>')+'</div>'
   +'<p class="hi-ev-line">'+e(r.type)+(r.issuer?' · '+e(r.issuer):'')+' · 제출 '+e(String(r.submittedAt||'').slice(0,10))+'</p>'
   +'<p class="hi-ev-line"><a href="'+e(r.url)+'" target="_blank" rel="noopener noreferrer">근거 링크 열기</a></p>'
-  +(r.note?'<p class="hi-ev-line">병원 메모 · '+e(r.note)+'</p>':'')
+  +(r.note?'<p class="hi-ev-line">병원 메모 · '+e(r.note)+'</p>':'')+(r.approved?'<p class="hi-ev-line">기존 ZENO 확인 근거 · '+e(r.approved.type)+(r.approved.issuer?' · '+e(r.approved.issuer):'')+' (보류해도 유지됨)</p>':'')
   +'<div class="field"><label for="admin-ev-note-'+i+'">보류 사유 (보류할 때 필수, 병원에 표시됨)</label><textarea id="admin-ev-note-'+i+'" maxlength="300"></textarea></div>'
   +'<div class="hi-adm-actions"><button class="btn small" data-action="admin-ev" data-decision="approve" data-hospital="'+e(r.hospitalId)+'" data-keyword="'+e(r.keyword)+'" data-idx="'+i+'">승인 · ZENO 확인</button><button class="btn secondary small" data-action="admin-ev" data-decision="reject" data-hospital="'+e(r.hospitalId)+'" data-keyword="'+e(r.keyword)+'" data-idx="'+i+'">확인 보류</button></div></div>';
  const history=done.map(r=>'<div class="row-line"><div><strong>'+e(name(r.hospitalId))+' · '+e(r.keyword)+'</strong><div class="sub">'+e(r.type)+(r.reviewNote?' · '+e(r.reviewNote):'')+'</div></div><span class="hi-ev-badge '+(r.reviewStatus==='approved'?'is-ok':'is-no')+'">'+(r.reviewStatus==='approved'?'ZENO 확인':'보류')+'</span></div>').join('');

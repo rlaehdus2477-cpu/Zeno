@@ -126,5 +126,9 @@ CREATE TABLE IF NOT EXISTS hospital_specialty_evidence (
   review_note TEXT NOT NULL DEFAULT '',
   submitted_at TEXT NOT NULL,
   reviewed_at TEXT,
+  approved_type TEXT NOT NULL DEFAULT '',
+  approved_issuer TEXT NOT NULL DEFAULT '',
+  approved_url TEXT NOT NULL DEFAULT '',
+  approved_at TEXT,
   PRIMARY KEY(hospital_id,keyword)
 );
