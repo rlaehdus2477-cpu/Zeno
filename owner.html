@@ -2982,7 +2982,11 @@ html body .zeno-search-page .zeno-search-card .zeno-card-call:disabled{
 .zeno-search-page .filter[aria-busy="true"]{opacity:.7}
 html.dark .zeno-search-page .zeno-nearby-note,html[data-theme="dark"] .zeno-search-page .zeno-nearby-note{color:#a6b8c9}
 </style>
-</head><body><div id="app" class="app"></div><script>
+<style id="zeno-personal-backup-style">
+.zeno-personal-backup{display:flex;flex-direction:column;gap:10px}
+.zeno-personal-backup textarea{font-family:monospace;font-size:12px;line-height:1.5;width:100%;max-width:100%;resize:vertical;padding:10px;border:1px solid #cad6e4;border-radius:9px;min-height:80px}
+.zeno-personal-backup .desc{font-size:13px;line-height:1.6}
+</style></head><body><div id="app" class="app"></div><script>
 'use strict';
 const APP_MODE='owner';
 
@@ -3183,6 +3187,61 @@ function zenoGuestProfileRead(){
           favorites:Array.isArray(data.favorites)?data.favorites:[]};
  }catch{return {pets:[],records:[],favorites:[]}}
 }
+
+/* Backup only personal records, never ZENO authentication tokens or passwords. */
+const ZENO_BACKUP_KIND='zeno-personal-records-v1';
+function zenoCollectBackup(){
+ const memorial={};
+ for(let i=0;i<localStorage.length;i++){
+  const k=localStorage.key(i)||'';
+  if(k==='zeno-memorial-v1'||k==='zeno-memorial-guest-v1'||/^zeno-memorial-owner-[\w-]{1,100}$/.test(k)){
+   try{const value=localStorage.getItem(k);if(value&&value.length<1000000)memorial[k]=JSON.parse(value)}catch{}
+  }
+ }
+ const account=state.ownerToken&&state.profileLoaded?{
+  pets:state.pets.map(p=>{const out={...p},photo=zenoPetPhotoSource(state.petPhotos[p.id]||p.photoUrl);if(photo)out.photoUrl=photo;return out}),
+  records:state.records,favorites:state.favorites
+ }:null;
+ const guest=zenoGuestProfileRead(),legacy=zenoLegacyDeviceProfile();
+ const data={kind:ZENO_BACKUP_KIND,createdAt:new Date().toISOString(),guest,legacy,memorial,account};
+ const count=k=>(guest[k]?.length||0)+(legacy[k]?.length||0)+(account?.[k]?.length||0);
+ const notes=Object.values(memorial).reduce((n,v)=>n+(Array.isArray(v)?v.length:Array.isArray(v?.notes)?v.notes.length:0),0);
+ return {value:JSON.stringify(data),count:{pets:count('pets'),records:count('records'),notes},account:Boolean(state.ownerToken)};
+}
+function zenoImportBackup(source){
+ if(typeof source!=='string'||source.length<25||source.length>4000000)throw Error('백업 내용을 다시 확인해 주세요.');
+ let backup;try{backup=JSON.parse(source)}catch{throw Error('복사한 백업 내용이 올바르지 않습니다.')}
+ if(!backup||backup.kind!==ZENO_BACKUP_KIND)throw Error('ZENO 기록 백업이 아닙니다.');
+ const sets=[backup.guest,backup.legacy,backup.account].filter(x=>x&&typeof x==='object'&&!Array.isArray(x));
+ const old=zenoGuestProfileRead();
+ const uniq=(arr,key)=>{const done=new Set();return arr.filter(x=>{if(!x||typeof x!=='object'||Array.isArray(x))return false;const id=String(key(x)||'');if(!id||id.length>200||done.has(id))return false;done.add(id);return true})};
+ const values=k=>sets.flatMap(x=>Array.isArray(x[k])?x[k]:[]);
+ const next={
+  pets:uniq([...old.pets,...values('pets')],x=>x.id),
+  records:uniq([...old.records,...values('records')],x=>x.id),
+  favorites:[...new Set([...old.favorites,...values('favorites')].filter(x=>typeof x==='string'&&x.length<100))]
+ };
+ if(next.pets.length>200||next.records.length>10000)throw Error('백업 내용이 너무 큽니다.');
+ const changes={};
+ const mem=backup.memorial&&typeof backup.memorial==='object'&&!Array.isArray(backup.memorial)?backup.memorial:{};
+ for(const [k,v] of Object.entries(mem)){
+  if(k!=='zeno-memorial-v1'&&k!=='zeno-memorial-guest-v1'&&!/^zeno-memorial-owner-[\w-]{1,100}$/.test(k))continue;
+  let current;try{current=JSON.parse(localStorage.getItem(k)||'null')}catch{}
+  if(Array.isArray(v)){
+   changes[k]=uniq([...(Array.isArray(current)?current:[]),...v],x=>x.id||JSON.stringify(x));
+  }else if(v&&typeof v==='object'&&Array.isArray(v.notes)&&Array.isArray(v.petIds)){
+   changes[k]={petIds:[...new Set([...(Array.isArray(current?.petIds)?current.petIds:[]),...v.petIds].filter(x=>typeof x==='string'))],
+    notes:uniq([...(Array.isArray(current?.notes)?current.notes:[]),...v.notes],x=>x.id||JSON.stringify(x))};
+  }
+ }
+ // Never modify server-side owner records or auth keys.
+ const json=JSON.stringify(next);if(json.length>3900000)throw Error('기기 저장 용량을 초과합니다.');
+ localStorage.setItem(ZENO_GUEST_PROFILE_KEY,json);
+ for(const [key,value] of Object.entries(changes))localStorage.setItem(key,JSON.stringify(value));
+ if(!state.ownerToken)zenoApplyGuestProfile();
+ return {pets:next.pets.length,records:next.records.length};
+}
+
 function zenoApplyGuestProfile(){
  if(state.ownerToken)return;
  const data=zenoGuestProfileRead();
@@ -4544,10 +4603,11 @@ function petsPage(){
   '</div></section>':'';
  const copyLocal=state.ownerToken&&state.pets.length?
   '<section class="section zeno-pet-recovery"><div class="panel" style="padding:14px;border:1px solid #dce7f2;box-shadow:none"><strong>로그인 없이도 이 아이들을 보고 싶으세요?</strong><p class="desc" style="margin:8px 0 12px">아래 버튼을 누르면 아이·건강 기록·사진을 이 기기에 복사합니다. 이 기기를 다른 사람이 사용하면 기록을 볼 수 있어요.</p><button type="button" class="btn secondary" data-action="copy-account-pets-local">이 기기에 기록 복사하기</button></div></section>':'';
+ const backupCard='<section class="section"><div class="panel" style="padding:14px;border:1px solid #dce7f2"><strong>앱 교체 전 기록 보관</strong><p class="desc">앱을 삭제하기 전에 기기에 있는 아이·추모 기록을 백업하세요.</p><button type="button" class="btn secondary" data-action="open-backup">백업 · 복원</button></div></section>';
  return '<div class="zeno-pets-page">'+topbar('내 아이','')
   +'<p class="zeno-pet-save-note">'+(state.ownerToken?'등록한 아이와 건강 기록은 로그인한 제노 계정에 저장됩니다. 병원 진료 기록과 자동 연동되지는 않아요.':'로그인 없이 사용할 수 있어요. 등록한 아이·사진·건강 기록은 이 기기에만 저장되며, 기기 변경이나 앱 데이터 삭제 시 사라질 수 있습니다.')+'</p>'
   +(state.profileSaveError?'<div class="banner warning">'+e(state.profileSaveError)+' <button class="btn small" data-action="retry-profile">다시 저장</button></div>':state.profileSaving?'<p class="zeno-save-status" role="status">저장 중…</p>':'')
-  +guestRestore+copyLocal
+  +guestRestore+copyLocal+backupCard
   +'<section class="section zeno-pet-section"><div class="section-title"><h2>등록한 아이 '+state.pets.length+'마리</h2><button type="button" class="btn small zeno-pet-register" data-action="add-pet">아이 등록</button></div>'+
   '<div class="grid two zeno-pet-card-grid">'+(cards||'<div class="empty">등록한 아이가 없어요. 아이를 먼저 등록해 주세요.</div>')+'</div></section>'
   +'<section class="section zeno-record-section"><div class="section-title"><h2>건강 기록</h2></div>'+
@@ -5111,6 +5171,22 @@ if(m.type==='memorial-note'){
  const pet=state.pets.find(p=>p.id===m.id);
  if(pet){title=pet.name+'의 추모 기록';body='<form id="memorial-note-form"><input type="hidden" name="petId" value="'+e(pet.id)+'"><div class="field"><label>제목</label><input name="title" maxlength="100" required></div><div class="field"><label>함께한 추억</label><textarea name="text" maxlength="1500" required></textarea></div><p class="desc">추모 기록은 이 기기에만 저장됩니다.</p><button class="btn full" type="submit">추억 저장하기</button></form>';}
 }
+
+if(m.type==='personal-backup'){
+ const b=zenoCollectBackup();title='내 기록 백업 · 복원';
+ body='<section class="zeno-personal-backup">'+
+ '<p class="desc"><strong>기존 앱을 삭제하기 전에</strong> 백업을 삼성 노트에 따로 저장하고 다시 열어 확인하세요. 이 백업은 자동으로 클라우드에 저장되지 않습니다.</p>'+
+ '<p class="desc">현재 확인된 아이 '+b.count.pets+'건 · 건강 기록 '+b.count.records+'건 · 추모 기록 '+b.count.notes+'건 (중복 포함 가능)</p>'+
+ (b.account?'<p class="desc">로그인 계정의 아이·건강 기록은 계정에도 저장되지만, 추모 기록은 이 기기에만 있을 수 있습니다.</p>':'<p class="desc">로그인하지 않은 기록은 이 기기에만 저장됩니다.</p>')+
+ '<label for="zeno-personal-export">백업 내용</label>'+
+ '<textarea id="zeno-personal-export" rows="4" readonly spellcheck="false">'+e(b.value)+'</textarea>'+
+ '<button type="button" class="btn full" data-action="copy-personal-backup">백업 내용 복사</button>'+
+ '<p class="desc">복사한 내용을 삼성 노트의 새 메모에 붙여넣고 저장한 다음 메모를 다시 열어 확인하세요. 건강 정보이므로 다른 사람에게 보내지 마세요.</p>'+
+ '<hr style="border:0;border-top:1px solid #ddd;margin:12px 0">'+
+ '<label for="zeno-personal-import">새 앱에서 백업 복원</label>'+
+ '<textarea id="zeno-personal-import" rows="4" placeholder="삼성 노트의 백업 내용을 전체 붙여넣으세요."></textarea>'+
+ '<button type="button" class="btn secondary full" data-action="restore-personal-backup">기기에 기록 복원</button></section>';
+}
 if(m.type==='recovery-code'){
  title='복구 코드 보관';
  body='<div class="zeno-recovery-notice"><strong>복구 코드는 이 화면에서만 확인할 수 있습니다.</strong><p>비밀번호를 잊어버렸을 때 계정을 확인하는 데 사용합니다. 안전한 곳에 저장해 주세요. 다른 사람에게 보내지 마세요.</p></div>'
@@ -5294,6 +5370,26 @@ if(a==='exotic'){if(val&&!EXOTIC.some(x=>x[0]===val))return;state.specialty='특
 if(a==='favorite'){if(!state.favorites.includes(id)&&state.favorites.length>=30){toast('병원은 최대 30곳까지 저장할 수 있어요.');return}state.favorites=state.favorites.includes(id)?state.favorites.filter(x=>x!==id):[...state.favorites,id];savePersonal();render();return}
 if(a==='retry-profile'){savePersonal();render();return}
 if(a==='pet-tab'){state.petTab=val;render();return}
+if(a==='open-backup'){
+ if(state.ownerToken&&!state.profileLoaded){toast('계정 기록을 불러오지 못했습니다. 로그인 상태를 확인해 주세요.');return}
+ openModal('personal-backup');return;
+}
+if(a==='copy-personal-backup'){
+ const area=document.getElementById('zeno-personal-export');if(!area)return;
+ let copied=false;
+ try{await navigator.clipboard.writeText(area.value);copied=true}catch{}
+ if(!copied){try{area.focus();area.select();copied=document.execCommand('copy')}catch{}}
+ toast(copied?'복사했습니다. 삼성 노트에 붙여넣고 저장 후 다시 열어 확인하세요.':'백업 내용을 길게 눌러 전체 선택하고 복사해 주세요.');
+ return;
+}
+if(a==='restore-personal-backup'){
+ const raw=document.getElementById('zeno-personal-import')?.value||'';
+ if(!raw.trim()){toast('보관한 백업 내용을 붙여넣어 주세요.');return}
+ if(!confirm('기기에 백업 기록을 추가할까요? 기존 기록과 계정 데이터는 삭제하지 않습니다.'))return;
+ try{const out=zenoImportBackup(raw);state.modal=null;render();toast('복원 완료 · 아이 '+out.pets+'건, 건강 기록 '+out.records+'건')}
+ catch(error){toast('복원 실패: '+(error.message||'백업 데이터를 확인해 주세요.'))}
+ return;
+}
 if(a==='recover-account-pets'){
  if(state.ownerToken){toast('이미 로그인되어 있어요. 이 기기에 기록을 복사해 주세요.');return}
  state.pendingGuestRestore=true;
@@ -5617,7 +5713,7 @@ async function start(){
  }finally{zenoStartPending=false}
 }
 render();start();
-const ZENO_OWNER_UI_REVISION='20261118-galaxy-nearby-v55';
+const ZENO_OWNER_UI_REVISION='20261118-personal-backup-v56';
 let zenoLastUIVersionCheck=0;
 let zenoUIVersionChecking=false;
 async function zenoCheckOwnerUIRevision(force=false){
