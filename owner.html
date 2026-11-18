@@ -3749,7 +3749,24 @@ async function zenoNearbyGeoRequest(check=false){
   return body;
  }finally{clearTimeout(timeout)}
 }
+async function zenoLoadServerNearbyCoordinates(){
+ for(let i=0;i<12;i++){
+  const body=await zenoNearbyGeoRequest();
+  if(!body.complete)continue;
+  if(!body.coordinates||!Object.keys(body.coordinates).length)throw Error('좌표가 확인된 병원이 없습니다.');
+  state.nearbyCoordinates=body.coordinates;state.nearbyMissing=Number(body.missing)||0;
+  state.nearbyStage='';state.nearbyProcessed=HOSPITALS.length;state.nearbyTotal=HOSPITALS.length;
+  return;
+ }
+ throw Error('병원 위치 확인이 완료되지 않았습니다.');
+}
 async function zenoLoadNearbyCoordinates(){
+ // 2026-11-18: 서버(네이버 확인 좌표, D1 저장)를 먼저 사용합니다. 갤럭시 휴대폰 주소 변환은 서버 실패 시에만 보조로 씁니다.
+ let serverError=null;
+ if(typeof fetch==='function'){
+  try{await zenoLoadServerNearbyCoordinates();return}
+  catch(error){serverError=error}
+ }
  let nativeError=null;
  if(window.ZenoNearbyAndroid&&typeof window.ZenoNearbyAndroid.resolveHospitalAddresses==='function'){
   try{
@@ -3797,21 +3814,8 @@ async function zenoLoadNearbyCoordinates(){
    });
   }catch(error){nativeError=error}
  }
- // Fallback: use the configured NAVER-only server geocoder if phone geocoding fails.
- try{
-  for(let i=0;i<12;i++){
-   const body=await zenoNearbyGeoRequest();
-   if(!body.complete)continue;
-   if(!body.coordinates||!Object.keys(body.coordinates).length)throw Error('좌표가 확인된 병원이 없습니다.');
-   state.nearbyCoordinates=body.coordinates;state.nearbyMissing=Number(body.missing)||0;
-   state.nearbyStage='';state.nearbyProcessed=HOSPITALS.length;state.nearbyTotal=HOSPITALS.length;
-   return;
-  }
-  throw Error('병원 위치 확인이 완료되지 않았습니다.');
- }catch(error){
-  if(nativeError)throw Error('휴대폰 주소 변환 실패: '+(nativeError.message||nativeError)+' / 네이버 서버: '+(error.message||error));
-  throw error;
- }
+ if(nativeError)throw Error('네이버 서버: '+((serverError&&serverError.message)||serverError||'확인 실패')+' / 휴대폰 주소 변환 실패: '+(nativeError.message||nativeError));
+ throw serverError||Error('병원 위치를 확인하지 못했습니다.');
 }
 async function zenoReadNearbyPosition(){
  // Galaxy APK: native location avoids WebView permission inconsistencies.
