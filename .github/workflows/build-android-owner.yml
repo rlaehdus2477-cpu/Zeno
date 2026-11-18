@@ -12,7 +12,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: zeno-owner-android-apk-v1-5
+  group: zeno-owner-android-apk-v1-6
   cancel-in-progress: false
 
 jobs:
@@ -56,15 +56,15 @@ jobs:
       - name: Compile and sign Android APK
         shell: bash
         run: |
-          bash android/owner/build.sh "$GITHUB_WORKSPACE/ZENO-Owner-1.5.apk"
-          ls -lh ZENO-Owner-1.5.apk
-          "$BUILD_TOOLS/aapt" dump badging ZENO-Owner-1.5.apk | head -15
+          bash android/owner/build.sh "$GITHUB_WORKSPACE/ZENO-Owner-1.6.apk"
+          ls -lh ZENO-Owner-1.6.apk
+          "$BUILD_TOOLS/aapt" dump badging ZENO-Owner-1.6.apk | head -15
 
       - name: Publish APK as workflow artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ZENO-Owner-1.5-Android-APK
-          path: ZENO-Owner-1.5.apk
+          name: ZENO-Owner-1.6-Android-APK
+          path: ZENO-Owner-1.6.apk
           if-no-files-found: error
 
       - name: Create public test APK release
@@ -72,10 +72,10 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
-          if gh release view owner-android-v1.5 >/dev/null 2>&1; then
-            echo "A v1.5 release already exists; keeping its published APK."
+          if gh release view owner-android-v1.6 >/dev/null 2>&1; then
+            echo "A v1.6 release already exists; keeping its published APK."
           else
-            gh release create owner-android-v1.5 ZENO-Owner-1.5.apk \
-              --title "ZENO 보호자용 Android 1.5 (갤럭시 테스트)" \
-              --notes "Android 8 이상 갤럭시용 테스트 APK입니다. 1.5는 내 주변 검색 시 WebView 스레드 오류로 병원 좌표 확인이 중단되는 문제를 수정했습니다. Play 스토어 배포판이 아닙니다. 임시 서명키가 버전마다 달라 기존 1.4 앱에 덮어 설치할 수 없습니다. 기존 앱의 내 아이·추모 기록을 JSON으로 백업하고 다운로드 폴더에서 파일을 확인한 다음 기존 앱 삭제 및 1.5 설치 후 복원하세요."
+            gh release create owner-android-v1.6 ZENO-Owner-1.6.apk \
+              --title "ZENO 보호자용 Android 1.6 (갤럭시 테스트)" \
+              --notes "Android 8 이상 갤럭시용 테스트 APK입니다. 1.6은 대략적인 위치 권한에서도 좌표를 읽고, 병원 주소의 상세 층수 등을 제거해 주소 변환 성공률을 높였습니다. 휴대폰의 변환 서비스가 실패하면 네이버 서버 조회를 시도하도록 개선했습니다. Play 스토어 배포판이 아닙니다. 임시 서명키가 버전마다 달라 기존 1.5 앱에 덮어 설치할 수 없습니다. 기존 앱의 내 아이·추모 기록을 JSON으로 백업하고 다운로드 폴더에서 파일을 확인한 다음 기존 앱 삭제 및 1.6 설치 후 복원하세요."
           fi

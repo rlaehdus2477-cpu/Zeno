@@ -44,7 +44,7 @@ import android.widget.Toast;
 
 public final class OwnerActivity extends Activity {
     private static final String HOST = "zeno.rlaehdus2477.workers.dev";
-    private static final String HOME = "https://" + HOST + "/owner?android_app=1.4";
+    private static final String HOME = "https://" + HOST + "/owner?android_app=1.6";
     private static final int PHOTO = 1;
     private static final int GEO_PERMISSION = 42;
     private static final int NATIVE_GEO_PERMISSION = 43;
@@ -268,9 +268,9 @@ public final class OwnerActivity extends Activity {
             try {
                 if (!nearbyLocationManager.isProviderEnabled(provider)) continue;
                 Location candidate = nearbyLocationManager.getLastKnownLocation(provider);
-                if (candidate != null && candidate.hasAccuracy() && candidate.getAccuracy() <= 1500f
+                if (candidate != null && candidate.hasAccuracy() && candidate.getAccuracy() <= (fine ? 1500f : 8000f)
                         && SystemClock.elapsedRealtimeNanos() - candidate.getElapsedRealtimeNanos() >= 0
-                        && SystemClock.elapsedRealtimeNanos() - candidate.getElapsedRealtimeNanos() <= 120000000000L
+                        && SystemClock.elapsedRealtimeNanos() - candidate.getElapsedRealtimeNanos() <= (fine ? 120000000000L : 300000000000L)
                         && (recent[0] == null || candidate.getAccuracy() < recent[0].getAccuracy())) {
                     recent[0] = candidate;
                 }
@@ -285,7 +285,7 @@ public final class OwnerActivity extends Activity {
 
         nearbyLocationListener = new LocationListener() {
             @Override public void onLocationChanged(Location location) {
-                if (location != null && (!location.hasAccuracy() || location.getAccuracy() <= 2000f))
+                if (location != null && (!location.hasAccuracy() || location.getAccuracy() <= (fine ? 3000f : 8000f)))
                     finishNativeNearbyLocation(location, null, 0);
             }
             @Override public void onStatusChanged(String provider, int status, Bundle extras) {}
@@ -377,7 +377,7 @@ public final class OwnerActivity extends Activity {
                 try {
                     JSONArray rows = new JSONArray(data);
                     if (rows.length() < 1 || rows.length() > 100) throw new Exception("병원 주소 목록을 확인해 주세요.");
-                    if (!Geocoder.isPresent()) throw new Exception("휴대폰 주소 위치 변환 서비스를 사용할 수 없습니다.");
+                    final boolean geocoderAvailable = Geocoder.isPresent();
                     Geocoder coder = new Geocoder(OwnerActivity.this, Locale.KOREA);
                     SharedPreferences cache = getSharedPreferences("zeno_hospital_geo_v1", MODE_PRIVATE);
                     JSONObject locations = new JSONObject();
@@ -410,8 +410,9 @@ public final class OwnerActivity extends Activity {
                                 lon = Double.parseDouble(parts[1]);
                             } catch (Exception ignored) {}
                         }
-                        if (!Double.isFinite(lat) || !Double.isFinite(lon)) {
-                            String query = address.replaceAll("\\s*\\([^)]*\\).*", "").trim();
+                        if (geocoderAvailable && (!Double.isFinite(lat) || !Double.isFinite(lon))) {
+                            String query = address.replaceAll("\\s*\\([^)]*\\).*", "").replaceAll(",.*$", "").trim();
+                            query = query.replaceFirst("^충북\\s+", "충청북도 ");
                             try {
                                 List<Address> found = coder.getFromLocationName(query, 1, 35.9, 126.9, 37.0, 128.2);
                                 if (found != null && !found.isEmpty()) {

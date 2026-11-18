@@ -47,5 +47,21 @@ const send = value => {
   await second;
   assert.equal(launched,2,'second attempt must launch geocoding again');
   assert.equal(state.nearbyCoordinates.test.lat,36.6);
-  console.log('Nearby regression checks passed: WebView UI thread + partial failure + retry.');
+
+  // Slow native geocoding should produce useful partial results after 12/62
+  // and continue updating without wiping the user's existing search.
+  context.zenoHasFilter = () => false;
+  context.render = () => {};
+  state.nearbyCoordinates = null;
+  const third = context.zenoLoadNearbyCoordinates();
+  const partial = {a:{lat:36.6,lon:127.4},b:{lat:36.61,lon:127.41},c:{lat:36.62,lon:127.42}};
+  send({coordinates:partial,processed:12,total:62,missing:9,done:false});
+  await third;
+  assert.equal(launched,3,'progressive geocoding must still use the native bridge');
+  assert.equal(Object.keys(state.nearbyCoordinates).length,3,'confirmed nearby coordinates should appear before completion');
+  send({coordinates:{...partial,d:{lat:36.63,lon:127.43}},processed:62,total:62,missing:58,done:true});
+  assert.equal(Object.keys(state.nearbyCoordinates).length,4,'later progress must complete the nearby list');
+  assert.match(html,/state\.nearbyError=/,'nearby failures must remain visible');
+
+  console.log('Nearby regression checks passed: UI thread + retry + progressive coordinates + visible error.');
 })().catch(error=>{console.error(error);process.exitCode=1;});

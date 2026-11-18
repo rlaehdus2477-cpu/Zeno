@@ -3172,7 +3172,7 @@ const hospitalById=id=>HOSPITALS.find(x=>x.id===id);
 function defaultStore(){return {settings:Object.fromEntries(['soo','naeum','tnd'].map(id=>[id,{status:'check',updatedAt:null,notice:'',services:[],prices:[],emergency:false}])),bookings:[],questions:[],reviews:[]}}
 function localGet(){try{return {...defaultStore(),...JSON.parse(localStorage.getItem(STOREKEY)||'{}')}}catch{return defaultStore()}}
 function localSet(x){localStorage.setItem(STOREKEY,JSON.stringify(x));window.dispatchEvent(new Event('zeno-refresh'))}
-const state={ownerToken:localStorage.getItem('zeno-owner-auth')||'',owner:null,authMode:'login',serverReady:false,profileLoaded:false,profileSaving:false,page:APP_MODE==='hospital'?'hospital':'home',internalFocusOnly:false,filter:'전체',query:'',specialty:'',exoticSpecies:'',detail:null,modal:null,local:true,settings:{},hospitalSpecialties:{},bookings:[],questions:[],reviews:[],hospitalBookings:[],hospitalQuestions:[],activeHospital:sessionStorage.getItem('zeno-h-hospital')||'soo',hospitalToken:sessionStorage.getItem('zeno-h-token')||'',adminToken:sessionStorage.getItem('zeno-admin-token')||'',pets:[],petPhotos:{},records:[],favorites:[],viewH:'soo',hTab:'bookings',appError:'',loading:false,adminStats:null,bookingTab:'전체',activeFilters:[],petTab:'전체',profileSaveError:'',authError:'',pendingAction:null,pendingPage:'',recoveryCode:'',afterRecoveryAction:null,authNotice:'',priceCategory:'초진 진찰료',healthCheckSpecies:'강아지',detailTab:'',symptomGuideOpen:false,symptomLabel:'',homeArea:'청주 전체',homeAreaOpen:false,homeShowAllCare:false,homeCarePickerOpen:false,homeCareSelection:'',homeCarePickerQuery:'',searchRegion:'',nearbyPosition:null,nearbyCoordinates:null,nearbyBusy:false,nearbyMissing:0};
+const state={ownerToken:localStorage.getItem('zeno-owner-auth')||'',owner:null,authMode:'login',serverReady:false,profileLoaded:false,profileSaving:false,page:APP_MODE==='hospital'?'hospital':'home',internalFocusOnly:false,filter:'전체',query:'',specialty:'',exoticSpecies:'',detail:null,modal:null,local:true,settings:{},hospitalSpecialties:{},bookings:[],questions:[],reviews:[],hospitalBookings:[],hospitalQuestions:[],activeHospital:sessionStorage.getItem('zeno-h-hospital')||'soo',hospitalToken:sessionStorage.getItem('zeno-h-token')||'',adminToken:sessionStorage.getItem('zeno-admin-token')||'',pets:[],petPhotos:{},records:[],favorites:[],viewH:'soo',hTab:'bookings',appError:'',loading:false,adminStats:null,bookingTab:'전체',activeFilters:[],petTab:'전체',profileSaveError:'',authError:'',pendingAction:null,pendingPage:'',recoveryCode:'',afterRecoveryAction:null,authNotice:'',priceCategory:'초진 진찰료',healthCheckSpecies:'강아지',detailTab:'',symptomGuideOpen:false,symptomLabel:'',homeArea:'청주 전체',homeAreaOpen:false,homeShowAllCare:false,homeCarePickerOpen:false,homeCareSelection:'',homeCarePickerQuery:'',searchRegion:'',nearbyPosition:null,nearbyCoordinates:null,nearbyBusy:false,nearbyMissing:0,nearbyError:'',nearbyStage:'',nearbyAccuracy:0,nearbyProcessed:0,nearbyTotal:0};
 let toastTimer;
 function toast(message){let o=document.querySelector('.toast');if(o)o.remove();o=document.createElement('div');o.className='toast';o.textContent=message;o.setAttribute('role','status');o.setAttribute('aria-live','polite');o.setAttribute('aria-atomic','true');document.body.appendChild(o);clearTimeout(toastTimer);toastTimer=setTimeout(()=>o.remove(),4500)}
 /* Guest "내 아이" data is device-local and intentionally separate from account data.
@@ -3750,59 +3750,68 @@ async function zenoNearbyGeoRequest(check=false){
  }finally{clearTimeout(timeout)}
 }
 async function zenoLoadNearbyCoordinates(){
- // In the Galaxy 1.3 app, address conversion happens on the device.
- // No NAVER API key or guardian location is transmitted to ZENO.
+ let nativeError=null;
  if(window.ZenoNearbyAndroid&&typeof window.ZenoNearbyAndroid.resolveHospitalAddresses==='function'){
-  return await new Promise((resolve,reject)=>{
-   const timeout=setTimeout(()=>{
-    if(window.zenoNearbyAndroidReport===report)window.zenoNearbyAndroidReport=null;
-    reject(Error('병원 주소 위치 확인이 지연되고 있습니다. 다시 시도해 주세요.'));
-   },180000);
-   const finish=(error)=>{
-    clearTimeout(timeout);
-    if(window.zenoNearbyAndroidReport===report)window.zenoNearbyAndroidReport=null;
-    if(error)reject(error);else resolve();
-   };
-   // Keep partial progress separate from completed coordinates. A failed run must be retryable.
-   let pendingCoordinates=null;
-   const report=raw=>{
-    let data;
-    try{data=typeof raw==='string'?JSON.parse(raw):raw}catch{return}
-    if(!data||typeof data!=='object')return;
-    if(data.error){finish(Error(String(data.error)));return}
-    if(data.coordinates&&typeof data.coordinates==='object'){
-     pendingCoordinates=data.coordinates;
-     state.nearbyMissing=Number(data.missing)||0;
-     state.nearbyProcessed=Number(data.processed)||0;
-     state.nearbyTotal=Number(data.total)||HOSPITALS.length;
-     const node=document.getElementById('zeno-nearby-loading');
-     if(node)node.textContent='병원 위치 확인 중 '+state.nearbyProcessed+'/'+state.nearbyTotal;
-    }
-    if(data.done){
-     if(!Object.keys(pendingCoordinates||{}).length){
-      finish(Error('이 기기에서 좌표를 확인할 수 있는 동물병원이 없습니다. 기존 검색은 그대로 이용할 수 있어요.'));
+  try{
+   return await new Promise((resolve,reject)=>{
+    let settled=false,pendingCoordinates=null;
+    const detach=()=>{clearTimeout(timeout);if(window.zenoNearbyAndroidReport===report)window.zenoNearbyAndroidReport=null};
+    const timeout=setTimeout(()=>{
+     if(!settled){settled=true;detach();reject(Error('휴대폰 병원 주소 확인 시간이 초과되었습니다.'))}
+     else{detach();state.nearbyStage='일부 병원 좌표만 확인됨';if(zenoHasFilter('내 주변')&&!state.nearbyBusy)render()}
+    },120000);
+    const fail=error=>{
+     if(!settled){settled=true;detach();reject(error)}
+     else{detach();state.nearbyStage='일부 병원 좌표만 확인됨';if(zenoHasFilter('내 주변')&&!state.nearbyBusy)render()}
+    };
+    const report=raw=>{
+     let data;
+     try{data=typeof raw==='string'?JSON.parse(raw):raw}catch{return}
+     if(!data||typeof data!=='object')return;
+     if(data.error){fail(Error(String(data.error)));return}
+     if(data.coordinates&&typeof data.coordinates==='object'){
+      pendingCoordinates=data.coordinates;
+      state.nearbyMissing=Number(data.missing)||0;
+      state.nearbyProcessed=Number(data.processed)||0;
+      state.nearbyTotal=Number(data.total)||HOSPITALS.length;
+      const node=document.getElementById('zeno-nearby-loading');
+      if(node)node.textContent='병원 위치 확인 중 '+state.nearbyProcessed+'/'+state.nearbyTotal;
+      if(settled){state.nearbyCoordinates=pendingCoordinates;if(zenoHasFilter('내 주변')&&!state.nearbyBusy)render()}
+     }
+     if(data.done){
+      if(!Object.keys(pendingCoordinates||{}).length){fail(Error('휴대폰이 병원 주소를 좌표로 변환하지 못했습니다.'));return}
+      state.nearbyCoordinates=pendingCoordinates;state.nearbyStage='';
+      if(!settled){settled=true;detach();resolve()}
+      else{detach();if(zenoHasFilter('내 주변')&&!state.nearbyBusy)render()}
       return;
      }
-     state.nearbyCoordinates=pendingCoordinates;
-     finish();
-    }
-   };
-   window.zenoNearbyAndroidReport=report;
-   try{
-    window.ZenoNearbyAndroid.resolveHospitalAddresses(JSON.stringify(HOSPITALS.map(h=>({id:h.id,address:h.address}))));
-   }catch(error){finish(error)}
-  });
+     if(!settled&&state.nearbyProcessed>=Math.min(12,state.nearbyTotal)
+         &&Object.keys(pendingCoordinates||{}).length>=3){
+      state.nearbyCoordinates=pendingCoordinates;state.nearbyStage='병원 주소 추가 확인 중';
+      settled=true;resolve();
+     }
+    };
+    window.zenoNearbyAndroidReport=report;
+    try{window.ZenoNearbyAndroid.resolveHospitalAddresses(JSON.stringify(HOSPITALS.map(h=>({id:h.id,address:h.address}))))}
+    catch(error){fail(error)}
+   });
+  }catch(error){nativeError=error}
  }
- // Browser-only fallback remains available if NAVER Maps is later configured.
- for(let i=0;i<12;i++){
-  const body=await zenoNearbyGeoRequest();
-  if(!body.complete)continue;
-  if(!body.coordinates||!Object.keys(body.coordinates).length)throw Error('좌표가 확인된 병원이 없습니다.');
-  state.nearbyCoordinates=body.coordinates;
-  state.nearbyMissing=Number(body.missing)||0;
-  return;
+ // Fallback: use the configured NAVER-only server geocoder if phone geocoding fails.
+ try{
+  for(let i=0;i<12;i++){
+   const body=await zenoNearbyGeoRequest();
+   if(!body.complete)continue;
+   if(!body.coordinates||!Object.keys(body.coordinates).length)throw Error('좌표가 확인된 병원이 없습니다.');
+   state.nearbyCoordinates=body.coordinates;state.nearbyMissing=Number(body.missing)||0;
+   state.nearbyStage='';state.nearbyProcessed=HOSPITALS.length;state.nearbyTotal=HOSPITALS.length;
+   return;
+  }
+  throw Error('병원 위치 확인이 완료되지 않았습니다.');
+ }catch(error){
+  if(nativeError)throw Error('휴대폰 주소 변환 실패: '+(nativeError.message||nativeError)+' / 네이버 서버: '+(error.message||error));
+  throw error;
  }
- throw Error('병원 위치 확인이 완료되지 않았습니다. 잠시 후 다시 시도해 주세요.');
 }
 async function zenoReadNearbyPosition(){
  // Galaxy APK: native location avoids WebView permission inconsistencies.
@@ -3852,7 +3861,7 @@ async function zenoToggleNearby(){
   state.activeFilters=zenoActiveFilters().filter(x=>x!=='내 주변');state.filter='전체';render();return;
  }
  if(!(window.ZenoNearbyAndroid&&typeof window.ZenoNearbyAndroid.requestCurrentLocation==='function')&&(!navigator.geolocation||!window.isSecureContext)){toast('내 주변 검색은 위치 기능을 지원하는 보안 연결에서 이용할 수 있어요.');return}
- state.nearbyBusy=true;render();
+ state.nearbyBusy=true;state.nearbyError='';state.nearbyStage='휴대폰 위치 확인 중';state.nearbyProcessed=0;state.nearbyTotal=HOSPITALS.length;render();
  try{
   // Galaxy's native geocoder does not need a NAVER Maps API key.
   if(!window.ZenoNearbyAndroid)await zenoNearbyGeoRequest(true);
@@ -3860,15 +3869,17 @@ async function zenoToggleNearby(){
   const lat=Number(position.coords.latitude),lon=Number(position.coords.longitude);
   if(!Number.isFinite(lat)||!Number.isFinite(lon))throw Error('현재 위치를 확인하지 못했습니다.');
   state.nearbyPosition={lat,lon};
+  state.nearbyAccuracy=Number(position.coords.accuracy)||0;
+  state.nearbyStage='병원 주소 위치 확인 중';render();
   if(!state.nearbyCoordinates||!Object.keys(state.nearbyCoordinates).length)await zenoLoadNearbyCoordinates();
   state.searchRegion='';
   state.activeFilters=[...zenoActiveFilters().filter(x=>x!=='내 주변'),'내 주변'];state.filter='전체';
-  toast('내 위치 기준 5km 이내 병원을 가까운 순으로 표시합니다.');
+  toast(state.nearbyAccuracy>2000?'대략적인 현재 위치로 찾았어요. 정확한 거리 표시에는 앱의 정확한 위치 허용이 필요합니다.':'내 위치 기준 5km 이내 병원을 가까운 순으로 표시합니다.');
  }catch(error){
-  state.nearbyPosition=null;
-  if(error?.code===1)toast('위치 권한이 거부되어 기존 병원 목록을 유지합니다. 기기 설정에서 위치를 허용할 수 있어요.');
-  else if(error?.code===2||error?.code===3)toast('현재 위치를 확인할 수 없어 기존 병원 목록을 유지합니다.');
-  else toast(error?.name==='AbortError'?'병원 위치 확인 시간이 초과되었습니다.':error.message||'내 주변 병원 검색에 실패했습니다.');
+  state.nearbyPosition=null;state.nearbyStage='';
+  state.nearbyError=error?.code===1?'ZENO 앱 위치 권한이 허용되지 않았습니다.':error?.message||'위치를 확인하지 못했습니다.';
+  if(error?.name==='AbortError')state.nearbyError='병원 위치 확인 시간이 초과되었습니다.';
+  toast('내 주변 검색 실패: '+state.nearbyError);
  }finally{state.nearbyBusy=false;render()}
 }
 
@@ -4513,7 +4524,7 @@ function searchPage(){
  const lbl=x=>x==='24시'?'24시간':x==='야간'?'야간 진료':x==='연결 병원'?'예약 요청 가능':x==='즐겨찾기'?'저장한 병원':x;
  const chip=x=>'<button type="button" class="filter '+(fs.includes(x)?'active':'')+'" aria-pressed="'+String(fs.includes(x))+'" '+(x==='내 주변'?'data-action="nearby-toggle"'+(state.nearbyBusy?' disabled aria-busy="true"':''):'data-action="filter" data-value="'+e(x)+'"')+'>'+(x==='내 주변'&&state.nearbyBusy?'위치 확인 중…':e(lbl(x)))+'</button>';
  const selected=more.filter(x=>fs.includes(x));
- const nearbyNote=state.nearbyBusy?'<p class="zeno-nearby-note" role="status" id="zeno-nearby-loading">병원 위치 확인 중 '+(state.nearbyProcessed||0)+'/'+(state.nearbyTotal||HOSPITALS.length)+'</p>':fs.includes('내 주변')?'<p class="zeno-nearby-note">현재 위치 기준 병원 주소 추정 직선거리 5km 이내 · 가까운 순'+(state.nearbyMissing?' · 좌표 미확인 병원 '+state.nearbyMissing+'곳 제외':'')+'</p>':'';
+ const nearbyNote=state.nearbyBusy?'<p class="zeno-nearby-note" role="status" id="zeno-nearby-loading">'+e(state.nearbyStage||'위치 확인 중')+(state.nearbyProcessed?' · 병원 '+state.nearbyProcessed+'/'+(state.nearbyTotal||HOSPITALS.length):'')+'</p>':fs.includes('내 주변')?'<p class="zeno-nearby-note">현재 위치 기준 직선 약 5km 이내 · 가까운 순'+(state.nearbyAccuracy>2000?' · 대략적인 위치 기준':'')+(state.nearbyStage?' · '+e(state.nearbyStage)+' '+state.nearbyProcessed+'/'+state.nearbyTotal:'')+(state.nearbyMissing?' · 좌표 미확인 '+state.nearbyMissing+'곳 제외':'')+'</p>':state.nearbyError?'<p class="zeno-nearby-note" role="status">내 주변 검색 실패 · '+e(state.nearbyError)+' · 다시 눌러 재시도할 수 있어요.</p>':'';
  const chips='<div class="zeno-filter-main"><div class="filters zeno-filter-primary">'+quick.map(chip).join('')+'</div><details class="zeno-filter-more"><summary>필터 '+(selected.length?selected.length:'')+'</summary><div class="zeno-filter-extras">'+more.map(chip).join('')+'</div></details></div>'
   +(selected.length?'<div class="zeno-filter-selected">'+selected.map(x=>'<button type="button" class="zeno-filter-selected-chip" data-action="'+(x==='내 주변'?'nearby-toggle':'filter')+'" data-value="'+e(x)+'">'+e(lbl(x))+' ×</button>').join('')+'</div>':'');
  return '<header class="zeno-search-topbar">'+zenoBrandLogo()+'<h1>병원 찾기</h1></header><section class="zeno-search-page">'
@@ -5758,7 +5769,7 @@ async function start(){
  }finally{zenoStartPending=false}
 }
 render();start();
-const ZENO_OWNER_UI_REVISION='20261118-galaxy-nearby-thread-fix-v58';
+const ZENO_OWNER_UI_REVISION='20261118-galaxy-nearby-v59';
 let zenoLastUIVersionCheck=0;
 let zenoUIVersionChecking=false;
 async function zenoCheckOwnerUIRevision(force=false){
