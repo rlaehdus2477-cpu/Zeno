@@ -3664,7 +3664,7 @@ function zenoBookingFlow(h){
  if(state.modal.step!=='details'){
   const animalButtons=animals.map(kind=>'<button type="button" class="zeno-book-option '+(chosenKind===kind?'selected':'')+'" data-action="zeno-book-kind" data-value="'+e(kind)+'" aria-pressed="'+(chosenKind===kind)+'">'+e(kind)+'</button>').join('');
   const serviceButtons=chosenKind?chosenService.map(([name,desc])=>'<button type="button" class="zeno-book-option zeno-book-service '+(selected===name?'selected':'')+'" data-action="zeno-book-service" data-value="'+e(name)+'" aria-pressed="'+(selected===name)+'"><strong>'+e(name)+'</strong><small>'+e(desc)+'</small></button>').join(''):'<p class="zeno-book-hint">먼저 진료받을 동물을 선택해 주세요.</p>';
-  const unsupported=!(h.officialExoticSpecies||[]).length?'<p class="zeno-book-hint">이 병원은 강아지·고양이만 예약할 수 있어요.</p>':'<p class="zeno-book-hint">특수동물은 병원이 안내한 종만 예약할 수 있어요.</p>';
+  const unsupported=animals.every(kind=>kind==='고양이'||kind==='강아지')?'<p class="zeno-book-hint">이 병원은 강아지·고양이만 예약할 수 있어요.</p>':'';
  const serviceNotice='';
   return {title:'진료 선택 · '+h.name,body:'<section class="zeno-book-step"><p class="zeno-book-step-label">1 / 2 · 진료 선택</p><h3>어떤 아이가 진료받나요?</h3><div class="zeno-book-kind-list">'+animalButtons+'</div>'+unsupported+'<h3>어떤 진료가 필요한가요?</h3>'+serviceNotice+'<div class="zeno-book-service-list">'+serviceButtons+'</div><button class="btn full zeno-book-next" type="button" data-action="zeno-book-next" '+(!chosenKind||!selected?'disabled':'')+'>다음</button><p class="zeno-book-warning">실제 진료 가능 여부는 병원이 확인한 뒤 확정돼요.</p></section>'};
  }
