@@ -3816,7 +3816,7 @@ function hospitalCard(h){
  const call=validPhone?'<a class="zeno-card-action'+(h.linked?'':' primary')+'" data-action="call-summary" data-id="'+e(h.id)+'" href="tel:'+e(phone.replace(/[^0-9]/g,''))+'">'+(h.linked?'전화':'전화로 문의')+'</a>':'';
  const website=zenoOfficialHospitalWebsite(h);
  const site=website?'<a class="zeno-card-action" href="'+e(website)+'" target="_blank" rel="noopener noreferrer">홈페이지 보기</a>':'';
- const eligible=h.linked&&(state.specialty==='특수동물'?Boolean((h.officialExoticSpecies||[]).length):(!state.specialty||state.specialty==='일반 진료'||(h.officialSpecialties||[]).some(x=>zenoCareAliases(state.specialty).includes(x))||(hs(h.id).services||[]).some(x=>zenoCareAliases(state.specialty).includes(x))));
+ const eligible=zenoBookEligible(h);
  const book=eligible?'<button class="zeno-card-action primary" type="button" data-action="book" data-id="'+e(h.id)+'">예약하기</button>':'';
  const map='<a class="zeno-card-action icon-only" href="'+e(zenoNaverPhotoUrl(h))+'" target="_blank" rel="noopener noreferrer" aria-label="'+e(h.name)+' 길찾기">'+zenoHomeSmallIcon('pin')+'</a>';
  const hours=zenoWeeklyData(h)[zenoTodayName()]||'';
@@ -3981,7 +3981,7 @@ function zenoSearchHospitalCard(h){
  const contextHtml=tags.length?'<span class="zeno-search-tags">'+tags.map(label=>'<span class="zeno-search-tag">'+e(label)+'</span>').join('')+'</span>':'';
  const phone=String(h.phone||'').trim(),validPhone=/^0[0-9 -]{8,15}$/.test(phone);
  const call=validPhone?'<a class="zeno-card-action zeno-card-call" data-action="call-summary" data-id="'+e(h.id)+'" href="tel:'+e(phone.replace(/[^0-9]/g,''))+'" aria-label="'+e(h.name)+' 전화">전화</a>':'<button class="zeno-card-action zeno-card-call" type="button" disabled aria-label="전화번호 미확인" title="전화번호 미확인">전화</button>';
- const eligible=h.linked&&(state.specialty==='특수동물'?Boolean((h.officialExoticSpecies||[]).length):(!state.specialty||state.specialty==='일반 진료'||(h.officialSpecialties||[]).some(x=>zenoCareAliases(state.specialty).includes(x))||(hs(h.id).services||[]).some(x=>zenoCareAliases(state.specialty).includes(x))));
+ const eligible=zenoBookEligible(h);
  const book=eligible?'<button class="zeno-card-action zeno-card-book" type="button" data-action="book" data-id="'+e(h.id)+'">예약 요청</button>':'';
  const route=h.address?'<a class="zeno-card-action zeno-card-call zeno-card-route" href="'+e(zenoNaverPhotoUrl(h))+'" target="_blank" rel="noopener noreferrer" aria-label="'+e(h.name)+' 길찾기 (네이버 지도)">길찾기</a>':'';
  // Details, published fees, hours and directions remain available by tapping the hospital row.
@@ -4059,6 +4059,14 @@ function zenoSpecialtyOrigin(h){
  /* No guardian-report matching in care search. */
  if(s==='내과'&&(h.cats||[]).includes('일반'))return 'inquiry';
  return '';
+}
+/* 예약 버튼: 제휴 병원이고, 검색한 진료 분야가 화면에 표시되는 근거(병원 등록 대표 특화·공식/공개 진료과목·병원 입력 진료)와 같을 때 보여 준다.
+   카드에 '치과·구강'이 보이는데 예약 버튼만 빠지는 불일치를 막는다. 특수동물은 기존 기준(공식 확인 동물) 유지. */
+function zenoBookEligible(h){
+ if(!h.linked)return false;
+ if(state.specialty==='특수동물')return Boolean((h.officialExoticSpecies||[]).length);
+ if(!state.specialty||state.specialty==='일반 진료')return true;
+ return ['official','demo','public'].includes(zenoSpecialtyOrigin(h));
 }
 function zenoSpecialtyNameOnly(h){return zenoSpecialtyOrigin(h)==='name';}
 function filteredHospitals(){
