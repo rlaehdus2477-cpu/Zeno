@@ -4200,12 +4200,12 @@ function home(){
  +'</header>'
  +'<section class="zeno-v10-intro"><form id="home-search-form" class="zeno-v10-search" role="search"><label class="sr-only" for="home-hospital-search">증상, 병원명, 진료과목 검색</label>'
  +zenoNavIcon('search')+'<input id="home-hospital-search" name="homeQuery" type="search" autocomplete="off" placeholder="증상, 병원명, 진료과목 검색" value="'+e(state.query)+'"></form></section>'
+ +zenoHomeOperatingRail()
  +zenoHomeSummary()
 
  +'<section class="care-launcher" aria-label="진료 분야로 찾기"><header><h2>진료과목</h2><button data-action="home-care-open" aria-haspopup="dialog" aria-expanded="'+state.homeCarePickerOpen+'">전체 과목 ›</button></header>'
  +'<div class="care-shortcuts">'+[['내과','내과'],['외과','외과'],['치과·구강','치과'],['피부·귀','피부과'],['특수동물','특수동물']].map(([value,label])=>'<button type="button" data-action="specialty" data-value="'+e(value)+'"><span>'+zenoCareIcon(value)+'</span>'+e(label)+'</button>').join('')+'</div>'
  +'<button class="care-symptoms" data-nav="symptoms">'+zenoHomeSmallIcon('help')+'<strong>증상으로 진료과목 찾기</strong><span aria-hidden="true">›</span></button></section>'
- +zenoHomeOperatingRail()
  +'<section class="zeno-home-utilities" aria-label="조건별 병원 찾기"><h2>조건별 병원 찾기</h2><div class="zeno-home-utility-list">'
  +'<button type="button" class="zeno-home-utility-row" data-action="night-shortcut"><span class="zeno-home-utility-icon">'+zenoHomeSmallIcon('moon')+'</span><span class="zeno-home-utility-copy"><strong>야간 진료</strong><small>밤 시간 진료가 안내된 병원</small></span><span class="zeno-home-utility-chevron" aria-hidden="true">›</span></button>'
  +'<button type="button" class="zeno-home-utility-row" data-action="around-clock-shortcut"><span class="zeno-home-utility-icon">'+zenoHomeSmallIcon('urgent')+'</span><span class="zeno-home-utility-copy"><strong>24시간 운영 병원</strong><small>응급 접수는 전화로 확인</small></span><span class="zeno-home-utility-chevron" aria-hidden="true">›</span></button>'
