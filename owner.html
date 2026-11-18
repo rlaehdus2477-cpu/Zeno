@@ -2394,6 +2394,10 @@ html.dark .modal.zeno-hospital-detail,html[data-theme="dark"] .modal.zeno-hospit
 .zeno-home-v10 .zeno-v10-open-section{padding-top:18px!important;border-top:1px solid var(--zh-line)}
 .zeno-home-v10 .zeno-v10-open-rail{display:flex!important;flex-wrap:nowrap!important;gap:10px!important;max-width:100%;overflow-x:auto!important;overflow-y:hidden!important;scroll-snap-type:x mandatory;scroll-padding-inline:2px;overscroll-behavior-x:contain;padding:10px 2px 12px!important;-webkit-overflow-scrolling:touch}
 .zeno-home-v10 .zeno-v10-open-card{flex:0 0 220px!important;width:220px!important;min-width:220px!important;max-width:220px!important;min-height:102px!important;padding:12px!important;display:flex!important;align-items:center!important;gap:10px!important;background:var(--zh-surface)!important;box-shadow:none!important;border:1px solid var(--zh-line)!important;border-radius:12px!important;scroll-snap-align:start}
+.zeno-home-v10 .zeno-v10-open-more{flex:0 0 205px;min-height:102px;padding:13px;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:5px;border:1px dashed var(--zh-line);border-radius:12px;background:var(--zh-surface-alt);color:var(--zh-text);text-align:left;scroll-snap-align:start}
+.zeno-home-v10 .zeno-v10-open-more strong{font-size:14px;font-weight:750}
+.zeno-home-v10 .zeno-v10-open-more small{font-size:11px;color:var(--zh-muted)}
+.zeno-home-v10 .zeno-v10-open-more span{font-size:12px;color:var(--zh-accent);font-weight:750}
 .zeno-home-v10 .zeno-v10-open-card strong{font-size:14px!important;white-space:nowrap!important;letter-spacing:-.02em}
 .zeno-home-v10 .zeno-v10-open-card small{font-size:12px!important}
 .zeno-home-v10 .zeno-v10-open-card .zeno-v10-mini-photo{width:48px!important;height:48px!important;flex:0 0 48px!important;border-radius:10px!important}
@@ -4188,15 +4192,16 @@ function zenoHomeWithinPublishedHours(h,date=new Date()){
 }
 function zenoHomeOperatingRail(){
  const list=zenoHomeAreaHospitals();
- const open=list.filter(h=>zenoHomeWithinPublishedHours(h)).slice(0,8);
+ const open=list.filter(h=>zenoHomeWithinPublishedHours(h));
  const cards=open.map(h=>{
   const p=(Array.isArray(h.photos)?h.photos:[]).find(x=>x.approved===true&&x.url);
   const img=p?'<img src="'+e(p.url)+'" alt="" class="'+(p.isLogo||p.fit==='contain'?'is-logo':'')+'" loading="lazy">':'';
   const badge=h.is24?'24시간 운영시간 내':'진료시간 내';
   return '<button type="button" class="zeno-v10-open-card" data-action="details" data-id="'+e(h.id)+'"><span class="zeno-v10-mini-photo">'+(img||zenoCareIcon('일반 진료'))+'</span><span class="zeno-home-rail-copy"><strong>'+e(h.name)+'</strong><small>'+e(String(h.region||'').split('·').pop().trim())+'</small><span class="zeno-v10-hospital-badges"><span class="zeno-v10-badge is-open">'+badge+'</span></span>'+zenoHomeEmergencyStatusNote(h)+'</span></button>';
  }).join('');
+ const more='<button type="button" class="zeno-v10-open-more" data-action="show-all-hospitals" aria-label="전체 병원 목록으로 이동"><strong>더 많은 병원 찾기</strong><small>운영시간 미확인 병원도 살펴보기</small><span aria-hidden="true">전체 병원 ›</span></button>';
  return '<section class="zeno-v10-open-section"><div class="care-list-heading"><h2>지금 문 여는 병원</h2><button data-action="show-all-hospitals">전체 병원 ›</button></div><p class="zeno-open-note">네이버 등록 운영시간 기준 · 실제 운영·접수 여부 전화 확인</p>'
-  +(open.length?'<div class="zeno-v10-open-rail" tabindex="0" role="region" aria-label="운영시간 기준 병원 가로 스크롤 목록">'+cards+'</div>':'<p class="zeno-v10-empty">현재 시간에 해당하는 등록 진료시간을 찾지 못했어요.</p>')+'</section>';
+  +(open.length?'<div class="zeno-v10-open-rail" tabindex="0" role="region" aria-label="운영시간 기준 병원 가로 스크롤 목록">'+cards+more+'</div>':'<p class="zeno-v10-empty">현재 시간에 해당하는 등록 진료시간을 찾지 못했어요.</p>')+'</section>';
 }
 
 function zenoSymptomPage(){
@@ -5525,7 +5530,7 @@ if(new URLSearchParams(location.search).has('android_app')){
 setTimeout(()=>zenoCheckOwnerUIRevision(true),1500);
 setInterval(()=>zenoCheckOwnerUIRevision(),180000);
 /* Guests and logged-in users see changed evening hours without a reload. */
-setInterval(()=>{if(document.hidden)return;if(state.page==='home'){const rail=document.querySelector('.zeno-v10-open-section');if(rail)rail.outerHTML=zenoHomeOperatingRail();}else if(state.page==='emergency'||(state.page==='search'&&zenoHasFilter('야간')))render();},60000);
+setInterval(()=>{if(document.hidden)return;if(state.page==='home'){const rail=document.querySelector('.zeno-v10-open-section');if(rail){const oldScroll=rail.querySelector('.zeno-v10-open-rail')?.scrollLeft||0;rail.outerHTML=zenoHomeOperatingRail();const updatedRail=document.querySelector('.zeno-v10-open-rail');if(updatedRail)updatedRail.scrollLeft=oldScroll;}}else if(state.page==='emergency'||(state.page==='search'&&zenoHasFilter('야간')))render();},60000);
 /* CHANGED: refresh guest-visible clinic intake every minute; no simulated live counters. */
 setInterval(()=>{if(document.hidden||state.ownerToken||!state.serverReady)return;refresh().catch(()=>{});},60000);
 </script><style>#memopen{position:fixed;bottom:16px;right:16px;z-index:100;border:0;border-radius:25px;background:#1979e6;color:white;padding:14px;font-weight:bold}#membg{display:none;position:fixed;inset:0;background:#091b32b8;z-index:110;overflow:auto;padding:20px}#membg.show{display:block}#memcard{background:white;color:#173452;max-width:560px;margin:4vh auto;border-radius:20px;padding:24px}#memcard input:not([type=checkbox]),#memcard textarea,#memcard select{display:block;width:100%;box-sizing:border-box;margin:9px 0;padding:12px;border:1px solid #ccc;border-radius:8px}#memcard button{padding:10px 14px;background:#1979e6;color:white;border:0;border-radius:9px;margin:5px}@media(max-width:750px){#memopen{bottom:calc(88px + env(safe-area-inset-bottom));right:13px;padding:9px 15px;font-size:13px;box-shadow:0 7px 20px #1861bb38}}</style>
