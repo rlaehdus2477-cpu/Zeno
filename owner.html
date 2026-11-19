@@ -3101,12 +3101,13 @@ html body .mobilebar button[aria-current="page"] .ico{color:#1689fa!important}
 .modal.zeno-hospital-detail .zeno-schedule-partial strong{display:block;font-size:19px;font-weight:720}
 .modal.zeno-hospital-detail .zeno-schedule-partial p{font-size:14px;line-height:1.55;margin:8px 0 0;color:#66798b;overflow-wrap:anywhere}
 </style>
-<style id="zeno-friends-photo-radius-20261119">
-/* Friends clinic search thumbnail only: preserve image fit and size. */
-.zeno-search-page .zeno-hospital-card .directory-main[data-id="pub046"] img.directory-photo{
- border-radius:12px!important;
- clip-path:inset(0 round 12px)!important;
-}
+<style id="zeno-search-thumb-radius-20261119">
+/* 병원 찾기 검색 카드 썸네일 공통 라운드: 병원별 예외 없이 .zeno-thumb 틀 기준으로 통일.
+   사진(cover)은 틀을 꽉 채우고, 로고·간판(contain)은 비율을 유지한 채 그림 자체도 둥글게 깎는다. */
+#app .zeno-search-page .zeno-thumb{border-radius:12px!important;overflow:hidden!important;clip-path:inset(0 round 12px)}
+#app .zeno-search-page .zeno-thumb.has-img::before{display:none!important}
+#app .zeno-search-page .zeno-thumb img{border-radius:12px}
+#app .zeno-search-page .zeno-thumb.is-logo img{position:static!important;inset:auto!important;display:block;width:auto!important;height:auto!important;max-width:100%!important;max-height:100%!important;padding:0!important;object-fit:contain!important;background:transparent!important;border-radius:8px!important}
 </style>
 </head><body><div id="app" class="app"></div><script>
 'use strict';
@@ -4399,7 +4400,7 @@ function zenoInternalEvidenceBlock(h){
 function zenoSearchHospitalCard(h){
  const photo=(Array.isArray(h.photos)?h.photos:[]).find(p=>p&&p.approved===true&&p.url);
  const initial=e(String(h.name||'').replace(/^24시\s*/,'').trim().charAt(0));
- const photoHtml='<span class="zeno-thumb'+(photo&&(photo.isLogo||photo.fit==='contain')?' is-logo':'')+'" data-initial="'+initial+'" aria-hidden="true">'+(photo?'<img loading="lazy" referrerpolicy="no-referrer" src="'+e(photo.url)+'" alt="" onerror="this.remove()">':'')+'</span>';
+ const photoHtml='<span class="zeno-thumb'+(photo?' has-img':'')+(photo&&(photo.isLogo||photo.fit==='contain')?' is-logo':'')+'" data-initial="'+initial+'" aria-hidden="true">'+(photo?'<img loading="lazy" referrerpolicy="no-referrer" src="'+e(photo.url)+'" alt="" onerror="this.parentNode.classList.remove(\'has-img\');this.remove()">':'')+'</span>';
  const status=zenoSearchClinicStatus(h);
  const distance=zenoHasFilter('내 주변')?zenoNearbyDistanceKm(h):Infinity;
  const nearbyDistance=Number.isFinite(distance)?'<span class="zeno-nearby-distance">직선 약 '+distance.toFixed(1)+'km</span>':'';
