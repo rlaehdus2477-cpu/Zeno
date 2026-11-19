@@ -80,7 +80,7 @@ async function startServer() {
     INSERT INTO vetqa_questions VALUES('${legacyQuestion}','legacy-owner','이전 질문','방문 준비물 질문','기타','일반','open','2026-01-01','2026-01-01');
     INSERT INTO vetqa_answers VALUES('legacy-answer','${legacyQuestion}','soo','','이전에 등록한 답변','visible','2026-01-01','2026-01-01');
     INSERT INTO questions VALUES('legacy-private','legacy-owner','soo','','이전 문의','기존 답변','answered','2026-01-01','2026-01-01');`);
-  const vars = [['SESSION_SECRET', SECRET], ['HOSPITAL_SOO_PIN', PINS.soo], ['HOSPITAL_NAEUM_PIN', PINS.naeum], ['HOSPITAL_TND_PIN', PINS.tnd]]
+  const vars = [['SESSION_SECRET', SECRET], ['ADMIN_PIN','admin-fixture-pin'], ['HOSPITAL_SOO_PIN', PINS.soo], ['HOSPITAL_NAEUM_PIN', PINS.naeum], ['HOSPITAL_TND_PIN', PINS.tnd]]
     .flatMap(([k, v]) => ['--var', `${k}:${v}`]);
   server = spawn(WRANGLER, ['dev', '--local', '--persist-to', PERSIST, '--ip', '127.0.0.1', '--port', String(PORT), ...vars],
     {cwd: ROOT, detached: true, stdio: ['ignore', 'pipe', 'pipe']});
@@ -112,6 +112,15 @@ async function main() {
   const soo = (await api('POST', '/api/login', {body: {hospitalId: 'soo', pin: PINS.soo}})).data.token;
   const naeum = (await api('POST', '/api/login', {body: {hospitalId: 'naeum', pin: PINS.naeum}})).data.token;
   expect(soo && naeum, '병원 로그인 실패');
+  const admin=(await api('POST','/api/admin/login',{body:{pin:'admin-fixture-pin'}})).data.token;
+  const pending=async()=> (await api('GET','/api/admin/answer-reviews',{token:admin})).data.reviews;
+  const decide=(id,decision='approve',token=admin)=>api('PATCH','/api/admin/answer-reviews/'+id,{token,body:{decision}});
+  async function approveFirst(hid,kind){
+    const review=(await pending()).find(r=>r.hospitalId===hid&&r.kind===kind);
+    expect(review,'검토 목록에 해당 답변이 없음');
+    expect((await decide(review.id)).status===200,'답변 승인 실패');
+    return review;
+  }
   let qid = null, privateId = null;
 
   await check(1, '로그인 없이 질문 작성 불가', async () => {
@@ -151,7 +160,15 @@ async function main() {
     const r2 = await api('PUT', '/api/hospital/vetqa/' + qid + '/answer', {token: naeum, body: {hospitalId: 'naeum', body: '물을 잘 마신다면 우선 관찰하되, 48시간이 넘으면 진료가 필요합니다.'}});
     expect(r1.status === 200 && r1.data.vetName === '김수의', '수동물병원 답변 실패');
     expect(r2.status === 200 && r2.data.vetName === '', '나음 답변(이름 없음) 실패');
-    expect(r1.data.pointsAwarded === 100 && r2.data.pointsAwarded === 100, '병원별 첫 답변 적립 실패');
+    expect(r1.data.pointsAwarded===0 && r1.data.rewardStatus==='pending' && r2.data.rewardStatus==='pending','첫 답변의 승인 대기 누락');
+    const before=await api('GET','/api/hospital/points?hospitalId=soo',{token:soo});
+    expect(before.data.balance===0 && before.data.reviews[0]?.status==='pending','심사 전 잔액·내역 오류');
+    expect((await api('GET','/api/admin/answer-reviews',{token:soo})).status===401,'병원이 관리자 목록을 조회함');
+    const review=(await pending()).find(r=>r.hospitalId==='soo');
+    expect(review.question.includes('사료') && review.answer.includes('내원') && !('ownerId' in review),'관리자 검토 자료 오류');
+    expect((await decide(review.id,'approve',soo)).status===401,'병원 자체 승인 허용');
+    expect((await decide(review.id)).status===200 && (await decide(review.id)).status===200,'승인 재시도 실패');
+    await approveFirst('naeum','vetqa');
   });
   await check(7, '공개 상세에 답변 2개, 답변 수 반영', async () => {
     const d = await api('GET', '/api/public/vetqa/' + qid);
@@ -210,7 +227,9 @@ async function main() {
     const answer = token => api('PATCH', '/api/questions/' + privateId, {token, body: {answer: '방문 시 진료 기록을 가져와 주세요.'}});
     expect((await answer(naeum)).status === 401, '다른 병원의 비공개 답변 허용');
     const attempts = await Promise.all([answer(soo), answer(soo)]);
-    expect(attempts.every(r => r.status === 200) && attempts.map(r => r.data.pointsAwarded).sort().join() === '0,100', '동시 비공개 답변 중복 적립');
+    expect(attempts.every(r => r.status === 200) && attempts.filter(r=>r.data.rewardStatus==='pending').length===1 && attempts.every(r=>r.data.pointsAwarded===0), '동시 비공개 답변 중복 적립');
+    expect((await wallet()).data.balance===100,'검토 전 포인트가 잔액에 포함됨');
+    await approveFirst('soo','previsit');
     expect((await answer(soo)).data.pointsAwarded === 0 && (await wallet()).data.balance === 200, '비공개 답변 수정 중복 적립');
   });
   await check(15, '공개 질문 첫 답변 동시 저장', async () => {
@@ -218,7 +237,8 @@ async function main() {
     const answer = () => api('PUT', '/api/hospital/vetqa/' + q.data.id + '/answer',
       {token:soo, body:{hospitalId:'soo', body:'방문 시 기존 기록을 지참해 주세요.'}});
     const attempts = await Promise.all([answer(), answer()]);
-    expect(attempts.every(r => r.status === 200) && attempts.map(r => r.data.pointsAwarded).sort().join() === '0,100', '동시 공개 답변 중복 적립');
+    expect(attempts.every(r => r.status === 200) && attempts.filter(r=>r.data.rewardStatus==='pending').length===1 && attempts.every(r=>r.data.pointsAwarded===0), '동시 공개 답변 중복 적립');
+    await approveFirst('soo','vetqa');
     expect((await wallet()).data.balance === 300, '광고에 사용할 잔액이 다름');
   });
   let paidId;
@@ -243,11 +263,30 @@ async function main() {
     expect((await ads()).data.ads.length === 0, '만료 광고가 공개됨');
     expect((await wallet()).data.activeUntil === null && (await buy(paidId)).status === 200, '만료 처리 또는 기존 요청 재전송 오류');
     expect((await wallet()).data.balance === 0 && (await buy(crypto.randomUUID())).status === 409, '만료 시 차감 복원');
+    const over=await api('POST','/api/questions',{token:B,body:{hospitalId:'soo',text:'검사 당일 준비물이 궁금합니다.'}});
+    const saved=await api('PATCH','/api/questions/'+over.data.id,{token:soo,body:{answer:'방문 전 병원에 연락해 주세요.'}});
+    expect(saved.status===200 && saved.data.pointsAwarded===0 && !saved.data.rewardStatus && !(await pending()).length,'오늘 심사 한도 초과 또는 답변 저장 실패');
+    const edited=await api('PATCH','/api/questions/'+over.data.id,{token:soo,body:{answer:'진료 기록도 가져와 주세요.'}});
+    expect(!edited.data.rewardStatus,'수정으로 새로운 심사가 생성됨');
+    // Model the following Seoul day. Existing credits still belong to the wallet.
+    localSql("UPDATE hospital_answer_reviews SET created_at='2026-01-01T00:00:00.000Z'; UPDATE hospital_point_entries SET created_at='2026-01-01T00:00:00.000Z' WHERE points>0");
     for (let i=0; i<3; i++) {
       const {data:q} = await api('POST','/api/questions',{token:A,body:{hospitalId:'soo',text:'방문 시 필요한 준비물이 있나요?'}});
       await api('PATCH','/api/questions/'+q.id,{token:soo,body:{answer:'기존 진료 기록을 가져와 주세요.'}});
+      await approveFirst('soo','previsit');
     }
     expect((await buy(crypto.randomUUID())).status === 201 && (await ads()).data.ads.length === 1, '만료 후 다시 광고를 시작할 수 없음');
+  });
+
+  await check(18,'승인 한도와 반려 결정이 광고 잔액과 분리됨',async()=>{
+    // A claim awaiting review from yesterday may be reviewed after today's ceiling resets.
+    const fixture='00000000-0000-4000-8000-000000000019';
+    localSql(`INSERT INTO hospital_answer_reviews(id,hospital_id,kind,reference,owner_id,first_answer,created_at)
+      VALUES('${fixture}','soo','previsit','older-reference','fixture-owner','이전 날짜 안내','2026-01-01T00:00:00.000Z')`);
+    expect((await decide(fixture)).status===429,'지급일 한도가 소진된 병원에 지급됨');
+    expect((await pending()).some(r=>r.id===fixture),'한도로 보류된 건이 사라짐');
+    expect((await decide(fixture,'reject')).status===200 && (await decide(fixture)).status===409,'반려 결정을 뒤집을 수 있음');
+    expect((await wallet()).data.balance===0,'반려 후 잔액 변동');
   });
 
   const failed = results.filter(r => !r.ok);
