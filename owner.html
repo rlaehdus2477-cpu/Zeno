@@ -3092,7 +3092,16 @@ html body .mobilebar button[aria-current="page"] .ico{color:#1689fa!important}
 .modal.zeno-book-modal .zeno-book-action-note{text-align:center;font-size:12px;line-height:1.45;color:#83909d;margin:8px 0 0}
 .modal.zeno-book-modal button:focus-visible,.modal.zeno-book-modal summary:focus-visible,.modal.zeno-book-modal input:focus-visible,.modal.zeno-book-modal textarea:focus-visible{outline:2px solid #2684d8!important;outline-offset:2px!important}
 @media(max-width:360px){.modal.zeno-book-modal .zeno-book-option{padding:9px!important}.modal.zeno-book-modal .zeno-book-option small{font-size:11.5px!important}}
-</style></head><body><div id="app" class="app"></div><script>
+</style><style id="zeno-hours-compact-20261119">/* Hospital details: concise, non-repeated hours when only a starting time exists. */
+.modal.zeno-hospital-detail .zeno-detail-quick .zeno-detail-current:empty{display:none!important}
+.modal.zeno-hospital-detail .zeno-detail-quick .zeno-detail-today{gap:6px!important;justify-content:flex-start!important}
+.modal.zeno-hospital-detail .zeno-detail-quick .zeno-detail-today strong{font-size:18px!important;line-height:1.45!important;font-weight:700!important}
+.modal.zeno-hospital-detail .zeno-schedule-partial{margin:8px 0 16px;padding:15px 16px;border:1px solid #e6ebf0;border-radius:12px;background:#f8fafc;color:#31475b}
+.modal.zeno-hospital-detail .zeno-schedule-partial span{display:block;font-size:12px;color:#667c8d;margin-bottom:6px}
+.modal.zeno-hospital-detail .zeno-schedule-partial strong{display:block;font-size:19px;font-weight:720}
+.modal.zeno-hospital-detail .zeno-schedule-partial p{font-size:14px;line-height:1.55;margin:8px 0 0;color:#66798b;overflow-wrap:anywhere}
+</style>
+</head><body><div id="app" class="app"></div><script>
 'use strict';
 const APP_MODE='owner';
 
@@ -3647,10 +3656,17 @@ function zenoOfficialHospitalWebsite(h){
  try{const url=new URL(h.website);return url.protocol==='https:'?url.href:''}catch{return ''}
 }
 function zenoDetailQuick(h){
- const hours=zenoListTodayHours(h),day=zenoTodayName();
+ const info=zenoVisibleClinicHours(h),day=zenoTodayName();
+ const heading=info.hasToday?'오늘 · '+day+'요일':'진료시간 안내';
+ const headline=info.hasToday?info.text.replace(new RegExp('^'+day+'요일\\s*'),''):info.partial?info.text:info.hasTime?'등록된 진료시간 참고':'운영시간 확인 필요';
+ const status=zenoPublishedStatusMarkup(h);
  const emergency=h.linked&&hs(h.id).emergencyStatus&&hs(h.id).emergencyStatus!=='check'
   ?'<p class="zeno-emergency-acceptance-preview">응급 문의 상태 (병원 입력): '+e(({available:'응급 문의 가능',busy:'응급 혼잡',unavailable:'응급 수용 어려움'})[hs(h.id).emergencyStatus]||'확인 필요')+'</p>':'';
- return '<section class="zeno-detail-quick"><div class="zeno-detail-today"><span>오늘 · '+e(day)+'요일</span><strong>'+e(hours)+'</strong></div><div class="zeno-detail-current">'+zenoPublishedStatusMarkup(h)+'</div>'+emergency+'<p class="zeno-detail-short-note">실시간 접수·응급 수용 여부는 병원에 전화해 확인하세요.</p></section>';
+ const note=info.partial?'종료시간과 휴진일은 아직 확인되지 않았습니다.'
+   :info.hasToday?info.note:info.hasTime?'아래 운영시간 탭에서 기존 등록정보를 확인하세요.':'실제 운영시간은 병원에 전화해 확인해 주세요.';
+ return '<section class="zeno-detail-quick"><div class="zeno-detail-today"><span>'+e(heading)+'</span><strong>'+e(headline)+'</strong></div>'
+  +(status?'<div class="zeno-detail-current">'+status+'</div>':'')
+  +emergency+'<p class="zeno-detail-short-note">'+e(note)+'</p></section>';
 }
 function zenoDetailSource(h){
  const source=h.hoursSource||h.verification||'공개 병원정보';
@@ -3664,8 +3680,15 @@ function zenoWeeklyHours(h){
  const week=provisional||trusted,today=zenoTodayName(),days=['월','화','수','목','금','토','일'];
  const rows=days.map(day=>`<div class='zeno-week-cell ${day===today?'zeno-hours-today':''} ${week[day]==='휴진'?'closed':''}'><strong>${day}${day===today?'<small>오늘</small>':''}</strong><span>${e(week[day]||'별도 확인')}</span></div>`).join('');
  const extra=['공휴일','점심시간','저녁시간','접수마감'].filter(day=>week[day]).map(day=>`<div class='zeno-week-cell zeno-week-extra'><strong>${day}</strong><span>${e(week[day])}</span></div>`).join('');
- const fallback=!Object.keys(week).length&&h.hours&&!/진료시간 확인 필요/.test(h.hours)?`<p class='zeno-schedule-summary'>${e(h.hours)}</p>`:!Object.keys(week).length?'<p class="zeno-schedule-summary">등록된 요일별 시간표가 없습니다. 병원에 문의해 주세요.</p>':'';
- return `<div class='zeno-schedule-header'><h3>운영시간</h3></div>${provisional?'<p class="zeno-schedule-summary">네이버 AI 요약 참고자료 · 플레이스 원문 미확인 (실제 진료 여부는 병원 확인)</p>':''}${Object.keys(week).length?`<div class='zeno-week-grid' role='list' aria-label='요일별 진료시간'>${rows}${extra}</div>`:''}${fallback}`;
+ const info=zenoVisibleClinicHours(h,today);
+ const fallback=!Object.keys(week).length
+  ?(info.partial
+     ?'<div class="zeno-schedule-partial"><span>진료 시작 안내</span><strong>'+e(info.text)+'</strong><p>요일별 종료시간과 정기휴무는 확인되지 않았습니다. 방문 전 병원에 문의해 주세요.</p></div>'
+     :info.hasTime
+        ?'<div class="zeno-schedule-partial"><span>기존 등록시간 · 최신 확인 필요</span><p>'+e(info.text)+'</p></div>'
+        :'<p class="zeno-schedule-summary">요일별 운영시간이 등록되지 않았습니다. 병원에 문의해 주세요.</p>')
+  :'';
+ return `<div class='zeno-schedule-header'><h3>운영시간</h3></div>${provisional?'<p class="zeno-schedule-source">네이버 AI 참고자료 · 플레이스 원본 확인 전</p>':''}${Object.keys(week).length?`<div class='zeno-week-grid' role='list' aria-label='요일별 진료시간'>${rows}${extra}</div>`:''}${fallback}`;
 }
 function hospitalHoursBlock(h,detail=false){
  const day=zenoTodayName(),info=zenoVisibleClinicHours(h,day);
@@ -3849,6 +3872,10 @@ function zenoVisibleClinicHours(h,day=zenoTodayName()){
    :'기존 등록정보 · 최신 확인 필요';
  if(today)return {text:day+'요일 '+today.replace('24시간 진료 안내','24시간 운영 안내'),note,hasTime:true,hasToday:true};
  const summary=String(h.hours||'').trim();
+ // A published start time is not a verified opening interval or today's schedule.
+ const onlyStart=summary.match(/([01]?\d|2[0-3]):([0-5]\d)\s*진료 시작/);
+ if(onlyStart&&!/\d{1,2}:\d{2}\s*[~–—-]\s*\d{1,2}:\d{2}/.test(summary))
+  return {text:onlyStart[1]+':'+onlyStart[2]+' 진료 시작',note:'종료시간·휴진일 확인 필요',hasTime:true,hasToday:false,partial:true};
  if(/\d{1,2}:\d{2}|24시간/.test(summary))
   return {text:summary,note,hasTime:true,hasToday:false};
  return {text:'진료시간 확인 필요',note:'등록된 요일별 시간표 없음 · 병원에 문의',hasTime:false,hasToday:false};
