@@ -3658,7 +3658,7 @@ function zenoOfficialHospitalWebsite(h){
 function zenoDetailQuick(h){
  const info=zenoVisibleClinicHours(h),day=zenoTodayName();
  const heading=info.hasToday?'오늘 · '+day+'요일':'진료시간 안내';
- const headline=info.hasToday||info.partial?info.text:info.hasTime?'등록된 진료시간 참고':'운영시간 확인 필요';
+ const headline=info.hasToday?info.text.replace(new RegExp('^'+day+'요일\\s*'),''):info.partial?info.text:info.hasTime?'등록된 진료시간 참고':'운영시간 확인 필요';
  const status=zenoPublishedStatusMarkup(h);
  const emergency=h.linked&&hs(h.id).emergencyStatus&&hs(h.id).emergencyStatus!=='check'
   ?'<p class="zeno-emergency-acceptance-preview">응급 문의 상태 (병원 입력): '+e(({available:'응급 문의 가능',busy:'응급 혼잡',unavailable:'응급 수용 어려움'})[hs(h.id).emergencyStatus]||'확인 필요')+'</p>':'';
