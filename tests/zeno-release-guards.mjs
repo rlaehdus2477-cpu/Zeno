@@ -68,4 +68,34 @@ assert.match(owner, /function zenoProvidedClinicalProfile\(/, 'NAVER care fields
 assert.match(owner, /\['soo','pub046'\]\.includes\(h\.id\)/, 'Soo exotic species must remain visible');
 assert.match(owner, /zenoPublishedStatusMarkup/, 'hospital status display must remain separate from hours');
 assert.match(owner, /function zenoHomeWithinPublishedHours\(/, 'open-now must remain time gated');
+
+// Exercise the real production open-now functions at fixed Korean local times.
+// Only public, user-supplied NAVER facts are used; no live hospital status is inferred.
+const statusFunctions = [
+  'zenoSeoulClock','zenoScheduleSpan','zenoWeeklyData','zenoBreakAt',
+  'zenoReceptionClosedAt','zenoHomeHoursVerified','zenoHomeWithinPublishedHours'
+].map(name => functionBody(owner,name)).join('\n');
+const {zenoHomeWithinPublishedHours} =
+  Function(statusFunctions+'\nreturn {zenoHomeWithinPublishedHours};')();
+const on = (id, dateTime) => zenoHomeWithinPublishedHours(
+  get(a,id), new Date(dateTime + '+09:00')
+);
+for (const [label,id,time,expected] of [
+ ['TND working Thursday','tnd','2026-11-19T12:00:00',true],
+ ['TND lunch break','tnd','2026-11-19T13:30:00',false],
+ ['TND after lunch','tnd','2026-11-19T14:30:00',true],
+ ['TND intake cutoff','tnd','2026-11-19T19:01:00',false],
+ ['Soo open Thursday','soo','2026-11-19T11:00:00',true],
+ ['Soo break Thursday','soo','2026-11-19T13:00:00',false],
+ ['Soo intake cutoff','soo','2026-11-19T17:40:00',false],
+ ['Soo Wednesday closed','soo','2026-11-18T11:00:00',false],
+ ['Soo Saturday cutoff','soo','2026-11-21T14:35:00',false],
+ ['Naeum evening break','naeum','2026-11-19T17:30:00',false],
+ ['Naeum evening clinic','naeum','2026-11-19T18:30:00',true],
+ ['Naeum intake cutoff','naeum','2026-11-19T23:40:00',false],
+ ['Naeum after midnight','naeum','2026-11-20T00:15:00',false],
+]) {
+ assert.equal(on(id,time),expected,label+' must not mislead owners about opening or intake');
+}
+
 console.log('PASS ZENO regression guards: Nov 18 home, 62 clinics, Soo/TND/Naeum hours, booking and care UI.');
