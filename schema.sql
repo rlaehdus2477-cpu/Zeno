@@ -168,3 +168,20 @@ CREATE TABLE IF NOT EXISTS vetqa_answers (
   UNIQUE(question_id,hospital_id)
 );
 CREATE INDEX IF NOT EXISTS vetqa_answers_question ON vetqa_answers(question_id,created_at);
+
+-- A home_ad debit is the placement itself. Its expiry never affects the balance.
+CREATE TABLE IF NOT EXISTS hospital_point_entries (
+  hospital_id TEXT NOT NULL,
+  kind TEXT NOT NULL,
+  reference TEXT NOT NULL,
+  points INTEGER NOT NULL,
+  created_at TEXT NOT NULL,
+  expires_at TEXT,
+  PRIMARY KEY (hospital_id, kind, reference),
+  CHECK (
+    (kind IN ('vetqa','previsit') AND points > 0 AND expires_at IS NULL) OR
+    (kind = 'home_ad' AND points < 0 AND expires_at IS NOT NULL AND expires_at > created_at)
+  )
+);
+CREATE INDEX IF NOT EXISTS hospital_point_history ON hospital_point_entries(hospital_id,created_at DESC);
+CREATE INDEX IF NOT EXISTS hospital_home_ads ON hospital_point_entries(expires_at) WHERE kind='home_ad';

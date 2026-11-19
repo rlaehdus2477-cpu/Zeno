@@ -3109,6 +3109,14 @@ html body .mobilebar button[aria-current="page"] .ico{color:#1689fa!important}
 #app .zeno-search-page .zeno-thumb img{border-radius:12px}
 #app .zeno-search-page .zeno-thumb.is-logo img{position:static!important;inset:auto!important;display:block;width:auto!important;height:auto!important;max-width:100%!important;max-height:100%!important;padding:0!important;object-fit:contain!important;background:transparent!important;border-radius:8px!important}
 </style>
+<style>
+#zeno-home-ads:empty{display:none}
+.zeno-home-v10 .zeno-sponsored-list{display:grid;gap:8px;margin:18px 0}
+.zeno-home-v10 .zeno-sponsored-card{display:flex;align-items:center;gap:12px;width:100%;min-height:60px;padding:12px 14px;text-align:left;border:1px solid var(--zh-line);border-radius:12px;background:var(--zh-surface-alt,#f6f8fa);color:var(--zh-text);cursor:pointer}
+.zeno-sponsored-card .ad-label{flex:none;padding:2px 6px;border:1px solid currentColor;border-radius:5px;color:var(--zh-muted);font-size:12px;font-weight:600}
+.zeno-sponsored-card strong{flex:1;min-width:0;font-size:15px;line-height:1.45;word-break:keep-all;overflow-wrap:anywhere}
+.zeno-sponsored-card .ad-detail{flex:none;color:var(--zh-accent);font-size:13px}
+</style>
 </head><body><div id="app" class="app"></div><script>
 'use strict';
 const APP_MODE='owner';
@@ -3533,6 +3541,7 @@ async function refresh(force=false){
     if(!state.hospitalToken){render();return}
     await loadHospital(false);
    }else{
+    if(state.page==='home')zenoLoadHomeAds();
     await zenoLoadPublicHospitalSpecialties();
      if(!state.ownerToken){await zenoLoadPublicHospitalSettings();zenoRefreshPaint(before,page);return}
     const v=await api('GET','/api/bootstrap');
@@ -3587,6 +3596,7 @@ function navTo(p,fromHistory=false){
  window.scrollTo({top:0,behavior:'instant'});
  if(p==='hospital')loadHospital();else if(p==='admin')loadAdmin();
  if(APP_MODE==='owner'&&(p==='vetqa'||p==='home'))zenoVetqaLoad();
+ if(p==='home')zenoLoadHomeAds();
  render();
  if(restore&&zenoSearchScrollY>0)window.scrollTo({left:0,top:zenoSearchScrollY,behavior:'instant'});
  zenoNewSearch=false;
@@ -4538,7 +4548,38 @@ function filteredHospitals(){
  return list;
 }
 /* CHANGED: placeholder advertising removed until real contract. */
-function ad(){return ''}
+let zenoHomeAds=[],zenoAdRequest=null,zenoAdExpiry=null;
+function zenoHomeAdCards(){
+ const active=new Set(zenoHomeAds.filter(ad=>Date.parse(ad.expiresAt)>Date.now()).map(ad=>ad.hospitalId));
+ const hospitals=zenoHomeAreaHospitals().filter(h=>active.has(h.id));
+ if(!hospitals.length)return '';
+ return '<section class="zeno-sponsored-list" aria-label="동물병원 광고">'+hospitals.map(h=>
+  '<button type="button" class="zeno-sponsored-card" data-action="details" data-id="'+e(h.id)+'"><span class="ad-label">광고</span><strong>'+e(h.name)+'</strong><span class="ad-detail">상세 보기 ›</span></button>'
+ ).join('')+'</section>';
+}
+function zenoPaintHomeAds(){
+ clearTimeout(zenoAdExpiry);
+ const t=Date.now();
+ zenoHomeAds=zenoHomeAds.filter(ad=>Date.parse(ad.expiresAt)>t);
+ const slot=document.getElementById('zeno-home-ads');
+ if(slot){
+  const html=zenoHomeAdCards();
+  if(slot.innerHTML!==html)slot.innerHTML=html;
+ }
+ if(zenoHomeAds.length){
+  const next=Math.min(...zenoHomeAds.map(ad=>Date.parse(ad.expiresAt)));
+  zenoAdExpiry=setTimeout(zenoPaintHomeAds,Math.max(1,next-t));
+ }
+}
+function zenoLoadHomeAds(){
+ if(!zenoAdRequest)zenoAdRequest=api('GET','/api/public/hospital-ads')
+  .then(result=>{if(Array.isArray(result.ads))zenoHomeAds=result.ads})
+  .catch(()=>{}).finally(()=>{zenoAdRequest=null;zenoPaintHomeAds()});
+ return zenoAdRequest;
+}
+document.addEventListener('visibilitychange',()=>{
+ if(!document.hidden&&state.page==='home'){zenoPaintHomeAds();zenoLoadHomeAds()}
+});
 
 function zenoVisitAt(b){
  return b.proposedAt&&['accepted','confirmed','in_progress','done','suggested'].includes(b.status)?String(b.proposedAt).replace('T',' '):String(b.date||'')+' '+String(b.time||'');
@@ -4714,6 +4755,7 @@ function home(){
  +'<div class="care-shortcuts">'+[['내과','내과'],['외과','외과'],['치과·구강','치과'],['피부·귀','피부과'],['특수동물','특수동물']].map(([value,label])=>'<button type="button" data-action="specialty" data-value="'+e(value)+'"><span>'+zenoCareIcon(value)+'</span>'+e(label)+'</button>').join('')+'</div>'
  +'<button class="care-symptoms" data-nav="symptoms">'+zenoHomeSmallIcon('help')+'<strong>증상으로 진료과목 찾기</strong><span aria-hidden="true">›</span></button></section>'
  +zenoHomeVetqa()
+ +'<div id="zeno-home-ads">'+zenoHomeAdCards()+'</div>'
  +'<section class="zeno-home-utilities" aria-label="조건별 병원 찾기"><h2>조건별 병원 찾기</h2><div class="zeno-home-utility-list">'
  +'<button type="button" class="zeno-home-utility-row" data-action="night-shortcut"><span class="zeno-home-utility-icon">'+zenoHomeSmallIcon('moon')+'</span><span class="zeno-home-utility-copy"><strong>야간 진료</strong><small>밤 시간 진료가 안내된 병원</small></span><span class="zeno-home-utility-chevron" aria-hidden="true">›</span></button>'
  +'<button type="button" class="zeno-home-utility-row" data-action="around-clock-shortcut"><span class="zeno-home-utility-icon">'+zenoHomeSmallIcon('urgent')+'</span><span class="zeno-home-utility-copy"><strong>24시간 운영 병원</strong><small>응급 접수는 전화로 확인</small></span><span class="zeno-home-utility-chevron" aria-hidden="true">›</span></button>'
