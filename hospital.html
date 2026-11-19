@@ -685,6 +685,25 @@ input::placeholder,textarea::placeholder{font-family:inherit;letter-spacing:-.00
 .hi-sheet-section h3,.hi-detail-cell dt{font-weight:600!important;letter-spacing:-.012em!important}
 .hi-detail-cell dd,.hi-time-large{font-weight:600!important;letter-spacing:-.012em!important}
 </style>
+<style>
+.hi-points-link{display:flex;align-items:center;justify-content:space-between;gap:16px;width:100%;margin:12px 0 16px;padding:14px 16px;border:1px solid #d6e5e2;border-radius:14px;background:#f2faf7;color:#22584d;text-align:left;cursor:pointer}
+.hi-points-link strong,.hi-points-link small{display:block}
+.hi-points-link small{margin-top:3px;font-size:13px;font-weight:500}
+.hi-wallet{display:grid;gap:14px;max-width:680px}
+.hi-wallet h2,.hi-wallet h3,.hi-wallet p{margin:0}
+.hi-wallet-back{justify-self:start;min-height:44px;padding:0 4px;background:none;border:0;color:#475467;font-size:15px;cursor:pointer}
+.hi-wallet-balance{padding:20px;border-radius:16px;background:#edf8f4;color:#164e40}
+.hi-wallet-balance h3{font-size:15px}
+.hi-wallet-balance strong{display:block;margin:6px 0;font-size:30px;font-variant-numeric:tabular-nums}
+.hi-wallet .panel{margin:0}
+.hi-wallet p{margin-top:6px;font-size:14px;line-height:1.55}
+.hi-wallet-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.hi-wallet .btn:disabled{opacity:.55;cursor:default}
+.hi-wallet-history{margin:10px 0 0;padding:0;list-style:none}
+.hi-wallet-history li{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 0;border-top:1px solid #e4e7ec}
+.hi-wallet-history small{display:block;margin-top:3px;color:#596778}
+.hi-wallet-history b{white-space:nowrap;font-variant-numeric:tabular-nums}
+</style>
 <style id="hospital-pc-layout-20261118">
 /* PC(1024px 이상) 로그인 후 화면: 하단 탭바 → 왼쪽 메뉴, 본문 넓게. 휴대폰·태블릿 세로는 변경 없음. */
 @media (min-width:1024px){
@@ -767,7 +786,7 @@ async function api(method,path,data,admin=false){
 
 let zenoRefreshTask=null,zenoRefreshFailures=0,zenoDeferredPaint=false;
 function zenoRefreshStamp(){
- return JSON.stringify([state.ownerToken,state.hospitalToken,state.local,state.serverReady,state.settings,state.bookings,state.questions,state.reviews,state.owner,state.pets,state.records,state.favorites,state.hospitalBookings,state.hospitalQuestions,state.hChangeRequests,state.hSpecialtyKeywords,state.appError,state.profileLoaded]);
+ return JSON.stringify([state.ownerToken,state.hospitalToken,state.local,state.serverReady,state.settings,state.bookings,state.questions,state.reviews,state.owner,state.pets,state.records,state.favorites,state.hospitalBookings,state.hospitalQuestions,state.hChangeRequests,state.hSpecialtyKeywords,state.hWallet,state.hWalletError,state.appError,state.profileLoaded]);
 }
 const editedHospitalForms=new WeakSet();
 function rememberHospitalEdit(event){
@@ -807,6 +826,7 @@ async function refresh(force=false){
    if(APP_MODE==='hospital'){
     if(!state.hospitalToken){render();return}
     await loadHospital(false);
+    if(state.hTab==='points'&&!state.hAdSending)await hLoadWallet(false);
    }else{
     if(!state.ownerToken){render();return}
     const v=await api('GET','/api/bootstrap');
@@ -841,10 +861,10 @@ async function refresh(force=false){
  zenoRefreshTask=task;
  try{return await task}finally{if(zenoRefreshTask===task)zenoRefreshTask=null}
 }
-async function loadHospital(draw=true){if(!state.hospitalToken)return;try{const x=await api('GET','/api/dashboard?hospitalId='+encodeURIComponent(state.activeHospital));const newBookings=x.bookings||[];
+async function loadHospital(draw=true){const token=state.hospitalToken;if(!token)return;try{const x=await api('GET','/api/dashboard?hospitalId='+encodeURIComponent(state.activeHospital));if(token!==state.hospitalToken)return;const newBookings=x.bookings||[];
  if(state.hAlertReady&&state.hLastHospital===state.activeHospital){const fresh=newBookings.filter(b=>b.status==='pending'&&!state.hSeenIds.includes(b.id));if(fresh.length){state.hNewCount+=fresh.length;toast('새 예약 요청 '+fresh.length+'건이 도착했습니다.');zenoHospitalAlert(fresh.length);}}
  state.hSeenIds=newBookings.map(b=>b.id);state.hAlertReady=true;state.hLastHospital=state.activeHospital;
- state.hospitalBookings=newBookings;state.hospitalQuestions=x.questions||[];state.hChangeRequests=x.changeRequests||[];state.hSpecialtyKeywords=x.specialtyKeywords||[];state.settings[state.activeHospital]=x.settings||state.settings[state.activeHospital];zenoHospitalTitle();if(draw)render()}catch(err){if(err.message.includes('401')||err.message.includes('권한')||err.message.includes('인증')){state.hospitalToken='';sessionStorage.removeItem('zeno-h-token')}if(draw){toast(err.message);render()}else throw err}}
+ state.hospitalBookings=newBookings;state.hospitalQuestions=x.questions||[];state.hChangeRequests=x.changeRequests||[];state.hSpecialtyKeywords=x.specialtyKeywords||[];state.settings[state.activeHospital]=x.settings||state.settings[state.activeHospital];zenoHospitalTitle();if(draw)render()}catch(err){if(token!==state.hospitalToken)return;if(err.message.includes('401')||err.message.includes('권한')||err.message.includes('인증')){state.hospitalToken='';sessionStorage.removeItem('zeno-h-token')}if(draw){toast(err.message);render()}else throw err}}
 async function loadAdmin(draw=true){if(!state.adminToken)return;try{state.adminStats=await api('GET','/api/admin/stats',null,true);try{state.adminEvidence=(await api('GET','/api/admin/specialty-evidence',null,true)).evidence||[]}catch(err){state.adminEvidence=null;state.adminEvidenceError=err.message}if(draw)render()}catch(err){toast(err.message);state.adminToken='';sessionStorage.removeItem('zeno-admin-token');if(draw)render()}}
 function navTo(p){if(APP_MODE==='hospital'&&p!=='hospital')return;if(APP_MODE==='owner'&&(p==='hospital'||p==='admin'))return;state.page=p;state.modal=null;window.scrollTo({top:0,behavior:'instant'});if(p==='hospital')loadHospital();else if(p==='admin')loadAdmin();render()}
 const HOSPITAL_SVG={
@@ -867,21 +887,89 @@ function topbar(title,sub){
 function nav(){
  if(ZENO_ADMIN_MODE||!state.hospitalToken)return '';
  const menu=[['bookings','calendar','예약 관리'],['status','activity','진료 상태'],['vetqa','vetqa','수의사 Q&A'],['questions','message','진료 전 질문'],['info','building','병원 정보']];
- return '<nav class="hi-bottom-nav" aria-label="병원 관리 메뉴">'+menu.map(x=>'<button type="button" data-action="h-tab" data-value="'+x[0]+'" class="'+(state.hTab===x[0]?'active':'')+'"'+(state.hTab===x[0]?' aria-current="page"':'')+'>'+hsIcon(x[1],20)+'<span>'+x[2]+'</span></button>').join('')+'</nav>';
+ const section=state.hTab==='points'?state.hWalletReturn:state.hTab;
+ return '<nav class="hi-bottom-nav" aria-label="병원 관리 메뉴">'+menu.map(x=>'<button type="button" data-action="h-tab" data-value="'+x[0]+'" class="'+(section===x[0]?'active':'')+'"'+(section===x[0]?' aria-current="page"':'')+'>'+hsIcon(x[1],20)+'<span>'+x[2]+'</span></button>').join('')+'</nav>';
+}
+const hPointLabels={vetqa:'수의사 Q&A 첫 답변',previsit:'진료 전 질문 첫 답변',home_ad:'보호자 홈 광고'};
+const hPoints=value=>Number(value).toLocaleString('ko-KR')+'P';
+function hAnswerNotice(result){
+ return result.pointsAwarded?'답변을 저장하고 '+hPoints(result.pointsAwarded)+'를 적립했습니다.':'답변을 저장했습니다.';
+}
+function hWalletLink(){
+ return '<button type="button" class="hi-points-link" data-action="h-points"><span><strong>답변 포인트</strong><small>적립 내역과 병원 광고 관리</small></span>'+hsIcon('chevron',18)+'</button>';
+}
+async function hLoadWallet(draw=true){
+ const token=state.hospitalToken,version=(state.hWalletVersion||0)+1;
+ state.hWalletVersion=version;
+ const current=()=>token===state.hospitalToken&&version===state.hWalletVersion;
+ try{
+  const wallet=await api('GET','/api/hospital/points?hospitalId='+encodeURIComponent(state.activeHospital));
+  if(current()){state.hWallet=wallet;state.hWalletError=''}
+ }catch(err){if(current())state.hWalletError=err.message}
+ if(draw&&current()&&state.hTab==='points')render();
+}
+async function hStartAd(){
+ const wallet=state.hWallet;
+ if(!wallet||!state.hAdConfirm||state.hAdSending||state.hWalletError)return;
+ const token=state.hospitalToken,hid=state.activeHospital,key='zeno-home-ad-request-'+hid;
+ state.hAdSending=true;render();
+ try{
+  const requestId=sessionStorage.getItem(key)||crypto.randomUUID();
+  sessionStorage.setItem(key,requestId);
+  const result=await api('POST','/api/hospital/point-ads',{hospitalId:hid,requestId,expectedCost:wallet.policy.adCost});
+  if(token!==state.hospitalToken)return;
+  sessionStorage.removeItem(key);
+  state.hAdConfirm=false;
+  toast(Date.parse(result.ad.expiresAt)>Date.now()?'보호자 홈 광고를 시작했습니다.':'이 광고는 이미 종료되었습니다.');
+ }catch(err){if(token===state.hospitalToken)toast(err.message)}
+ finally{
+  if(token===state.hospitalToken){
+   await hLoadWallet(false);
+   if(token===state.hospitalToken){state.hAdSending=false;if(state.hTab==='points')render()}
+  }
+ }
+}
+function hWalletSection(){
+ const wallet=state.hWallet;
+ const back=state.hWalletReturn||'vetqa';
+ let html='<section class="hi-wallet"><button type="button" class="hi-wallet-back" data-action="h-tab" data-value="'+e(back)+'">‹ 돌아가기</button><h2>답변 포인트</h2>';
+ if(state.hWalletError)html+='<div class="banner warning" role="alert">'+e(state.hWalletError)+' <button class="btn secondary small" data-action="h-points-reload">다시 시도</button></div>';
+ if(!wallet)return html+(state.hWalletError?'':'<p role="status">포인트를 불러오는 중입니다.</p>')+'</section>';
+ const {balance,activeUntil,policy,history}=wallet;
+ const active=Date.parse(activeUntil)>Date.now(),cost=hPoints(policy.adCost);
+ html+='<div class="hi-wallet-balance"><h3>사용 가능한 포인트</h3><strong>'+hPoints(balance)+'</strong><p>새 질문에 우리 병원이 처음 답변하면 '+hPoints(policy.answerPoints)+'가 적립됩니다.</p></div>';
+ html+='<div class="panel"><h3>보호자 홈 병원 광고</h3><p>'+policy.adHours+'시간 · '+cost+'</p><p>보호자 홈에 우리 병원 이름과 상세 보기 버튼이 ‘광고’로 표시됩니다.</p>';
+ if(active){
+  html+='<p role="status"><strong>광고 노출 중</strong> · '+e(dateTime(activeUntil))+' 종료</p>';
+ }else if(state.hAdConfirm&&balance>=policy.adCost){
+  html+='<p>사용 후 잔액 <strong>'+hPoints(balance-policy.adCost)+'</strong></p><div class="hi-wallet-actions"><button class="btn" data-action="h-ad-start" '+(state.hAdSending||state.hWalletError?'disabled':'')+'>'+(state.hAdSending?'신청 중…':cost+' 사용하고 광고 시작')+'</button><button class="btn secondary" data-action="h-ad-cancel" '+(state.hAdSending?'disabled':'')+'>취소</button></div>';
+ }else{
+  if(balance<policy.adCost)html+='<p>'+hPoints(policy.adCost-balance)+' 더 모으면 광고를 시작할 수 있습니다.</p>';
+  html+='<div class="hi-wallet-actions"><button class="btn" data-action="h-ad-review" '+(balance<policy.adCost||state.hWalletError?'disabled':'')+'>광고에 포인트 사용</button></div>';
+ }
+ html+='</div><div class="panel"><h3>최근 포인트 내역</h3>';
+ if(history.length)html+='<ul class="hi-wallet-history">'+history.map(row=>'<li><span>'+e(hPointLabels[row.kind])+'<small>'+e(dateTime(row.createdAt))+'</small></span><b>'+(row.points>0?'+':'')+hPoints(row.points)+'</b></li>').join('')+'</ul>';
+ else html+='<p>첫 답변을 등록하면 여기에 적립 내역이 표시됩니다.</p>';
+ return html+'</div></section>';
 }
 /* 수의사 Q&A (2026-11-18): 보호자 공개 질문에 우리 병원 수의사가 답합니다. 수의사 이름은 선택 입력입니다. */
 async function hVetqaLoad(){
- if(!state.hospitalToken||state.hVetqaLoading)return;state.hVetqaLoading=true;state.hVetqaError='';
- try{const r=await api('GET','/api/hospital/vetqa?hospitalId='+encodeURIComponent(state.activeHospital));state.hVetqa=Array.isArray(r.questions)?r.questions:[]}
- catch(err){state.hVetqaError=err.message||'질문을 불러오지 못했습니다.'}
- finally{state.hVetqaLoading=false;if(state.hTab==='vetqa')render()}
+ const token=state.hospitalToken;
+ if(!token)return;
+ const version=(state.hVetqaVersion||0)+1;state.hVetqaVersion=version;
+ const current=()=>token===state.hospitalToken&&version===state.hVetqaVersion;
+ state.hVetqaLoading=true;state.hVetqaError='';
+ try{const r=await api('GET','/api/hospital/vetqa?hospitalId='+encodeURIComponent(state.activeHospital));if(current())state.hVetqa=Array.isArray(r.questions)?r.questions:[]}
+ catch(err){if(current())state.hVetqaError=err.message||'질문을 불러오지 못했습니다.'}
+ finally{if(current()){state.hVetqaLoading=false;if(state.hTab==='vetqa')render()}}
 }
 async function hVetqaSave(id){
  const body=String(document.getElementById('vq-answer-'+id)?.value||'').trim();
  const vetName=String(document.getElementById('vq-vet-'+id)?.value||'').trim();
  if(body.length<10){toast('답변을 10자 이상 입력해 주세요.');return}
  if(!state.hVetqaDrafts)state.hVetqaDrafts={};
- try{await api('PUT','/api/hospital/vetqa/'+encodeURIComponent(id)+'/answer',{hospitalId:state.activeHospital,body,vetName});delete state.hVetqaDrafts[id];toast('답변을 등록했습니다. 보호자 앱에 바로 공개됩니다.');await hVetqaLoad()}
+ const token=state.hospitalToken;
+ try{const result=await api('PUT','/api/hospital/vetqa/'+encodeURIComponent(id)+'/answer',{hospitalId:state.activeHospital,body,vetName});if(token!==state.hospitalToken)return;delete state.hVetqaDrafts[id];toast(hAnswerNotice(result));await hVetqaLoad()}
  catch(err){toast(err.message)}
 }
 function hVetqaSection(){
@@ -889,6 +977,7 @@ function hVetqaSection(){
  const shown=f==='mine'?list.filter(q=>q.myAnswer):f==='all'?list:list.filter(q=>!q.myAnswer);
  const tabs=[['waiting','답변 전 '+list.filter(q=>!q.myAnswer).length],['mine','우리 답변 '+list.filter(q=>q.myAnswer).length],['all','전체 '+list.length]];
  return '<header class="hi-inbox-heading hi-tab-heading"><h2>수의사 Q&A</h2></header>'
+ +hWalletLink()
  +'<p class="desc">보호자가 공개로 올린 질문입니다. 답변은 보호자 앱에 병원 이름과 함께 공개되며, 수의사 이름은 적고 싶을 때만 적으면 됩니다. 진단·처방이 아닌 일반 안내로 작성해 주세요.</p>'
  +'<div class="tabs">'+tabs.map(t=>'<button type="button" data-action="vetqa-filter" data-value="'+t[0]+'" class="'+(f===t[0]?'active':'')+'">'+e(t[1])+'</button>').join('')+'</div>'
  +(state.hVetqaError?'<div class="banner warning">'+e(state.hVetqaError)+'</div>':'')
@@ -1172,7 +1261,7 @@ function hospitalPage(){
  const chips='<div class="hi-filter-bar"><div class="hi-filter-chips">'+[['all','전체'],['waiting','처리 필요'],['awaiting','보호자 응답 대기'],['confirmed','예약 확정'],['closed','종료']].map(x=>'<button class="'+((state.hBookingFilter||'all')===x[0]?'selected':'')+'" data-action="booking-filter" data-value="'+x[0]+'" aria-pressed="'+String((state.hBookingFilter||'all')===x[0])+'">'+x[1]+'</button>').join('')+'</div><button class="hi-sort-button" data-action="booking-sort">'+hsIcon('filter',16)+(state.hSort==='urgency'?'긴급도순':'최신순')+'</button></div>';
  const inbox='<section class="hi-inbox"><header class="hi-inbox-heading"><h2>예약 관리</h2><span>'+shown.length+'건</span></header>'+(!live.length?'<p class="hi-no-booking">아직 접수된 예약 요청이 없습니다.</p>':'')+chips+hiInboxGroups(shown)+'</section>';
  const current=all.find(x=>x.id===state.hDetailBookingId);
- return topbar('병원 관리','')+header+counts+(state.hTab==='bookings'?inbox:'')+`${state.hTab==='status'?tabTitle('진료 상태')+`<div class="two-col"><div class="panel"><h3>진료 수용 상태</h3><p class="desc">일반 진료와 응급 진료는 따로 설정되며, 변경하면 보호자용 병원 목록에 반영됩니다.</p>${hiStatusRow('normal','일반 진료','change-status',s.status,[['available','현재 접수 가능'],['busy','혼잡'],['check','확인 필요']])}${hiStatusRow('emergency','응급 진료','change-emergency',s.emergencyStatus,[['check','확인 필요'],['available','문의 가능'],['busy','혼잡'],['unavailable','수용 어려움']])}<p class="hi-status-help">상태는 선택하는 즉시 저장됩니다. 응급 진료 상태는 병원이 입력한 참고 상태이며, 보호자에게는 전화로 확인하도록 안내됩니다.</p><form id="status-settings" class="hi-guide-form"><h3>보호자 안내 문구</h3><p class="desc">아래 내용은 "안내 문구 저장"을 눌러야 반영됩니다.</p><div class="field"><label>병원 운영 공지</label><textarea name="notice" maxlength="250" placeholder="예: 현재 야간 인력이 제한되어 있습니다.">${e(s.notice||'')}</textarea></div><label class="radio-row" style="margin-bottom:14px"><input type="checkbox" name="emergency" ${s.emergency?'checked':''}>“응급은 전화로 문의해 주세요” 문구 표시</label><p class="hi-checkbox-help">응급 진료 상태와 별개로, 보호자 앱 병원 정보에 전화 문의 안내 문구를 함께 보여줍니다.</p><button class="btn" type="submit">안내 문구 저장</button></form></div><div class="panel"><h3>보호자 화면 미리보기</h3><dl class="hi-preview-list"><div><dt>일반 진료</dt><dd>${statusWidget(h)}</dd></div><div><dt>응급 진료</dt><dd>${e(({available:'문의 가능',busy:'혼잡',unavailable:'수용 어려움'})[s.emergencyStatus]||'표시 안 함 (확인 필요 상태)')}</dd></div><div><dt>응급 안내 문구</dt><dd>${s.emergency?'“응급은 전화로 문의해 주세요” 표시':'표시 안 함'}</dd></div></dl><p class="desc">${s.updatedAt?'마지막 변경 ':''}<span id="hi-status-updated">${updateText(s.updatedAt)}</span></p><p class="desc">${e(s.notice||'병원 공지가 없습니다.')}</p><div class="banner warning">진료 가능 여부는 병원에 전화해 최종 확인해 주세요.</div></div></div>`:''}${state.hTab==='vetqa'?hVetqaSection():''}${state.hTab==='questions'?tabTitle('진료 전 질문')+`<div class="grid two">${q.map(x=>`<div class="panel"><span class="status ${x.status==='answered'?'available':'busy'}">${x.status==='answered'?'답변 등록':'답변 대기'}</span><h3 style="margin-top:12px">${e(x.petName||'반려동물')}의 질문</h3><p class="preline">${e(x.text)}</p><p class="desc">작성 ${dateTime(x.createdAt)}</p><div class="divider"></div><div class="field"><label>병원 답변</label><textarea id="answer-${e(x.id)}" maxlength="1200" placeholder="진료 판단이 아닌 시연 답변을 입력하세요">${e(x.answer||'')}</textarea></div><button class="btn small" data-action="answer" data-id="${e(x.id)}">답변 저장</button></div>`).join('')||'<div class="empty">등록된 질문이 없습니다.</div>'}</div>`:''}${state.hTab==='info'?tabTitle('병원 정보')+`<div class="grid two"><div class="panel"><h3>병원 기본 정보</h3><dl class="hi-basic-info"><div><dt>주소</dt><dd>${e(h.address)}</dd></div><div><dt>전화</dt><dd>${e(h.phone||'공개 연락처 미확인')}</dd></div></dl><div class="hi-public-note"><span>보호자에게 표시되는 진료시간 안내</span><p>${e(h.hours)}</p></div><div class="banner">공개자료 기반 기본 정보입니다. 실제 병원 확인 전에는 수정된 내용을 검증된 정보로 표시하지 않습니다.</div><div class="divider"></div><h3>진료 가능 과목·진료 동물 등록</h3><form id="hospital-service"><div class="field"><label>추가 진료 항목</label><select name="service">${['일반 진료','내과','피부·귀','안과','치과·구강','정형외과','외과','중성화수술','심장·호흡기','비뇨기','건강검진·접종','토끼','햄스터','기니피그','조류','파충류'].map(x=>`<option>${x}</option>`).join('')}</select></div><button class="btn small" type="submit">진료 분야 추가</button></form><div class="tags hi-service-chips" style="margin-top:12px">${(s.services||[]).map(x=>`<button class="tag blue" data-action="service-remove" data-value="${e(x)}">${e(x)} ×</button>`).join('')}</div>${hiSpecialtySettings()}</div>${hiChangeRequestPanel(h)}</div>`:''}`+(current&&state.hTab==='bookings'?hiDetailSheet(current):'');
+ return topbar('병원 관리','')+header+(state.hTab==='points'?hWalletSection():counts)+(state.hTab==='bookings'?inbox:'')+`${state.hTab==='status'?tabTitle('진료 상태')+`<div class="two-col"><div class="panel"><h3>진료 수용 상태</h3><p class="desc">일반 진료와 응급 진료는 따로 설정되며, 변경하면 보호자용 병원 목록에 반영됩니다.</p>${hiStatusRow('normal','일반 진료','change-status',s.status,[['available','현재 접수 가능'],['busy','혼잡'],['check','확인 필요']])}${hiStatusRow('emergency','응급 진료','change-emergency',s.emergencyStatus,[['check','확인 필요'],['available','문의 가능'],['busy','혼잡'],['unavailable','수용 어려움']])}<p class="hi-status-help">상태는 선택하는 즉시 저장됩니다. 응급 진료 상태는 병원이 입력한 참고 상태이며, 보호자에게는 전화로 확인하도록 안내됩니다.</p><form id="status-settings" class="hi-guide-form"><h3>보호자 안내 문구</h3><p class="desc">아래 내용은 "안내 문구 저장"을 눌러야 반영됩니다.</p><div class="field"><label>병원 운영 공지</label><textarea name="notice" maxlength="250" placeholder="예: 현재 야간 인력이 제한되어 있습니다.">${e(s.notice||'')}</textarea></div><label class="radio-row" style="margin-bottom:14px"><input type="checkbox" name="emergency" ${s.emergency?'checked':''}>“응급은 전화로 문의해 주세요” 문구 표시</label><p class="hi-checkbox-help">응급 진료 상태와 별개로, 보호자 앱 병원 정보에 전화 문의 안내 문구를 함께 보여줍니다.</p><button class="btn" type="submit">안내 문구 저장</button></form></div><div class="panel"><h3>보호자 화면 미리보기</h3><dl class="hi-preview-list"><div><dt>일반 진료</dt><dd>${statusWidget(h)}</dd></div><div><dt>응급 진료</dt><dd>${e(({available:'문의 가능',busy:'혼잡',unavailable:'수용 어려움'})[s.emergencyStatus]||'표시 안 함 (확인 필요 상태)')}</dd></div><div><dt>응급 안내 문구</dt><dd>${s.emergency?'“응급은 전화로 문의해 주세요” 표시':'표시 안 함'}</dd></div></dl><p class="desc">${s.updatedAt?'마지막 변경 ':''}<span id="hi-status-updated">${updateText(s.updatedAt)}</span></p><p class="desc">${e(s.notice||'병원 공지가 없습니다.')}</p><div class="banner warning">진료 가능 여부는 병원에 전화해 최종 확인해 주세요.</div></div></div>`:''}${state.hTab==='vetqa'?hVetqaSection():''}${state.hTab==='questions'?tabTitle('진료 전 질문')+hWalletLink()+`<div class="grid two">${q.map(x=>`<div class="panel"><span class="status ${x.status==='answered'?'available':'busy'}">${x.status==='answered'?'답변 등록':'답변 대기'}</span><h3 style="margin-top:12px">${e(x.petName||'반려동물')}의 질문</h3><p class="preline">${e(x.text)}</p><p class="desc">작성 ${dateTime(x.createdAt)}</p><div class="divider"></div><div class="field"><label>병원 답변</label><textarea id="answer-${e(x.id)}" maxlength="1200" placeholder="보호자에게 보낼 답변을 입력해 주세요">${e(x.answer||'')}</textarea></div><button class="btn small" data-action="answer" data-id="${e(x.id)}">답변 저장</button></div>`).join('')||'<div class="empty">등록된 질문이 없습니다.</div>'}</div>`:''}${state.hTab==='info'?tabTitle('병원 정보')+hWalletLink()+`<div class="grid two"><div class="panel"><h3>병원 기본 정보</h3><dl class="hi-basic-info"><div><dt>주소</dt><dd>${e(h.address)}</dd></div><div><dt>전화</dt><dd>${e(h.phone||'공개 연락처 미확인')}</dd></div></dl><div class="hi-public-note"><span>보호자에게 표시되는 진료시간 안내</span><p>${e(h.hours)}</p></div><div class="banner">공개자료 기반 기본 정보입니다. 실제 병원 확인 전에는 수정된 내용을 검증된 정보로 표시하지 않습니다.</div><div class="divider"></div><h3>진료 가능 과목·진료 동물 등록</h3><form id="hospital-service"><div class="field"><label>추가 진료 항목</label><select name="service">${['일반 진료','내과','피부·귀','안과','치과·구강','정형외과','외과','중성화수술','심장·호흡기','비뇨기','건강검진·접종','토끼','햄스터','기니피그','조류','파충류'].map(x=>`<option>${x}</option>`).join('')}</select></div><button class="btn small" type="submit">진료 분야 추가</button></form><div class="tags hi-service-chips" style="margin-top:12px">${(s.services||[]).map(x=>`<button class="tag blue" data-action="service-remove" data-value="${e(x)}">${e(x)} ×</button>`).join('')}</div>${hiSpecialtySettings()}</div>${hiChangeRequestPanel(h)}</div>`:''}`+(current&&state.hTab==='bookings'?hiDetailSheet(current):'');
 }
 function adminPage(){if(!state.adminToken)return `${topbar('제노 관리자용','플랫폼 운영 현황 · 시연 관리자')}<div class="panel" style="max-width:510px;margin:20px auto"><h3>관리자 로그인</h3><form id="admin-login"><div class="field"><label>관리자 비밀번호</label><input name="pin" type="password" required></div><button class="btn full" type="submit">운영 현황 열기</button></form>${state.local?'<p class="notice">로컬 체험 관리자 비밀번호: 0000</p>':''}</div>`;let a=state.adminStats||{bookings:0,questions:0,confirmed:0,hospitals:3};return `${topbar('제노 운영 현황','3개 병원 연동 체험 데이터에 대한 집계')}<div class="dashboard-hero"><div><span class="eyebrow" style="color:#9ed6ff">ZENO ADMIN</span><h2>청주 파일럿 운영 화면</h2><p>병원 참여 → 실제 이용 → 재이용 검증</p></div><button class="btn secondary small" data-action="admin-logout">로그아웃</button></div><div class="metric-grid"><div class="metric"><span class="micon">🏥</span><strong>${a.hospitals}</strong><small>연동 구성 병원</small></div><div class="metric"><span class="micon">📅</span><strong>${a.bookings}</strong><small>데모 예약 수</small></div><div class="metric"><span class="micon">💬</span><strong>${a.questions}</strong><small>데모 질문 수</small></div></div><div class="section"><div class="panel"><h3>서비스 운영 체크리스트</h3>${[['병원 참여','시연 병원 3곳 구성'],['실제 이용','보호자 예약·병원 수락 흐름 테스트'],['재이용 검증','예약 후 기록·질문·혜택 이용 지표 측정']].map((x,i)=>`<div class="row-line"><div><strong>0${i+1} ${x[0]}</strong><div class="sub">${x[1]}</div></div><span class="tag blue">MVP</span></div>`).join('')}</div></div><div class="banner warning">진료·예약 실적은 병원의 실제 운영 자료로 확인해야 합니다.</div>${hiAdminEvidenceSection()}<p style="text-align:center;margin-top:16px"><button class="btn secondary small" data-action="admin-exit">병원 관리 화면으로</button></p>`}
 function hiAdminEvidenceSection(){
@@ -1279,7 +1368,7 @@ if(a==='ask'){openModal('ask');return}if(a==='point-calc'){openModal('point');re
 if(a==='owner-cancel'){if(confirm('예약 요청을 취소하시겠습니까?'))await mutate('PATCH','/api/bookings/'+id,{status:'cancelled',side:'owner'},'예약 요청을 취소했습니다.');return}
 if(a==='owner-confirm'){if(confirm('병원이 제안한 시간으로 확정하시겠습니까?'))await mutate('PATCH','/api/bookings/'+id,{status:'confirmed',side:'owner'},'제안된 시간으로 확정했습니다.');return}
 if(a==='hospital-alert-toggle'){await zenoHospitalAlertToggle();render();return}
-if(a==='hospital-logout'){document.title=ZENO_H_BASE_TITLE;state.hDemoMode=false;state.hNewCount=0;state.hAlertReady=false;state.hSeenIds=[];state.hospitalToken='';sessionStorage.removeItem('zeno-h-token');sessionStorage.removeItem('zeno-h-hospital');state.hospitalBookings=[];state.hospitalQuestions=[];state.hSpecialtyKeywords=[];render();return}
+if(a==='hospital-logout'){state.hWallet=null;state.hWalletError='';state.hAdConfirm=false;state.hAdSending=false;state.hVetqa=[];state.hVetqaDrafts={};state.hVetqaFilter='waiting';state.hVetqaLoading=false;state.hVetqaError='';document.title=ZENO_H_BASE_TITLE;state.hDemoMode=false;state.hNewCount=0;state.hAlertReady=false;state.hSeenIds=[];state.hospitalToken='';sessionStorage.removeItem('zeno-h-token');sessionStorage.removeItem('zeno-h-hospital');state.hospitalBookings=[];state.hospitalQuestions=[];state.hSpecialtyKeywords=[];render();return}
 if(a==='admin-ev'){
  const decision=el.dataset.decision,reviewNote=(document.getElementById('admin-ev-note-'+el.dataset.idx)?.value||'').trim();
  if(decision==='reject'&&reviewNote.length<2){toast('보류 사유를 입력해 주세요.');return}
@@ -1290,6 +1379,14 @@ if(a==='admin-ev'){
 if(a==='admin-exit'){sessionStorage.removeItem('zeno-admin-mode');window.location.replace('/hospital');return}
 if(a==='admin-logout'){state.adminToken='';sessionStorage.removeItem('zeno-admin-token');render();return}
 if(a==='h-tab'){state.hTab=val;state.hDetailBookingId=null;if(val==='bookings')state.hNewCount=0;if(val==='vetqa')hVetqaLoad();render();return}
+if(a==='h-points'){
+ state.hWalletReturn=state.hTab;state.hTab='points';state.hAdConfirm=false;state.hWallet=null;state.hWalletError='';
+ render();window.scrollTo(0,0);await hLoadWallet();return;
+}
+if(a==='h-points-reload'){await hLoadWallet();return}
+if(a==='h-ad-review'){state.hAdConfirm=true;render();document.querySelector('[data-action="h-ad-start"]')?.focus();return}
+if(a==='h-ad-cancel'){state.hAdConfirm=false;render();document.querySelector('[data-action="h-ad-review"]')?.focus();return}
+if(a==='h-ad-start'){await hStartAd();return}
 if(a==='vetqa-answer'){await hVetqaSave(id);return}
 if(a==='vetqa-filter'){state.hVetqaFilter=val;render();return}
 /* CHANGED: no sample mode button. */
@@ -1330,7 +1427,9 @@ if(a==='hospital-update'&&el.dataset.status==='confirmed'){const row=(state.hDem
 /* CHANGED: removed fabricated booking status path. */
 if(a==='hospital-update'){let label=STATUS[el.dataset.status]||'변경';if(el.dataset.status==='cancelled'||confirm('예약을 '+label+' 처리하시겠습니까?'))await mutate('PATCH','/api/bookings/'+id,{status:el.dataset.status,side:'hospital'},'예약 상태를 변경했습니다.');return}
 if(a==='propose'){state.hDetailBookingId=null;openModal('propose',id);return}
-if(a==='answer'){let answer=document.getElementById('answer-'+id)?.value.trim();if(!answer||answer.length<3){toast('답변을 3자 이상 입력해 주세요.');return}await mutate('PATCH','/api/questions/'+id,{answer},'답변을 저장했습니다.');return}
+if(a==='answer'){let answer=document.getElementById('answer-'+id)?.value.trim();if(!answer||answer.length<3){toast('답변을 3자 이상 입력해 주세요.');return}const token=state.hospitalToken;
+ try{const result=await api('PATCH','/api/questions/'+encodeURIComponent(id),{answer});if(token===state.hospitalToken)await afterMutation(hAnswerNotice(result))}
+ catch(err){toast(err.message)}return}
 if(a==='hi-keywords-keep'){
  try{
   const response=await api('PATCH','/api/hospital-specialties/keep',{});

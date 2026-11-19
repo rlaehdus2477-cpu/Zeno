@@ -2,7 +2,7 @@
 // - worker.js를 wrangler dev --local로 띄우고, 로컬 D1(임시 폴더)에서만 실행합니다.
 // - 운영 데이터베이스(--remote)에는 접속하지 않습니다.
 // - 비밀번호·비밀키는 테스트 전용 가짜 값이며 실제 값과 무관합니다.
-// 실행: node tests/booking-flow.mjs
+// 실행: node tests/vetqa-flow.mjs
 import {spawn, spawnSync} from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -68,9 +68,18 @@ function run(cmd, args) {
 }
 
 let server;
+const legacyQuestion = '00000000-0000-4000-8000-000000000001';
+function localSql(sql) {
+  run(WRANGLER, ['d1', 'execute', 'zeno-live-db', '--local', '--persist-to', PERSIST, '--command', sql]);
+}
 async function startServer() {
   // 로컬 D1에만 스키마 적용
   run(WRANGLER, ['d1', 'execute', 'zeno-live-db', '--local', '--persist-to', PERSIST, '--file=schema.sql']);
+  // Model an existing installation with answers written before points were available.
+  localSql(`DROP TABLE hospital_point_entries;
+    INSERT INTO vetqa_questions VALUES('${legacyQuestion}','legacy-owner','이전 질문','방문 준비물 질문','기타','일반','open','2026-01-01','2026-01-01');
+    INSERT INTO vetqa_answers VALUES('legacy-answer','${legacyQuestion}','soo','','이전에 등록한 답변','visible','2026-01-01','2026-01-01');
+    INSERT INTO questions VALUES('legacy-private','legacy-owner','soo','','이전 문의','기존 답변','answered','2026-01-01','2026-01-01');`);
   const vars = [['SESSION_SECRET', SECRET], ['HOSPITAL_SOO_PIN', PINS.soo], ['HOSPITAL_NAEUM_PIN', PINS.naeum], ['HOSPITAL_TND_PIN', PINS.tnd]]
     .flatMap(([k, v]) => ['--var', `${k}:${v}`]);
   server = spawn(WRANGLER, ['dev', '--local', '--persist-to', PERSIST, '--ip', '127.0.0.1', '--port', String(PORT), ...vars],
@@ -103,7 +112,7 @@ async function main() {
   const soo = (await api('POST', '/api/login', {body: {hospitalId: 'soo', pin: PINS.soo}})).data.token;
   const naeum = (await api('POST', '/api/login', {body: {hospitalId: 'naeum', pin: PINS.naeum}})).data.token;
   expect(soo && naeum, '병원 로그인 실패');
-  let qid = null;
+  let qid = null, privateId = null;
 
   await check(1, '로그인 없이 질문 작성 불가', async () => {
     const r = await api('POST', '/api/vetqa', {body: {title: '밥을 안 먹어요', body: '고양이가 이틀째 사료를 안 먹어요.', species: '고양이', field: '내과'}});
@@ -142,6 +151,7 @@ async function main() {
     const r2 = await api('PUT', '/api/hospital/vetqa/' + qid + '/answer', {token: naeum, body: {hospitalId: 'naeum', body: '물을 잘 마신다면 우선 관찰하되, 48시간이 넘으면 진료가 필요합니다.'}});
     expect(r1.status === 200 && r1.data.vetName === '김수의', '수동물병원 답변 실패');
     expect(r2.status === 200 && r2.data.vetName === '', '나음 답변(이름 없음) 실패');
+    expect(r1.data.pointsAwarded === 100 && r2.data.pointsAwarded === 100, '병원별 첫 답변 적립 실패');
   });
   await check(7, '공개 상세에 답변 2개, 답변 수 반영', async () => {
     const d = await api('GET', '/api/public/vetqa/' + qid);
@@ -172,6 +182,72 @@ async function main() {
   await check(11, '기존 진료 전 질문(/api/questions)은 그대로 동작', async () => {
     const r = await api('POST', '/api/questions', {token: A, body: {hospitalId: 'soo', petName: '나비', text: '내원 전에 금식이 필요한가요?'}});
     expect(r.status === 201, '기존 질문 실패: ' + r.status);
+    privateId = r.data.id;
+  });
+
+  const wallet = (hid = 'soo', token = soo) => api('GET', '/api/hospital/points?hospitalId=' + hid, {token});
+  const buy = (requestId, token = soo, expectedCost = 300) => api('POST', '/api/hospital/point-ads',
+    {token, body: {hospitalId: 'soo', requestId, expectedCost}});
+  const ads = () => api('GET', '/api/public/hospital-ads');
+  await check(12, '병원별 잔액·접근 권한과 잔액 부족 처리', async () => {
+    const w = (await wallet()).data;
+    expect(w.balance === 100 && w.history.length === 1 && w.history[0].kind === 'vetqa', '재답변 중복 적립');
+    expect((await wallet('naeum', naeum)).data.balance === 100, '병원별 잔액 불일치');
+    for (const token of [A, naeum, null]) {
+      expect((await wallet('soo', token)).status === 401, '다른 계정의 잔액 조회 허용');
+      expect((await buy(crypto.randomUUID(), token)).status === 401, '권한 없는 광고 구매 허용');
+    }
+    expect((await buy(crypto.randomUUID())).status === 409, '잔액 부족 구매 허용');
+    expect((await ads()).data.ads.length === 0, '신청 전 광고 노출');
+  });
+  await check(13, '기존 공개·비공개 답변 수정은 미적립', async () => {
+    const pub = await api('PUT', '/api/hospital/vetqa/' + legacyQuestion + '/answer',
+      {token: soo, body: {hospitalId: 'soo', body: '이전에 등록한 답변을 수정합니다.'}});
+    const priv = await api('PATCH', '/api/questions/legacy-private', {token: soo, body: {answer: '이전 안내 수정'}});
+    expect(pub.data.pointsAwarded === 0 && priv.data.pointsAwarded === 0 && (await wallet()).data.balance === 100, '기존 답변에 신규 포인트 적립');
+  });
+  await check(14, '비공개 질문 첫 답변 동시 저장과 수정', async () => {
+    const answer = token => api('PATCH', '/api/questions/' + privateId, {token, body: {answer: '방문 시 진료 기록을 가져와 주세요.'}});
+    expect((await answer(naeum)).status === 401, '다른 병원의 비공개 답변 허용');
+    const attempts = await Promise.all([answer(soo), answer(soo)]);
+    expect(attempts.every(r => r.status === 200) && attempts.map(r => r.data.pointsAwarded).sort().join() === '0,100', '동시 비공개 답변 중복 적립');
+    expect((await answer(soo)).data.pointsAwarded === 0 && (await wallet()).data.balance === 200, '비공개 답변 수정 중복 적립');
+  });
+  await check(15, '공개 질문 첫 답변 동시 저장', async () => {
+    const q = await api('POST', '/api/vetqa', {token: B, body: {species:'고양이', field:'일반', title:'방문 준비물 문의', body:'방문할 때 어떤 기록을 가져가야 하나요?'}});
+    const answer = () => api('PUT', '/api/hospital/vetqa/' + q.data.id + '/answer',
+      {token:soo, body:{hospitalId:'soo', body:'방문 시 기존 기록을 지참해 주세요.'}});
+    const attempts = await Promise.all([answer(), answer()]);
+    expect(attempts.every(r => r.status === 200) && attempts.map(r => r.data.pointsAwarded).sort().join() === '0,100', '동시 공개 답변 중복 적립');
+    expect((await wallet()).data.balance === 300, '광고에 사용할 잔액이 다름');
+  });
+  let paidId;
+  await check(16, '광고 동시 신청·재전송은 한 번만 차감하고 24시간 공개', async () => {
+    expect((await buy(crypto.randomUUID(), soo, 1)).status === 409, '다른 가격으로 구매 허용');
+    const ids = [crypto.randomUUID(), crypto.randomUUID()];
+    const attempts = await Promise.all(ids.map(id => buy(id)));
+    const created = attempts.findIndex(r => r.status === 201);
+    expect(created >= 0 && attempts[1-created].status === 409, '동시 광고 신청 처리 실패');
+    paidId = ids[created];
+    const replay = await buy(paidId), ad = attempts[created].data.ad;
+    expect(replay.status === 200 && replay.data.ad.expiresAt === ad.expiresAt, '재전송에 새 광고 생성');
+    expect(Date.parse(ad.expiresAt)-Date.parse(ad.startedAt) === 24*3600000, '광고 기간 오류');
+    const w = (await wallet()).data;
+    expect(w.balance === 0 && w.activeUntil === ad.expiresAt && w.history.filter(x => x.kind === 'home_ad' && x.points === -300).length === 1, '잔액·광고 내역 불일치');
+    expect((await wallet('naeum', naeum)).data.balance === 100, '다른 병원의 포인트 차감');
+    const feed = (await ads()).data.ads;
+    expect(feed.length === 1 && feed[0].hospitalId === 'soo' && Object.keys(feed[0]).sort().join() === 'expiresAt,hospitalId', '보호자 광고 공개 필드 오류');
+  });
+  await check(17, '만료 시 광고 종료, 적립 내역 보존 및 새 포인트로 재집행', async () => {
+    localSql("UPDATE hospital_point_entries SET created_at='2026-01-01T00:00:00.000Z', expires_at='2026-01-02T00:00:00.000Z' WHERE kind='home_ad'");
+    expect((await ads()).data.ads.length === 0, '만료 광고가 공개됨');
+    expect((await wallet()).data.activeUntil === null && (await buy(paidId)).status === 200, '만료 처리 또는 기존 요청 재전송 오류');
+    expect((await wallet()).data.balance === 0 && (await buy(crypto.randomUUID())).status === 409, '만료 시 차감 복원');
+    for (let i=0; i<3; i++) {
+      const {data:q} = await api('POST','/api/questions',{token:A,body:{hospitalId:'soo',text:'방문 시 필요한 준비물이 있나요?'}});
+      await api('PATCH','/api/questions/'+q.id,{token:soo,body:{answer:'기존 진료 기록을 가져와 주세요.'}});
+    }
+    expect((await buy(crypto.randomUUID())).status === 201 && (await ads()).data.ads.length === 1, '만료 후 다시 광고를 시작할 수 없음');
   });
 
   const failed = results.filter(r => !r.ok);
