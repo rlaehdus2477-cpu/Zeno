@@ -1,6 +1,6 @@
 -- ZENO MVP D1 schema
 CREATE TABLE IF NOT EXISTS hospital_settings (
-  hospital_id TEXT PRIMARY KEY CHECK(hospital_id IN ('soo','naeum','tnd')),
+  hospital_id TEXT PRIMARY KEY,
   status TEXT NOT NULL DEFAULT 'check',
   notice TEXT NOT NULL DEFAULT '',
   emergency INTEGER NOT NULL DEFAULT 0,
@@ -185,3 +185,22 @@ CREATE TABLE IF NOT EXISTS hospital_point_entries (
 );
 CREATE INDEX IF NOT EXISTS hospital_point_history ON hospital_point_entries(hospital_id,created_at DESC);
 CREATE INDEX IF NOT EXISTS hospital_home_ads ON hospital_point_entries(expires_at) WHERE kind='home_ad';
+
+CREATE TABLE IF NOT EXISTS hospital_staff (
+ hospital_id TEXT NOT NULL, username TEXT NOT NULL, salt TEXT NOT NULL, password_hash TEXT NOT NULL,
+ session_version TEXT NOT NULL, active INTEGER NOT NULL DEFAULT 1 CHECK(active IN (0,1)),
+ PRIMARY KEY(hospital_id,username));
+
+CREATE TABLE IF NOT EXISTS removed_booking_submissions (
+ booking_id TEXT PRIMARY KEY, owner_id TEXT NOT NULL, created_at TEXT NOT NULL);
+
+CREATE TABLE IF NOT EXISTS hospital_answer_reviews (
+ id TEXT PRIMARY KEY, hospital_id TEXT NOT NULL, kind TEXT NOT NULL CHECK(kind IN ('vetqa','previsit')),
+ reference TEXT NOT NULL, owner_id TEXT NOT NULL, first_answer TEXT NOT NULL, created_at TEXT NOT NULL,
+ status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending','approved','rejected')), reviewed_at TEXT,
+ UNIQUE(hospital_id,kind,reference));
+CREATE INDEX IF NOT EXISTS removed_bookings_owner ON removed_booking_submissions(owner_id,created_at);
+CREATE INDEX IF NOT EXISTS removed_bookings_expiry ON removed_booking_submissions(created_at);
+CREATE INDEX IF NOT EXISTS answer_review_day ON hospital_answer_reviews(hospital_id,created_at);
+CREATE INDEX IF NOT EXISTS answer_review_queue ON hospital_answer_reviews(status,created_at);
+CREATE INDEX IF NOT EXISTS answer_review_owner ON hospital_answer_reviews(hospital_id,owner_id,created_at);
