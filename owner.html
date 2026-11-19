@@ -1117,6 +1117,9 @@ body{word-break:keep-all;overflow-wrap:break-word}
 .zeno-book-option strong{display:block;font-size:13.5px;line-height:1.35}
 .zeno-book-option small{display:block;margin-top:4px;font-size:11.5px!important;font-weight:450;line-height:1.45;color:#758393}
 .zeno-book-hint{font-size:12px;color:#7a8998;line-height:1.5;margin:9px 0 15px}
+.zeno-book-step-soo h3{margin:12px 0 8px}
+.zeno-book-step-soo .zeno-book-kind-list,.zeno-book-step-soo .zeno-book-service-list{gap:7px}
+.zeno-book-step-soo .zeno-book-option{min-height:44px;padding:9px 11px}
 .zeno-book-next{margin:18px 0 5px}
 .modal.zeno-book-modal .modal-head{position:sticky;top:-20px;z-index:5;background:inherit;margin-top:-20px!important;padding-top:20px!important;padding-bottom:10px!important;border-bottom:1px solid #edf1f5}
 .zeno-book-service-list .zeno-book-option:last-child:nth-child(odd){grid-column:1/-1}
@@ -3716,7 +3719,12 @@ function zenoExoticSearchAnimals(h){const services=hs(h.id).services||[];return 
 function zenoExoticMatches(h,species){const names=zenoExoticSearchAnimals(h);return names.includes(species)||(species==='기타 파충류'&&names.includes('파충류'));}
 function zenoBookingAnimals(h){
  const services=hs(h.id).services||[];
- return [...new Set([...(h.officialCompanionSpecies||['고양이','강아지']),...(h.officialExoticSpecies||[]),...services.filter(x=>['토끼','햄스터','기니피그','조류','파충류'].includes(x))])];
+ // 수동물병원은 네이버에 기재된 진료 대상 종을 예약 요청 후보로 노출한다.
+ // 진료 대상 안내는 예약 수락을 의미하지 않으므로 병원 확인 전 확정으로 표시하지 않는다.
+ const published=h.id==='soo'?(h.publishedExoticSpecies||[]):[];
+ // 이 병원은 검증되지 않은 서비스 태그(예: 조류)가 예약 동물종에 섞이지 않도록 한다.
+ const serviceKinds=h.id==='soo'?[]:services.filter(x=>['토끼','햄스터','기니피그','조류','파충류'].includes(x));
+ return [...new Set([...(h.officialCompanionSpecies||['고양이','강아지']),...(h.officialExoticSpecies||[]),...published,...serviceKinds])];
 }
 function zenoBookingServices(h,species){
  const registered=[...(h.officialSpecialties||[]),...(hs(h.id).services||[]),...(h.cats||[]).map(x=>x==='일반'?'일반 진료':x)];
@@ -3733,9 +3741,12 @@ function zenoBookingFlow(h){
  if(state.modal.step!=='details'){
   const animalButtons=animals.map(kind=>'<button type="button" class="zeno-book-option '+(chosenKind===kind?'selected':'')+'" data-action="zeno-book-kind" data-value="'+e(kind)+'" aria-pressed="'+(chosenKind===kind)+'">'+e(kind)+'</button>').join('');
   const serviceButtons=chosenKind?chosenService.map(([name,desc])=>'<button type="button" class="zeno-book-option zeno-book-service '+(selected===name?'selected':'')+'" data-action="zeno-book-service" data-value="'+e(name)+'" aria-pressed="'+(selected===name)+'"><strong>'+e(name)+'</strong><small>'+e(desc)+'</small></button>').join(''):'<p class="zeno-book-hint">먼저 진료받을 동물을 선택해 주세요.</p>';
-  const unsupported=!(h.officialExoticSpecies||[]).length?'<p class="zeno-book-hint">이 병원은 강아지·고양이만 예약할 수 있어요.</p>':'<p class="zeno-book-hint">특수동물은 병원이 안내한 종만 예약할 수 있어요.</p>';
+  const hasExotics=animals.some(kind=>kind!=='고양이'&&kind!=='강아지');
+  const unsupported=h.id==='soo'
+   ?'<p class="zeno-book-hint">네이버에 안내된 진료 동물입니다. 특수동물 예약은 병원에서 접수 가능 여부를 확인한 뒤 확정해요.</p>'
+   :hasExotics?'<p class="zeno-book-hint">특수동물은 병원이 안내한 종만 예약할 수 있어요.</p>':'<p class="zeno-book-hint">이 병원은 강아지·고양이만 예약할 수 있어요.</p>';
  const serviceNotice='';
-  return {title:'진료 선택 · '+h.name,body:'<section class="zeno-book-step"><p class="zeno-book-step-label">1 / 2 · 진료 선택</p><h3>어떤 아이가 진료받나요?</h3><div class="zeno-book-kind-list">'+animalButtons+'</div>'+unsupported+'<h3>어떤 진료가 필요한가요?</h3>'+serviceNotice+'<div class="zeno-book-service-list">'+serviceButtons+'</div><button class="btn full zeno-book-next" type="button" data-action="zeno-book-next" '+(!chosenKind||!selected?'disabled':'')+'>다음</button><p class="zeno-book-warning">실제 진료 가능 여부는 병원이 확인한 뒤 확정돼요.</p></section>'};
+  return {title:'진료 선택 · '+h.name,body:'<section class="zeno-book-step'+(h.id==='soo'?' zeno-book-step-soo':'')+'"><p class="zeno-book-step-label">1 / 2 · 진료 선택</p><h3>어떤 아이가 진료받나요?</h3><div class="zeno-book-kind-list">'+animalButtons+'</div>'+unsupported+'<h3>어떤 진료가 필요한가요?</h3>'+serviceNotice+'<div class="zeno-book-service-list">'+serviceButtons+'</div><button class="btn full zeno-book-next" type="button" data-action="zeno-book-next" '+(!chosenKind||!selected?'disabled':'')+'>다음</button><p class="zeno-book-warning">실제 진료 가능 여부는 병원이 확인한 뒤 확정돼요.</p></section>'};
  }
  const petChoices=state.pets.filter(p=>p.species===chosenKind).map(p=>'<button class="zeno-book-pet" type="button" data-action="book-pet" data-id="'+e(p.id)+'">'+e(p.name)+'</button>').join('');
  const optionHint=chosenKind==='고양이'||chosenKind==='강아지'?'': '<p class="zeno-book-hint">이 동물종의 진료 가능 여부를 예약 전에 병원에 전화로 확인해 주세요.</p>';
@@ -5495,7 +5506,7 @@ function openModal(type,id){
   const kind=state.exoticSpecies||pet?.species||'고양이';
   const choices=h?zenoBookingServices(h,kind):[];
   const chosen=choices.find(x=>zenoCareAliases(state.specialty).includes(x[0])||x[0]===state.specialty);
-  state.modal={type,id,kind,service:chosen?.[0]||(!state.specialty?choices[0]?.[0]:'')||'',step:'choose'};
+  state.modal={type,id,kind,service:chosen?.[0]||(h?.id==='soo'?'':(!state.specialty?choices[0]?.[0]:'')||''),step:'choose'};
  }else state.modal={type,id};
  render();
  if(zenoDetailScrollY>0)window.scrollTo({left:0,top:zenoDetailScrollY,behavior:'instant'});
