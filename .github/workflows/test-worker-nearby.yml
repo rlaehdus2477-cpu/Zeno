@@ -6,6 +6,8 @@ on:
       - "worker.js"
       - "owner.html"
       - "tests/test-worker-nearby-coordinates.mjs"
+      - "tests/zeno-release-guards.mjs"
+      - "hospital.html"
       - ".github/workflows/test-worker-nearby.yml"
   workflow_dispatch:
 
@@ -20,5 +22,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
+      - name: ZENO home and hospital facts regression guards (read-only)
+        run: node tests/zeno-release-guards.mjs
       - name: Nearby coordinate API regression test (mock D1 + mock NAVER)
         run: node tests/test-worker-nearby-coordinates.mjs
