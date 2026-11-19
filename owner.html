@@ -3041,6 +3041,55 @@ html body .mobilebar button[aria-current="page"] .ico{color:#1689fa!important}
 .zeno-home-v10 .zeno-home-other-heading small{font-size:12px;color:var(--zh-muted);line-height:1.5}
 .zeno-home-v10 .zeno-v10-open-card.is-unknown{background:var(--zh-surface-alt)!important}
 .zeno-home-v10 .zeno-v10-open-card .zeno-v10-badge.is-unknown{background:transparent;color:var(--zh-muted);border-color:var(--zh-line)}
+</style><style id="zeno-book-ui-polish-20261119">
+/* Scoped Galaxy-friendly booking UI. Other dialogs and booking data are unchanged. */
+.modal.zeno-book-modal{border-radius:22px 22px 0 0!important;background:#fff!important;padding-top:16px!important}
+.modal.zeno-book-modal .modal-head{position:sticky!important;top:-16px!important;z-index:7!important;background:#fff!important;margin:-16px -16px 14px!important;padding:15px 16px 13px!important;align-items:center!important;border-bottom:1px solid #edf0f3!important}
+.modal.zeno-book-modal .modal-head h2{font-size:17px!important;line-height:1.4!important;font-weight:750!important;letter-spacing:-.03em!important}
+.modal.zeno-book-modal .close{width:44px!important;height:44px!important;min-width:44px!important;min-height:44px!important;border-radius:13px!important;background:#f2f5f8!important;color:#617589!important;font-size:22px!important}
+.modal.zeno-book-modal .zeno-book-step-label{display:flex!important;align-items:center;gap:8px!important;font-size:13px!important;color:#506175!important;margin:2px 0 9px!important}
+.modal.zeno-book-modal .zeno-book-step-label span{color:#176fc9;font-weight:800}
+.modal.zeno-book-modal .zeno-book-progress{display:grid;grid-template-columns:repeat(2,1fr);gap:5px;margin-bottom:18px}
+.modal.zeno-book-modal .zeno-book-progress i{height:4px;border-radius:8px;background:#e7edf4}
+.modal.zeno-book-modal .zeno-book-progress i.active{background:#1976d2}
+.modal.zeno-book-modal .zeno-book-step h3{font-size:17px!important;color:#253544!important;margin:17px 0 10px!important;line-height:1.4!important}
+.modal.zeno-book-modal .zeno-book-kind-list,.modal.zeno-book-modal .zeno-book-service-list{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:9px!important}
+.modal.zeno-book-modal .zeno-book-option{min-width:0!important;min-height:48px!important;border:1px solid #e0e5eb!important;border-radius:12px!important;background:#fff!important;color:#33475c!important;box-shadow:none!important;padding:10px 12px!important;font-size:14px!important}
+.modal.zeno-book-modal .zeno-book-service-list .zeno-book-option{min-height:66px!important;text-align:left!important}
+.modal.zeno-book-modal .zeno-book-option strong{font-size:14px!important;font-weight:750!important}
+.modal.zeno-book-modal .zeno-book-option small{font-size:12px!important;line-height:1.4!important;font-weight:450!important;color:#788693!important}
+.modal.zeno-book-modal .zeno-book-option.selected{border:1.5px solid #2279ce!important;background:#edf5ff!important;color:#1262af!important;box-shadow:none!important}
+.modal.zeno-book-modal .zeno-book-option.selected strong{color:#1262af!important}
+.modal.zeno-book-modal .zeno-book-hint{font-size:12px!important;line-height:1.5!important;margin:9px 0 4px!important;color:#7b8795!important}
+.modal.zeno-book-modal .zeno-book-next{margin:0!important}
+.modal.zeno-book-modal .zeno-book-summary{background:#f4f8fc!important;border-radius:12px!important;margin:0 0 12px!important}
+.modal.zeno-book-modal .zeno-book-summary button{min-height:44px!important;font-size:13px!important}
+.modal.zeno-book-modal .zeno-book-intro{font-size:12.5px;line-height:1.5;color:#6d7c8a;margin:0 0 15px}
+.modal.zeno-book-modal .zeno-book-picker{padding:13px!important;border:1px solid #e7edf4!important;border-radius:15px!important;background:#f7f9fc!important}
+.modal.zeno-book-modal .zeno-book-picker h3{font-size:16px!important;margin:0 0 4px!important}
+.modal.zeno-book-modal .zeno-book-picker p{font-size:12.5px!important;margin:0 0 10px!important}
+.modal.zeno-book-modal .zeno-book-pets{display:flex!important;flex-wrap:nowrap!important;overflow-x:auto;gap:7px!important}
+.modal.zeno-book-modal .zeno-book-pet{flex:0 0 auto!important;white-space:nowrap!important;min-height:44px!important;padding:9px 12px!important;border-radius:11px!important;font-size:13px!important}
+.modal.zeno-book-modal .zeno-book-pet.selected{background:#edf5ff!important;border-color:#2279ce!important;color:#1766b5!important}
+.modal.zeno-book-modal .formgrid{display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:13px!important}
+.modal.zeno-book-modal .field{min-width:0!important;margin:0!important;gap:7px!important}
+.modal.zeno-book-modal .field label{font-size:13px!important;color:#64778b!important;font-weight:700!important}
+.modal.zeno-book-modal .field input,.modal.zeno-book-modal .field select,.modal.zeno-book-modal .field textarea{width:100%!important;min-height:48px!important;padding:12px 13px!important;border:1px solid #dce3e9!important;border-radius:12px!important;font-size:16px!important;line-height:1.4!important;background:#fff!important;box-shadow:none!important}
+.modal.zeno-book-modal .field textarea{min-height:106px!important}
+.modal.zeno-book-modal #zeno-book-owner-name[readonly]{background:#f7f9fb!important;color:#64748b!important}
+.modal.zeno-book-modal .zeno-book-optional{grid-column:1/-1;border:1px solid #e6ebf0;border-radius:12px;overflow:hidden}
+.modal.zeno-book-modal .zeno-book-optional summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:48px;padding:12px 14px;font-size:13.5px;font-weight:750;color:#42586c}
+.modal.zeno-book-modal .zeno-book-optional summary::-webkit-details-marker{display:none}
+.modal.zeno-book-modal .zeno-book-optional summary span{font-size:11.5px;font-weight:500;color:#7e8d9c;text-align:right}
+.modal.zeno-book-modal .zeno-book-optional[open] summary{border-bottom:1px solid #e7edf4}
+.modal.zeno-book-modal .zeno-book-optional-grid{display:grid;gap:12px;padding:14px}
+.modal.zeno-book-modal .zeno-book-section-title{grid-column:1/-1;font-size:15px;font-weight:750;color:#2c3e50;padding-top:7px}
+.modal.zeno-book-modal .zeno-book-actions{position:sticky;bottom:-1px;z-index:6;background:#fff;margin:16px -16px -2px;padding:12px 16px calc(10px + env(safe-area-inset-bottom));border-top:1px solid #ebeff3}
+.modal.zeno-book-modal .zeno-book-actions .btn{width:100%!important;min-height:50px!important;margin:0!important;border-radius:12px!important;font-size:15px!important;font-weight:750!important;background:#1976d2!important;box-shadow:none!important}
+.modal.zeno-book-modal .zeno-book-actions .btn:disabled{opacity:.45!important}
+.modal.zeno-book-modal .zeno-book-action-note{text-align:center;font-size:12px;line-height:1.45;color:#83909d;margin:8px 0 0}
+.modal.zeno-book-modal button:focus-visible,.modal.zeno-book-modal summary:focus-visible,.modal.zeno-book-modal input:focus-visible,.modal.zeno-book-modal textarea:focus-visible{outline:2px solid #2684d8!important;outline-offset:2px!important}
+@media(max-width:360px){.modal.zeno-book-modal .zeno-book-option{padding:9px!important}.modal.zeno-book-modal .zeno-book-option small{font-size:11.5px!important}}
 </style></head><body><div id="app" class="app"></div><script>
 'use strict';
 const APP_MODE='owner';
@@ -3742,17 +3791,15 @@ function zenoBookingFlow(h){
   const animalButtons=animals.map(kind=>'<button type="button" class="zeno-book-option '+(chosenKind===kind?'selected':'')+'" data-action="zeno-book-kind" data-value="'+e(kind)+'" aria-pressed="'+(chosenKind===kind)+'">'+e(kind)+'</button>').join('');
   const serviceButtons=chosenKind?chosenService.map(([name,desc])=>'<button type="button" class="zeno-book-option zeno-book-service '+(selected===name?'selected':'')+'" data-action="zeno-book-service" data-value="'+e(name)+'" aria-pressed="'+(selected===name)+'"><strong>'+e(name)+'</strong><small>'+e(desc)+'</small></button>').join(''):'<p class="zeno-book-hint">먼저 진료받을 동물을 선택해 주세요.</p>';
   const hasExotics=animals.some(kind=>kind!=='고양이'&&kind!=='강아지');
-  const unsupported=h.id==='soo'
-   ?'<p class="zeno-book-hint">네이버에 안내된 진료 동물입니다. 특수동물 예약은 병원에서 접수 가능 여부를 확인한 뒤 확정해요.</p>'
-   :hasExotics?'<p class="zeno-book-hint">특수동물은 병원이 안내한 종만 예약할 수 있어요.</p>':'<p class="zeno-book-hint">이 병원은 강아지·고양이만 예약할 수 있어요.</p>';
+  const unsupported=hasExotics?'<p class="zeno-book-hint">표시된 동물은 예약 문의 대상입니다. 진료 가능 여부는 병원 확인 후 결정돼요.</p>':'<p class="zeno-book-hint">진료 가능 여부와 방문 일정은 병원 확인 후 확정돼요.</p>';
  const serviceNotice='';
-  return {title:'진료 선택 · '+h.name,body:'<section class="zeno-book-step'+(h.id==='soo'?' zeno-book-step-soo':'')+'"><p class="zeno-book-step-label">1 / 2 · 진료 선택</p><h3>어떤 아이가 진료받나요?</h3><div class="zeno-book-kind-list">'+animalButtons+'</div>'+unsupported+'<h3>어떤 진료가 필요한가요?</h3>'+serviceNotice+'<div class="zeno-book-service-list">'+serviceButtons+'</div><button class="btn full zeno-book-next" type="button" data-action="zeno-book-next" '+(!chosenKind||!selected?'disabled':'')+'>다음</button><p class="zeno-book-warning">실제 진료 가능 여부는 병원이 확인한 뒤 확정돼요.</p></section>'};
+  return {title:'진료 선택 · '+h.name,body:'<section class="zeno-book-step'+(h.id==='soo'?' zeno-book-step-soo':'')+'"><p class="zeno-book-step-label"><span>1 / 2</span> 진료 선택</p><div class="zeno-book-progress" aria-label="1단계"><i class="active"></i><i></i></div><h3>어떤 아이가 진료받나요?</h3><div class="zeno-book-kind-list">'+animalButtons+'</div>'+unsupported+'<h3>어떤 진료가 필요한가요?</h3>'+serviceNotice+'<div class="zeno-book-service-list">'+serviceButtons+'</div><div class="zeno-book-actions"><button class="btn full zeno-book-next" type="button" data-action="zeno-book-next" '+(!chosenKind||!selected?'disabled':'')+'>다음 단계</button><p class="zeno-book-action-note">병원이 확인한 뒤 예약이 확정돼요.</p></div></section>'};
  }
- const petChoices=state.pets.filter(p=>p.species===chosenKind).map(p=>'<button class="zeno-book-pet" type="button" data-action="book-pet" data-id="'+e(p.id)+'">'+e(p.name)+'</button>').join('');
+ const petChoices=state.pets.filter(p=>p.species===chosenKind).map(p=>'<button class="zeno-book-pet'+(defaultPet?.id===p.id?' selected':'')+'" type="button" data-action="book-pet" data-id="'+e(p.id)+'" aria-pressed="'+(defaultPet?.id===p.id)+'">'+e(p.name)+'</button>').join('');
  const optionHint=chosenKind==='고양이'||chosenKind==='강아지'?'': '<p class="zeno-book-hint">이 동물종의 진료 가능 여부를 예약 전에 병원에 전화로 확인해 주세요.</p>';
  const kindText='<div class="zeno-book-summary"><span>'+e(chosenKind)+' · '+e(selected)+'</span><button type="button" data-action="zeno-book-back">변경</button></div>';
- const body='<form id="booking-form"><p class="zeno-book-step-label">2 / 2 · 예약 정보</p>'+kindText
- +'<div class="zeno-book-warning">예약 요청을 전송한 뒤 병원에서 수락해야 방문 시간이 확정됩니다.</div>'
+ const body='<form id="booking-form"><p class="zeno-book-step-label"><span>2 / 2</span> 예약 정보</p><div class="zeno-book-progress" aria-label="2단계"><i class="active"></i><i class="active"></i></div>'+kindText
+ +'<p class="zeno-book-intro">병원이 요청을 수락한 뒤 방문 시간이 확정됩니다.</p>'
  +'<input type="hidden" name="hospitalId" value="'+e(h.id)+'"><input type="hidden" name="petId" value="'+e(defaultPet?.id||'')+'">'
  +'<input type="hidden" id="zeno-book-species" name="species" value="'+e(chosenKind)+'">'
  +'<input type="hidden" id="zeno-book-service" name="service" value="'+e(selected)+'">'
@@ -3760,14 +3807,14 @@ function zenoBookingFlow(h){
  +'<div class="formgrid"><div class="field"><label for="zeno-book-owner-name">보호자 이름</label><input id="zeno-book-owner-name" value="'+e(state.owner?.displayName||'로그인 보호자')+'" readonly></div>'
  +'<div class="field"><label for="zeno-book-owner-phone">연락처</label><input id="zeno-book-owner-phone" name="ownerPhone" type="tel" inputmode="tel" autocomplete="tel" required maxlength="15" placeholder="010-1234-5678" pattern="[0-9-]{10,15}"></div>'
  +'<div class="field"><label for="zeno-book-pet-name">반려동물 이름</label><input id="zeno-book-pet-name" name="petName" required maxlength="30" placeholder="아이 이름" value="'+e(defaultPet?.name||'')+'"></div>'
- +'<div class="field"><label for="zeno-book-breed">품종 (선택)</label><input id="zeno-book-breed" name="breed" maxlength="35" placeholder="예: 코리안숏헤어" value="'+e(defaultPet?.breed||'')+'"></div>'
+ +'<details class="zeno-book-optional"><summary>추가 정보 <span>품종 · 나이 · 체중 (선택)</span></summary><div class="zeno-book-optional-grid"><div class="field"><label for="zeno-book-breed">품종 (선택)</label><input id="zeno-book-breed" name="breed" maxlength="35" placeholder="예: 코리안숏헤어" value="'+e(defaultPet?.breed||'')+'"></div>'
  +'<div class="field"><label for="zeno-book-age">나이 (선택)</label><input id="zeno-book-age" name="age" maxlength="20" placeholder="예: 4세" value="'+e(defaultPet?.age||'')+'"></div>'
- +'<div class="field"><label for="zeno-book-weight">체중 (선택)</label><input id="zeno-book-weight" name="weight" maxlength="20" placeholder="예: 4.6kg" value="'+e(defaultPet?.weight||'')+'"></div>'
- +'<div class="field"><label for="zeno-book-visit-type">방문 구분</label><select id="zeno-book-visit-type" name="visitType"><option>첫 방문</option><option>재방문</option></select></div>'
+ +'<div class="field"><label for="zeno-book-weight">체중 (선택)</label><input id="zeno-book-weight" name="weight" maxlength="20" placeholder="예: 4.6kg" value="'+e(defaultPet?.weight||'')+'"></div></div></details>'
+ +'<div class="zeno-book-section-title">방문 일정</div><div class="field"><label for="zeno-book-visit-type">방문 구분</label><select id="zeno-book-visit-type" name="visitType"><option>첫 방문</option><option>재방문</option></select></div>'
  +'<div class="field"><label for="zeno-book-date">희망 날짜</label><input id="zeno-book-date" name="date" type="date" min="'+today()+'" value="'+defaultBookingDate()+'" required></div>'
  +'<div class="field"><label for="zeno-book-time">희망 시간</label><input id="zeno-book-time" name="time" type="time" value="11:00" required></div>'
  +'<div class="field wide"><label for="zeno-book-note">수의사에게 말하고 싶은 것</label><textarea id="zeno-book-note" maxlength="500" name="note" placeholder="예: 언제부터 식욕이 줄었는지, 복용 중인 약, 걱정되는 증상 등">'+e(state.symptomLabel||'')+'</textarea></div>'
- +'</div>'+optionHint+'<button class="btn full" type="submit">예약 요청하기</button></form>';
+ +'</div>'+optionHint+'<div class="zeno-book-actions"><button class="btn full" type="submit">예약 요청하기</button><p class="zeno-book-action-note">요청만으로 예약이 확정되지는 않습니다.</p></div></form>';
  return {title:'예약 정보 · '+h.name,body};
 }
 function zenoListTodayHours(h){
@@ -5561,7 +5608,7 @@ if(a==='book-pet'){
  for(const key of ['petId','petName','species','breed','age','weight']){
   const el=form.elements.namedItem(key);if(!el)continue;
   if(key==='species'){el.value=state.modal?.kind||'';continue}
-  el.value=key==='petId'?(pet?.id||''):key==='petName'?(pet?.name||''):key==='species'?(pet?.species||''):key==='age'?(pet?.age||''):key==='weight'?(pet?.weight||''):'';
+  el.value=key==='petId'?(pet?.id||''):key==='petName'?(pet?.name||''):key==='species'?(pet?.species||''):key==='breed'?(pet?.breed||''):key==='age'?(pet?.age||''):key==='weight'?(pet?.weight||''):'';
  }
  document.querySelectorAll('.zeno-book-pet').forEach(button=>{const selected=button.dataset.id===id;button.classList.toggle('selected',selected);button.setAttribute('aria-pressed',String(selected))});
  if(!pet)form.elements.namedItem('petName')?.focus();
