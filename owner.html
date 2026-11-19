@@ -4651,20 +4651,15 @@ function zenoHomeOtherStatus(h,date=new Date()){
 function zenoHomeOperatingRail(){
  const list=zenoHomeAreaHospitals();
  const open=list.filter(h=>zenoHomeWithinPublishedHours(h));
- const openIds=new Set(open.map(h=>h.id));
- const others=list.filter(h=>!openIds.has(h.id));
- const card=(h,isOpen)=>{
+ const cards=open.map(h=>{
   const p=(Array.isArray(h.photos)?h.photos:[]).find(x=>x.approved===true&&x.url);
   const img=p?'<img src="'+e(p.url)+'" alt="" class="'+(p.isLogo||p.fit==='contain'?'is-logo':'')+'" loading="lazy">':'';
-  const badge=isOpen?(h.is24?'24시간 운영':zenoHomeOpenLabel(h)):zenoHomeOtherStatus(h);
-  const info=zenoVisibleClinicHours(h);
-  return '<button type="button" class="zeno-v10-open-card'+(isOpen?'':' is-unknown')+'" data-action="details" data-id="'+e(h.id)+'"><span class="zeno-v10-mini-photo">'+(img||zenoCareIcon('일반 진료'))+'</span><span class="zeno-home-rail-copy"><strong>'+e(h.name)+'</strong><small>'+e(String(h.region||'').split('·').pop().trim())+'</small><span class="zeno-home-hour-line" title="'+e(info.text)+'">'+e(info.text)+'</span><span class="zeno-v10-hospital-badges"><span class="zeno-v10-badge '+(isOpen?'is-open':'is-unknown')+'">'+e(badge)+'</span></span>'+(isOpen?zenoHomeEmergencyStatusNote(h):'')+'</span></button>';
- };
- const more='<button type="button" class="zeno-v10-open-more" data-action="show-all-hospitals" aria-label="전체 병원 목록으로 이동"><strong>전체 병원 보기</strong><small>진료시간·진료과목별로 확인</small><span aria-hidden="true">전체 병원 ›</span></button>';
- return '<section class="zeno-v10-open-section"><div class="care-list-heading"><h2>지금 진료 중인 병원 <span class="zeno-home-open-count">'+open.length+'곳</span></h2><button data-action="show-all-hospitals">전체 병원 ›</button></div><p class="zeno-open-note">네이버에 등록된 운영시간 기준 · 실제 접수는 전화 확인</p>'
-  +(open.length?'<div class="zeno-v10-open-rail" data-rail="open" tabindex="0" role="region" aria-label="등록된 운영시간 기준 진료 중인 병원 가로 목록">'+open.map(h=>card(h,true)).join('')+'</div>':'<p class="zeno-v10-empty">최신 확인된 시간표상 진료 중인 병원이 없습니다. 아래에서 기존 등록 진료시간을 확인하세요.</p>')
-  +(others.length?'<div class="zeno-home-other-heading"><strong>전체 병원 진료시간 · 다른 병원 '+others.length+'곳</strong><small>기존 등록시간도 표시 · 미확인 자료는 방문 전 전화 확인</small></div><div class="zeno-v10-open-rail" data-rail="other" tabindex="0" role="region" aria-label="다른 병원과 운영시간 확인 필요 병원 가로 목록">'+others.map(h=>card(h,false)).join('')+more+'</div>':'')
-  +'</section>';
+  const badge=h.is24?'24시간 운영':zenoHomeOpenLabel(h);
+  return '<button type="button" class="zeno-v10-open-card" data-action="details" data-id="'+e(h.id)+'"><span class="zeno-v10-mini-photo">'+(img||zenoCareIcon('일반 진료'))+'</span><span class="zeno-home-rail-copy"><strong>'+e(h.name)+'</strong><small>'+e(String(h.region||'').split('·').pop().trim())+'</small><span class="zeno-v10-hospital-badges"><span class="zeno-v10-badge is-open">'+badge+'</span></span>'+zenoHomeEmergencyStatusNote(h)+'</span></button>';
+ }).join('');
+ const more='<button type="button" class="zeno-v10-open-more" data-action="show-all-hospitals" aria-label="전체 병원 목록으로 이동"><strong>더 많은 병원 찾기</strong><small>운영시간 미확인 병원도 살펴보기</small><span aria-hidden="true">전체 병원 ›</span></button>';
+ return '<section class="zeno-v10-open-section"><div class="care-list-heading"><h2>지금 진료 중인 병원</h2><button data-action="show-all-hospitals">전체 병원 ›</button></div><p class="zeno-open-note">운영시간 기준 · 실제 접수는 전화 확인</p>'
+  +(open.length?'<div class="zeno-v10-open-rail" tabindex="0" role="region" aria-label="운영시간 기준 병원 가로 스크롤 목록">'+cards+more+'</div>':'<p class="zeno-v10-empty">현재 시간에 해당하는 등록 진료시간을 찾지 못했어요.</p>')+'</section>';
 }
 
 function zenoSymptomPage(){
