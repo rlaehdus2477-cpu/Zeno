@@ -3666,6 +3666,22 @@ function zenoWeeklyData(h){
  if(!week&&['pub007','pub016'].includes(h.id))week=Object.fromEntries(['월','화','수','목','금','토','일','공휴일'].map(d=>[d,'24시간 진료 안내']));
  return week||{};
 }
+/* Published hours and AI-reference hours are separate evidence levels.
+   A recent provisional timetable may inform a time-window label, never live intake. */
+function zenoProvisionalHoursRecent(h,date=new Date()){
+ if(h.hoursVerificationStatus!=='ai-summary-unverified'||!h.provisionalSchedule||typeof h.provisionalSchedule!=='object')return false;
+ const sourceDate=String(h.hoursSource||'').match(/20\d{2}-\d{2}-\d{2}/)?.[0];
+ const checked=sourceDate||h.hoursCheckedAt||h.checkedAt||'';
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(checked))return false;
+ const recorded=new Date(checked+'T00:00:00+09:00').getTime();
+ return Number.isFinite(recorded)&&date.getTime()>=recorded&&date.getTime()-recorded<365*86400000;
+}
+function zenoStatusSchedule(h,date=new Date()){
+ const verified=zenoWeeklyData(h);
+ if(Object.keys(verified).length)return {week:verified,provisional:false};
+ const provisional=zenoProvisionalHoursRecent(h,date);
+ return {week:provisional?h.provisionalSchedule:verified,provisional};
+}
 function zenoTodayName(){return new Date().toLocaleDateString('ko-KR',{timeZone:'Asia/Seoul',weekday:'short'}).slice(0,1);}
 /* Compact detail: today and the main action appear above the tabs. */
 /* [7] Official hospital homepage only. Never use a directory listing as a homepage. */
@@ -3794,22 +3810,23 @@ function zenoNightStatus(h,date=new Date()){
 }
 
 function zenoPublishedClinicStatus(h,date=new Date()){
- const clock=zenoSeoulClock(date),week=zenoWeeklyData(h);
+ const clock=zenoSeoulClock(date),schedule=zenoStatusSchedule(h,date),week=schedule.week;
+ const qualifier=schedule.provisional?'참고 시간표':'등록시간 기준';
  if(h.emergency24)return {text:'24시간 응급 안내 · 일반진료 별도',kind:'guide'};
  if(h.is24)return {text:'24시간 운영 안내',kind:'guide'};
  const days=['일','월','화','수','목','금','토'],day=clock.weekday;
  const todayHours=week[day],previous=zenoScheduleSpan(week[days[(days.indexOf(day)+6)%7]]);
- if(previous?.overnight&&clock.now<previous.end)return {text:'등록된 야간 진료시간',kind:'hours'};
+ if(previous?.overnight&&clock.now<previous.end)return {text:'진료시간 내 · '+qualifier,kind:'hours'};
  if(!todayHours)return {text:'오늘 시간표 미확인',kind:'unknown'};
- if(/휴무|휴진/.test(todayHours))return {text:'오늘 휴진 안내',kind:'closed'};
+ if(/휴무|휴진/.test(todayHours))return {text:'오늘 휴진 · '+qualifier,kind:'closed'};
  const span=zenoScheduleSpan(todayHours);
  if(!span)return {text:'진료시간 확인 필요',kind:'unknown'};
- if(zenoBreakAt(h,week,day,clock.now))return {text:'휴게시간 안내',kind:'closed'};
+ if(zenoBreakAt(h,week,day,clock.now))return {text:'휴게시간 · '+qualifier,kind:'closed'};
  if(clock.now>=span.start&&(span.overnight||clock.now<span.end)){
-  if(zenoReceptionClosedAt(h,day,clock.now))return {text:'접수마감 안내 · 진료 종료 전',kind:'closed'};
-  return {text:'진료 중 · 등록시간 기준 (접수 전화 확인)',kind:'hours'};
+  if(zenoReceptionClosedAt(h,day,clock.now))return {text:'접수마감 · 진료시간 내',kind:'closed'};
+  return {text:'진료 중 · '+qualifier+' (접수 전화 확인)',kind:'hours'};
  }
- return {text:'등록된 진료시간 외',kind:'closed'};
+ return {text:'진료시간 외 · '+qualifier,kind:'closed'};
 }
 
 /* CHANGED: no fixed, unverifiable realtime status. */
@@ -4324,18 +4341,19 @@ function zenoSearchClinicStatus(h){
   const end=to?to.end:from.end,within=clock.now>=from.start&&clock.now<end;
   return {text:(within?'진료시간 내':'진료시간 외')+' · 요일 미확인',kind:'estimated'+(within?' is-open':'')};
  }
- const week=zenoWeeklyData(h);
+ const schedule=zenoStatusSchedule(h),week=schedule.week;
+ const qualifier=schedule.provisional?'참고 시간표':'시간표 기준';
  const days=['일','월','화','수','목','금','토'];
  const prior=zenoScheduleSpan(week[days[(days.indexOf(clock.weekday)+6)%7]]);
  const today=week[clock.weekday],span=zenoScheduleSpan(today);
  if(!today)return {text:'진료시간 확인 필요',kind:'unknown'};
- if(/휴진|휴무/.test(today))return {text:'오늘 휴진 · 시간표 기준',kind:'estimated'};
- if(prior?.overnight&&clock.now<prior.end)return {text:'진료시간 내 · 시간표 기준',kind:'estimated is-open'};
+ if(/휴진|휴무/.test(today))return {text:'오늘 휴진 · '+qualifier,kind:'estimated'};
+ if(prior?.overnight&&clock.now<prior.end)return {text:'진료시간 내 · '+qualifier,kind:'estimated is-open'};
  if(!span)return {text:'진료시간 확인 필요',kind:'unknown'};
- if(zenoBreakAt(h,week,clock.weekday,clock.now))return {text:'휴게시간 · 시간표 기준',kind:'estimated'};
+ if(zenoBreakAt(h,week,clock.weekday,clock.now))return {text:'휴게시간 · '+qualifier,kind:'estimated'};
  const within=clock.now>=span.start&&(span.overnight||clock.now<span.end);
  if(within&&zenoReceptionClosedAt(h,clock.weekday,clock.now))return {text:'접수마감 · 진료시간 내',kind:'estimated'};
- return {text:(within?'진료시간 내':'진료시간 외')+' · 시간표 기준',kind:'estimated'+(within?' is-open':'')};
+ return {text:(within?'진료시간 내':'진료시간 외')+' · '+qualifier,kind:'estimated'+(within?' is-open':'')};
 }
 
 /* Show all existing CFC evidence in search cards without upgrading reports to certifications. */
@@ -4654,8 +4672,8 @@ function zenoHomeHoursVerified(h,date=new Date()){
  return Number.isFinite(verifiedAt)&&date.getTime()>=verifiedAt&&date.getTime()-verifiedAt<365*86400000;
 }
 function zenoHomeWithinPublishedHours(h,date=new Date()){
- if(!zenoHomeHoursVerified(h,date))return false;
- const clock=zenoSeoulClock(date),week=zenoWeeklyData(h);
+ if(!zenoHomeHoursVerified(h,date)&&!zenoProvisionalHoursRecent(h,date))return false;
+ const clock=zenoSeoulClock(date),week=zenoStatusSchedule(h,date).week;
  const days=['일','월','화','수','목','금','토'],dayIndex=days.indexOf(clock.weekday);
  if(dayIndex<0)return false;
  const today=String(week[clock.weekday]||'');
@@ -4676,23 +4694,23 @@ function zenoHomeWithinPublishedHours(h,date=new Date()){
 }
 /* Home rail label: today's published closing time, never an emergency claim. */
 function zenoHomeOpenLabel(h,date=new Date()){
- const clock=zenoSeoulClock(date),week=zenoWeeklyData(h);
+ const clock=zenoSeoulClock(date),schedule=zenoStatusSchedule(h,date),week=schedule.week;
  const days=['일','월','화','수','목','금','토'],dayIndex=days.indexOf(clock.weekday);
  if(dayIndex<0)return '진료 중';
  const today=zenoScheduleSpan(String(week[clock.weekday]||'').replace(/\([^)]*\)/g,'').trim());
  const prior=zenoScheduleSpan(week[days[(dayIndex+6)%7]]);
  const end=(prior?.overnight&&clock.now<prior.end)?prior.end:(today?today.end:null);
- if(end===null)return '진료 중';
+ if(end===null)return schedule.provisional?'진료 중 · 참고 시간표':'진료 중';
  const hh=String(Math.floor(end/60)).padStart(2,'0'),mm=String(end%60).padStart(2,'0');
- return '진료 중 · '+hh+':'+mm+'까지';
+ return '진료 중 · '+hh+':'+mm+'까지'+(schedule.provisional?' (참고)':'');
 }
 /* Home cards: show every hospital without treating unknown hours as live open. */
 function zenoHomeOtherStatus(h,date=new Date()){
- if(!zenoHomeHoursVerified(h,date)){
+ if(!zenoHomeHoursVerified(h,date)&&!zenoProvisionalHoursRecent(h,date)){
   const hours=zenoVisibleClinicHours(h);
   return hours.hasTime?'진료시간 전화 확인':'운영시간 확인 필요';
  }
- const clock=zenoSeoulClock(date),week=zenoWeeklyData(h);
+ const clock=zenoSeoulClock(date),week=zenoStatusSchedule(h,date).week;
  const today=String(week[clock.weekday]||'');
  if(!today)return '운영시간 확인 필요';
  if(/^(휴진|휴무)$/.test(today.trim()))return '오늘 휴진';
