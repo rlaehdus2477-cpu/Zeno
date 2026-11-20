@@ -12,7 +12,7 @@ import {webcrypto as crypto} from 'node:crypto';
 const PORT = Number(process.env.ZENO_TEST_PORT || 8799);
 const BASE = `http://127.0.0.1:${PORT}`;
 const SECRET = 'zeno-test-only-secret-not-production';
-const PINS = {soo: 'soo-test-pin', naeum: 'naeum-test-pin', tnd: 'tnd-test-pin'};
+const PINS = {soo: 'soo-test-pin', naeum: 'naeum-test-pin', pub045: 'tplus-test-pin'};
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
 const PERSIST = fs.mkdtempSync(path.join(os.tmpdir(), 'zeno-d1-test-'));
 const WRANGLER = path.join(ROOT, 'node_modules', '.bin', 'wrangler');
@@ -71,7 +71,7 @@ let server;
 async function startServer() {
   // 로컬 D1에만 스키마 적용
   run(WRANGLER, ['d1', 'execute', 'zeno-live-db', '--local', '--persist-to', PERSIST, '--file=schema.sql']);
-  const vars = [['SESSION_SECRET', SECRET], ['HOSPITAL_SOO_PIN', PINS.soo], ['HOSPITAL_NAEUM_PIN', PINS.naeum], ['HOSPITAL_TND_PIN', PINS.tnd]]
+  const vars = [['SESSION_SECRET', SECRET], ['HOSPITAL_SOO_PIN', PINS.soo], ['HOSPITAL_NAEUM_PIN', PINS.naeum], ['HOSPITAL_TPLUS_PIN', PINS.pub045]]
     .flatMap(([k, v]) => ['--var', `${k}:${v}`]);
   server = spawn(WRANGLER, ['dev', '--local', '--persist-to', PERSIST, '--ip', '127.0.0.1', '--port', String(PORT), ...vars],
     {cwd: ROOT, detached: true, stdio: ['ignore', 'pipe', 'pipe']});
@@ -194,15 +194,19 @@ async function main() {
     expect(p.status === 401, `나음 토큰으로 수동물병원 예약 변경 → ${p.status} (401이어야 함)`);
   });
 
-  await check(9, '비제휴 병원: 제휴 3곳 외에는 예약 불가', async () => {
-    for (const id of ['pub015', 'unknown', '']) {
+  await check(9, '제휴 변경: 티플러스 예약 허용 및 티앤디 등 비제휴 병원 예약 거절', async () => {
+    const tplus = await api('POST', '/api/bookings', {token: A, body: bookingBody('pub045', '테스트냥9')});
+    expect(tplus.status === 201, `티플러스 예약 → ${tplus.status}`);
+    for (const id of ['tnd', 'pub015', 'unknown', '']) {
       const r = await api('POST', '/api/bookings', {token: A, body: bookingBody(id, '테스트냥9')});
       expect(r.status === 400, `병원 ID "${id}" 예약 → ${r.status} (400이어야 함)`);
     }
   });
 
   await check(10, '병원 로그인: 비밀번호가 틀리면 401', async () => {
-    const r = await api('POST', '/api/login', {body: {hospitalId: 'tnd', pin: 'wrong-pin'}});
+    const login = await api('POST', '/api/login', {body: {hospitalId: 'pub045', pin: PINS.pub045}});
+    expect(login.status === 200 && login.data?.hospitalId === 'pub045' && login.data?.token, '티플러스 병원 로그인 실패');
+    const r = await api('POST', '/api/login', {body: {hospitalId: 'pub045', pin: 'wrong-pin'}});
     expect(r.status === 401, `틀린 비밀번호 → ${r.status}`);
     expect(!r.data?.token, '틀린 비밀번호에 토큰이 발급됨');
   });

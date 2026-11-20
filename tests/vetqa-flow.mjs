@@ -12,7 +12,7 @@ import {webcrypto as crypto} from 'node:crypto';
 const PORT = Number(process.env.ZENO_TEST_PORT || 8798);
 const BASE = `http://127.0.0.1:${PORT}`;
 const SECRET = 'zeno-test-only-secret-not-production';
-const PINS = {soo: 'soo-test-pin', naeum: 'naeum-test-pin', tnd: 'tnd-test-pin'};
+const PINS = {soo: 'soo-test-pin', naeum: 'naeum-test-pin', pub045: 'tplus-test-pin'};
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
 const PERSIST = fs.mkdtempSync(path.join(os.tmpdir(), 'zeno-vetqa-test-'));
 const WRANGLER = path.join(ROOT, 'node_modules', '.bin', 'wrangler');
@@ -80,7 +80,7 @@ async function startServer() {
     INSERT INTO vetqa_questions VALUES('${legacyQuestion}','legacy-owner','이전 질문','방문 준비물 질문','기타','일반','open','2026-01-01','2026-01-01');
     INSERT INTO vetqa_answers VALUES('legacy-answer','${legacyQuestion}','soo','','이전에 등록한 답변','visible','2026-01-01','2026-01-01');
     INSERT INTO questions VALUES('legacy-private','legacy-owner','soo','','이전 문의','기존 답변','answered','2026-01-01','2026-01-01');`);
-  const vars = [['SESSION_SECRET', SECRET], ['HOSPITAL_SOO_PIN', PINS.soo], ['HOSPITAL_NAEUM_PIN', PINS.naeum], ['HOSPITAL_TND_PIN', PINS.tnd]]
+  const vars = [['SESSION_SECRET', SECRET], ['HOSPITAL_SOO_PIN', PINS.soo], ['HOSPITAL_NAEUM_PIN', PINS.naeum], ['HOSPITAL_TPLUS_PIN', PINS.pub045]]
     .flatMap(([k, v]) => ['--var', `${k}:${v}`]);
   server = spawn(WRANGLER, ['dev', '--local', '--persist-to', PERSIST, '--ip', '127.0.0.1', '--port', String(PORT), ...vars],
     {cwd: ROOT, detached: true, stdio: ['ignore', 'pipe', 'pipe']});
