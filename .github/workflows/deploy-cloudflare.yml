@@ -8,7 +8,7 @@ on:
       - "owner.html"
       - "hospital.html"
       - "manifest-hospital.webmanifest"
-      - "assets/hospital-icon-approved.webp.b64"
+      - "android/hospital/res/drawable-nodpi/zeno_hospital.webp"
       - "wrangler.toml"
       - "package.json"
       - ".github/workflows/deploy-cloudflare.yml"
@@ -51,14 +51,10 @@ jobs:
         run: |
           python3 -m pip install --quiet pillow
           python3 - <<'PY'
-          import base64, io
-          from pathlib import Path
           from PIL import Image
-          b64 = Path('assets/hospital-icon-approved.webp.b64').read_text().strip()
-          raw = base64.b64decode(b64, validate=True)
-          img = Image.open(io.BytesIO(raw)).convert('RGBA')
-          if img.size != (256, 256):
-              raise ValueError('Unexpected approved hospital icon dimensions')
+          img = Image.open('android/hospital/res/drawable-nodpi/zeno_hospital.webp').convert('RGB')
+          if img.size != (512, 512):
+              raise ValueError('The hospital launcher artwork must be 512 by 512 pixels')
           for size in (192, 512):
               img.resize((size, size), Image.Resampling.LANCZOS).save(
                   f'/tmp/zeno-hospital-icon-{size}.png', optimize=True)
@@ -107,11 +103,6 @@ jobs:
           for(const size of [192,512]){
             replaceEmbedded('HOSPITAL_MINT_PNG'+size,fs.readFileSync('/tmp/zeno-hospital-icon-'+size+'.png').toString('base64'));
           }
-          const oldIconRoute="if(path==='/icon-hospital-mint-512-v5.png')";
-          if(!worker.includes(oldIconRoute))throw Error('Hospital icon route anchor missing');
-          worker=worker.replace(oldIconRoute,
-            "if(path==='/icon-hospital-mint-512-v6.png')return binary(HOSPITAL_MINT_PNG512,'image/png'); "+
-            "if(path==='/icon-hospital-mint-192-v6.png')return binary(HOSPITAL_MINT_PNG192,'image/png'); "+oldIconRoute);
           const revision=/const OWNER_UI_REVISION\s*=\s*'[^']+';/;
           if(!revision.test(worker))throw Error('Worker UI revision constant missing');
           worker=worker.replace(revision,"const OWNER_UI_REVISION = '"+version+"';");
@@ -136,7 +127,7 @@ jobs:
           import vm from 'node:vm';
           const worker=fs.readFileSync('worker.js','utf8');
           for(const size of [192,512]){
-            const iconName='/icon-hospital-mint-'+size+'-v6.png';
+            const iconName='/icon-hospital-mint-'+size+'-v7.png';
             if(!worker.includes(iconName))throw Error('Approved hospital icon route missing: '+iconName);
             const expected=fs.readFileSync('/tmp/zeno-hospital-icon-'+size+'.png').toString('base64');
             if(!worker.includes('const HOSPITAL_MINT_PNG'+size+' = '+JSON.stringify(expected)+';'))throw Error('Approved hospital icon payload mismatch: '+size);

@@ -13,7 +13,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: zeno-hospital-android-1-1-${{ github.ref }}
+  group: zeno-hospital-android-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -56,26 +56,23 @@ jobs:
             -alias hospital -keyalg RSA -keysize 3072 -validity 3650 \
             -dname "CN=ZENO Hospital Test, OU=Development, O=ZENO, C=KR"
 
-      - name: Install approved hospital icon (mint dog, cat and cross)
-        shell: bash
-        run: |
-          mkdir -p android/hospital/res/drawable-nodpi
-          base64 --decode assets/hospital-icon-approved.webp.b64 > android/hospital/res/drawable-nodpi/zeno_hospital.webp
-          test -s android/hospital/res/drawable-nodpi/zeno_hospital.webp
-
       - name: Compile and sign hospital APK
         shell: bash
         run: |
-          bash android/hospital/build.sh "$GITHUB_WORKSPACE/ZENO-Hospital-1.2.apk"
-          "$BUILD_TOOLS/aapt" dump badging ZENO-Hospital-1.2.apk | head -15
-          test "$("$BUILD_TOOLS/aapt" dump badging ZENO-Hospital-1.2.apk | grep -c "package: name='kr.zeno.hospital'")" -eq 1
-          "$BUILD_TOOLS/apksigner" verify --verbose ZENO-Hospital-1.2.apk
+          bash android/hospital/build.sh "$GITHUB_WORKSPACE/ZENO-Hospital-1.3.apk"
+          apk=ZENO-Hospital-1.3.apk
+          "$BUILD_TOOLS/aapt" dump badging "$apk" > "$RUNNER_TEMP/hospital-badging.txt"
+          grep -F "package: name='kr.zeno.hospital' versionCode='4' versionName='1.3'" "$RUNNER_TEMP/hospital-badging.txt"
+          launcher_icon=$(sed -n "s/^application: .*icon='\([^']*\)'.*/\1/p" "$RUNNER_TEMP/hospital-badging.txt")
+          test -n "$launcher_icon"
+          unzip -p "$apk" "$launcher_icon" | cmp - android/hospital/res/drawable-nodpi/zeno_hospital.webp
+          "$BUILD_TOOLS/apksigner" verify --verbose ZENO-Hospital-1.3.apk
 
       - name: Upload test APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ZENO-Hospital-1.2-Android-APK
-          path: ZENO-Hospital-1.2.apk
+          name: ZENO-Hospital-1.3-Android-APK
+          path: ZENO-Hospital-1.3.apk
           if-no-files-found: error
 
   publish:
@@ -87,17 +84,17 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
-          name: ZENO-Hospital-1.2-Android-APK
+          name: ZENO-Hospital-1.3-Android-APK
       - name: Create public test APK release
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: rlaehdus2477-cpu/Zeno
         shell: bash
         run: |
-          if gh release view hospital-android-v1.2 >/dev/null 2>&1; then
+          if gh release view hospital-android-v1.3 >/dev/null 2>&1; then
             echo "Release already exists; retain its signing identity and published APK."
           else
-            gh release create hospital-android-v1.2 ZENO-Hospital-1.2.apk \
-              --title "ZENO 동물병원용 Android 1.2 (갤럭시 테스트)" \
-              --notes "갤럭시 Android 8 이상용 병원 관리 테스트 APK. 기존 보호자용과 별도 앱(kr.zeno.hospital)입니다. Cloudflare /hospital을 WebView로 열며 실행 시 HTTP 캐시를 사용하지 않습니다. 예약/상태 관리 기능은 현재 운영 서버와 연결되며 기존 데이터베이스는 변경하지 않습니다. 웹 알림은 Android WebView의 OS 푸시 알림으로 보장되지 않으므로 앱 화면에서 예약을 확인해 주세요. Play Store 배포본이 아닙니다. 기존 1.1과 서명이 달라 설치 전 1.1 앱을 삭제해야 합니다. 삭제하면 이 기기에 저장된 로그인 상태가 사라질 수 있으므로 로그인 정보를 먼저 확인하세요. 병원 운영 데이터베이스는 삭제되지 않습니다. 테스트용 임시 서명으로 추후 APK 교체 설치가 제한될 수 있습니다."
+            gh release create hospital-android-v1.3 ZENO-Hospital-1.3.apk \
+              --title "ZENO 동물병원용 Android 1.3 (갤럭시 테스트)" \
+              --notes "보호자용의 강아지·고양이·십자 디자인을 민트색으로 적용한 병원용 테스트 APK입니다. Android 8 이상에서 설치할 수 있습니다. 이전 병원용 테스트 APK와 서명이 달라 교체 시 기존 병원용 앱을 삭제한 뒤 설치하고 다시 로그인해야 합니다."
           fi
