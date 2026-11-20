@@ -3101,6 +3101,25 @@ html body .mobilebar button[aria-current="page"] .ico{color:#1689fa!important}
 .modal.zeno-hospital-detail .zeno-schedule-partial strong{display:block;font-size:19px;font-weight:720}
 .modal.zeno-hospital-detail .zeno-schedule-partial p{font-size:14px;line-height:1.55;margin:8px 0 0;color:#66798b;overflow-wrap:anywhere}
 </style>
+<style id="zeno-search-polish-20261120">
+/* 2026-11-20 병원 찾기 정돈: 특수동물 칩, 결과 도구 글자 버튼, 소제목 위계, 필터 줄 정렬. 기능·데이터 변경 없음 */
+#app .zeno-search-page .zeno-filter-rail .zeno-filter-primary{padding:0!important;align-items:center!important;-webkit-mask-image:linear-gradient(to right,#000 calc(100% - 16px),transparent);mask-image:linear-gradient(to right,#000 calc(100% - 16px),transparent)}
+#app .zeno-search-page>.zeno-exotic-top{margin:0!important;padding:18px 20px 2px!important;border:0!important;background:transparent!important}
+#app .zeno-search-page .zeno-exotic-heading{margin:0 0 10px!important}
+#app .zeno-search-page .zeno-exotic-heading h2{font-size:15px!important;font-weight:700!important;color:#191f28!important;letter-spacing:-.02em!important}
+#app .zeno-search-page .zeno-exotic-chips{display:flex!important;flex-wrap:wrap!important;grid-template-columns:none!important;gap:8px 6px!important}
+#app .zeno-search-page .zeno-exotic-chips .zeno-exotic-option{flex:none!important;width:auto!important;height:34px!important;min-height:34px!important;padding:0 14px!important;border:0!important;border-radius:17px!important;background:#f2f4f6!important;color:#333d4b!important;font-size:14px!important;font-weight:500!important;box-shadow:none!important}
+#app .zeno-search-page .zeno-exotic-chips .zeno-exotic-option.is-selected{background:#2679c5!important;color:#fff!important;font-weight:600!important;box-shadow:none!important}
+#app .zeno-search-page .zeno-exotic-note{margin:10px 0 0!important;font-size:12px!important;color:#8b95a1!important}
+#app .zeno-search-page .zeno-results-bar{display:flex!important;flex-wrap:wrap!important;align-items:center!important;justify-content:space-between!important;gap:6px 12px!important;padding:20px 20px 0!important}
+#app .zeno-search-page .zeno-results-bar-tools{margin-left:auto!important;align-items:center!important;gap:12px!important}
+#app .zeno-search-page .zeno-results-bar-tools>.zeno-search-reset,#app .zeno-search-page .zeno-results-bar-tools>.zeno-search-emergency-link{height:28px!important;padding:0!important;border:0!important;border-radius:0!important;background:none!important;color:#6b7684!important;font-size:13px!important;font-weight:500!important}
+#app .zeno-search-page .zeno-internal-section h3,#app .zeno-search-page .zeno-result-group{margin:18px 20px 2px!important;font-size:13px!important;font-weight:600!important;color:#6b7684!important;letter-spacing:-.01em!important}
+:is(html.dark,html[data-theme="dark"]) #app .zeno-search-page .zeno-exotic-heading h2{color:#f2f4f6!important}
+:is(html.dark,html[data-theme="dark"]) #app .zeno-search-page .zeno-exotic-chips .zeno-exotic-option{background:#2b3440!important;color:#e5e8eb!important}
+:is(html.dark,html[data-theme="dark"]) #app .zeno-search-page .zeno-exotic-chips .zeno-exotic-option.is-selected{background:#3a8ee6!important;color:#fff!important}
+:is(html.dark,html[data-theme="dark"]) #app .zeno-search-page .zeno-internal-section h3,:is(html.dark,html[data-theme="dark"]) #app .zeno-search-page .zeno-result-group,:is(html.dark,html[data-theme="dark"]) #app .zeno-search-page .zeno-results-bar-tools>button{color:#9aa4b0!important}
+</style>
 <style id="zeno-search-thumb-radius-20261119">
 /* 병원 찾기 검색 카드 썸네일 공통 라운드: 병원별 예외 없이 .zeno-thumb 틀 기준으로 통일.
    사진(cover)은 틀을 꽉 채우고, 로고·간판(contain)은 비율을 유지한 채 그림 자체도 둥글게 깎는다. */
@@ -4834,7 +4853,7 @@ function searchPage(){
  const internalNote=clinical?'<p class="zeno-clinical-legend">'+(inquiryCount?'추가 전화 확인 '+inquiryCount+'곳 · ':'')+'특화는 병원 공개 안내 기준이며 전문의 자격을 뜻하지 않습니다.</p>':'';
  const focusChip=clinical?'<button type="button" class="zeno-internal-only" data-action="internal-focus-only" aria-pressed="'+(state.internalFocusOnly?'true':'false')+'">특화만 보기'+(state.internalFocusOnly?' ✓':'')+'</button>':'';
  const exotic=state.specialty==='특수동물'?'<section class="zeno-exotic-top" aria-labelledby="zeno-exotic-title">'
-  +'<div class="zeno-exotic-heading"><div><h2 id="zeno-exotic-title">특수동물 진료</h2><p>동물 종류를 선택하세요.</p></div>'
+  +'<div class="zeno-exotic-heading"><div><h2 id="zeno-exotic-title">특수동물 진료</h2></div>'
   +(state.exoticSpecies?'<button type="button" class="zeno-exotic-clear" data-action="exotic" data-value="">전체 동물 보기</button>':'')+'</div>'
   +'<div class="zeno-exotic-chips" role="group" aria-label="특수동물 종류">'
   +EXOTIC.map(x=>'<button type="button" class="zeno-exotic-option'+(state.exoticSpecies===x[0]?' is-selected':'')+'" data-action="exotic" data-value="'+e(x[0])+'" aria-pressed="'+(state.exoticSpecies===x[0])+'">'+e(x[0])+'</button>').join('')
