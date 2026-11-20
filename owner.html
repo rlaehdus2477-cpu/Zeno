@@ -3136,6 +3136,68 @@ html body .mobilebar button[aria-current="page"] .ico{color:#1689fa!important}
 .zeno-sponsored-card strong{flex:1;min-width:0;font-size:15px;line-height:1.45;word-break:keep-all;overflow-wrap:anywhere}
 .zeno-sponsored-card .ad-detail{flex:none;color:var(--zh-accent);font-size:13px}
 </style>
+
+<style id="zeno-galaxy-search-overflow-20261120">
+/* Search-page-only Galaxy fit: prevent selected chips and card actions from being squeezed. */
+@media(max-width:750px){
+html body .zeno-search-page .zeno-filter-rail > .filters{
+ display:flex!important;flex-direction:column!important;align-items:stretch!important;
+ gap:8px!important;min-width:0!important;max-width:100%!important;overflow:visible!important;
+}
+html body .zeno-search-page .zeno-filter-rail .zeno-filter-main{
+ min-width:0!important;max-width:100%!important;flex:0 0 auto!important;gap:8px!important;
+}
+html body .zeno-search-page .zeno-filter-rail .filters.zeno-filter-primary{
+ flex:1 1 0!important;min-width:0!important;max-width:100%!important;
+ overflow-x:auto!important;overflow-y:hidden!important;scrollbar-width:none!important;
+ overscroll-behavior-x:contain;touch-action:pan-x;
+ -webkit-mask-image:none!important;mask-image:none!important;
+}
+html body .zeno-search-page .zeno-filter-rail .zeno-filter-selected{
+ display:flex!important;flex-wrap:wrap!important;align-self:stretch!important;
+ gap:6px!important;min-width:0!important;margin:0!important;padding:0!important;
+}
+html body .zeno-search-page .zeno-filter-selected .zeno-filter-selected-chip{
+ display:inline-flex!important;align-items:center!important;white-space:nowrap!important;
+ word-break:keep-all!important;flex:0 0 auto!important;max-width:100%!important;min-height:32px!important;
+}
+html body .zeno-search-page .zeno-filter-rail .filter,
+html body .zeno-search-page .zeno-filter-more > summary{
+ white-space:nowrap!important;flex-shrink:0!important;
+}
+html body .zeno-search-page > .zeno-nearby-note{
+ margin:7px 0 14px!important;padding:0 20px!important;box-sizing:border-box!important;
+ line-height:1.5!important;overflow-wrap:break-word!important;
+}
+#app .zeno-search-page .zeno-search-card .zeno-card-context .directory-region:has(+ .zeno-nearby-distance)::after{
+ content:" · ";white-space:pre;color:#b0b8c1;
+}
+#app .zeno-search-page .zeno-search-card .zeno-card-context{
+ max-width:100%!important;overflow-wrap:break-word!important;
+}
+#app .zeno-search-page .zeno-search-card .zeno-search-fact{
+ overflow:visible!important;text-overflow:clip!important;white-space:normal!important;
+ word-break:keep-all!important;
+}
+#app .zeno-search-page .zeno-search-card .zeno-card-actions,
+#app .zeno-search-page .zeno-search-card .zeno-card-actions.has-book{
+ display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;
+ gap:8px!important;box-sizing:border-box!important;margin:10px 0 0 76px!important;
+ width:calc(100% - 76px)!important;max-width:calc(100% - 76px)!important;min-width:0!important;
+}
+#app .zeno-search-page .zeno-search-card .zeno-card-actions.has-book{
+ grid-template-columns:repeat(3,minmax(0,1fr))!important;
+}
+#app .zeno-search-page .zeno-search-card .zeno-card-actions .zeno-card-action{
+ flex:none!important;width:100%!important;max-width:100%!important;min-width:0!important;
+ box-sizing:border-box!important;padding:0 4px!important;
+ height:40px!important;min-height:40px!important;font-size:12.5px!important;
+}
+html body main.content:has(.zeno-search-page){
+ padding-bottom:calc(108px + env(safe-area-inset-bottom,0px))!important;
+}
+}
+</style>
 </head><body><div id="app" class="app"></div><script>
 'use strict';
 const APP_MODE='owner';
