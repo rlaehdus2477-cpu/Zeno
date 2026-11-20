@@ -25,7 +25,7 @@ import android.widget.Toast;
 
 public final class HospitalActivity extends Activity {
     private static final String HOST = "zeno.rlaehdus2477.workers.dev";
-    private static final String HOME = "https://" + HOST + "/hospital?android_app=1.0";
+    private static final String HOME = "https://" + HOST + "/hospital?android_app=1.3";
     private static final int PHOTO = 1;
     private static final int SURFACE = Color.rgb(248, 250, 252);
     private WebView web;
