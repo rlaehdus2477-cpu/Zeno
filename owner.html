@@ -4645,12 +4645,13 @@ function zenoHomeEmergencyStatusNote(h){
 /* Home rail only: never equate historical or non-NAVER hours with currently open. */
 function zenoHomeHoursVerified(h,date=new Date()){
  const source=String(h.hoursSource||''),evidence=source+' '+String(h.hours||'');
- if(!/네이버|NAVER/i.test(source))return false;
+ // Accept recorded sources beyond Naver; reject missing or explicitly unverified provenance.
+ if(!source.trim()||/미확인|미검증|확인 필요|자료 상충|시간 상충|출처 없음/.test(source))return false;
  if(/2025|미확인|미검증|확인 필요|자료 상충|시간 상충|현재 운영시간 아님/.test(evidence))return false;
  const checked=String(h.hoursCheckedAt||'');
  if(!/^\d{4}-\d{2}-\d{2}$/.test(checked))return false;
  const verifiedAt=new Date(checked+'T00:00:00+09:00').getTime();
- return Number.isFinite(verifiedAt)&&date.getTime()>=verifiedAt&&date.getTime()-verifiedAt<60*86400000;
+ return Number.isFinite(verifiedAt)&&date.getTime()>=verifiedAt&&date.getTime()-verifiedAt<365*86400000;
 }
 function zenoHomeWithinPublishedHours(h,date=new Date()){
  if(!zenoHomeHoursVerified(h,date))return false;
