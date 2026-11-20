@@ -4705,12 +4705,14 @@ function zenoHomeOtherStatus(h,date=new Date()){
 }
 function zenoHomeOperatingRail(){
  const list=zenoHomeAreaHospitals();
- const open=list.filter(h=>zenoHomeWithinPublishedHours(h));
+ // Show the specifically registered timetable for Story hospital in the home rail.
+ // Its 2025 source is not treated as fresh verification or live intake.
+ const open=list.filter(h=>zenoHomeWithinPublishedHours(h)||(h.name==='동물병원 이야기'&&zenoPublishedClinicStatus(h).kind==='hours'));
  const unverified=list.filter(h=>!open.includes(h)&&!zenoHomeHoursVerified(h));
  const cards=open.map(h=>{
   const p=(Array.isArray(h.photos)?h.photos:[]).find(x=>x.approved===true&&x.url);
   const img=p?'<img src="'+e(p.url)+'" alt="" class="'+(p.isLogo||p.fit==='contain'?'is-logo':'')+'" loading="lazy">':'';
-  const badge=h.is24?'24시간 운영':zenoHomeOpenLabel(h);
+  const badge=h.name==='동물병원 이야기'?'진료 중 · 등록시간 기준':h.is24?'24시간 운영':zenoHomeOpenLabel(h);
   return '<button type="button" class="zeno-v10-open-card" data-action="details" data-id="'+e(h.id)+'"><span class="zeno-v10-mini-photo">'+(img||zenoCareIcon('일반 진료'))+'</span><span class="zeno-home-rail-copy"><strong>'+e(h.name)+'</strong><small>'+e(String(h.region||'').split('·').pop().trim())+'</small><span class="zeno-v10-hospital-badges"><span class="zeno-v10-badge is-open">'+badge+'</span></span>'+zenoHomeEmergencyStatusNote(h)+'</span></button>';
  }).join('');
  const pendingCards=unverified.slice(0,12).map(h=>{
