@@ -170,6 +170,12 @@ jobs:
       - name: Deploy existing Worker and D1 binding
         id: deploy
         run: |
+          # The Worker health check requires the new partner's production login binding.
+          secrets_json=$(npx wrangler secret list --config wrangler.toml --format json)
+          if ! jq -e 'any(.[]; .name == "HOSPITAL_TPLUS_PIN")' <<< "$secrets_json" >/dev/null; then
+            echo "::error::HOSPITAL_TPLUS_PIN is missing on the zeno Worker."
+            exit 1
+          fi
           # Cloudflare may intermittently fail Worker version uploads (API 10013).
           # Retry the same compiled artifact, then retry with an earlier Wrangler release.
           for attempt in 1 2; do
@@ -232,6 +238,8 @@ jobs:
                 const end=html.indexOf('];',start);
                 if(start<0||end<start)throw Error(view+' HOSPITALS data missing');
                 const records=JSON.parse(html.slice(start+'const HOSPITALS='.length,end+1));
+                const partners=records.filter(h=>h.linked).map(h=>h.id).sort().join(',');
+                if(partners!=='naeum,pub045,soo'||!records.some(h=>h.id==='tnd'&&h.linked===false))throw Error(view+' pilot partner list mismatch: '+partners);
                 const waiting=records.filter(h=>h.catWaiting);
                 if(waiting.length!==17)throw Error(view+' cat waiting room records count '+waiting.length+' (expected 17)');
                 const may=waiting.find(h=>h.id==='pub029');
@@ -266,6 +274,8 @@ jobs:
               const revision=await (await get('/api/ui-version?ui='+nonce)).json();
               if(revision?.owner!==expectedOwnerRevision)throw Error('Owner UI version not deployed: '+JSON.stringify(revision)+' expected '+expectedOwnerRevision);
               if(!owner.includes("const ZENO_OWNER_UI_REVISION='"+expectedOwnerRevision+"'"))throw Error('Owner page revision not synchronized with Worker: '+expectedOwnerRevision);
+              const ping=await (await get('/api/ping?ui='+nonce)).json();
+              if(ping.connected!==true)throw Error('Production Worker connection check failed');
               const json=await (await get('/api/public/hospital-status?ui='+nonce)).json();
               if(!json||typeof json.settings!=='object')throw Error('Public hospital status response invalid');
               checked=true;break;
