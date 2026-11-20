@@ -3807,7 +3807,7 @@ function zenoPublishedClinicStatus(h,date=new Date()){
  if(zenoBreakAt(h,week,day,clock.now))return {text:'휴게시간 안내',kind:'closed'};
  if(clock.now>=span.start&&(span.overnight||clock.now<span.end)){
   if(zenoReceptionClosedAt(h,day,clock.now))return {text:'접수마감 안내 · 진료 종료 전',kind:'closed'};
-  return {text:'등록된 진료시간에 해당',kind:'hours'};
+  return {text:'진료 중 · 등록시간 기준 (접수 전화 확인)',kind:'hours'};
  }
  return {text:'등록된 진료시간 외',kind:'closed'};
 }
