@@ -57,6 +57,13 @@ function functionBody(source, name) {
   assert.ok(next > start, name + ' boundaries');
   return source.slice(start, next);
 }
+const defaultSearch = Function('HOSPITALS','state','zenoWaitingQuery','zenoActiveFilters',
+  functionBody(owner,'zenoPartnerFirst')+'\n'+functionBody(owner,'filteredHospitals')+'\nreturn filteredHospitals();'
+);
+const listed = defaultSearch(Object.freeze([...a]), {query:''}, () => ({text:''}), () => []);
+assert.deepEqual(listed.map(h => h.id), [...a.filter(h => h.linked), ...a.filter(h => !h.linked)].map(h => h.id),
+  'default search must put partners first and retain all other clinics in their original order');
+
 const home = functionBody(owner, 'zenoHomeOperatingRail');
 assert.match(home, /const cards=open\.map\(/, 'keep Nov 18 single open-clinic carousel');
 assert.match(home, /더 많은 병원 찾기/, 'keep the original browse-more card');
@@ -65,14 +72,23 @@ assert.doesNotMatch(home, /const others\s*=|zeno-home-other-heading|data-rail="o
 assert.doesNotMatch(home, /다른 병원.*곳|zeno-home-open-count/, 'do not restore the unwanted counts');
 assert.match(owner, /function zenoBookingFlow\(/, 'booking must remain in owner');
 assert.match(owner, /function zenoProvidedClinicalProfile\(/, 'NAVER care fields must remain visible');
-assert.match(owner, /\['soo','pub046'\]\.includes\(h\.id\)/, 'Soo exotic species must remain visible');
+const renderClinicalProfile = Function('e','zenoRepresentativeSpecialtySection','zenoCareSourceLink',
+  functionBody(owner,'zenoProvidedClinicalProfile')+'\nreturn zenoProvidedClinicalProfile;'
+)(String, () => '', () => '');
+for (const id of ['soo','pub046']) {
+  const clinic = get(a,id);
+  const speciesSection = renderClinicalProfile(clinic).match(/<h3>주요 진료 대상<\/h3>([\s\S]*?)<\/section>/)?.[1];
+  for (const species of clinic.publishedExoticSpecies) {
+    assert.ok(speciesSection?.includes('>'+species+'</span>'), id+' clinic profile must show '+species);
+  }
+}
 assert.match(owner, /zenoPublishedStatusMarkup/, 'hospital status display must remain separate from hours');
 assert.match(owner, /function zenoHomeWithinPublishedHours\(/, 'open-now must remain time gated');
 
 // Exercise the real production open-now functions at fixed Korean local times.
 // Only public, user-supplied NAVER facts are used; no live hospital status is inferred.
 const statusFunctions = [
-  'zenoSeoulClock','zenoScheduleSpan','zenoWeeklyData','zenoBreakAt',
+  'zenoSeoulClock','zenoScheduleSpan','zenoWeeklyData','zenoProvisionalHoursRecent','zenoStatusSchedule','zenoBreakAt',
   'zenoReceptionClosedAt','zenoHomeHoursVerified','zenoHomeWithinPublishedHours'
 ].map(name => functionBody(owner,name)).join('\n');
 const {zenoHomeWithinPublishedHours} =
