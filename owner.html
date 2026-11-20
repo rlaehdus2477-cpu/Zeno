@@ -4486,11 +4486,15 @@ function zenoSearchHospitalCard(h){
   +zenoDeclaredSpecialtyLine(h,false,2,true)+contextHtml+'</span></button><div class="zeno-card-actions'+(book?' has-book':'')+'">'+call+route+book+'</div></article>';
 }
 
+function zenoPartnerFirst(a,b){
+ return Number(Boolean(b.linked))-Number(Boolean(a.linked));
+}
+
 function zenoInternalHospitalResults(items){
  const department=e(state.specialty);
  if(!items.length)return '<div class="empty zeno-results-empty"><strong>선택한 조건에 맞는 병원이 없어요.</strong><button type="button" class="btn secondary small" data-action="clear-search">조건 초기화</button></div>';
  const focus=items.filter(h=>Boolean(zenoSpecialtyFocus(h)));
- if(!zenoHasFilter('내 주변'))focus.sort((a,b)=>Number(zenoSpecialtyFocus(b).status==='confirmed')-Number(zenoSpecialtyFocus(a).status==='confirmed'));
+ if(!zenoHasFilter('내 주변'))focus.sort((a,b)=>zenoPartnerFirst(a,b)||Number(zenoSpecialtyFocus(b).status==='confirmed')-Number(zenoSpecialtyFocus(a).status==='confirmed'));
  const care=items.filter(h=>!zenoSpecialtyFocus(h)&&zenoSpecialtyOrigin(h)!=='inquiry');
  const inquiry=items.filter(h=>!zenoSpecialtyFocus(h)&&zenoSpecialtyOrigin(h)==='inquiry');
  const cards=rows=>'<div class="hospital-list zeno-compact-results">'+rows.map(zenoSearchHospitalCard).join('')+'</div>';
@@ -4589,9 +4593,9 @@ function filteredHospitals(){
   return Number(zenoCfc(b)?.status==='listed')-Number(zenoCfc(a)?.status==='listed');
  });
  if(fs.includes('내 주변')&&state.nearbyPosition&&state.nearbyCoordinates){
-  list=list.filter(h=>zenoNearbyDistanceKm(h)<=ZENO_NEARBY_RADIUS_KM).sort((a,b)=>zenoNearbyDistanceKm(a)-zenoNearbyDistanceKm(b));
+  return list.filter(h=>zenoNearbyDistanceKm(h)<=ZENO_NEARBY_RADIUS_KM).sort((a,b)=>zenoNearbyDistanceKm(a)-zenoNearbyDistanceKm(b));
  }
- return list;
+ return list.sort(zenoPartnerFirst);
 }
 /* CHANGED: placeholder advertising removed until real contract. */
 let zenoHomeAds=[],zenoAdRequest=null,zenoAdExpiry=null;
@@ -4780,7 +4784,8 @@ function zenoHomeOperatingRail(){
  const list=zenoHomeAreaHospitals();
  // Show the specifically registered timetable for Story hospital in the home rail.
  // Its 2025 source is not treated as fresh verification or live intake.
- const open=list.filter(h=>zenoHomeWithinPublishedHours(h)||zenoArkWithinReferenceHours(h)||(h.name==='동물병원 이야기'&&zenoPublishedClinicStatus(h).kind==='hours'));
+ const open=list.filter(h=>zenoHomeWithinPublishedHours(h)||zenoArkWithinReferenceHours(h)||(h.name==='동물병원 이야기'&&zenoPublishedClinicStatus(h).kind==='hours'))
+  .sort(zenoPartnerFirst);
  const cards=open.map(h=>{
   const p=(Array.isArray(h.photos)?h.photos:[]).find(x=>x.approved===true&&x.url);
   const img=p?'<img src="'+e(p.url)+'" alt="" class="'+(p.isLogo||p.fit==='contain'?'is-logo':'')+'" loading="lazy">':'';
