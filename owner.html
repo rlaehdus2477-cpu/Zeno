@@ -3795,6 +3795,7 @@ function zenoNightStatus(h,date=new Date()){
 
 function zenoPublishedClinicStatus(h,date=new Date()){
  const clock=zenoSeoulClock(date),week=zenoWeeklyData(h);
+ if(zenoArkWithinReferenceHours(h,date))return {text:'진료 중 · 참고시간 기준 (접수 전화 확인)',kind:'hours'};
  if(h.emergency24)return {text:'24시간 응급 안내 · 일반진료 별도',kind:'guide'};
  if(h.is24)return {text:'24시간 운영 안내',kind:'guide'};
  const days=['일','월','화','수','목','금','토'],day=clock.weekday;
@@ -4324,6 +4325,14 @@ function zenoSearchClinicStatus(h){
   const end=to?to.end:from.end,within=clock.now>=from.start&&clock.now<end;
   return {text:(within?'진료시간 내':'진료시간 외')+' · 요일 미확인',kind:'estimated'+(within?' is-open':'')};
  }
+ if(h.id==='pub034'&&zenoArkReferenceIsFresh(h)){
+  const week=h.provisionalSchedule,day=clock.weekday,span=zenoScheduleSpan(week[day]);
+  if(/휴무|휴진/.test(week[day]||''))return {text:'오늘 휴진 · 참고시간 기준',kind:'estimated'};
+  if(!span)return {text:'진료시간 확인 필요',kind:'unknown'};
+  if(zenoBreakAt(h,week,day,clock.now))return {text:'휴게시간 · 참고시간 기준',kind:'estimated'};
+  const within=zenoArkWithinReferenceHours(h);
+  return {text:(within?'진료시간 내':'진료시간 외')+' · 참고시간 기준',kind:'estimated'+(within?' is-open':'')};
+ }
  const week=zenoWeeklyData(h);
  const days=['일','월','화','수','목','금','토'];
  const prior=zenoScheduleSpan(week[days[(days.indexOf(clock.weekday)+6)%7]]);
@@ -4642,6 +4651,33 @@ function zenoHomeEmergencyStatusNote(h){
  if(!record?.updatedAt||!Object.prototype.hasOwnProperty.call(labels,record.emergencyStatus))return '';
  return '<small>'+e('병원 입력 · '+labels[record.emergencyStatus]+' · '+dateTime(record.updatedAt))+'</small>';
 }
+
+/* Ark has a recent, explicitly labelled reference timetable supplied by the user.
+   Its "open now" hint must not be mistaken for a hospital-confirmed intake status. */
+function zenoArkReferenceIsFresh(h,date=new Date()){
+ if(h.id!=='pub034'||h.hoursVerificationStatus!=='ai-summary-unverified'||!h.provisionalSchedule)return false;
+ const checked=String(h.hoursEvidenceCapturedAt||'');
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(checked))return false;
+ const stamped=new Date(checked+'T00:00:00+09:00').getTime();
+ return Number.isFinite(stamped)&&date.getTime()>=stamped&&date.getTime()-stamped<365*86400000;
+}
+function zenoArkWithinReferenceHours(h,date=new Date()){
+ if(!zenoArkReferenceIsFresh(h,date))return false;
+ const clock=zenoSeoulClock(date),week=h.provisionalSchedule;
+ const span=zenoScheduleSpan(week[clock.weekday]);
+ if(!span||clock.now<span.start||(!span.overnight&&clock.now>=span.end))return false;
+ if(zenoBreakAt(h,week,clock.weekday,clock.now))return false;
+ if(zenoReceptionClosedAt(h,clock.weekday,clock.now))return false;
+ return true;
+}
+function zenoArkReferenceOpenLabel(h,date=new Date()){
+ const day=zenoSeoulClock(date).weekday;
+ const span=zenoScheduleSpan(h.provisionalSchedule?.[day]);
+ if(!span)return '진료 중 · 참고시간 기준';
+ const closing=String(Math.floor(span.end/60)).padStart(2,'0')+':'+String(span.end%60).padStart(2,'0');
+ return '진료 중 · '+closing+'까지 (참고)';
+}
+
 /* Home rail only: never equate historical or non-NAVER hours with currently open. */
 function zenoHomeHoursVerified(h,date=new Date()){
  const source=String(h.hoursSource||''),evidence=source+' '+String(h.hours||'');
@@ -4707,11 +4743,11 @@ function zenoHomeOperatingRail(){
  const list=zenoHomeAreaHospitals();
  // Show the specifically registered timetable for Story hospital in the home rail.
  // Its 2025 source is not treated as fresh verification or live intake.
- const open=list.filter(h=>zenoHomeWithinPublishedHours(h)||(h.name==='동물병원 이야기'&&zenoPublishedClinicStatus(h).kind==='hours'));
+ const open=list.filter(h=>zenoHomeWithinPublishedHours(h)||zenoArkWithinReferenceHours(h)||(h.name==='동물병원 이야기'&&zenoPublishedClinicStatus(h).kind==='hours'));
  const cards=open.map(h=>{
   const p=(Array.isArray(h.photos)?h.photos:[]).find(x=>x.approved===true&&x.url);
   const img=p?'<img src="'+e(p.url)+'" alt="" class="'+(p.isLogo||p.fit==='contain'?'is-logo':'')+'" loading="lazy">':'';
-  const badge=h.name==='동물병원 이야기'?'진료 중 · 등록시간 기준':h.is24?'24시간 운영':zenoHomeOpenLabel(h);
+  const badge=h.name==='동물병원 이야기'?'진료 중 · 등록시간 기준':h.id==='pub034'?zenoArkReferenceOpenLabel(h):h.is24?'24시간 운영':zenoHomeOpenLabel(h);
   return '<button type="button" class="zeno-v10-open-card" data-action="details" data-id="'+e(h.id)+'"><span class="zeno-v10-mini-photo">'+(img||zenoCareIcon('일반 진료'))+'</span><span class="zeno-home-rail-copy"><strong>'+e(h.name)+'</strong><small>'+e(String(h.region||'').split('·').pop().trim())+'</small><span class="zeno-v10-hospital-badges"><span class="zeno-v10-badge is-open">'+badge+'</span></span>'+zenoHomeEmergencyStatusNote(h)+'</span></button>';
  }).join('');
  const more='<button type="button" class="zeno-v10-open-more" data-action="show-all-hospitals" aria-label="전체 병원 목록으로 이동"><strong>더 많은 병원 찾기</strong><small>운영시간 미확인 병원도 살펴보기</small><span aria-hidden="true">전체 병원 ›</span></button>';
