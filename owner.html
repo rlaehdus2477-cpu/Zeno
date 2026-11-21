@@ -4707,10 +4707,10 @@ function zenoVisitAt(b){
 }
 function zenoHomeBookingPreview(){
  if(!state.ownerToken)return '';
- const active=state.bookings.filter(b=>['pending','accepted','suggested','confirmed','in_progress'].includes(b.status));
- const priority=b=>b.status==='suggested'?0:1;
- const upcoming=active.filter(b=>b.status==='suggested'||b.status==='in_progress'||zenoVisitAt(b).slice(0,10)>=today())
-  .sort((a,b)=>priority(a)-priority(b)||zenoVisitAt(a).localeCompare(zenoVisitAt(b)));
+ // Select the latest requested upcoming appointment; do not surface stale past visits.
+ const upcoming=state.bookings
+  .filter(b=>['pending','accepted','suggested','confirmed','in_progress'].includes(b.status)&&zenoVisitAt(b).slice(0,10)>=today())
+  .sort((a,b)=>String(b.createdAt||b.updatedAt||'').localeCompare(String(a.createdAt||a.updatedAt||''))||zenoVisitAt(b).localeCompare(zenoVisitAt(a)));
  const booking=upcoming[0];
  if(!booking)return '';
  const raw=zenoVisitAt(booking),[date,time='']=raw.trim().split(' ');
