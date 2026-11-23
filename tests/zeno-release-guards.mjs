@@ -122,9 +122,9 @@ for (const [label,id,time,expected] of [
  ['Soo intake cutoff','soo','2026-11-19T17:40:00',false],
  ['Soo Wednesday closed','soo','2026-11-18T11:00:00',false],
  ['Soo Saturday cutoff','soo','2026-11-21T14:35:00',false],
- ['Naeum evening 24h','naeum','2026-11-19T17:30:00',true],
- ['Naeum evening clinic','naeum','2026-11-19T18:30:00',true],
- ['Naeum 23:40 24h','naeum','2026-11-19T23:40:00',true],
+ ['Naeum evening 24h','naeum','2026-11-20T17:30:00',true],
+ ['Naeum evening clinic','naeum','2026-11-20T18:30:00',true],
+ ['Naeum 23:40 24h','naeum','2026-11-20T23:40:00',true],
  ['Naeum after midnight','naeum','2026-11-20T00:15:00',true],
  ['Naeum Sunday night','naeum','2026-11-22T03:20:00',true],
 ]) {
