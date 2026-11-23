@@ -2782,7 +2782,7 @@ html body .zeno-search-page .zeno-hospital-card.zeno-search-card{display:block!i
 html body .zeno-search-page .zeno-search-card .directory-main{display:grid!important;grid-template-columns:60px minmax(0,1fr)!important;gap:12px!important;align-items:start!important;width:100%!important;padding:0 18px 0 0!important;margin:0!important;border:0!important;background:none!important;text-align:left!important;box-shadow:none!important}
 html body .zeno-search-page .zeno-search-card .directory-main::after{content:'›'!important;top:1px!important;right:0!important;color:#b0b8c1!important;font-size:22px!important;line-height:1!important}
 html body .zeno-search-page .zeno-thumb{position:relative;display:flex;align-items:center;justify-content:center;width:60px;height:60px;border-radius:10px;overflow:hidden;background:#f2f4f6;box-shadow:inset 0 0 0 1px rgba(0,0,0,.04)}
-html body .zeno-search-page .zeno-thumb::before{content:attr(data-initial);color:#8b95a1;font-size:20px;font-weight:600}
+/* 2026-11-23: 사진 없는 병원은 첫 글자 대신 작은 병원 아이콘으로 표시 */html body .zeno-search-page .zeno-thumb::before{content:'';width:26px;height:26px;background:#b0b8c1;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 21V7l8-4 8 4v14'/%3E%3Cpath d='M3 21h18'/%3E%3Cpath d='M12 8v6M9 11h6'/%3E%3Cpath d='M10 21v-3h4v3'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 21V7l8-4 8 4v14'/%3E%3Cpath d='M3 21h18'/%3E%3Cpath d='M12 8v6M9 11h6'/%3E%3Cpath d='M10 21v-3h4v3'/%3E%3C/svg%3E") center/contain no-repeat}
 html body .zeno-search-page .zeno-thumb img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#fff}
 html body .zeno-search-page .zeno-thumb.is-logo img{object-fit:contain;padding:4px;box-sizing:border-box}
 html body .zeno-search-page .zeno-search-card .directory-text{display:flex!important;flex-direction:column!important;gap:3px!important;min-width:0!important}
@@ -4424,7 +4424,7 @@ function zenoSearchClinicStatus(h){
   if(fresh)return {text:'병원 입력 · '+(updated.status==='available'?'접수 가능':updated.status==='busy'?'혼잡':'접수 상태 확인 필요'),kind:'direct'+(updated.status==='available'?' is-open':'')};
  }
  if(h.emergency24&&!h.is24)return {text:'24시간 응급 안내 · 수용 전화 확인',kind:'schedule24'};
- if(h.is24)return {text:'24시간 운영 안내 · 응급 수용 별도',kind:'schedule24'};
+ if(h.is24)return {text:'24시간 · 응급 별도 확인',kind:'schedule24'};
  const clock=zenoSeoulClock();
  if(h.careSchedule){
   const from=zenoScheduleSpan(h.careSchedule.day),to=zenoScheduleSpan(h.careSchedule.night);
@@ -4554,7 +4554,7 @@ function zenoSearchHospitalCard(h){
  // Details, published fees, hours and directions remain available by tapping the hospital row.
  return '<article class="directory-item zeno-hospital-card zeno-search-card"><button type="button" class="directory-main" data-action="details" data-id="'+e(h.id)+'" aria-label="'+e(h.name)+' 상세 정보, 진료비, 운영시간 및 위치">'
   +photoHtml+'<span class="directory-text"><strong>'+e(h.name)+'</strong><span class="zeno-card-context"><span class="directory-region">'+e(h.region||'')+'</span>'+nearbyDistance+'<span class="zeno-search-status '+status.kind+'">'+String(status.text).split(' · ').map(part=>'<span class="zeno-nowrap">'+e(part)+'</span>').join(' · ')+'</span></span>'
-  +zenoDeclaredSpecialtyLine(h,false,2,true)+contextHtml+'</span></button><div class="zeno-card-actions'+(book?' has-book':'')+'">'+call+route+book+'</div></article>';
+  +zenoDeclaredSpecialtyLine(h,false,2,false)+contextHtml+'</span></button><div class="zeno-card-actions'+(book?' has-book':'')+'">'+call+route+book+'</div></article>';
 }
 
 function zenoPartnerFirst(a,b){
