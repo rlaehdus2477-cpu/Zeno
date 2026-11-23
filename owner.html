@@ -2799,6 +2799,8 @@ html body .zeno-fact-label{display:inline-block;margin-right:6px;color:#8b95a1;f
 html body .zeno-fact-item{white-space:nowrap}
 html body .zeno-fact-more{white-space:nowrap;color:#8b95a1}
 html body .zeno-search-fact.is-empty{color:#8b95a1!important}
+/* 2026-11-23: 병원 찾기 목록에서는 확인 전 진료과목 줄을 숨겨 카드 높이를 줄인다 (상세 화면은 그대로) */
+html body #app .zeno-search-page .zeno-search-card .zeno-search-fact.is-empty{display:none!important}
 html body .zeno-search-page .zeno-search-card .zeno-search-tags{margin-top:4px!important}
 
 /* 행동 버튼: 텍스트 열에 맞춰 작게 */
@@ -4554,7 +4556,7 @@ function zenoSearchHospitalCard(h){
  // Details, published fees, hours and directions remain available by tapping the hospital row.
  return '<article class="directory-item zeno-hospital-card zeno-search-card"><button type="button" class="directory-main" data-action="details" data-id="'+e(h.id)+'" aria-label="'+e(h.name)+' 상세 정보, 진료비, 운영시간 및 위치">'
   +photoHtml+'<span class="directory-text"><strong>'+e(h.name)+'</strong><span class="zeno-card-context"><span class="directory-region">'+e(h.region||'')+'</span>'+nearbyDistance+'<span class="zeno-search-status '+status.kind+'">'+String(status.text).split(' · ').map(part=>'<span class="zeno-nowrap">'+e(part)+'</span>').join(' · ')+'</span></span>'
-  +zenoDeclaredSpecialtyLine(h,false,2,false)+contextHtml+'</span></button><div class="zeno-card-actions'+(book?' has-book':'')+'">'+call+route+book+'</div></article>';
+  +zenoDeclaredSpecialtyLine(h,false,2,true)+contextHtml+'</span></button><div class="zeno-card-actions'+(book?' has-book':'')+'">'+call+route+book+'</div></article>';
 }
 
 function zenoPartnerFirst(a,b){
