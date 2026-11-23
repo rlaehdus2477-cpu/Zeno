@@ -29,7 +29,6 @@ function get(list, id) {
 const weekdays = ['월','화','수','목','금','토','일'];
 for (const [id, hours, breakTime, reception] of [
   ['tnd', '10:00~19:30', '13:00~14:00', '19:00'],
-  ['naeum','09:30~24:00', '12:30~13:30','23:30'],
 ]) {
   for (const list of [a,b]) {
     const h = get(list,id);
@@ -38,6 +37,23 @@ for (const [id, hours, breakTime, reception] of [
     assert.ok(h.breakSchedule?.월?.includes(breakTime), id + ': published break time');
     assert.equal(h.hoursVerificationStatus, 'naver-place-screenshot', id + ': source evidence classification');
   }
+}
+// Keep both public-facing apps on the same clinic facts; they share one dataset contract.
+for (const sourceClinic of a) {
+  const hospitalClinic = get(b, sourceClinic.id);
+  for (const field of ['is24','weeklySchedule','breakSchedule','receptionDeadlines','hoursVerificationStatus','hours','declaredSpecialties','careFields']) {
+    assert.deepEqual(hospitalClinic[field], sourceClinic[field], sourceClinic.id + ': owner/hospital ' + field + ' mismatch');
+  }
+}
+for (const list of [a,b]) {
+  const naeum = get(list,'naeum');
+  assert.equal(naeum.is24,true,'Naeum must be categorized as 24-hour hospital');
+  for (const day of [...weekdays,'공휴일']) {
+    assert.equal(naeum.weeklySchedule?.[day],'24시간 진료 안내','Naeum must not inherit old general-care hours');
+  }
+  assert.equal(Object.keys(naeum.breakSchedule||{}).length,0,'Naeum must not inherit previous lunch break as global 24h closure');
+  assert.equal(Object.keys(naeum.receptionDeadlines||{}).length,0,'Naeum must not inherit previous 23:30 global closing time');
+  assert.equal(naeum.hoursVerificationStatus,'hospital-official','Naeum official source classification');
 }
 for (const list of [a,b]) {
   const soo = get(list,'soo');
@@ -106,10 +122,11 @@ for (const [label,id,time,expected] of [
  ['Soo intake cutoff','soo','2026-11-19T17:40:00',false],
  ['Soo Wednesday closed','soo','2026-11-18T11:00:00',false],
  ['Soo Saturday cutoff','soo','2026-11-21T14:35:00',false],
- ['Naeum evening break','naeum','2026-11-19T17:30:00',false],
- ['Naeum evening clinic','naeum','2026-11-19T18:30:00',true],
- ['Naeum intake cutoff','naeum','2026-11-19T23:40:00',false],
- ['Naeum after midnight','naeum','2026-11-20T00:15:00',false],
+ ['Naeum evening 24h','naeum','2026-11-20T17:30:00',true],
+ ['Naeum evening clinic','naeum','2026-11-20T18:30:00',true],
+ ['Naeum 23:40 24h','naeum','2026-11-20T23:40:00',true],
+ ['Naeum after midnight','naeum','2026-11-20T00:15:00',true],
+ ['Naeum Sunday night','naeum','2026-11-22T03:20:00',true],
 ]) {
  assert.equal(on(id,time),expected,label+' must not mislead owners about opening or intake');
 }
