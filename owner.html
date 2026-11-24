@@ -3821,9 +3821,7 @@ function zenoNaverAction(h){
  if(!Array.isArray(h.reservationInfo?.methods)||!h.reservationInfo.methods.includes('naver'))return null;
  const direct=zenoNaverBookingUrl(h);
  if(direct)return {url:direct,label:'네이버 예약'};
- const g=zenoReservationGuide(h);
- if(g.naverLinkStatus==='official-place-link'&&g.url)return {url:g.url,label:'네이버 안내'};
- return {url:zenoNaverPhotoUrl(h),label:'네이버 찾기'};
+ return null;
 }
 function zenoReservationLine(h,allowZeno=false){
  const g=zenoReservationGuide(h,allowZeno);
@@ -3842,7 +3840,7 @@ function zenoReservationDetail(h){
  +(h.linked?'<p class="zeno-detail-short-note">ZENO 예약은 병원 확인 후 확정됩니다.</p>':'')
  +(!g.hasExternal?'<p class="zeno-detail-short-note">'+(h.linked?'그 외 예약 방식은 병원에 문의해 주세요.':'방문 전 병원에 예약 및 접수 방법을 문의해 주세요.')+'</p>':'')
  +(g.note?'<p class="zeno-detail-short-note">'+e(g.note)+'</p>':'')
- +(zenoNaverBookingUrl(h)?'<a class="btn secondary small" href="'+e(zenoNaverBookingUrl(h))+'" target="_blank" rel="noopener noreferrer">네이버에서 예약하기</a>':g.url?'<a class="btn secondary small" href="'+e(g.url)+'" target="_blank" rel="noopener noreferrer">'+(g.naverLinkStatus==='official-place-link'?'네이버 플레이스 열기':'병원 예약 안내 보기')+'</a>':g.naverSearch?'<a class="btn secondary small" href="'+e(g.naverSearch)+'" target="_blank" rel="noopener noreferrer">네이버에서 병원 찾기</a><p class="zeno-detail-short-note">직접 예약 링크 미확인 · 네이버에서 예약 탭을 확인해 주세요.</p>':'')
+ +(zenoNaverBookingUrl(h)?'<a class="btn secondary small" href="'+e(zenoNaverBookingUrl(h))+'" target="_blank" rel="noopener noreferrer">네이버에서 예약하기</a>':g.url?'<a class="btn secondary small" href="'+e(g.url)+'" target="_blank" rel="noopener noreferrer">'+(g.naverLinkStatus==='official-place-link'?'네이버 플레이스 열기':'병원 예약 안내 보기')+'</a>':'')
  +(g.source?'<p class="zeno-detail-short-note">출처: '+e(g.source)+(g.checkedAt?' · 확인일: '+e(g.checkedAt):g.reportedAt?' · 정보 제공일: '+e(g.reportedAt):'')+(g.sourceUrl?' · <a href="'+e(g.sourceUrl)+'" target="_blank" rel="noopener noreferrer">출처 보기</a>':'')+'</p>':'')+'</section>';
 }
 function zenoDetailQuick(h){
