@@ -122,7 +122,7 @@ jobs:
           // path not intercepted by older service workers which only controlled /owner.
           const ownerRoute="if(['/owner','/owner/','/owner.html'].includes(path))return new Response(OWNER_HTML";
           if(!worker.includes(ownerRoute))throw Error('Owner routing anchor missing');
-          const legacyRedirect="if(path==='/owner'&&new URL(request.url).searchParams.get('android_app')==='1.2')return Response.redirect(new URL('/owner-native?android_app=1.2',request.url).toString(),302);\n";
+          const legacyRedirect="if(['/owner','/owner/','/owner.html'].includes(path)&&new URL(request.url).searchParams.has('android_app')){const target=new URL(request.url);target.pathname='/owner-native';return new Response(null,{status:302,headers:{Location:target.toString(),'Cache-Control':'no-store, max-age=0'}});}\n";
           worker=worker.replace(ownerRoute,legacyRedirect+"if(['/owner','/owner/','/owner.html','/owner-compact','/owner-native'].includes(path))return new Response(OWNER_HTML");
           if(!worker.includes("if(['/owner','/owner/','/owner.html','/owner-compact','/owner-native'].includes(path))return new Response(OWNER_HTML"))throw Error('Native route missing from built Worker');
           fs.writeFileSync('worker.js',worker);
@@ -220,7 +220,7 @@ jobs:
               const owner=await (await get('/owner?ui='+nonce)).text();
               for(const expected of ['ZENO','진료 분야로 찾기','특수동물','예약 요청','24시 청주이음동물의료센터','종양 수술','영상의학','수술 후 재활']){if(!owner.includes(expected))throw Error('Production owner UI missing: '+expected);}
               // Check the ordinary owner URL that installed apps open as well.
-              for(const mobilePath of ['/owner-native?android_app=1.2','/owner','/owner?android_app=1.2','/owner?ui='+encodeURIComponent(expectedOwnerRevision)]){
+              for(const mobilePath of ['/owner-native?android_app=1.2','/owner-native?android_app=1.6','/owner','/owner?android_app=1.2','/owner?android_app=1.6','/owner?ui='+encodeURIComponent(expectedOwnerRevision)]){
                 const mobileOwner=await (await get(mobilePath)).text();
               if(!mobileOwner.includes("const ZENO_OWNER_UI_REVISION='"+expectedOwnerRevision+"'") ||
                  !mobileOwner.includes('#app .zeno-search-page .zeno-search-card .zeno-card-actions') ||
@@ -231,6 +231,8 @@ jobs:
               }
               const redirect=await fetch(base+'/owner?android_app=1.2',{redirect:'manual',headers:{'Cache-Control':'no-cache'},signal:AbortSignal.timeout(20000)});
               if(redirect.status!==302||!redirect.headers.get('location')?.includes('/owner-native?android_app=1.2'))throw Error('Legacy 1.2 APK route does not redirect outside old service worker paths');
+              const native16=await fetch(base+'/owner?android_app=1.6',{redirect:'manual',headers:{'Cache-Control':'no-cache'},signal:AbortSignal.timeout(20000)});
+              if(native16.status!==302||!native16.headers.get('location')?.includes('/owner-native?android_app=1.6')||!native16.headers.get('cache-control')?.includes('no-store'))throw Error('Installed 1.6 APK route is not redirected to a fresh native page');
               // Check the exact hospital record delivered to installed Galaxy PWAs, not just the UI revision.
               const dugeunStart=owner.indexOf('{"id":"pub008"');
               const dugeunEnd=owner.indexOf('},{"id":"pub009"',dugeunStart);
