@@ -2729,6 +2729,15 @@ html.dark .zeno-search-page .zeno-filter-extras,html[data-theme="dark"] .zeno-se
 .zeno-home-v10 .zeno-home-service-links button{display:flex;flex:1 1 0;align-items:center;justify-content:center;gap:6px;min-width:0;min-height:48px;padding:8px 4px;text-align:center;border:0;border-radius:0;background:transparent;color:var(--zh-text);font-size:12px;line-height:1.3;font-weight:650;white-space:normal;box-shadow:none}
 .zeno-home-v10 .zeno-home-service-links button+button{border-left:1px solid var(--zh-line)}
 .zeno-home-v10 .zeno-home-service-links svg{width:17px;height:17px;flex:none;color:var(--zh-muted)}
+/* 2026-11-24 home bottom: titled 2x2 service grid replaces the divided strip. */
+.zeno-home-v10 .zeno-home-services{margin:24px 0 12px}
+#app .zeno-home-v10 .zeno-home-services h2{margin:0 0 10px;font-size:17px!important;font-weight:700!important;line-height:1.4!important;letter-spacing:-.02em!important;color:var(--zh-text)}
+.zeno-home-v10 .zeno-home-service-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.zeno-home-v10 .zeno-home-service-grid button{display:flex;align-items:center;gap:10px;min-width:0;min-height:52px;padding:12px 14px;text-align:left;border:1px solid var(--zh-line);border-radius:12px;background:#fff;color:var(--zh-text);font-size:14px;line-height:1.35;font-weight:600;box-shadow:none;word-break:keep-all}
+.zeno-home-v10 .zeno-home-service-grid button:active{background:#f2f6fa}
+.zeno-home-v10 .zeno-home-service-grid button:focus-visible{outline:2px solid var(--zh-accent);outline-offset:2px}
+.zeno-home-v10 .zeno-home-service-icon{flex:none;display:grid;place-items:center;width:24px;height:24px;color:var(--zh-accent)}
+.zeno-home-v10 .zeno-home-service-icon svg{width:20px;height:20px}
 @media(max-width:390px){
  .zeno-home-v10 .zeno-home-service-links button{flex-direction:column;gap:4px;font-size:11.5px}
  .zeno-home-v10 .zeno-v10-open-card{flex-basis:206px!important;min-width:206px!important;width:206px!important;max-width:206px!important}
@@ -3695,7 +3704,7 @@ function navTo(p,fromHistory=false){
  zenoNewSearch=false;
 }
 
-function zenoBrandLogo(){return '<img class="zeno-global-brand" src="/brand-wordmark-v3.webp" alt="ZENO">';}
+function zenoBrandLogo(){return '<img class="zeno-global-brand" src="/brand-wordmark-v4.webp" alt="ZENO">';}
 function topbar(title,sub){return '<div class="top zeno-owner-top"><div><div class="mobile-logo">'+zenoBrandLogo()+'</div><h1>'+e(title)+'</h1>'+(sub?'<p>'+e(sub)+'</p>':'')+'</div></div>'}
 
 /* 하단 탭 아이콘: Tabler Icons (MIT, tabler.io) 외곽선/채움 세트. 선택된 탭은 채움 아이콘. */
@@ -3733,7 +3742,7 @@ function nav(){
  const item=(m,mobile=false)=>APP_MODE==='hospital'?
  '<button class="'+(mobile?'':'navlink ')+(state.hTab===m[0]?'active':'')+'" data-action="h-tab" data-value="'+e(m[0])+'"><span class="ico">'+zenoNavIcon(m[0])+'</span><b>'+e(m[1])+'</b></button>':
  '<button class="'+(mobile?'':'navlink ')+(state.page===m[0]?'active':'')+'" data-nav="'+e(m[0])+'"'+(state.page===m[0]?' aria-current="page"':'')+'><span class="ico">'+zenoTabIcon(m[0],state.page===m[0])+'</span><b>'+e(mobile&&m[0]==='vetqa'?'Q&A':m[1])+'</b></button>';
- return '<aside class="sidebar"><div class="brand"><img class="original-logo" alt="ZENO" src="/brand-wordmark-v3.webp"></div>'
+ return '<aside class="sidebar"><div class="brand"><img class="original-logo" alt="ZENO" src="/brand-wordmark-v4.webp"></div>'
  +'<p class="side-caption">'+(APP_MODE==='hospital'?'병원 운영':'보호자 서비스')+'</p><nav>'+menu.map(m=>item(m)).join('')+'</nav>'
  +'<div class="sidelow"><strong>ZENO</strong>'+(APP_MODE==='owner'?state.ownerToken?'<button class="btn secondary small full" data-action="owner-logout">로그아웃</button>':'<button class="btn secondary small full" data-nav="login">로그인</button>':'')+'</div></aside>'
  +'<div class="mobilebar">'+(APP_MODE==='hospital'?menu:menu.filter(m=>['home','search','vetqa','pets','more'].includes(m[0]))).map(m=>item(m,true)).join('')+'</div>';
@@ -4956,7 +4965,7 @@ function home(){
  +'<button type="button" class="zeno-home-utility-row" data-action="around-clock-shortcut"><span class="zeno-home-utility-icon">'+zenoHomeSmallIcon('urgent')+'</span><span class="zeno-home-utility-copy"><strong>24시간 운영 병원</strong><small>응급 접수는 전화로 확인</small></span><span class="zeno-home-utility-chevron" aria-hidden="true">›</span></button>'
  +'<button type="button" class="zeno-home-utility-row" data-action="cat-waiting-shortcut"><span class="zeno-home-utility-icon">'+zenoNavIcon('pets')+'</span><span class="zeno-home-utility-copy"><strong>고양이 전용 대기실</strong><small>분리된 공간이 안내된 병원</small></span><span class="zeno-home-utility-chevron" aria-hidden="true">›</span></button></div></section>'
  +zenoHomeBookingPreview()
- +'<nav class="zeno-home-service-links" aria-label="내 서비스"><button type="button" data-nav="pets">'+zenoNavIcon('pets')+'<span>내 아이 기록</span></button><button type="button" data-nav="qa">'+zenoNavIcon('qa')+'<span>질문·답변</span></button><button type="button" data-nav="prices">'+zenoNavIcon('search')+'<span>진료비 비교</span></button></nav>'
+ +'<section class="zeno-home-services" aria-label="내 서비스"><h2>내 서비스</h2><div class="zeno-home-service-grid">'+[['bookings','내 예약'],['qa','진료 전 질문'],['prices','진료비 비교'],['pets','내 아이 기록']].map(([nav,label])=>'<button type="button" data-nav="'+nav+'"><span class="zeno-home-service-icon">'+zenoNavIcon(nav)+'</span><span>'+label+'</span></button>').join('')+'</div></section>'
  +picker+'</div>';
 }
 function searchPage(){
@@ -5702,7 +5711,7 @@ function pricesPage(){
 const ZENO_MORE_COPY=Object.freeze({
  title:'ZENO 소개',
  headline:'ZENO의 성장이 보호소 아이들의 건강한 내일로 이어집니다.',
- description:'유료 서비스 시작 후 매출의 5%를 보호소 동물 건강검진에 지원할 계획입니다.'
+ description:'유료 서비스 시작 후 매출의 3%를 보호소 동물 건강검진에 지원할 계획입니다.'
 });
 function morePage(){
  const items=[
@@ -5811,7 +5820,7 @@ return `<div class="modalbg ${m.type==='book'?'zeno-book-backdrop':''}" data-act
 function authScreen(){
  const signup=state.authMode==='register';
  if(state.authMode==='recover'){
-  return '<div class="zeno-auth"><div class="zeno-auth-card"><img src="/brand-wordmark-v3.webp" alt="ZENO" class="zeno-auth-logo"><h1>비밀번호 재설정</h1>'
+  return '<div class="zeno-auth"><div class="zeno-auth-card"><img src="/brand-wordmark-v4.webp" alt="ZENO" class="zeno-auth-logo"><h1>비밀번호 재설정</h1>'
   +'<p class="zeno-recovery-guide">가입할 때 받았거나 계정에서 재발급한 복구 코드가 필요합니다. 복구 코드가 없으면 계정을 임의로 초기화할 수 없습니다.</p>'
   +(state.authError?'<div id="zeno-auth-error" class="zeno-auth-error" role="alert">'+e(state.authError)+'</div>':'')
   +'<form id="owner-recovery-reset"><label class="auth-label" for="zeno-reset-user">아이디</label><input id="zeno-reset-user" name="username" required maxlength="24" autocomplete="username" placeholder="가입한 아이디">'
@@ -5823,7 +5832,7 @@ function authScreen(){
   +'<small>복구 코드 1회 사용 후 기존 로그인은 만료됩니다. 변경 후 새 비밀번호로 로그인해 주세요.</small></div></div>';
  }
 
- return '<div class="zeno-auth"><div class="zeno-auth-card"><img src="/brand-wordmark-v3.webp" alt="ZENO" class="zeno-auth-logo"><h1>'+(signup?'회원가입':'로그인')+'</h1>'
+ return '<div class="zeno-auth"><div class="zeno-auth-card"><img src="/brand-wordmark-v4.webp" alt="ZENO" class="zeno-auth-logo"><h1>'+(signup?'회원가입':'로그인')+'</h1>'
  +'<div class="auth-tabs"><button type="button" data-action="auth-mode" data-value="login" class="'+(!signup?'selected':'')+'">로그인</button><button type="button" data-action="auth-mode" data-value="register" class="'+(signup?'selected':'')+'">회원가입</button></div>'
  +(state.authError?'<div id="zeno-auth-error" class="zeno-auth-error" role="alert">'+e(state.authError)+'</div>':'')
  +(state.authNotice?'<div class="zeno-auth-notice" role="status">'+e(state.authNotice)+'</div>':'')
