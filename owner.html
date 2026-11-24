@@ -5007,7 +5007,7 @@ function searchPage(){
  const specialtyChip=state.specialty&&state.specialty!=='특수동물'?'<button type="button" class="zeno-selected-care-chip" data-action="clear-specialty" aria-label="'+e(state.specialty)+' 진료 분야 선택 해제">'+e(state.specialty)+' <span aria-hidden="true">×</span></button>':'';
  const reset=(state.query||fs.length||state.specialty||state.searchRegion)?'<button class="zeno-search-reset" type="button" data-action="clear-search">조건 초기화</button>':'';
  const regionChip=state.searchRegion?'<button type="button" class="zeno-selected-care-chip" data-action="clear-home-region-filter" aria-label="'+e(state.searchRegion)+' 지역 필터 해제">'+e(state.searchRegion)+' <span aria-hidden="true">×</span></button>':'';
- const quick=['전체','야간','24시','고양이 대기실','예약 없이 방문 가능'],more=['내 주변','고양이 친화','강아지 피어프리·스트레스 케어','연결 병원','즐겨찾기'];
+ const quick=['전체','야간','24시','고양이 대기실'],more=['예약 없이 방문 가능','내 주변','고양이 친화','강아지 피어프리·스트레스 케어','연결 병원','즐겨찾기'];
  const lbl=x=>x==='24시'?'24시간':x==='야간'?'야간 진료':x==='연결 병원'?'예약 요청 가능':x==='즐겨찾기'?'저장한 병원':x;
  const chip=x=>'<button type="button" class="filter '+(fs.includes(x)?'active':'')+'" aria-pressed="'+String(fs.includes(x))+'" '+(x==='내 주변'?'data-action="nearby-toggle"'+(state.nearbyBusy?' disabled aria-busy="true"':''):'data-action="filter" data-value="'+e(x)+'"')+'>'+(x==='내 주변'&&state.nearbyBusy?'위치 확인 중…':e(lbl(x)))+'</button>';
  const selected=more.filter(x=>fs.includes(x));
