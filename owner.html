@@ -3387,8 +3387,9 @@ const STOREKEY='zeno-rebuild-v1'; const OWNERKEY='zeno-owner-device';
 const e=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const uid=()=>typeof crypto!=='undefined'&&crypto.randomUUID?crypto.randomUUID():'z'+Date.now()+Math.random().toString(36).slice(2);
 let ownerId='';
-const today=()=>new Date(Date.now()-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,10);
-const defaultBookingDate=()=>{const d=new Date();if(d.getHours()>=11)d.setDate(d.getDate()+1);return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10)};
+const today=()=>new Date(Date.now()+9*3600e3).toISOString().slice(0,10);
+const defaultBookingDate=()=>today();
+const defaultBookingTime=()=>new Date(Date.now()+9*3600e3).toISOString().slice(11,16);
 const dateTime=t=>t?new Date(t).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}):'미갱신';
 const updateText=t=>t?dateTime(t):'병원 갱신 기록 없음';
 const hospitalById=id=>HOSPITALS.find(x=>x.id===id);
@@ -3982,7 +3983,7 @@ function zenoBookingFlow(h){
  +'<div class="field"><label for="zeno-book-weight">체중 (선택)</label><input id="zeno-book-weight" name="weight" maxlength="20" placeholder="예: 4.6kg" value="'+e(defaultPet?.weight||'')+'"></div></div></details>'
  +'<div class="zeno-book-section-title">방문 일정</div><div class="field"><label for="zeno-book-visit-type">방문 구분</label><select id="zeno-book-visit-type" name="visitType"><option>첫 방문</option><option>재방문</option></select></div>'
  +'<div class="field"><label for="zeno-book-date">희망 날짜</label><input id="zeno-book-date" name="date" type="date" min="'+today()+'" value="'+defaultBookingDate()+'" required></div>'
- +'<div class="field"><label for="zeno-book-time">희망 시간</label><input id="zeno-book-time" name="time" type="time" value="11:00" required></div>'
+ +'<div class="field"><label for="zeno-book-time">희망 시간</label><input id="zeno-book-time" name="time" type="time" value="'+defaultBookingTime()+'" required></div>'
  +'<div class="field wide"><label for="zeno-book-note">수의사에게 말하고 싶은 것</label><textarea id="zeno-book-note" maxlength="500" name="note" placeholder="예: 언제부터 식욕이 줄었는지, 복용 중인 약, 걱정되는 증상 등">'+e(state.symptomLabel||'')+'</textarea></div>'
  +'</div>'+optionHint+'<div class="zeno-book-actions"><button class="btn full" type="submit">예약 요청하기</button><p class="zeno-book-action-note">요청만으로 예약이 확정되지는 않습니다.</p></div></form>';
  return {title:'예약 정보 · '+h.name,body};
@@ -6197,7 +6198,7 @@ if(id==='hospital-login'){try{let x=await api('POST','/api/login',{hospitalId:d.
 if(id==='admin-login'){try{let x=await api('POST','/api/admin/login',{pin:d.pin});state.adminToken=x.token;sessionStorage.setItem('zeno-admin-token',x.token);await loadAdmin();toast('관리자 화면으로 연결되었습니다.')}catch(err){toast(err.message)}return}
 if(id==='booking-form'){
  if(state.bookingSubmitting)return;
- if(d.date<today()){toast('오늘 이후 날짜를 선택해 주세요.');return}
+ if(d.date<today()){toast('오늘 또는 이후 날짜를 선택해 주세요.');return}
  if(!hospitalById(d.hospitalId)?.linked){toast('해당 병원은 연동 대상이 아닙니다.');return}
  if(!val(d.petName)||!d.species){toast('진료받을 아이를 선택해 주세요.');return}
  const bookingHospital=hospitalById(d.hospitalId);
