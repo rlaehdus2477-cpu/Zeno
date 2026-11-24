@@ -3689,6 +3689,7 @@ function navTo(p,fromHistory=false){
  if(p==='hospital')loadHospital();else if(p==='admin')loadAdmin();
  if(APP_MODE==='owner'&&(p==='vetqa'||p==='home'))zenoVetqaLoad();
  if(p==='home')zenoLoadHomeAds();
+ if(state.ownerToken&&(p==='bookings'||p==='qa'))refresh();
  render();
  if(restore&&zenoSearchScrollY>0)window.scrollTo({left:0,top:zenoSearchScrollY,behavior:'instant'});
  zenoNewSearch=false;
@@ -3975,7 +3976,7 @@ function zenoBookingFlow(h){
  +'<input type="hidden" id="zeno-book-service" name="service" value="'+e(selected)+'">'
  +'<div class="zeno-book-picker"><h3>진료받을 아이</h3><p>등록한 아이를 선택하거나 이름을 입력하세요.</p><div class="zeno-book-pets">'+petChoices+'<button type="button" class="zeno-book-pet" data-action="book-pet" data-id="">직접 입력</button></div></div>'
  +'<div class="formgrid"><div class="field"><label for="zeno-book-owner-name">보호자 이름</label><input id="zeno-book-owner-name" value="'+e(state.owner?.displayName||'로그인 보호자')+'" readonly></div>'
- +'<div class="field"><label for="zeno-book-owner-phone">연락처</label><input id="zeno-book-owner-phone" name="ownerPhone" type="tel" inputmode="tel" autocomplete="tel" required maxlength="15" placeholder="010-1234-5678" pattern="[0-9-]{10,15}"></div>'
+ +'<div class="field"><label for="zeno-book-owner-phone">연락처</label><input id="zeno-book-owner-phone" name="ownerPhone" type="tel" inputmode="tel" autocomplete="tel" required maxlength="15" placeholder="010-1234-5678" pattern="(?:[0-9]{10,11}|[0-9]{2,3}-[0-9]{3,4}-[0-9]{4})"></div>'
  +'<div class="field"><label for="zeno-book-pet-name">반려동물 이름</label><input id="zeno-book-pet-name" name="petName" required maxlength="30" placeholder="아이 이름" value="'+e(defaultPet?.name||'')+'"></div>'
  +'<details class="zeno-book-optional"><summary>추가 정보 <span>품종 · 나이 · 체중 (선택)</span></summary><div class="zeno-book-optional-grid"><div class="field"><label for="zeno-book-breed">품종 (선택)</label><input id="zeno-book-breed" name="breed" maxlength="35" placeholder="예: 코리안숏헤어" value="'+e(defaultPet?.breed||'')+'"></div>'
  +'<div class="field"><label for="zeno-book-age">나이 (선택)</label><input id="zeno-book-age" name="age" maxlength="20" placeholder="예: 4세" value="'+e(defaultPet?.age||'')+'"></div>'
@@ -5121,18 +5122,24 @@ function bookingsPage(){
   return zenoVisitAt(a).localeCompare(zenoVisitAt(b))||String(b.updatedAt||'').localeCompare(String(a.updatedAt||''));
  });
  const tabs=[['전체','전체'],['preconfirmed','확정 전'],['suggested','답변 필요'],['pending','확인 대기'],['confirmed','예약 확정'],['done','진료 완료']];
- return topbar('내 예약','')+'<p class="zeno-disclaimer">병원이 수락하기 전까지 예약이 확정된 것은 아닙니다. 실제 접수 여부는 병원에 확인해 주세요.</p><div class="tabs">'+tabs.map(x=>'<button data-action="booking-tab" data-value="'+x[0]+'" class="'+(state.bookingTab===x[0]?'active':'')+'">'+x[1]+'</button>').join('')+'</div><div class="section"><div class="grid two">'+(list.map(x=>bookingCard(x)).join('')||(state.bookingTab==='전체'?'<div class="empty"><strong>아직 예약이 없어요.</strong><p>병원을 찾고 예약을 요청할 수 있어요.</p><button class="btn small" data-nav="search">병원 찾기</button></div>':'<div class="empty"><strong>이 상태의 예약은 없어요.</strong><p>다른 예약 상태를 선택해 확인해 보세요.</p></div>'))+'</div></div>';
+ return topbar('내 예약','')+'<button type="button" class="btn secondary small" data-action="refresh">예약 새로고침</button><p class="zeno-disclaimer">병원이 수락하기 전까지 예약이 확정된 것은 아닙니다. 실제 접수 여부는 병원에 확인해 주세요.</p><div class="tabs">'+tabs.map(x=>'<button data-action="booking-tab" data-value="'+x[0]+'" class="'+(state.bookingTab===x[0]?'active':'')+'">'+x[1]+'</button>').join('')+'</div><div class="section"><div class="grid two">'+(list.map(x=>bookingCard(x)).join('')||(state.bookingTab==='전체'?'<div class="empty"><strong>아직 예약이 없어요.</strong><p>병원을 찾고 예약을 요청할 수 있어요.</p><button class="btn small" data-nav="search">병원 찾기</button></div>':'<div class="empty"><strong>이 상태의 예약은 없어요.</strong><p>다른 예약 상태를 선택해 확인해 보세요.</p></div>'))+'</div></div>';
+}
+function zenoPrevisitHospitals(){
+ const booked=new Set(state.bookings.filter(b=>['pending','accepted','suggested','confirmed'].includes(b.status)).map(b=>b.hospitalId));
+ return HOSPITALS.filter(h=>h.linked&&booked.has(h.id));
 }
 function qaPage(){
+ const canAsk=zenoPrevisitHospitals().length>0;
  const list=[...state.questions].sort((a,b)=>String(b.updatedAt||b.createdAt||'').localeCompare(String(a.updatedAt||a.createdAt||'')));
  return topbar('진료 전 질문','예약한 병원에 내원 전 1:1로 묻는 비공개 질문')
- +'<div class="section"><p class="zeno-qa-identity"><strong>답변 주체</strong> · 제휴 병원 계정의 담당자입니다. 수의사 자격과 답변 시간은 확인되지 않았어요.</p><div class="section-title"><h2>질문 '+list.length+'개</h2><button class="btn small" data-action="ask">질문하기</button></div>'
+ +'<div class="section"><p class="zeno-qa-identity"><strong>답변 주체</strong> · 제휴 병원 계정의 담당자입니다. 수의사 자격과 답변 시간은 확인되지 않았어요.</p><div class="section-title"><h2>질문 '+list.length+'개</h2>'+(canAsk?'<button class="btn small" data-action="ask">질문하기</button>':'<button class="btn secondary small" data-nav="search">예약할 병원 찾기</button>')+'</div>'
+ +(!canAsk?'<p class="desc">예약을 요청하면 해당 병원에 진료 전 질문을 보낼 수 있어요.</p>':'')
  +(list.length?'<div class="grid two">'+list.map(q=>{
  const answered=q.status==='answered'&&!!q.answer;
  const lead=String(q.text||'').trim().split('\n')[0].slice(0,65)||'내 질문';
  return '<article class="panel zeno-question-card"><h3>'+e(lead)+'</h3><p class="desc">'+e(q.petName||'반려동물')+' · '+e(answered?'답변 도착':'답변 대기')+'</p><p class="zeno-question-hospital">'+e(hospitalById(q.hospitalId)?.name||'답변 병원 확인')+'</p><details class="zeno-question-full"><summary>내 질문 전체 보기</summary><p class="preline">'+e(q.text||'')+'</p></details>'
  +(answered?'<details><summary>병원 답변 보기</summary><p class="preline">'+e(q.answer)+'</p><small>의료진 자격 별도 확인 필요</small></details>':'')+'</article>';
- }).join('')+'</div>':'<div class="empty"><strong>아직 질문이 없어요.</strong><p>궁금한 점이 있다면 질문을 남겨보세요.</p></div>')
+ }).join('')+'</div>':'<div class="empty"><strong>아직 질문이 없어요.</strong></div>')
  +'<p class="zeno-disclaimer">병원 계정에서 작성한 답변이며 수의사 자격은 별도 확인이 필요합니다. 응급 진료를 대신하지 않습니다.</p></div>';
 }
 /* 수의사 Q&A (2026-11-18): 공개 질문 · 예약 가능한 제휴 병원 수의사 답변. '진료 전 질문'(qa)과 별개입니다. */
@@ -5760,7 +5767,7 @@ if(m.type==='recovery-setup'){
 }
 if(m.type==='pet'){title='우리 아이 등록';body=`<form id="pet-form">${zenoPetPhotoPickerMarkup(null)}<div class="field"><label>이름</label><input name="name" maxlength="30" required placeholder="반려동물 이름"></div><div class="field"><label>종류</label><select name="species"><option>고양이</option><option>강아지</option><option>토끼</option><option>햄스터</option><option>조류</option><option>파충류</option><option>기타</option></select></div><div class="formgrid"><div class="field"><label>나이 (선택)</label><input name="age" maxlength="22" placeholder="예: 4살"></div><div class="field"><label>체중 (선택)</label><input name="weight" maxlength="16" placeholder="예: 3.2kg"></div></div><button class="btn full" type="submit">저장하기</button></form>`}
 if(m.type==='record'){title='건강 기록 추가';let p=state.pets.find(x=>x.id===m.id);body=`<p class="desc">${e(p?.name)}의 건강 기록</p><form id="record-form"><input type="hidden" name="petId" value="${e(m.id)}"><div class="field"><label>기록 종류</label><select name="kind"><option>예방접종</option><option>건강검진</option><option>진료 기록</option><option>체중 변화</option><option>투약 기록</option><option>건강 메모</option></select></div><div class="field"><label>날짜</label><input type="date" name="date" value="${today()}" required></div><div class="field"><label>상세 내용</label><textarea name="memo" required maxlength="500" placeholder="검진 항목, 예방접종 종류 등"></textarea></div><button class="btn full" type="submit">기록 저장</button></form>`}
-if(m.type==='ask'){title='병원에 질문 보내기';body=`<div class="banner warning" style="margin-bottom:14px">답변 주체: 선택한 제휴 병원 계정 담당자입니다. 수의사 자격과 답변 시간은 검증되지 않았으며 실제 진료를 대신하지 않습니다.</div><form id="question-form"><div class="field"><label>답변을 요청할 병원</label><select name="hospitalId">${HOSPITALS.filter(x=>x.linked).map(x=>`<option value="${x.id}">${e(x.name)}</option>`).join('')}</select></div><div class="field"><label>반려동물 이름</label><input name="petName" maxlength="30" placeholder="예: 조림이"></div><div class="field"><label>궁금한 내용</label><textarea name="text" required maxlength="1200" placeholder="예: 예방접종 일정을 어떤 기준으로 잡는지 궁금합니다."></textarea></div><button class="btn full" type="submit">질문 등록</button></form>`}
+if(m.type==='ask'){title='병원에 질문 보내기';body=`<div class="banner warning" style="margin-bottom:14px">답변 주체: 선택한 제휴 병원 계정 담당자입니다. 수의사 자격과 답변 시간은 검증되지 않았으며 실제 진료를 대신하지 않습니다.</div><form id="question-form"><div class="field"><label>답변을 요청할 병원</label><select name="hospitalId">${zenoPrevisitHospitals().map(x=>`<option value="${x.id}">${e(x.name)}</option>`).join('')}</select></div><div class="field"><label>반려동물 이름</label><input name="petName" maxlength="30" placeholder="예: 조림이"></div><div class="field"><label>궁금한 내용</label><textarea name="text" required maxlength="1200" placeholder="예: 예방접종 일정을 어떤 기준으로 잡는지 궁금합니다."></textarea></div><button class="btn full" type="submit">질문 등록</button></form>`}
 if(m.type==='propose'){title='예약 시간 다시 제안';body=`<form id="propose-form"><input type="hidden" name="bookingId" value="${e(m.id)}"><div class="field"><label>새로 제안할 날짜 및 시간</label><input name="proposedAt" type="datetime-local" required min="${today()}T00:00"></div><div class="field"><label>병원 안내 문구</label><textarea name="hospitalNote" maxlength="300" placeholder="제안 이유 또는 내원 안내"></textarea></div><button class="btn full" type="submit">보호자에게 시간 제안</button></form>`}
 if(m.type==='review'){title='진료 경험 후기';body=`<div class="banner">방문을 완료한 예약에 대해 후기를 작성할 수 있어요.</div><form id="review-form" style="margin-top:14px"><input type="hidden" name="bookingId" value="${e(m.id)}"><div class="field"><label>진료 경험 점수</label><select name="stars"><option value="5">★★★★★ (5점)</option><option value="4">★★★★ (4점)</option><option value="3">★★★ (3점)</option><option value="2">★★ (2점)</option><option value="1">★ (1점)</option></select></div><div class="field"><label>후기 내용</label><textarea name="text" required minlength="10" maxlength="800" placeholder="실제 방문 경험을 바탕으로 작성해 주세요."></textarea></div><button class="btn full" type="submit">후기 등록 · 100P 받기</button></form>`}
 if(m.type==='point'){let p=state.reviews.reduce((a,x)=>a+(x.points||0),0),discount=Math.min(p,1800),cost=1800-discount;title='멤버십 포인트 계산';body=`<p class="desc">멤버십 월 요금 <strong>1,800원</strong> · 현재 포인트 <strong>${p}P</strong></p><div class="panel" style="margin-top:17px;background:#f0f8ff"><div class="row-line"><span>월 요금</span><strong>1,800원</strong></div><div class="row-line"><span>보유 포인트 적용</span><strong>-${discount}P</strong></div><div class="row-line"><span>가상 결제 금액</span><strong style="font-size:27px;color:var(--blue)">${cost.toLocaleString()}원</strong></div></div><p class="notice">1P=1원 가정의 PPT 기반 시뮬레이션입니다. 실제 결제·포인트 사용·구독 등록은 되지 않습니다.</p>`}
@@ -5887,7 +5894,7 @@ if(a==='auth-mode'){state.authMode=val;state.authError='';if(val!=='login')state
 if(a==='recovery-setup'){if(!state.ownerToken){navTo('login');return}openModal('recovery-setup');return}
 if(a==='copy-recovery-code'){const code=state.recoveryCode;if(!code)return;try{await navigator.clipboard.writeText(code);toast('복구 코드를 복사했어요. 안전하게 보관해 주세요.')}catch(err){const input=document.getElementById('zeno-recovery-code-value');if(input){input.focus();input.select();toast('복구 코드를 선택했습니다. 길게 눌러 복사해 주세요.')}}return}
 if(a==='owner-logout'){clearTimeout(profileSaveTimer);state.recoveryCode='';state.afterRecoveryAction=null;state.profileSaving=false;state.profileSaveError='';state.ownerToken='';state.page='home';state.owner=null;ownerId='';state.pets=[];state.petPhotos={};state.records=[];state.favorites=[];state.bookings=[];state.questions=[];state.reviews=[];state.authMode='login';localStorage.removeItem('zeno-owner-auth');zenoApplyGuestProfile();render();return}
-if(a==='refresh'){await refresh(true);toast('최신 정보를 불러왔습니다.');return}
+if(a==='refresh'){await refresh(true);toast(zenoRefreshFailures?'새로고침하지 못했어요. 다시 시도해 주세요.':'최신 정보를 불러왔습니다.');return}
 if(a==='details'||a==='book'){if(a==='book'&&!state.ownerToken){state.pendingAction={type:'book',id};navTo('login');return}if(a==='details')state.detailTab=ev.target.closest('[data-fee-direct]')?'fees':ev.target.closest('img.zeno-list-photo')?'photos':(ev.target.closest('.zeno-hours-card')?'hours':((zenoHasFilter('고양이 대기실')||zenoWaitingQuery(state.query).waiting||ev.target.closest('.zeno-list-condition')?.textContent.includes('대기실'))?'intro':state.specialty?'services':'hours'));openModal(a==='details'?'details':'book',id);return}
 if(a==='zeno-book-kind'||a==='zeno-book-service'){if(!state.modal||state.modal.type!=='book')return;const h=hospitalById(state.modal.id);if(!h)return;if(a==='zeno-book-kind'){if(!zenoBookingAnimals(h).includes(val))return;state.modal.kind=val;state.modal.service='';}else{if(!zenoBookingServices(h,state.modal.kind).some(x=>x[0]===val))return;state.modal.service=val;}render();return}
 if(a==='zeno-book-next'){if(!state.modal||state.modal.type!=='book')return;const h=hospitalById(state.modal.id);if(!h||!zenoBookingAnimals(h).includes(state.modal.kind)||!zenoBookingServices(h,state.modal.kind).some(x=>x[0]===state.modal.service)){toast('동물 종류와 진료 목적을 선택해 주세요.');return}state.modal.step='details';render();return}
@@ -6212,7 +6219,17 @@ if(id==='booking-form'){
  finally{state.bookingSubmitting=false;if(button&&button.isConnected){button.disabled=false;button.textContent='예약 요청하기'}}
  return;
 }
-if(id==='question-form'){if(val(d.text).length<5){toast('질문을 5자 이상 작성해 주세요.');return}await mutate('POST','/api/questions',{hospitalId:d.hospitalId,petName:val(d.petName),text:val(d.text)},'질문이 저장되었습니다.');navTo('qa');return}
+if(id==='question-form'){
+ if(val(d.text).length<5){toast('질문을 5자 이상 작성해 주세요.');return}
+ const submit=f.querySelector('[type=submit]');
+ if(submit.disabled)return;
+ submit.disabled=true;
+ try{
+  await api('POST','/api/questions',{hospitalId:d.hospitalId,petName:val(d.petName),text:val(d.text)});
+  state.modal=null;await afterMutation('질문이 저장되었습니다.');navTo('qa');
+ }catch(err){toast(err.message);submit.disabled=false}
+ return;
+}
 if(id==='memorial-note-form'){
  const pet=state.pets.find(p=>p.id===d.petId),mem=zenoMemorialGet();
  if(!pet||!mem.petIds.includes(pet.id)||!val(d.title)||!val(d.text)){toast('추모 내용을 확인해 주세요.');return}

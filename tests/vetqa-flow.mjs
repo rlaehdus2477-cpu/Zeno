@@ -179,7 +179,16 @@ async function main() {
     const list = await api('GET', '/api/public/vetqa');
     expect(del.status === 200 && !list.data.questions.some(q => q.id === r.data.id), '삭제 실패');
   });
-  await check(11, '기존 진료 전 질문(/api/questions)은 그대로 동작', async () => {
+  await check(11, '진료 전 질문은 해당 병원에 진행 중인 예약이 있는 보호자만 작성', async () => {
+    const ask = hospitalId => api('POST', '/api/questions', {token: A, body: {hospitalId, text: '방문 전에 준비할 물건이 있나요?'}});
+    expect((await ask('soo')).status === 403, '예약 전에는 질문이 제한되어야 함');
+    const booked = await api('POST', '/api/bookings', {token: A, body: bookingBody('soo','나비')});
+    expect(booked.status === 201, '질문 테스트 예약 실패');
+    expect((await ask('naeum')).status === 403, '예약하지 않은 병원을 선택할 수 없음');
+    const cancelled = await api('POST', '/api/bookings', {token: A, body: bookingBody('pub045','나비')});
+    expect(cancelled.status === 201, '취소 테스트 예약 실패');
+    expect((await api('PATCH','/api/bookings/'+cancelled.data.id,{token:A,body:{side:'owner',status:'cancelled'}})).status === 200,'예약 취소 실패');
+    expect((await ask('pub045')).status === 403, '취소한 예약만 있으면 질문이 제한되어야 함');
     const r = await api('POST', '/api/questions', {token: A, body: {hospitalId: 'soo', petName: '나비', text: '내원 전에 금식이 필요한가요?'}});
     expect(r.status === 201, '기존 질문 실패: ' + r.status);
     privateId = r.data.id;
