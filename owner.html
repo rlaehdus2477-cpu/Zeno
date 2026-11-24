@@ -3800,8 +3800,9 @@ function zenoReservationGuide(h,allowZeno=false){
 function zenoNaverBookingUrl(h){
  const methods=Array.isArray(h.reservationInfo?.methods)?h.reservationInfo.methods:[];
  if(!methods.includes('naver'))return '';
+ // Only a direct NAVER booking page is offered. A map search is not a booking and is never shown as one.
  try{const u=new URL(h.reservationUrl||'');if(u.protocol==='https:'&&/(^|\.)booking\.naver\.com$/.test(u.hostname))return u.href;}catch{}
- return zenoNaverPhotoUrl(h);
+ return '';
 }
 function zenoReservationLine(h,allowZeno=false){
  const guide=zenoReservationGuide(h,allowZeno);
