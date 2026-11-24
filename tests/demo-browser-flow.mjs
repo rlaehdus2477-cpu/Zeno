@@ -32,7 +32,12 @@ try {
     });
     const page=await context.newPage();
     page.setDefaultTimeout(10000);
-    page.on('pageerror',err=>pageErrors.push(err.message));
+    page.on('pageerror',err=>{pageErrors.push(err.message);console.error(app,'page error',err.message);});
+    page.on('response',r=>{
+      const path=new URL(r.url()).pathname;
+      if(path.startsWith('/api/') && (r.request().method()!=='GET' || r.status()>=400))
+        console.log(app,r.request().method(),path,r.status());
+    });
     page.on('dialog',dialog=>dialog.accept());
     await page.goto(origin+'/'+app);
     return page;
@@ -65,8 +70,15 @@ try {
   await owner.locator('#zeno-book-time').fill('11:00');
   await owner.locator('#zeno-book-note').fill(note);
   assert.ok(await owner.locator('#booking-form').evaluate(form=>form.checkValidity()));
-  await button(owner,'예약 요청하기').click();
-  await card.waitFor();
+  const [submitted]=await Promise.all([
+    owner.waitForResponse(r=>r.url().endsWith('/api/bookings') && r.request().method()==='POST'),
+    button(owner,'예약 요청하기').click()
+  ]);
+  assert.equal(submitted.status(),201,'booking creation');
+  await card.waitFor().catch(async error=>{
+    console.error('Booking screen headings:',await owner.locator('h1:visible,h2:visible').allInnerTexts());
+    throw error;
+  });
   await button(hospital,'새로고침').click();
   await row.getByText(note,{exact:true}).waitFor();
   console.log('PASS mobile owner request, hospital login, booking and note received');
