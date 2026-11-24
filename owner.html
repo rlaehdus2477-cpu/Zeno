@@ -3227,6 +3227,24 @@ html body #app .zeno-channel-website{background:#fff!important;border:1px solid 
 html body #app .zeno-channel-phone,html body #app .zeno-channel-walkin{background:#f1f5f9!important;border-color:#dbe3ed!important;color:#475569!important}
 #app .zeno-search-page .zeno-search-card .zeno-card-actions .zeno-channel-website{white-space:normal!important;line-height:1.2!important;word-break:keep-all!important}
 </style>
+<style id="zeno-reservation-directory-20261125">
+#app .zeno-resdir-entry{width:100%;display:flex;justify-content:space-between;align-items:center;padding:10px 12px;margin-top:8px;background:#f8fafc;color:#2458a4;border:1px solid #dbe5f0;border-radius:7px;font-weight:650;font-size:14px;cursor:pointer}
+.zeno-resdir{max-width:840px;margin:auto;padding:12px 12px 110px}
+.zeno-resdir-back{background:none;border:0;color:#2563eb;font-size:14px;font-weight:650;padding:8px 0;cursor:pointer}
+.zeno-resdir-note{font-size:13px;color:#64748b;line-height:1.5;margin:6px 0 12px}
+.zeno-resdir-tabs{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 18px}
+.zeno-resdir-tabs button{background:#fff;border:1px solid #dbe3ed;color:#475569;border-radius:6px;padding:8px 10px;font-size:13px;cursor:pointer}
+.zeno-resdir-tabs button.active{background:#2563eb;color:#fff;border-color:#2563eb}
+.zeno-resdir-tabs b{font-weight:650}
+.zeno-resdir h2{font-size:17px;margin:0 0 10px;color:#172b45}
+.zeno-resdir-list{display:grid;gap:8px}
+.zeno-resdir-card{background:#fff;border:1px solid #dbe3ed;border-radius:8px;padding:12px;min-width:0}
+.zeno-resdir-name{display:block;text-align:left;background:none;border:0;width:100%;padding:0;cursor:pointer;color:#172b45;min-width:0}
+.zeno-resdir-name strong{display:block;font-size:16px;line-height:1.4;word-break:keep-all}
+.zeno-resdir-name small{display:block;font-size:12px;color:#64748b;margin:2px 0 5px}
+.zeno-resdir-actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+.zeno-resdir-action{display:inline-flex;align-items:center;justify-content:center;min-height:38px;padding:0 12px;border:1px solid #dbe3ed;background:#fff;border-radius:6px;font-size:13px;font-weight:650;color:#475569;text-decoration:none;cursor:pointer}
+</style>
 </head><body><div id="app" class="app"></div><script>
 'use strict';
 const APP_MODE='owner';
@@ -3693,7 +3711,7 @@ async function loadHospital(draw=true){if(!state.hospitalToken)return;try{const 
 async function loadAdmin(draw=true){if(!state.adminToken)return;try{state.adminStats=await api('GET','/api/admin/stats',null,true);if(draw)render()}catch(err){toast(err.message);state.adminToken='';sessionStorage.removeItem('zeno-admin-token');if(draw)render()}}
 
 let zenoSearchScrollY=0,zenoNewSearch=false;
-const ZENO_PUBLIC_PAGES=['home','search','emergency','prices','more','symptoms','vetqa','pets'];
+const ZENO_PUBLIC_PAGES=['home','search','reservation-directory','emergency','prices','more','symptoms','vetqa','pets'];
 const zenoCanViewPage=p=>APP_MODE!=='owner'||!!state.ownerToken||ZENO_PUBLIC_PAGES.includes(p);
 function navTo(p,fromHistory=false){
  if(APP_MODE==='hospital'&&p!=='hospital')return;
@@ -5015,13 +5033,41 @@ function home(){
  +'<button class="care-symptoms" data-nav="symptoms">'+zenoHomeSmallIcon('help')+'<strong>증상으로 진료과목 찾기</strong><span aria-hidden="true">›</span></button></section>'
  +zenoHomeVetqa()
  +'<div id="zeno-home-ads">'+zenoHomeAdCards()+'</div>'
- +'<section class="zeno-home-utilities" aria-label="조건별 병원 찾기"><h2>조건별 병원 찾기</h2><div class="zeno-home-utility-list">'
+ +'<section class="zeno-home-utilities" aria-label="조건별 병원 찾기"><h2>조건별 병원 찾기</h2><div class="zeno-home-utility-list"><button type="button" class="zeno-home-utility-row" data-nav="reservation-directory"><span class="zeno-home-utility-icon">'+zenoNavIcon('bookings')+'</span><span class="zeno-home-utility-copy"><strong>예약 방법별 병원 목록</strong><small>전화·네이버·홈페이지·방문 접수</small></span><span class="zeno-home-utility-chevron" aria-hidden="true">›</span></button>'
  +'<button type="button" class="zeno-home-utility-row" data-action="night-shortcut"><span class="zeno-home-utility-icon">'+zenoHomeSmallIcon('moon')+'</span><span class="zeno-home-utility-copy"><strong>야간 진료</strong><small>밤 시간 진료가 안내된 병원</small></span><span class="zeno-home-utility-chevron" aria-hidden="true">›</span></button>'
  +'<button type="button" class="zeno-home-utility-row" data-action="around-clock-shortcut"><span class="zeno-home-utility-icon">'+zenoHomeSmallIcon('urgent')+'</span><span class="zeno-home-utility-copy"><strong>24시간 운영 병원</strong><small>응급 접수는 전화로 확인</small></span><span class="zeno-home-utility-chevron" aria-hidden="true">›</span></button>'
  +'<button type="button" class="zeno-home-utility-row" data-action="cat-waiting-shortcut"><span class="zeno-home-utility-icon">'+zenoNavIcon('pets')+'</span><span class="zeno-home-utility-copy"><strong>고양이 전용 대기실</strong><small>분리된 공간이 안내된 병원</small></span><span class="zeno-home-utility-chevron" aria-hidden="true">›</span></button></div></section>'
  +zenoHomeBookingPreview()
  +'<section class="zeno-home-services" aria-label="내 서비스"><h2>내 서비스</h2><div class="zeno-home-service-grid">'+[['bookings','내 예약'],['qa','진료 전 질문'],['prices','진료비 비교'],['pets','내 아이 기록']].map(([nav,label])=>'<button type="button" data-nav="'+nav+'"><span class="zeno-home-service-icon">'+zenoNavIcon(nav)+'</span><span>'+label+'</span></button>').join('')+'</div></section>'
  +picker+'</div>';
+}
+const ZENO_RES_DIRECTORY_TABS=[['all','전체'],['zeno','ZENO 예약'],['naver','네이버 예약'],['website','홈페이지 예약'],['phone','전화 예약'],['walkin','예약 없이 방문'],['unknown','기타·확인 필요']];
+function zenoReservationDirectoryKinds(h){
+ const m=Array.isArray(h.reservationInfo?.methods)?h.reservationInfo.methods:[],k=[];
+ if(h.linked)k.push('zeno');
+ if(m.includes('naver'))k.push('naver');
+ if(m.includes('official'))k.push('website');
+ if(m.includes('phone')||(!m.length&&h.reservationInfo?.policy==='recommended'&&/^0[0-9 -]{8,15}$/.test(String(h.phone||'').trim())))k.push('phone');
+ if(zenoWalkInAllowed(h)||m.includes('walkin'))k.push('walkin');
+ if(!k.length||m.includes('app'))k.push('unknown');
+ return k;
+}
+function zenoReservationDirectory(){
+ const tab=ZENO_RES_DIRECTORY_TABS.some(x=>x[0]===state.resDirectoryTab)?state.resDirectoryTab:'all';
+ const rows=HOSPITALS.map(h=>({h,k:zenoReservationDirectoryKinds(h)}));
+ const count=key=>key==='all'?rows.length:rows.filter(x=>x.k.includes(key)).length;
+ const picked=rows.filter(x=>tab==='all'||x.k.includes(tab)).sort((a,b)=>a.h.name.localeCompare(b.h.name,'ko'));
+ const card=({h,k})=>{
+  const phone=String(h.phone||'').trim(),valid=/^0[0-9 -]{8,15}$/.test(phone),m=h.reservationInfo?.methods||[];
+  const call=valid?'<a class="zeno-resdir-action" data-action="call-summary" data-id="'+e(h.id)+'" href="tel:'+e(phone.replace(/[^0-9]/g,''))+'">'+(m.includes('phone')?'전화 예약':'전화 문의')+'</a>':'';
+  const n=zenoNaverAction(h),w=zenoWebsiteBookingUrl(h);
+  const z=h.linked?'<button class="zeno-resdir-action zeno-channel-zeno" type="button" data-action="book" data-id="'+e(h.id)+'">ZENO 예약</button>':'';
+  const na=zenoBookingActionLink(n?{...n,kind:'naver'}:null,h,'zeno-resdir-action');
+  const wa=zenoBookingActionLink(w?{url:w,label:'홈페이지 예약',kind:'website'}:null,h,'zeno-resdir-action');
+  const action=(tab==='zeno'?z:tab==='naver'?na:tab==='website'?wa:tab==='phone'?call:tab==='walkin'||tab==='unknown'?call:(z+na+wa+call))||call;
+  return '<article class="zeno-resdir-card"><button class="zeno-resdir-name" type="button" data-action="details" data-id="'+e(h.id)+'"><strong>'+e(h.name)+'</strong><small>'+e(h.region||'')+'</small>'+zenoReservationLine(h,Boolean(h.linked))+'</button><div class="zeno-resdir-actions">'+action+'<button class="zeno-resdir-action" type="button" data-action="details" data-id="'+e(h.id)+'">상세 정보</button></div></article>';
+ };
+ return '<header class="zeno-search-topbar">'+zenoBrandLogo()+'<h1>예약 병원 목록</h1></header><section class="zeno-resdir"><button type="button" class="zeno-resdir-back" data-nav="search">‹ 병원 찾기</button><p class="zeno-resdir-note">병원마다 다른 예약 방법을 확인하세요. 여러 예약 방식이 있는 병원은 각 목록에 포함됩니다.</p><div class="zeno-resdir-tabs" role="group" aria-label="예약 방법 선택">'+ZENO_RES_DIRECTORY_TABS.map(([id,label])=>'<button type="button" data-action="res-directory-tab" data-value="'+id+'" aria-pressed="'+String(tab===id)+'" class="'+(tab===id?'active':'')+'">'+e(label)+' <b>'+count(id)+'</b></button>').join('')+'</div><h2 aria-live="polite">'+e(ZENO_RES_DIRECTORY_TABS.find(x=>x[0]===tab)[1])+' '+picked.length+'곳</h2>'+(tab==='walkin'?'<p class="zeno-resdir-note">예약 없이 방문할 수 있으나 즉시 진료를 보장하지는 않습니다.</p>':'')+'<div class="zeno-resdir-list">'+(picked.map(card).join('')||'<p class="zeno-resdir-note">해당하는 병원이 없습니다.</p>')+'</div></section>';
 }
 function searchPage(){
  const results=filteredHospitals(),fs=zenoActiveFilters();
@@ -5053,7 +5099,7 @@ function searchPage(){
   +(selected.length?'<div class="zeno-filter-selected">'+selected.map(x=>'<button type="button" class="zeno-filter-selected-chip" data-action="'+(x==='내 주변'?'nearby-toggle':'filter')+'" data-value="'+e(x)+'">'+e(lbl(x))+' ×</button>').join('')+'</div>':'');
  return '<header class="zeno-search-topbar">'+zenoBrandLogo()+'<h1>병원 찾기</h1></header><section class="zeno-search-page">'
  +'<div class="zeno-search-module"><div class="searchrow"><input type="search" class="search" id="hospital-search" aria-label="병원명·동네·시설 검색" placeholder="병원명·동네·시설 검색" value="'+e(state.query)+'"><button class="btn" data-action="search-apply">검색</button></div>'
- +'<div class="zeno-filter-rail"><div class="filters" role="group" aria-label="병원 조건 필터">'+chips+'</div></div></div>'
+ +'<div class="zeno-filter-rail"><div class="filters" role="group" aria-label="병원 조건 필터">'+chips+'</div></div><button type="button" class="zeno-resdir-entry" data-nav="reservation-directory"><span>예약 방법별 병원 목록</span><span aria-hidden="true">›</span></button></div>'
  +exotic
  +'<div class="zeno-results-bar"><div class="zeno-results-bar-leading"><h2 aria-live="polite">'+resultsHeading+'</h2>'+regionChip+specialtyChip+'</div><div class="zeno-results-bar-tools">'+focusChip+reset+'<button class="zeno-search-emergency-link" type="button" data-nav="emergency">야간·24시간 안내</button></div></div>'
  +internalNote+nearbyNote
@@ -5904,7 +5950,7 @@ function authScreen(){
  +'<a class="hosp-switch" href="/hospital">병원 담당자용 화면</a></div></div>';
 }
 
-function render(){const zenoBeforePaintY=window.scrollY;if(APP_MODE==='owner'&&!zenoCanViewPage(state.page)){document.getElementById('app').innerHTML=authScreen();return;}if(state.page==='login'){document.getElementById('app').innerHTML=authScreen();return;}if(APP_MODE==='hospital')state.page='hospital';else if(state.page==='hospital'||state.page==='admin')state.page='home';const body=state.page==='home'?home():state.page==='symptoms'?zenoSymptomPage():state.page==='search'?searchPage():state.page==='emergency'?emergency():state.page==='pets'?petsPage():state.page==='bookings'?bookingsPage():state.page==='qa'?qaPage():state.page==='vetqa'?vetqaPage():state.page==='membership'?membership():state.page==='prices'?pricesPage():state.page==='hospital'?hospitalPage():state.page==='more'?morePage():adminPage();document.getElementById('app').innerHTML=`${nav()}<main class="content">${state.appError?`<div class="banner warning">정보를 불러오지 못했어요. <button class="btn secondary small" data-action="refresh">다시 시도</button></div>`:''}${body}${footer()}</main>${renderModal()}`;requestAnimationFrame(zenoUpdateDetailHint);requestAnimationFrame(zenoSyncBookingViewport);if(zenoBeforePaintY>0)window.scrollTo({left:0,top:zenoBeforePaintY,behavior:'instant'});}
+function render(){const zenoBeforePaintY=window.scrollY;if(APP_MODE==='owner'&&!zenoCanViewPage(state.page)){document.getElementById('app').innerHTML=authScreen();return;}if(state.page==='login'){document.getElementById('app').innerHTML=authScreen();return;}if(APP_MODE==='hospital')state.page='hospital';else if(state.page==='hospital'||state.page==='admin')state.page='home';const body=state.page==='home'?home():state.page==='symptoms'?zenoSymptomPage():state.page==='search'?searchPage():state.page==='reservation-directory'?zenoReservationDirectory():state.page==='emergency'?emergency():state.page==='pets'?petsPage():state.page==='bookings'?bookingsPage():state.page==='qa'?qaPage():state.page==='vetqa'?vetqaPage():state.page==='membership'?membership():state.page==='prices'?pricesPage():state.page==='hospital'?hospitalPage():state.page==='more'?morePage():adminPage();document.getElementById('app').innerHTML=`${nav()}<main class="content">${state.appError?`<div class="banner warning">정보를 불러오지 못했어요. <button class="btn secondary small" data-action="refresh">다시 시도</button></div>`:''}${body}${footer()}</main>${renderModal()}`;requestAnimationFrame(zenoUpdateDetailHint);requestAnimationFrame(zenoSyncBookingViewport);if(zenoBeforePaintY>0)window.scrollTo({left:0,top:zenoBeforePaintY,behavior:'instant'});}
 
 /* Adjust the booking sheet to the Android keyboard's visual viewport, without altering other dialogs. */
 function zenoKeepBookingFieldVisible(dialog,input){
@@ -5978,6 +6024,7 @@ window.addEventListener('popstate',()=>{
 async function afterMutation(p=''){try{await refresh(true);if(p)toast(p)}catch(err){toast(err.message)}}
 async function mutate(method,path,data,message){try{await api(method,path,data);state.modal=null;await afterMutation(message||'저장되었습니다.')}catch(err){toast(err.message)}}
 document.addEventListener('click',async ev=>{let n=ev.target.closest('[data-nav]');if(n){navTo(n.dataset.nav);return}let el=ev.target.closest('[data-action]');if(!el)return;const a=el.dataset.action,id=el.dataset.id,val=el.dataset.value;
+if(a==='res-directory-tab'){if(ZENO_RES_DIRECTORY_TABS.some(x=>x[0]===val)){state.resDirectoryTab=val;window.scrollTo({top:0,behavior:'instant'});render()}return}
 if(a==='vetqa-ask'){if(!state.ownerToken){toast('질문하려면 로그인해 주세요.');state.pendingPage='vetqa';navTo('login');return}const v=zenoVq();v.composing=true;v.openId=null;if(state.page!=='vetqa')navTo('vetqa');else render();setTimeout(()=>document.getElementById('vq-species')?.focus(),0);return}
 if(a==='vetqa-cancel'){const v=zenoVq();v.composing=false;v.draft={};render();return}
 if(a==='vetqa-open'){zenoVetqaOpen(id);return}
