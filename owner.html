@@ -4098,7 +4098,7 @@ function zenoBookingFlow(h){
  +'<div class="zeno-book-section-title">방문 일정</div><div class="field"><label for="zeno-book-visit-type">방문 구분</label><select id="zeno-book-visit-type" name="visitType"><option>첫 방문</option><option>재방문</option></select></div>'
  +'<div class="field"><label for="zeno-book-date">희망 날짜</label><input id="zeno-book-date" name="date" type="date" min="'+today()+'" value="'+defaultBookingDate()+'" required></div>'
  +'<div class="field"><label for="zeno-book-time">희망 시간</label><input id="zeno-book-time" name="time" type="time" value="'+defaultBookingTime()+'" required></div>'
- +'<div class="field wide"><label for="zeno-book-note">수의사에게 말하고 싶은 것</label><textarea id="zeno-book-note" maxlength="500" name="note" placeholder="예: 언제부터 식욕이 줄었는지, 복용 중인 약, 걱정되는 증상 등">'+e(state.symptomLabel||'')+'</textarea></div>'
+ +'<div class="field wide"><label for="zeno-book-note">진료 전 문진 (선택)</label><p style="font-size:13px;color:#64748b;line-height:1.6">증상 · 시작 시점 · 식욕과 활동 변화 · 복용 약을 입력해 주세요. 모르는 항목은 비워도 됩니다.</p><textarea id="zeno-book-note" maxlength="500" name="note" rows="5" placeholder="예: 어제 저녁부터 구토 2회, 식욕 감소. 복용 약 없음.">'+e(state.symptomLabel||'')+'</textarea><div style="margin-top:10px;padding:12px;border:1px solid #dce7f2;border-radius:8px;background:#f8fafc"><strong>AI 문진 정리</strong><p style="font-size:12px;color:#64748b;line-height:1.6">입력한 사실만 정리합니다. 이름·연락처 등 개인정보는 입력하지 마세요. AI는 진단하거나 응급 여부를 판단하지 않습니다.</p><label style="display:flex;align-items:flex-start;gap:8px;font-size:13px"><input type="checkbox" id="zeno-intake-consent" style="width:auto"> 문진 텍스트를 Cloudflare Workers AI에 전송하여 정리하는 데 동의합니다 (선택).</label><button type="button" class="btn secondary full" data-action="zeno-intake-summarize" style="margin-top:8px">AI로 문진 정리하기</button><p id="zeno-intake-status" role="status" aria-live="polite" style="font-size:13px"></p><div id="zeno-intake-preview" hidden><label for="zeno-intake-result">AI 정리 초안 · 원문과 비교해 주세요</label><textarea id="zeno-intake-result" readonly rows="5"></textarea><button type="button" class="btn secondary full" data-action="zeno-intake-apply">확인한 초안 반영하기</button><p style="font-size:12px;color:#64748b">반영 후 직접 수정할 수 있습니다. 사실과 다른 내용이 없는지 확인해 주세요.</p></div></div><p style="font-size:12px;color:#64748b">호흡곤란, 의식 소실, 심한 출혈 등 응급 상황에서는 예약 응답을 기다리지 말고 즉시 동물병원에 전화하세요.</p></div>'
  +'</div>'+optionHint+'<div class="zeno-book-actions"><button class="btn full" type="submit">예약 요청하기</button><p class="zeno-book-action-note">요청만으로 예약이 확정되지는 않습니다.</p></div></form>';
  return {title:'예약 정보 · '+h.name,body};
 }
@@ -6024,6 +6024,30 @@ window.addEventListener('popstate',()=>{
 async function afterMutation(p=''){try{await refresh(true);if(p)toast(p)}catch(err){toast(err.message)}}
 async function mutate(method,path,data,message){try{await api(method,path,data);state.modal=null;await afterMutation(message||'저장되었습니다.')}catch(err){toast(err.message)}}
 document.addEventListener('click',async ev=>{let n=ev.target.closest('[data-nav]');if(n){navTo(n.dataset.nav);return}let el=ev.target.closest('[data-action]');if(!el)return;const a=el.dataset.action,id=el.dataset.id,val=el.dataset.value;
+if(a==='zeno-intake-summarize'||a==='zeno-intake-apply'){
+ const form=el.closest('#booking-form');if(!form)return;
+ const note=form.querySelector('#zeno-book-note'),consent=form.querySelector('#zeno-intake-consent'),status=form.querySelector('#zeno-intake-status'),preview=form.querySelector('#zeno-intake-preview'),result=form.querySelector('#zeno-intake-result');
+ if(!note||!status||!preview||!result)return;
+ if(a==='zeno-intake-apply'){
+  if(note.value!==preview.dataset.source){status.textContent='원문이 변경됐어요. 다시 정리해 주세요.';preview.hidden=true;return}
+  if(!result.value.trim()||!confirm('AI 초안을 문진에 반영할까요? 원문이 바뀌며 이후 수정할 수 있습니다.'))return;
+  note.value=result.value.slice(0,500);preview.hidden=true;status.textContent='초안을 반영했어요. 내용 확인 후 예약을 요청해 주세요.';note.focus();return;
+ }
+ if(!consent?.checked){status.textContent='AI 정리 동의를 선택해 주세요. 동의하지 않아도 직접 문진을 작성하고 예약할 수 있습니다.';return}
+ const original=note.value;
+ if(original.trim().length<5){status.textContent='증상이나 방문 목적을 5자 이상 입력해 주세요.';return}
+ preview.hidden=true;result.value='';el.disabled=true;status.textContent='입력 내용을 정리하는 중…';
+ try{
+  const out=await api('POST','/api/intake/summarize',{note:original,consent:true});
+  if(!form.isConnected)return;
+  if(note.value!==original){status.textContent='원문이 변경됐어요. 다시 정리해 주세요.';return}
+  if(typeof out.summary!=='string'||!out.summary.trim())throw Error('정리 결과를 받지 못했습니다.');
+  result.value=out.summary.slice(0,500);preview.dataset.source=original;preview.hidden=false;status.textContent='초안이 준비됐어요. 원문과 비교한 뒤 반영해 주세요.';
+ }catch(err){if(form.isConnected)status.textContent=(err.message||'AI 정리를 완료하지 못했어요.')+' 직접 작성한 문진으로 예약할 수 있습니다.'}
+ finally{if(el.isConnected)el.disabled=false}
+ return;
+}
+
 if(a==='res-directory-tab'){if(ZENO_RES_DIRECTORY_TABS.some(x=>x[0]===val)){state.resDirectoryTab=val;window.scrollTo({top:0,behavior:'instant'});render()}return}
 if(a==='vetqa-ask'){if(!state.ownerToken){toast('질문하려면 로그인해 주세요.');state.pendingPage='vetqa';navTo('login');return}const v=zenoVq();v.composing=true;v.openId=null;if(state.page!=='vetqa')navTo('vetqa');else render();setTimeout(()=>document.getElementById('vq-species')?.focus(),0);return}
 if(a==='vetqa-cancel'){const v=zenoVq();v.composing=false;v.draft={};render();return}

@@ -1116,7 +1116,7 @@ function hiDetailSheet(b){
  +'<div class="hi-sheet-scroll"><div class="hi-sheet-state"><span class="hi-status-badge hi-st-'+e(b.status||'pending')+'">'+e(hiStatus(b))+'</span>'+(hiUrgency(b)&&hiShowRiskHint(b)?'<span class="hi-urgent-label">'+e(hiUrgency(b).label)+'</span>':'')+'</div>'+hsSteps(b)
  +'<section class="hi-sheet-section"><h3>보호자 · 환자 정보</h3><dl class="hi-detail-grid">'+info+'</dl></section>'
  +'<section class="hi-sheet-section"><h3>희망 진료일</h3><strong class="hi-time-large">'+e(hsSlot(b.date,b.time))+'</strong>'+(b.proposedAt?'<p>병원 제안 · '+e(hsTimestamp(b.proposedAt))+'</p>':'')+'</section>'
- +(b.note?'<section class="hi-sheet-section"><h3>증상 및 요청</h3><p>'+e(b.note)+'</p></section>':'')
+ +(b.note?'<section class="hi-sheet-section"><h3>진료 전 문진 · 증상 및 요청</h3><p style="white-space:pre-wrap;overflow-wrap:anywhere">'+e(b.note)+'</p></section>':'')
  +(callPhone.length>=10&&callPhone.length<=11&&!b.demo?'<a class="hi-guardian-call" href="tel:'+e(callPhone)+'">보호자에게 전화하기</a>':'')
  +'<p class="hi-history">접수 '+e(hsTimestamp(b.createdAt))+(changed?' · 마지막 변경 '+e(hsTimestamp(b.updatedAt)):'')+'</p></div>'
  +'<footer class="hi-sheet-buttons">'+hospitalBookingButtons(b)+'</footer></section></div>';
