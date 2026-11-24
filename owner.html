@@ -37,6 +37,38 @@ input,select,textarea,.search{font-size:16px;line-height:1.45}
  .mobilebar button{font-size:12px}
 }
 .zeno-home-v10 .zeno-v10-more-care{margin-top:12px}.zeno-home-v10 .zeno-v10-more-care summary{list-style:none;cursor:pointer;text-align:center;padding:13px 12px;border:1px solid var(--zh-line);border-radius:10px;background:var(--zh-surface);font-weight:650;font-size:14px;color:var(--zh-text)}.zeno-home-v10 .zeno-v10-more-care summary::-webkit-details-marker{display:none}.zeno-home-v10 .zeno-v10-more-care[open] summary{margin-bottom:12px}.zeno-home-v10 .zeno-v10-more-care summary span{margin-left:5px}.zeno-home-v10 .zeno-v10-more-care[open] summary span{display:inline-block;transform:rotate(180deg)}
+
+.modal.zeno-book-modal .zi-intake{grid-column:1/-1;min-width:0}
+.modal.zeno-book-modal .zi-head h3{font-size:17px;color:#162d43;margin:0 0 4px;font-weight:750}
+.modal.zeno-book-modal .zi-head h3 span{font-size:12px;color:#718096;font-weight:500;margin-left:5px}
+.modal.zeno-book-modal .zi-head p,.modal.zeno-book-modal .zi-hint{font-size:12px;line-height:1.6;color:#64748b;margin:5px 0 8px;font-weight:400}
+.modal.zeno-book-modal .zi-details{border:1px solid #dce5ee;border-radius:9px;background:#fff;overflow:hidden}
+.modal.zeno-book-modal .zi-details>summary{list-style:none;display:flex;justify-content:space-between;align-items:center;padding:13px;min-height:48px;color:#1767b3;font-weight:700;font-size:14px;cursor:pointer}
+.modal.zeno-book-modal .zi-details>summary::-webkit-details-marker{display:none}
+.modal.zeno-book-modal .zi-details[open]>summary{border-bottom:1px solid #e5eaf0}
+.modal.zeno-book-modal .zi-body{padding:12px;display:block;min-width:0}
+.modal.zeno-book-modal .zi-body h4{font-size:14px;color:#172b40;margin:14px 0 8px;font-weight:700}
+.modal.zeno-book-modal .zi-body h4:first-child{margin-top:0}
+.modal.zeno-book-modal .zi-body h4 small{font-size:11px;font-weight:400;color:#64748b}
+.modal.zeno-book-modal .zi-chips{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.modal.zeno-book-modal .zi-chip{font:inherit;font-size:13px;font-weight:600;color:#334155;border:1px solid #dbe4ed;background:#f8fafc;min-height:42px;padding:8px 5px;border-radius:7px;white-space:normal;box-shadow:none}
+.modal.zeno-book-modal .zi-chip[aria-pressed=true]{color:#1767b3;background:#eaf3ff;border-color:#2679cc}
+.modal.zeno-book-modal .zi-question{margin:8px 0;min-width:0}
+.modal.zeno-book-modal .zi-question label,.modal.zeno-book-modal .zi-body>label:not(.zi-consent),.modal.zeno-book-modal .zi-preview label{font-size:13px;font-weight:600;display:block;margin-bottom:5px;color:#334155}
+.modal.zeno-book-modal .zi-question select{min-height:42px!important;padding:8px 10px!important;border-radius:7px!important}
+.modal.zeno-book-modal .zi-intake #zeno-book-note{min-height:72px!important;resize:vertical}
+.modal.zeno-book-modal .zi-consent{display:flex!important;align-items:flex-start!important;gap:8px!important;font-size:12px!important;line-height:1.55!important;font-weight:400!important;color:#475569;margin:10px 0 4px!important}
+.modal.zeno-book-modal .zi-consent input[type=checkbox]{appearance:auto!important;-webkit-appearance:checkbox!important;width:18px!important;height:18px!important;min-width:18px!important;min-height:18px!important;max-width:18px!important;max-height:18px!important;padding:0!important;margin:1px 0 0!important;flex:0 0 18px!important;border-radius:3px!important;accent-color:#1976d2}
+.modal.zeno-book-modal .zi-consent span{flex:1;min-width:0}
+.modal.zeno-book-modal .zi-privacy{font-size:11px;color:#64748b;margin:0 0 10px}
+.modal.zeno-book-modal .zi-privacy summary{cursor:pointer;text-decoration:underline}
+.modal.zeno-book-modal .zi-privacy p{font-size:12px;line-height:1.5}
+.modal.zeno-book-modal .zi-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.modal.zeno-book-modal .zi-actions .btn{font-size:13px;min-height:44px;padding:9px 5px;border-radius:7px}
+.modal.zeno-book-modal .zi-preview{background:#f8fafc;border:1px solid #dce5ee;padding:10px;border-radius:8px;margin-top:10px}
+.modal.zeno-book-modal .zi-confirmed{white-space:pre-wrap;overflow-wrap:anywhere;background:#edf6ff;color:#164e84;padding:10px;font-size:13px;line-height:1.5;border-radius:7px}
+.modal.zeno-book-modal .zi-emergency{background:#fff4e8;color:#9a3412;padding:10px;border-radius:7px;font-size:12px;line-height:1.5}
+.modal.zeno-book-modal .zi-intake [hidden]{display:none!important}
 </style>
 <style>
 /* ZENO optional hospital photo gallery / Naver photo discovery */
@@ -4068,6 +4100,76 @@ function zenoBookingServices(h,species){
 }
 
 /* CHANGED: pet profile and symptom prefill in appointment. */
+
+const ZENO_INTAKE_BANK=[
+ ['vomit','구토','구토 횟수',['1회','2~3회','4회 이상','모름']],
+ ['stool','설사·변 이상','변 상태',['무른 변','물설사','혈변·검은 변','모름']],
+ ['appetite','식욕 감소','최근 먹은 양',['평소보다 적음','거의 안 먹음','전혀 안 먹음','모름']],
+ ['skin','피부 이상','관찰된 변화',['가려움','발진·붉어짐','탈모','상처','모름']],
+ ['breath','기침·호흡 이상','관찰된 변화',['기침','재채기·콧물','호흡이 힘들어 보임','모름']],
+ ['urine','배뇨 이상','소변 상태',['횟수 증가','양 감소','소변이 나오지 않음','혈뇨','모름']],
+ ['move','보행 이상','관찰된 변화',['절뚝거림','움직임 감소','다리를 딛지 못함','모름']],
+ ['eye','눈·귀 이상','관찰된 변화',['눈물·분비물','충혈','귀 분비물','귀 긁기','모름']],
+ ['mouth','치아·구강 이상','관찰된 변화',['구취','침 흘림','씹기 어려움','잇몸 출혈','모름']],
+ ['other','기타 증상','',[]],['routine','검진·예방 등','',[]]
+];
+function zenoIntakeSelect(id,label,choices){
+ return '<div class="zi-question"><label for="'+e(id)+'">'+e(label)+'</label><select id="'+e(id)+'" data-zi-answer><option value="">선택 안 함</option>'+choices.map(v=>'<option value="'+e(v)+'">'+e(v)+'</option>').join('')+'</select></div>';
+}
+function zenoIntakeMarkup(){
+ return '<section class="zi-intake field wide" aria-label="진료 전 문진"><div class="zi-head"><h3>진료 전 문진 <span>선택</span></h3><p>간단히 답하고 병원에 전달할 내용을 확인하세요.</p></div>'
+ +'<details class="zi-details"><summary>문진 시작하기 <span aria-hidden="true">⌄</span></summary><div class="zi-body">'
+ +'<h4>어떤 증상이 있나요? <small>복수 선택</small></h4><div class="zi-chips">'+ZENO_INTAKE_BANK.map(([key,label])=>'<button type="button" class="zi-chip" data-action="zeno-intake-symptom" data-value="'+key+'" aria-pressed="false">'+e(label)+'</button>').join('')+'</div>'
+ +'<div id="zi-follow" hidden><h4>선택한 증상에 대한 추가 질문</h4>'+ZENO_INTAKE_BANK.filter(x=>x[2]).map(([key,label,question,options])=>'<div data-zi-follow="'+key+'" hidden>'+zenoIntakeSelect('zi-'+key,label+' · '+question,options)+'</div>').join('')+'</div>'
+ +'<h4>현재 상태</h4><div class="zi-questions">'+zenoIntakeSelect('zi-onset','언제부터 증상이 있었나요?',['오늘','어제','2~3일 전','4~7일 전','일주일 이상','모름'])+zenoIntakeSelect('zi-food','식욕은 어떤가요?',['평소와 같음','감소','먹지 않음','모름'])+zenoIntakeSelect('zi-energy','활동량은 어떤가요?',['평소와 같음','감소','거의 움직이지 않음','모름'])+zenoIntakeSelect('zi-med','복용 중인 약이 있나요?',['있음','없음','모름'])+'</div>'
+ +'<label for="zeno-book-note">추가로 전달할 내용</label><textarea id="zeno-book-note" name="note" maxlength="500" rows="2" placeholder="약 이름, 증상 횟수 등 (선택)">'+e(state.symptomLabel||'')+'</textarea>'
+ +'<p class="zi-emergency" id="zi-alert" role="status" hidden></p><p class="zi-hint">개인정보는 입력하지 마세요. 호흡곤란·의식 소실·심한 출혈 등 응급 상황에서는 예약을 기다리지 말고 즉시 병원에 전화하세요.</p>'
+ +'<label class="zi-consent"><input type="checkbox" id="zeno-intake-consent"><span>AI 문진 정리를 위한 외부 AI 서비스 정보 전송에 동의합니다 (선택).</span></label><details class="zi-privacy"><summary>AI 정보 처리 안내</summary><p>문진 답변과 추가 내용만 Cloudflare Workers AI에 전송합니다. 이름·연락처 등의 입력은 피해주세요. AI는 진단·처방하지 않으며 동의 없이도 예약 가능합니다.</p></details>'
+ +'<div class="zi-actions"><button type="button" class="btn secondary" data-action="zeno-intake-review">입력 내용 확인</button><button type="button" class="btn" data-action="zeno-intake-summarize">AI로 정리하기</button></div><p id="zeno-intake-status" role="status" aria-live="polite" class="zi-hint"></p>'
+ +'<div id="zeno-intake-preview" class="zi-preview" hidden><label for="zeno-intake-result">병원에 전달할 문진 초안</label><textarea id="zeno-intake-result" maxlength="500" rows="4"></textarea><p class="zi-hint">입력한 사실과 맞는지 확인하고 필요하면 수정하세요.</p><button type="button" class="btn full" data-action="zeno-intake-apply">확인하고 예약에 반영</button></div><p id="zi-confirmed" class="zi-confirmed" hidden></p></div></details></section>';
+}
+function zenoIntakeSource(form){
+ const selected=[...form.querySelectorAll('.zi-chip[aria-pressed="true"]')].map(b=>b.dataset.value);
+ const rows=[];
+ const labels=ZENO_INTAKE_BANK.filter(x=>selected.includes(x[0])).map(x=>x[1]);
+ if(labels.length)rows.push('증상·방문 목적: '+labels.join(', '));
+ for(const [key,label,question] of ZENO_INTAKE_BANK){if(!question||!selected.includes(key))continue;const v=form.querySelector('#zi-'+key)?.value;if(v)rows.push(label+' '+question+': '+v);}
+ for(const [key,label] of [['onset','발생 시점'],['food','식욕'],['energy','활동량'],['med','복용 약']]){const v=form.querySelector('#zi-'+key)?.value;if(v)rows.push(label+': '+v);}
+ const note=form.querySelector('#zeno-book-note')?.value.trim();if(note)rows.push('추가 내용: '+note);
+ // Preserve the original note length limit for free-text-only reservations.
+ return rows.length===1&&note&&rows[0]==='추가 내용: '+note?note:rows.join('\n');
+}
+function zenoIntakeInvalidate(form){
+ const preview=form.querySelector('#zeno-intake-preview'),confirmed=form.querySelector('#zi-confirmed'),status=form.querySelector('#zeno-intake-status');
+ if(preview)preview.hidden=true;
+ if(confirmed){confirmed.hidden=true;delete confirmed.dataset.source;delete confirmed.dataset.note;}
+ if(status)status.textContent='';
+}
+function zenoIntakeFollow(form){
+ let any=false;
+ for(const el of form.querySelectorAll('[data-zi-follow]')){
+  const active=form.querySelector('.zi-chip[data-value="'+el.dataset.ziFollow+'"][aria-pressed="true"]');
+  el.hidden=!active;any=any||!!active;
+ }
+ form.querySelector('#zi-follow').hidden=!any;
+ zenoIntakeAlert(form);
+}
+function zenoIntakeAlert(form){
+ const active=key=>!!form.querySelector('.zi-chip[data-value="'+key+'"][aria-pressed="true"]');
+ const alert=form.querySelector('#zi-alert');if(!alert)return;
+ const urgent=(active('breath')&&form.querySelector('#zi-breath')?.value==='호흡이 힘들어 보임')||(active('urine')&&form.querySelector('#zi-urine')?.value==='소변이 나오지 않음');
+ alert.hidden=!urgent;alert.textContent=urgent?'호흡이 힘들거나 소변이 나오지 않는 경우 즉시 동물병원에 전화해 진료 가능 여부를 확인하세요. AI 문진이나 예약 응답을 기다리지 마세요.':'';
+}
+document.addEventListener('input',ev=>{
+ const form=ev.target.closest?.('#booking-form');if(!form)return;
+ if(ev.target.matches('[data-zi-answer],#zeno-book-note')){zenoIntakeInvalidate(form);zenoIntakeAlert(form);}
+});
+document.addEventListener('change',ev=>{
+ const form=ev.target.closest?.('#booking-form');if(!form)return;
+ if(ev.target.matches('[data-zi-answer]')){zenoIntakeInvalidate(form);zenoIntakeAlert(form);}
+ if(ev.target.id==='zeno-intake-consent'&&!ev.target.checked)zenoIntakeInvalidate(form);
+});
+
 function zenoBookingFlow(h){
  const chosenKind=state.modal.kind||'',selected=state.modal.service||'';
  const defaultPet=state.pets.find(p=>p.species===chosenKind)||null;
@@ -4098,7 +4200,7 @@ function zenoBookingFlow(h){
  +'<div class="zeno-book-section-title">방문 일정</div><div class="field"><label for="zeno-book-visit-type">방문 구분</label><select id="zeno-book-visit-type" name="visitType"><option>첫 방문</option><option>재방문</option></select></div>'
  +'<div class="field"><label for="zeno-book-date">희망 날짜</label><input id="zeno-book-date" name="date" type="date" min="'+today()+'" value="'+defaultBookingDate()+'" required></div>'
  +'<div class="field"><label for="zeno-book-time">희망 시간</label><input id="zeno-book-time" name="time" type="time" value="'+defaultBookingTime()+'" required></div>'
- +'<div class="field wide"><label for="zeno-book-note">진료 전 문진 (선택)</label><p style="font-size:13px;color:#64748b;line-height:1.6">증상 · 시작 시점 · 식욕과 활동 변화 · 복용 약을 입력해 주세요. 모르는 항목은 비워도 됩니다.</p><textarea id="zeno-book-note" maxlength="500" name="note" rows="5" placeholder="예: 어제 저녁부터 구토 2회, 식욕 감소. 복용 약 없음.">'+e(state.symptomLabel||'')+'</textarea><div style="margin-top:10px;padding:12px;border:1px solid #dce7f2;border-radius:8px;background:#f8fafc"><strong>AI 문진 정리</strong><p style="font-size:12px;color:#64748b;line-height:1.6">입력한 사실만 정리합니다. 이름·연락처 등 개인정보는 입력하지 마세요. AI는 진단하거나 응급 여부를 판단하지 않습니다.</p><label style="display:flex;align-items:flex-start;gap:8px;font-size:13px"><input type="checkbox" id="zeno-intake-consent" style="width:auto"> 문진 텍스트를 Cloudflare Workers AI에 전송하여 정리하는 데 동의합니다 (선택).</label><button type="button" class="btn secondary full" data-action="zeno-intake-summarize" style="margin-top:8px">AI로 문진 정리하기</button><p id="zeno-intake-status" role="status" aria-live="polite" style="font-size:13px"></p><div id="zeno-intake-preview" hidden><label for="zeno-intake-result">AI 정리 초안 · 원문과 비교해 주세요</label><textarea id="zeno-intake-result" readonly rows="5"></textarea><button type="button" class="btn secondary full" data-action="zeno-intake-apply">확인한 초안 반영하기</button><p style="font-size:12px;color:#64748b">반영 후 직접 수정할 수 있습니다. 사실과 다른 내용이 없는지 확인해 주세요.</p></div></div><p style="font-size:12px;color:#64748b">호흡곤란, 의식 소실, 심한 출혈 등 응급 상황에서는 예약 응답을 기다리지 말고 즉시 동물병원에 전화하세요.</p></div>'
+ +zenoIntakeMarkup()
  +'</div>'+optionHint+'<div class="zeno-book-actions"><button class="btn full" type="submit">예약 요청하기</button><p class="zeno-book-action-note">요청만으로 예약이 확정되지는 않습니다.</p></div></form>';
  return {title:'예약 정보 · '+h.name,body};
 }
@@ -6024,26 +6126,36 @@ window.addEventListener('popstate',()=>{
 async function afterMutation(p=''){try{await refresh(true);if(p)toast(p)}catch(err){toast(err.message)}}
 async function mutate(method,path,data,message){try{await api(method,path,data);state.modal=null;await afterMutation(message||'저장되었습니다.')}catch(err){toast(err.message)}}
 document.addEventListener('click',async ev=>{let n=ev.target.closest('[data-nav]');if(n){navTo(n.dataset.nav);return}let el=ev.target.closest('[data-action]');if(!el)return;const a=el.dataset.action,id=el.dataset.id,val=el.dataset.value;
-if(a==='zeno-intake-summarize'||a==='zeno-intake-apply'){
+if(a.startsWith('zeno-intake-')){
  const form=el.closest('#booking-form');if(!form)return;
- const note=form.querySelector('#zeno-book-note'),consent=form.querySelector('#zeno-intake-consent'),status=form.querySelector('#zeno-intake-status'),preview=form.querySelector('#zeno-intake-preview'),result=form.querySelector('#zeno-intake-result');
- if(!note||!status||!preview||!result)return;
- if(a==='zeno-intake-apply'){
-  if(note.value!==preview.dataset.source){status.textContent='원문이 변경됐어요. 다시 정리해 주세요.';preview.hidden=true;return}
-  if(!result.value.trim()||!confirm('AI 초안을 문진에 반영할까요? 원문이 바뀌며 이후 수정할 수 있습니다.'))return;
-  note.value=result.value.slice(0,500);preview.hidden=true;status.textContent='초안을 반영했어요. 내용 확인 후 예약을 요청해 주세요.';note.focus();return;
+ const status=form.querySelector('#zeno-intake-status'),preview=form.querySelector('#zeno-intake-preview'),result=form.querySelector('#zeno-intake-result'),confirmed=form.querySelector('#zi-confirmed'),consent=form.querySelector('#zeno-intake-consent');
+ if(!status||!preview||!result||!confirmed)return;
+ if(a==='zeno-intake-symptom'){
+  const next=el.getAttribute('aria-pressed')!=='true';
+  if(next&&el.dataset.value==='routine')for(const b of form.querySelectorAll('.zi-chip'))b.setAttribute('aria-pressed','false');
+  if(next&&el.dataset.value!=='routine')form.querySelector('.zi-chip[data-value="routine"]')?.setAttribute('aria-pressed','false');
+  el.setAttribute('aria-pressed',String(next));zenoIntakeInvalidate(form);zenoIntakeFollow(form);return;
  }
- if(!consent?.checked){status.textContent='AI 정리 동의를 선택해 주세요. 동의하지 않아도 직접 문진을 작성하고 예약할 수 있습니다.';return}
- const original=note.value;
- if(original.trim().length<5){status.textContent='증상이나 방문 목적을 5자 이상 입력해 주세요.';return}
- preview.hidden=true;result.value='';el.disabled=true;status.textContent='입력 내용을 정리하는 중…';
+ const source=zenoIntakeSource(form);
+ if(a==='zeno-intake-apply'){
+  if(source!==preview.dataset.source){zenoIntakeInvalidate(form);status.textContent='답변이 변경됐어요. 다시 확인해 주세요.';return}
+  const final=result.value.trim();
+  if(!final||final.length>500){status.textContent='문진 내용을 1~500자로 확인해 주세요.';return}
+  confirmed.dataset.source=source;confirmed.dataset.note=final;confirmed.textContent='문진 확인 완료\n'+final;confirmed.hidden=false;preview.hidden=true;status.textContent='예약 요청 시 확인한 문진이 전달됩니다.';return;
+ }
+ if(source.length>500){status.textContent='문진이 500자를 넘었어요. 추가 내용을 줄여 주세요.';return}
+ if(source.length<5){status.textContent='증상을 선택하거나 추가 내용을 입력해 주세요.';return}
+ if(a==='zeno-intake-review'){preview.dataset.source=source;result.value=source;preview.hidden=false;status.textContent='입력한 내용을 확인해 주세요.';return}
+ if(a!=='zeno-intake-summarize')return;
+ if(!consent?.checked){status.textContent='AI 정리 동의를 선택하거나 입력 내용 확인을 이용해 주세요.';return}
+ preview.hidden=true;el.disabled=true;status.textContent='문진을 정리하는 중…';
  try{
-  const out=await api('POST','/api/intake/summarize',{note:original,consent:true});
+  const out=await api('POST','/api/intake/summarize',{note:source,consent:true});
   if(!form.isConnected)return;
-  if(note.value!==original){status.textContent='원문이 변경됐어요. 다시 정리해 주세요.';return}
-  if(typeof out.summary!=='string'||!out.summary.trim())throw Error('정리 결과를 받지 못했습니다.');
-  result.value=out.summary.slice(0,500);preview.dataset.source=original;preview.hidden=false;status.textContent='초안이 준비됐어요. 원문과 비교한 뒤 반영해 주세요.';
- }catch(err){if(form.isConnected)status.textContent=(err.message||'AI 정리를 완료하지 못했어요.')+' 직접 작성한 문진으로 예약할 수 있습니다.'}
+  if(zenoIntakeSource(form)!==source||!consent.checked){status.textContent='답변 또는 동의가 변경됐어요. 다시 확인해 주세요.';return}
+  if(typeof out.summary!=='string'||!out.summary.trim()||out.summary.length>500)throw Error('정리 결과를 받지 못했습니다.');
+  preview.dataset.source=source;result.value=out.summary;preview.hidden=false;status.textContent='AI 초안을 확인하고 필요하면 수정해 주세요.';
+ }catch(err){if(form.isConnected){status.textContent='AI 정리를 완료하지 못했어요. 입력 내용 확인으로 계속할 수 있습니다.';}}
  finally{if(el.isConnected)el.disabled=false}
  return;
 }
@@ -6378,11 +6490,14 @@ if(id==='booking-form'){
  if(!val(d.petName)||!d.species){toast('진료받을 아이를 선택해 주세요.');return}
  const bookingHospital=hospitalById(d.hospitalId);
  if(!bookingHospital||!zenoBookingAnimals(bookingHospital).includes(d.species)||!zenoBookingServices(bookingHospital,d.species).some(x=>x[0]===d.service)){toast('진료받을 동물과 진료 목적을 다시 확인해 주세요.');return}
+ const intakeSource=zenoIntakeSource(f),intakeConfirmed=f.querySelector('#zi-confirmed');
+ const finalNote=intakeConfirmed?.dataset.source===intakeSource?intakeConfirmed.dataset.note:intakeSource;
+ if((finalNote||'').length>500){toast('문진 내용을 500자 이내로 줄여 주세요.');return}
  const button=f.querySelector('[type=submit]');
  state.bookingSubmitting=true;
  if(button){button.disabled=true;button.textContent='예약 요청 보내는 중…'}
  try{
-  await api('POST','/api/bookings',{hospitalId:d.hospitalId,petName:val(d.petName),species:d.species,date:d.date,time:d.time,service:d.service,note:val(d.note),ownerPhone:val(d.ownerPhone),breed:val(d.breed),age:val(d.age),weight:val(d.weight),visitType:val(d.visitType)});
+  await api('POST','/api/bookings',{hospitalId:d.hospitalId,petName:val(d.petName),species:d.species,date:d.date,time:d.time,service:d.service,note:finalNote||'',ownerPhone:val(d.ownerPhone),breed:val(d.breed),age:val(d.age),weight:val(d.weight),visitType:val(d.visitType)});
   state.modal=null;await afterMutation('예약 요청을 보냈어요. 병원 확인을 기다려 주세요.');navTo('bookings');
  }catch(err){toast('요청하지 못했어요. 입력 내용을 유지했으니 다시 시도해 주세요. '+err.message)}
  finally{state.bookingSubmitting=false;if(button&&button.isConnected){button.disabled=false;button.textContent='예약 요청하기'}}
