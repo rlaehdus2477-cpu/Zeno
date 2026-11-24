@@ -41,6 +41,10 @@ globalThis.fetch = async (input, init = {}) => {
 
 const {default: worker} = await import('../worker.js');
 const env = {DB: db, NAVER_MAPS_CLIENT_ID: 'test-id', NAVER_MAPS_CLIENT_SECRET: 'test-secret'};
+const ownerPage = await worker.fetch(new Request('https://zeno.test/owner'), env);
+assert.match(ownerPage.headers.get('permissions-policy') || '', /geolocation=\(self\)/);
+const hospitalPage = await worker.fetch(new Request('https://zeno.test/hospital'), env);
+assert.match(hospitalPage.headers.get('permissions-policy') || '', /geolocation=\(\)/);
 const call = () => worker.fetch(new Request('https://zeno.test/api/public/hospital-coordinates'), env);
 
 const check = await worker.fetch(new Request('https://zeno.test/api/public/hospital-coordinates?check=1'), env);

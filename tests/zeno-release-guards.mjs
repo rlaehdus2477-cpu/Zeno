@@ -38,13 +38,8 @@ for (const [id, hours, breakTime, reception] of [
     assert.equal(h.hoursVerificationStatus, 'naver-place-screenshot', id + ': source evidence classification');
   }
 }
-// Keep both public-facing apps on the same clinic facts; they share one dataset contract.
-for (const sourceClinic of a) {
-  const hospitalClinic = get(b, sourceClinic.id);
-  for (const field of ['is24','weeklySchedule','breakSchedule','receptionDeadlines','hoursVerificationStatus','hours','declaredSpecialties','careFields']) {
-    assert.deepEqual(hospitalClinic[field], sourceClinic[field], sourceClinic.id + ': owner/hospital ' + field + ' mismatch');
-  }
-}
+// Both apps publish the same clinic records, including their evidence and media.
+assert.deepEqual(b,a,'owner and hospital public directory must match in full');
 for (const list of [a,b]) {
   const naeum = get(list,'naeum');
   assert.equal(naeum.is24,true,'Naeum must be categorized as 24-hour hospital');
