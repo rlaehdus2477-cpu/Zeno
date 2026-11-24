@@ -4709,6 +4709,7 @@ function zenoBookEligible(h){
  return ['official','demo','public'].includes(zenoSpecialtyOrigin(h));
 }
 function zenoSpecialtyNameOnly(h){return zenoSpecialtyOrigin(h)==='name';}
+function zenoWalkInAllowed(h){return ['optional','walkin'].includes(h.reservationInfo?.policy);}
 function filteredHospitals(){
  const query=zenoWaitingQuery(state.query);
  let list=HOSPITALS.filter(h=>!query.text||[h.name,...(h.aliases||[]),h.address,...(h.tags||[]),...(h.cats||[]),...(h.officialSpecialties||[]),...(h.publishedCareFields||[]),...zenoHospitalFocusEntries(h).map(row=>row.keyword),...(h.careFields||[]),...(h.focusedCare||[]),...(h.detailedCare||[]),...(h.publishedExoticSpecies||[]),...Object.keys(h.specialtySnippets||{})].join(' ').toLowerCase().replace(/\s+/g,'').includes(query.text));
@@ -4722,6 +4723,7 @@ function filteredHospitals(){
  }
  const catFriendly=fs.includes('고양이 친화'),dogStress=fs.includes('강아지 피어프리·스트레스 케어');
  if(catFriendly||dogStress)list=list.filter(h=>(catFriendly&&Boolean(zenoCfc(h)))||(dogStress&&Boolean(zenoFearFree(h))));
+ if(fs.includes('예약 없이 방문 가능'))list=list.filter(zenoWalkInAllowed);
  if(fs.includes('연결 병원'))list=list.filter(h=>h.linked);
  if(fs.includes('즐겨찾기'))list=list.filter(h=>state.favorites.includes(h.id));
  if(state.specialty)list=list.filter(h=>state.specialty==='특수동물'?(state.exoticSpecies?zenoExoticMatches(h,state.exoticSpecies):Boolean(zenoExoticSearchAnimals(h).length)):Boolean(zenoSpecialtyOrigin(h)));
@@ -4993,7 +4995,7 @@ function searchPage(){
  const resultCount=clinical?(state.internalFocusOnly?focusCount:registeredCount):results.length;
  const waitingOnly=zenoHasFilter('고양이 대기실')&&!state.specialty;
  const verifiedWaitingCount=waitingOnly?results.filter(h=>h.catWaiting?.verified).length:0;
- const resultsHeading=waitingOnly?'고양이 대기실 확인 '+verifiedWaitingCount+'곳':(state.specialty==='특수동물'?'검색 결과 ':clinical?(e(state.specialty)+(state.internalFocusOnly?' 특화 ':' 진료 ')):'청주 병원 ')+resultCount+'곳';
+ const resultsHeading=zenoHasFilter('예약 없이 방문 가능')&&!state.specialty&&!waitingOnly?'예약 없이 방문 가능 '+resultCount+'곳':waitingOnly?'고양이 대기실 확인 '+verifiedWaitingCount+'곳':(state.specialty==='특수동물'?'검색 결과 ':clinical?(e(state.specialty)+(state.internalFocusOnly?' 특화 ':' 진료 ')):'청주 병원 ')+resultCount+'곳';
  const internalNote=clinical?'<p class="zeno-clinical-legend">'+(inquiryCount?'추가 전화 확인 '+inquiryCount+'곳 · ':'')+'특화는 병원 공개 안내 기준이며 전문의 자격을 뜻하지 않습니다.</p>':'';
  const focusChip=clinical?'<button type="button" class="zeno-internal-only" data-action="internal-focus-only" aria-pressed="'+(state.internalFocusOnly?'true':'false')+'">특화만 보기'+(state.internalFocusOnly?' ✓':'')+'</button>':'';
  const exotic=state.specialty==='특수동물'?'<section class="zeno-exotic-top" aria-labelledby="zeno-exotic-title">'
@@ -5005,7 +5007,7 @@ function searchPage(){
  const specialtyChip=state.specialty&&state.specialty!=='특수동물'?'<button type="button" class="zeno-selected-care-chip" data-action="clear-specialty" aria-label="'+e(state.specialty)+' 진료 분야 선택 해제">'+e(state.specialty)+' <span aria-hidden="true">×</span></button>':'';
  const reset=(state.query||fs.length||state.specialty||state.searchRegion)?'<button class="zeno-search-reset" type="button" data-action="clear-search">조건 초기화</button>':'';
  const regionChip=state.searchRegion?'<button type="button" class="zeno-selected-care-chip" data-action="clear-home-region-filter" aria-label="'+e(state.searchRegion)+' 지역 필터 해제">'+e(state.searchRegion)+' <span aria-hidden="true">×</span></button>':'';
- const quick=['전체','야간','24시','고양이 대기실'],more=['내 주변','고양이 친화','강아지 피어프리·스트레스 케어','연결 병원','즐겨찾기'];
+ const quick=['전체','야간','24시','고양이 대기실','예약 없이 방문 가능'],more=['내 주변','고양이 친화','강아지 피어프리·스트레스 케어','연결 병원','즐겨찾기'];
  const lbl=x=>x==='24시'?'24시간':x==='야간'?'야간 진료':x==='연결 병원'?'예약 요청 가능':x==='즐겨찾기'?'저장한 병원':x;
  const chip=x=>'<button type="button" class="filter '+(fs.includes(x)?'active':'')+'" aria-pressed="'+String(fs.includes(x))+'" '+(x==='내 주변'?'data-action="nearby-toggle"'+(state.nearbyBusy?' disabled aria-busy="true"':''):'data-action="filter" data-value="'+e(x)+'"')+'>'+(x==='내 주변'&&state.nearbyBusy?'위치 확인 중…':e(lbl(x)))+'</button>';
  const selected=more.filter(x=>fs.includes(x));
