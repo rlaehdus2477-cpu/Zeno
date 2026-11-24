@@ -3817,6 +3817,14 @@ function zenoNaverBookingUrl(h){
  }catch{}
  return '';
 }
+function zenoNaverAction(h){
+ if(!Array.isArray(h.reservationInfo?.methods)||!h.reservationInfo.methods.includes('naver'))return null;
+ const direct=zenoNaverBookingUrl(h);
+ if(direct)return {url:direct,label:'네이버 예약'};
+ const g=zenoReservationGuide(h);
+ if(g.naverLinkStatus==='official-place-link'&&g.url)return {url:g.url,label:'네이버 안내'};
+ return {url:zenoNaverPhotoUrl(h),label:'네이버 찾기'};
+}
 function zenoReservationLine(h,allowZeno=false){
  const g=zenoReservationGuide(h,allowZeno);
  const unknown='예약 방법 미확인';
@@ -4459,8 +4467,8 @@ function zenoSavedHospitalCard(h){
  const cfc=zenoCfc(h);
  const cfcNote=cfc?(cfc.status==='listed'?'CFC 명단 조사 기록 · 유효 여부 확인 필요':cfc.status==='criteria'?'CFC Gold 기준 · 병원 안내':'CFC '+(cfc.grade||'')+' 표기 · 갱신 미확인'):'';
  const phone=String(h.phone||'').trim(),validPhone=/^0[0-9 -]{8,15}$/.test(phone);
- const savedNaver=h.linked?'':zenoNaverBookingUrl(h);
- const book=h.linked?'<button type="button" class="zeno-saved-action primary" data-action="book" data-id="'+e(h.id)+'">예약 요청</button>':savedNaver?'<a class="zeno-saved-action" href="'+e(savedNaver)+'" target="_blank" rel="noopener noreferrer">네이버 예약</a>':'';
+ const savedNaver=h.linked?null:zenoNaverAction(h);
+ const book=h.linked?'<button type="button" class="zeno-saved-action primary" data-action="book" data-id="'+e(h.id)+'">예약 요청</button>':savedNaver?'<a class="zeno-saved-action" href="'+e(savedNaver.url)+'" target="_blank" rel="noopener noreferrer">'+e(savedNaver.label)+'</a>':'';
  const call=validPhone?'<a class="zeno-saved-action" data-action="call-summary" data-id="'+e(h.id)+'" href="tel:'+e(phone.replace(/[^0-9]/g,''))+'">전화</a>':'';
  const map='<a class="zeno-saved-action" href="'+e(zenoNaverPhotoUrl(h))+'" target="_blank" rel="noopener noreferrer" aria-label="'+e(h.name)+' 지도에서 보기">위치</a>';
  return '<article class="zeno-saved-card"><div class="zeno-saved-head">'+photoHtml
@@ -4609,8 +4617,8 @@ function zenoSearchHospitalCard(h){
  const call=validPhone?'<a class="zeno-card-action zeno-card-call" data-action="call-summary" data-id="'+e(h.id)+'" href="tel:'+e(phone.replace(/[^0-9]/g,''))+'" aria-label="'+e(h.name)+' 전화">전화</a>':'<button class="zeno-card-action zeno-card-call" type="button" disabled aria-label="전화번호 미확인" title="전화번호 미확인">전화</button>';
  const eligible=zenoBookEligible(h);
  const book=eligible?'<button class="zeno-card-action zeno-card-book" type="button" data-action="book" data-id="'+e(h.id)+'">예약 요청</button>':'';
- const naverUrl=eligible?'':zenoNaverBookingUrl(h);
- const naver=naverUrl?'<a class="zeno-card-action zeno-card-call zeno-card-naver" href="'+e(naverUrl)+'" target="_blank" rel="noopener noreferrer" aria-label="'+e(h.name)+' 네이버 예약">네이버 예약</a>':'';
+ const naverAction=eligible?null:zenoNaverAction(h);
+ const naver=naverAction?'<a class="zeno-card-action zeno-card-call zeno-card-naver" href="'+e(naverAction.url)+'" target="_blank" rel="noopener noreferrer" aria-label="'+e(h.name+' '+naverAction.label)+'">'+e(naverAction.label)+'</a>':'';
  const route=h.address?'<a class="zeno-card-action zeno-card-call zeno-card-route" href="'+e(zenoNaverPhotoUrl(h))+'" target="_blank" rel="noopener noreferrer" aria-label="'+e(h.name)+' 길찾기 (네이버 지도)">길찾기</a>':'';
  // Details, published fees, hours and directions remain available by tapping the hospital row.
  return '<article class="directory-item zeno-hospital-card zeno-search-card"><button type="button" class="directory-main" data-action="details" data-id="'+e(h.id)+'" aria-label="'+e(h.name)+' 상세 정보, 진료비, 운영시간 및 위치">'
