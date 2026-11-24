@@ -199,6 +199,13 @@ jobs:
           const workerSource=fs.readFileSync('worker.js','utf8');
           const expectedOwnerRevision=workerSource.match(/const OWNER_UI_REVISION\s*=\s*'([^']+)'/)?.[1];
           if(!expectedOwnerRevision)throw Error('Worker UI revision missing');
+          const reservationSnapshot=html=>{
+            const start=html.indexOf('const HOSPITALS=');
+            const end=html.indexOf('];',start);
+            if(start<0||end<start)throw Error('Reservation snapshot: HOSPITALS missing');
+            return JSON.stringify(JSON.parse(html.slice(start+'const HOSPITALS='.length,end+1)).map(h=>[h.id,h.reservationInfo||null,h.reservationUrl||null]));
+          };
+          const expectedReservationSnapshot=reservationSnapshot(fs.readFileSync('owner.html','utf8'));
           const base='https://zeno.rlaehdus2477.workers.dev';
           async function get(path){
             const response=await fetch(base+path,{headers:{'Cache-Control':'no-cache'},signal:AbortSignal.timeout(20000)});
@@ -217,9 +224,10 @@ jobs:
                 const mobileOwner=await (await get(mobilePath)).text();
               if(!mobileOwner.includes("const ZENO_OWNER_UI_REVISION='"+expectedOwnerRevision+"'") ||
                  !mobileOwner.includes('#app .zeno-search-page .zeno-search-card .zeno-card-actions') ||
-                 !mobileOwner.includes('zenoDeclaredSpecialtyLine(h,false,2,true)+contextHtml')){
+                 !mobileOwner.includes('zenoDeclaredSpecialtyLine(h,false,2,true)+zenoReservationLine(h,eligible)+contextHtml')){
                   throw Error(mobilePath+' still serves the previous hospital list');
                 }
+                if(reservationSnapshot(mobileOwner)!==expectedReservationSnapshot)throw Error(mobilePath+' reservation information differs from release data');
               }
               const redirect=await fetch(base+'/owner?android_app=1.2',{redirect:'manual',headers:{'Cache-Control':'no-cache'},signal:AbortSignal.timeout(20000)});
               if(redirect.status!==302||!redirect.headers.get('location')?.includes('/owner-native?android_app=1.2'))throw Error('Legacy 1.2 APK route does not redirect outside old service worker paths');
