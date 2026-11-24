@@ -1,0 +1,38 @@
+name: Test ZENO owner and hospital screens
+on:
+  pull_request:
+    paths:
+      - 'owner.html'
+      - 'hospital.html'
+      - 'worker.js'
+      - 'schema.sql'
+      - 'tests/demo-browser-flow.mjs'
+      - '.github/workflows/test-demo-browser.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  demo-browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install local test tools
+        run: npm install --no-save --no-audit --no-fund playwright-core@1.56.1
+      - name: Verify mobile owner and desktop hospital
+        shell: bash
+        run: |
+          set -euo pipefail
+          state_dir="$(mktemp -d)"
+          npx wrangler d1 execute zeno-live-db --local --persist-to "$state_dir" --file schema.sql
+          npx wrangler dev --local --persist-to "$state_dir" --ip 127.0.0.1 --port 8787 \
+            --var SESSION_SECRET:demo-session-local-only \
+            --var HOSPITAL_SOO_PIN:demo-soo-local \
+            --var HOSPITAL_NAEUM_PIN:demo-naeum-local \
+            --var HOSPITAL_TPLUS_PIN:demo-tplus-local > "$RUNNER_TEMP/zeno-demo-worker.log" 2>&1 &
+          worker_pid=$!
+          trap 'kill "$worker_pid" 2>/dev/null || true' EXIT
+          node tests/demo-browser-flow.mjs
