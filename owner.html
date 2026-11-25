@@ -5444,7 +5444,7 @@ function home(){
  +'<button class="care-symptoms" data-nav="symptoms">'+zenoHomeSmallIcon('help')+'<strong>증상으로 진료과목 찾기</strong><span aria-hidden="true">›</span></button></section>'
  +zenoHomeFees()
  +'<div id="zeno-home-ads">'+zenoHomeAdCards()+'</div>'
- +'<section class="zeno-home-utilities" aria-label="조건별 병원 찾기"><h2>조건별 병원 찾기</h2><div class="zeno-home-utility-list"><button type="button" class="zeno-home-utility-row" data-nav="reservation-directory"><span class="zeno-home-utility-icon">'+zenoNavIcon('bookings')+'</span><span class="zeno-home-utility-copy"><strong>예약 방법별 병원 목록</strong><small>전화·네이버·홈페이지·방문 접수</small></span><span class="zeno-home-utility-chevron" aria-hidden="true">›</span></button>'
+ +'<section class="zeno-home-utilities" aria-label="조건별 병원 찾기"><h2>조건별 병원 찾기</h2><div class="zeno-home-utility-list"><button type="button" class="zeno-home-utility-row" data-nav="reservation-directory"><span class="zeno-home-utility-icon">'+zenoNavIcon('bookings')+'</span><span class="zeno-home-utility-copy"><strong>예약·접수 안내</strong><small>전화·네이버·홈페이지·방문 접수</small></span><span class="zeno-home-utility-chevron" aria-hidden="true">›</span></button>'
  +'<button type="button" class="zeno-home-utility-row" data-action="night-shortcut"><span class="zeno-home-utility-icon">'+zenoHomeSmallIcon('moon')+'</span><span class="zeno-home-utility-copy"><strong>야간 진료</strong><small>밤 시간 진료가 안내된 병원</small></span><span class="zeno-home-utility-chevron" aria-hidden="true">›</span></button>'
  +'<button type="button" class="zeno-home-utility-row" data-action="around-clock-shortcut"><span class="zeno-home-utility-icon">'+zenoHomeSmallIcon('urgent')+'</span><span class="zeno-home-utility-copy"><strong>24시간 운영 병원</strong><small>응급 접수는 전화로 확인</small></span><span class="zeno-home-utility-chevron" aria-hidden="true">›</span></button>'
  +'</div></section>'
@@ -5502,7 +5502,7 @@ function zenoReservationDirectory(){
  const selectedLabel=ZENO_RES_DIRECTORY_TABS.find(([id])=>id===tab)[1];
  return '<section class="zeno-resdir" aria-labelledby="zeno-resdir-title"><header class="zeno-resdir-header">'
   +'<button type="button" class="zeno-resdir-back" data-nav="search" aria-label="병원 찾기로 돌아가기"><span class="zeno-resdir-arrow" aria-hidden="true"></span>'+zenoBrandLogo()+'</button>'
-  +'<h1 id="zeno-resdir-title">예약 방법별 병원</h1></header>'
+  +'<h1 id="zeno-resdir-title">예약·접수 안내</h1></header>'
   +'<div class="zeno-resdir-tabs" role="group" aria-label="예약 방법 선택"><div class="zeno-resdir-tools">'
   +filterButton(ZENO_RES_DIRECTORY_TABS[0])+'<p class="zeno-resdir-note">한 병원이 여러 방법에 포함될 수 있어요.</p></div>'
   +'<div class="zeno-resdir-grid">'+ZENO_RES_DIRECTORY_TABS.slice(1).map(filterButton).join('')+'</div></div>'
@@ -5540,7 +5540,7 @@ function searchPage(){
   +(selected.length?'<div class="zeno-filter-selected">'+selected.map(x=>'<button type="button" class="zeno-filter-selected-chip" data-action="'+(x==='내 주변'?'nearby-toggle':'filter')+'" data-value="'+e(x)+'">'+e(lbl(x))+' ×</button>').join('')+'</div>':'');
  return '<header class="zeno-search-topbar">'+zenoBrandLogo()+'<h1>병원 찾기</h1></header><section class="zeno-search-page">'
  +'<div class="zeno-search-module"><div class="searchrow"><input type="search" class="search" id="hospital-search" aria-label="병원명·동네·시설 검색" placeholder="병원명·동네·시설 검색" value="'+e(state.query)+'"><button class="btn" data-action="search-apply">검색</button></div>'
- +'<div class="zeno-filter-rail"><div class="filters" role="group" aria-label="병원 조건 필터">'+chips+'</div></div><button type="button" class="zeno-resdir-entry" data-nav="reservation-directory"><span>예약 방법별 병원 목록</span><span aria-hidden="true">›</span></button></div>'
+ +'<div class="zeno-filter-rail"><div class="filters" role="group" aria-label="병원 조건 필터">'+chips+'</div></div><button type="button" class="zeno-resdir-entry" data-nav="reservation-directory"><span>예약·접수 안내</span><span aria-hidden="true">›</span></button></div>'
  +exotic
  +'<div class="zeno-results-bar"><div class="zeno-results-bar-leading"><h2 aria-live="polite">'+resultsHeading+'</h2>'+regionChip+specialtyChip+'</div><div class="zeno-results-bar-tools">'+focusChip+reset+'<button class="zeno-search-emergency-link" type="button" data-nav="emergency">야간·24시간 안내</button></div></div>'
  +internalNote+nearbyNote
