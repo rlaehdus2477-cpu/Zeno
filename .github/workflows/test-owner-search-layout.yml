@@ -4,6 +4,7 @@ on:
     paths:
       - 'owner.html'
       - 'tests/owner-search-card.mjs'
+      - 'tests/owner-home.mjs'
       - '.github/workflows/test-owner-search-layout.yml'
 permissions:
   contents: read
@@ -80,6 +81,10 @@ jobs:
         env:
           SCREENSHOT_DIR: screenshots
         run: node tests/owner-search-card.mjs
+      - name: Home screen check (320/360/390/412px, light/dark, data-linked fees, links)
+        env:
+          SCREENSHOT_DIR: screenshots
+        run: node tests/owner-home.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
