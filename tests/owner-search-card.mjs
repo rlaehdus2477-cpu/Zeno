@@ -135,7 +135,11 @@ for(const width of [320,360,390,412]){
      buttons:[...card.querySelectorAll('.zeno-card-actions .zeno-card-action')].map(measure),
      chips:[...card.querySelectorAll('.zeno-list-resv-chip')].map(measure),
      resvLabel:card.querySelector('.zeno-list-resv-label')?measure(card.querySelector('.zeno-list-resv-label')):null,
-     pending:[...card.querySelectorAll('.zeno-list-resv-pending')].map(measure),
+     pending:card.querySelector('.zeno-list-resv')?.dataset.pending?[card.querySelector('.zeno-list-resv').dataset.pending]:[],
+     visiblePending:[...card.querySelectorAll('.zeno-list-resv-pending')].length,
+     gap:(()=>{const resv=card.querySelector('.zeno-list-resv');if(!resv)return 0;const last=[...card.querySelectorAll('.directory-text>*')].filter(x=>x.getBoundingClientRect().height>0).pop();return resv.getBoundingClientRect().top-(last?last.getBoundingClientRect().bottom:0)})(),
+     thumbBottom:card.querySelector('.zeno-thumb')?.getBoundingClientRect().bottom??0,
+     actionsTop:card.querySelector('.zeno-card-actions')?.getBoundingClientRect().top??0,
      policy:[...card.querySelectorAll('.zeno-list-resv-policy')].map(measure),
      book:[...card.querySelectorAll('[data-action="book"]')].map(b=>b.dataset.id),
      text:card.textContent};
@@ -181,33 +185,34 @@ for(const width of [320,360,390,412]){
     assert.ok(c.resvLabel,who+' 예약 줄 없음');
     assert.ok(c.resvLabel.contrast>=4.5,who+" '예약' 글자 대비 "+c.resvLabel.contrast);
    }
-   for(const x of [...c.pending,...c.policy]){
+   assert.equal(c.visiblePending,0,who+' 목록에 확인 문구 노출');
+   assert.ok(c.gap<8,who+' 예약 줄 위 빈칸 '+c.gap.toFixed(1)+'px');
+   assert.ok(c.thumbBottom<=c.actionsTop+0.5,who+' 사진과 버튼 줄 겹침');
+   for(const x of c.policy){
     assert.ok(x.contrast>=4.5,who+" '"+x.label+"' 대비 "+x.contrast);
     assert.ok(x.right<=c.right+1,who+" '"+x.label+"' 카드 밖으로 나감");
    }
    // 확인 문구: 상태별 정확한 문구와 개수
    const want=expectedPending(h);
-   assert.deepEqual(c.pending.map(x=>x.label),want?[want]:[],who+' 확인 문구');
+   assert.deepEqual(c.pending,want?[want]:[],who+' 확인 상태');
    assert.ok(!c.text.includes('예약 방법 확인 필요'),who+" '예약 방법 확인 필요' 노출");
    measured[tag]=measured[tag]||{};
    if(c.buttons.length===3&&!measured[tag].partner)measured[tag].partner=widths.map(w=>w.toFixed(2)).join(' / ');
-   for(const x of [c.resvLabel,...c.pending].filter(Boolean)){
-    const key=x===c.resvLabel?'예약':x.label;
-    measured[tag][key]=Math.min(measured[tag][key]??99,x.contrast);
-   }
+   if(c.resvLabel)measured[tag]['예약']=Math.min(measured[tag]['예약']??99,c.resvLabel.contrast);
+   for(const ch of c.chips){const key=ch.tag==='A'?'링크':'글자';measured[tag][key]=Math.min(measured[tag][key]??99,ch.contrast);}
   }
   // 실제 그려진 글자의 글꼴
-  for(const sel of ['.zeno-search-card .zeno-list-resv-chip.zeno-resv-naver','.zeno-search-card .zeno-list-resv-pending','.zeno-search-card .zeno-card-actions .zeno-card-call','.zeno-search-card .zeno-card-book']){
+  for(const sel of ['.zeno-search-card .zeno-list-resv-chip.zeno-resv-naver','.zeno-search-card .zeno-list-resv-label','.zeno-search-card .zeno-card-actions .zeno-card-call','.zeno-search-card .zeno-card-book']){
    const fonts=await glyphFonts(page,sel);
    assert.ok(fonts.some(f=>f.isCustomFont&&/Pretendard/i.test(f.familyName)),tag+' '+sel+' Pretendard 아님: '+JSON.stringify(fonts));
   }
   const three=result.cards.filter(c=>c.buttons.length===3).length,two=result.cards.filter(c=>c.buttons.length===2).length;
   const m=measured[tag];
-  report.push(tag+': 카드 '+result.cards.length+'곳 원본 일치 (버튼3 '+three+' · 버튼2 '+two+') · 버튼 너비 차 최대 '+maxDiff.toFixed(2)+'px · 제휴 버튼 '+m.partner+' · 대비 예약 '+m['예약']+' / 링크 확인 중 '+m['링크 확인 중']+' / 이용자 제공 · 확인 중 '+m['이용자 제공 · 확인 중']);
+  report.push(tag+': 카드 '+result.cards.length+'곳 원본 일치 (버튼3 '+three+' · 버튼2 '+two+') · 버튼 너비 차 최대 '+maxDiff.toFixed(2)+'px · 제휴 버튼 '+m.partner+' · 대비 예약 '+m['예약']+' / 링크 '+m['링크']+' / 글자 '+m['글자']);
   // 캡처: 320px 확인 문구가 줄바꿈된 카드 / 360px 제휴 카드
   if(width===320){
-   const idx=await page.evaluate(()=>[...document.querySelectorAll('.zeno-search-card')].findIndex(c=>{const p=c.querySelector('.zeno-list-resv-pending'),f=c.querySelector('.zeno-list-resv-chip');return p&&f&&p.getBoundingClientRect().top>f.getBoundingClientRect().top+2}));
-   if(idx>=0)await page.locator('.zeno-search-card').nth(idx).screenshot({path:path.join(shots,'card-320-'+scheme+'-pending-wrap.png')});
+   const idx=await page.evaluate(()=>[...document.querySelectorAll('.zeno-search-card')].findIndex(c=>c.querySelectorAll('.zeno-list-resv-chips>*').length>=3));
+   if(idx>=0)await page.locator('.zeno-search-card').nth(idx).screenshot({path:path.join(shots,'card-320-'+scheme+'-resv-long.png')});
   }
   if(width===360)await page.locator('.zeno-search-card:has([data-action="book"])').first().screenshot({path:path.join(shots,'card-360-'+scheme+'-partner.png')});
   await page.locator('.zeno-search-card').nth(4).scrollIntoViewIfNeeded();
@@ -234,11 +239,13 @@ for(const width of [320,360,390,412]){
  for(const t of cases){
   const got=await page.evaluate(h=>{
    const box=document.createElement('div');box.innerHTML=zenoListReservation({id:'t',name:'테스트',phone:'043-000-0000',linked:false,...h},false);
-   return {links:[...box.querySelectorAll('a')].map(a=>a.getAttribute('href')),plain:[...box.querySelectorAll('span.zeno-list-resv-chip')].map(x=>x.textContent),pending:[...box.querySelectorAll('.zeno-list-resv-pending')].map(x=>x.textContent),text:box.textContent};
+   return {links:[...box.querySelectorAll('a')].map(a=>a.getAttribute('href')),plain:[...box.querySelectorAll('span.zeno-list-resv-chip')].map(x=>x.textContent),pending:box.querySelector('.zeno-list-resv')?.dataset.pending?[box.querySelector('.zeno-list-resv').dataset.pending]:[],visible:box.querySelectorAll('.zeno-list-resv-pending').length,text:box.textContent};
   },t.h);
   assert.deepEqual(got.links,t.link,t.name+' 링크');
   assert.deepEqual(got.plain,t.plain,t.name+' 누를 수 없는 라벨');
-  assert.deepEqual(got.pending,t.pending?[t.pending]:[],t.name+' 확인 문구');
+  assert.deepEqual(got.pending,t.pending?[t.pending]:[],t.name+' 확인 상태');
+  assert.equal(got.visible,0,t.name+' 목록에 확인 문구 노출');
+  assert.ok(!/확인 중/.test(got.text),t.name+' 목록 글자에 확인 중 노출');
   assert.ok(!got.text.includes('예약 방법 확인 필요'),t.name+" '예약 방법 확인 필요' 노출");
  }
  report.push('확인 문구 입력 사례 '+cases.length+'개 (네이버·홈페이지 주소 없음, 이용자 제공, 확인 완료, 비허용 주소) 통과');
