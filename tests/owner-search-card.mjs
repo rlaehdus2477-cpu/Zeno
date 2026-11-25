@@ -115,6 +115,58 @@ async function glyphFonts(page,selector){
  return (await session.send('CSS.getPlatformFontsForNode',{nodeId})).fonts;
 }
 
+async function checkReservationDirectory(page,width){
+ await page.locator('.zeno-resdir-entry').click();
+ const directory=page.locator('.zeno-resdir');
+ const tabs=directory.getByRole('group',{name:'예약 방법 선택'});
+ const cards=directory.locator('.zeno-resdir-card');
+ assert.deepEqual((await cards.locator('[data-action="details"]').evaluateAll(nodes=>nodes.map(n=>n.dataset.id))).sort(),[...byId.keys()].sort());
+ assert.equal(await page.locator('.mobilebar [data-nav="search"]').getAttribute('aria-current'),'page');
+
+ const metrics=await directory.evaluate(root=>{
+  const rect=node=>node.getBoundingClientRect();
+  const grid=root.querySelector('.zeno-resdir-grid');
+  const filters=[...grid.children];
+  const actions=[...root.querySelectorAll('.zeno-resdir-actions')];
+  return {
+   columns:new Set(filters.map(node=>Math.round(rect(node).left))).size,
+   rowCount:new Set(filters.map(node=>Math.round(rect(node).top))).size,
+   clipped:filters.filter(node=>{
+    const label=node.firstElementChild;
+    return node.scrollWidth>node.clientWidth+1||rect(label).right>rect(node.lastElementChild).left
+     ||rect(label).height>parseFloat(getComputedStyle(label).lineHeight)+1;
+   }).map(node=>node.textContent),
+   gutterDifference:Math.abs(rect(grid).left-rect(root.querySelector('.zeno-resdir-list')).left),
+   brokenRows:actions.filter(row=>{
+    const bounds=rect(row),items=[...row.children].map(rect);
+    if(items.some(item=>item.left<bounds.left-1||item.right>bounds.right+1))return true;
+    if(items.length===1)return Math.abs(items[0].width-bounds.width)>1;
+    return items.some(item=>Math.abs(item.width-items[0].width)>1);
+   }).length,
+   overflow:document.documentElement.scrollWidth-innerWidth
+  };
+ });
+ const columns=width<=352?2:3;
+ assert.equal(metrics.columns,columns);
+ assert.equal(metrics.rowCount,6/columns);
+ assert.deepEqual(metrics.clipped,[]);
+ assert.ok(metrics.gutterDifference<=1);
+ assert.equal(metrics.brokenRows,0);
+ assert.ok(metrics.overflow<=0);
+
+ const options=await tabs.getByRole('button').evaluateAll(nodes=>nodes.map(node=>({value:node.dataset.value,count:Number(node.querySelector('b').textContent)})));
+ assert.deepEqual(options.map(option=>option.value),['all','zeno','naver','website','phone','walkin','unknown']);
+ for(const {value,count} of options){
+  const button=tabs.locator('[data-value="'+value+'"]');
+  await button.click();
+  assert.equal(await button.getAttribute('aria-pressed'),'true');
+  assert.equal(await tabs.locator('[aria-pressed="true"]').count(),1);
+  assert.equal(await cards.count(),count);
+ }
+ await directory.getByRole('button',{name:'병원 찾기로 돌아가기'}).click();
+ assert.ok(await page.locator('.zeno-resdir-entry').isVisible());
+}
+
 const report=[];
 const measured={};
 for(const width of [320,360,390,412]){
@@ -217,9 +269,11 @@ for(const width of [320,360,390,412]){
   if(width===360)await page.locator('.zeno-search-card:has([data-action="book"])').first().screenshot({path:path.join(shots,'card-360-'+scheme+'-partner.png')});
   await page.locator('.zeno-search-card').nth(4).scrollIntoViewIfNeeded();
   await page.screenshot({path:path.join(shots,'search-card-'+width+'-'+scheme+'.png')});
+  await checkReservationDirectory(page,width);
   await context.close();
  }
 }
+report.push('예약 방법별 병원 320/360/390/412px 라이트·다크: 필터 열 맞춤·글자 잘림·버튼 너비·7개 필터 건수·병원 찾기 복귀 확인');
 
 // ---- URL이 없거나 쓸 수 없는 네이버·홈페이지, 제보 정보: 테스트 입력으로 직접 확인 ----
 {
