@@ -3293,6 +3293,29 @@ html body .zeno-search-page>.zeno-status-legend{margin:2px 20px 4px!important}
 .zeno-resdir-name small{display:block;font-size:12px;color:#64748b;margin:2px 0 5px}
 .zeno-resdir-actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
 .zeno-resdir-action{display:inline-flex;align-items:center;justify-content:center;min-height:38px;padding:0 12px;border:1px solid #dbe3ed;background:#fff;border-radius:6px;font-size:13px;font-weight:650;color:#475569;text-decoration:none;cursor:pointer}
+#app .zeno-resdir{box-sizing:border-box;width:100%;padding:6px 12px 100px;font-family:var(--zeno-ui-font)}
+#app .zeno-resdir-back{font-size:13px;padding:6px 0}
+#app .zeno-resdir-note{font-size:12px;line-height:1.45;margin:3px 0 8px;word-break:keep-all}
+#app .zeno-resdir-tabs{gap:4px;margin:8px 0 12px;min-width:0}
+#app .zeno-resdir-tabs button{box-sizing:border-box;padding:0 8px;min-height:32px;font-size:12px;white-space:nowrap;font-family:var(--zeno-ui-font)}
+#app .zeno-resdir h2{font-size:14px;font-weight:650;margin:0 0 8px}
+#app .zeno-resdir-list{gap:0;border:1px solid #e4e8ef;border-radius:8px;background:#fff;overflow:hidden}
+#app .zeno-resdir-card{box-sizing:border-box;border:0;border-bottom:1px solid #e8edf2;border-radius:0;padding:11px 12px}
+#app .zeno-resdir-card:last-child{border-bottom:0}
+#app .zeno-resdir-name{display:flex;align-items:center;justify-content:space-between;gap:8px;font-family:var(--zeno-ui-font)}
+#app .zeno-resdir-name>span:first-child{min-width:0}
+#app .zeno-resdir-name strong{font-size:15px;font-weight:650;overflow-wrap:anywhere}
+#app .zeno-resdir-name small{margin:2px 0 0}
+#app .zeno-resdir-chevron{font-size:20px;color:#8b95a1;flex:none}
+#app .zeno-resdir-actions{align-items:center;gap:5px;margin-top:7px;min-width:0}
+#app .zeno-resdir-action{box-sizing:border-box;min-height:32px;padding:0 9px;font-size:12px;font-weight:600;white-space:nowrap;font-family:var(--zeno-ui-font)}
+#app .zeno-resdir-static{display:inline-flex;align-items:center;min-height:28px;font-size:12px;color:#6b7684;white-space:nowrap}
+#app .zeno-resdir-policy{font-size:12px;line-height:1.4;color:#6b7684;margin:5px 0 0}
+:is(html.dark,html[data-theme="dark"]) #app .zeno-resdir-list,:is(html.dark,html[data-theme="dark"]) #app .zeno-resdir-card{background:#182230;border-color:#344254}
+:is(html.dark,html[data-theme="dark"]) #app .zeno-resdir-name,:is(html.dark,html[data-theme="dark"]) #app .zeno-resdir h2{color:#edf3fb}
+:is(html.dark,html[data-theme="dark"]) #app .zeno-resdir-note,:is(html.dark,html[data-theme="dark"]) #app .zeno-resdir-name small,:is(html.dark,html[data-theme="dark"]) #app .zeno-resdir-policy,:is(html.dark,html[data-theme="dark"]) #app .zeno-resdir-static{color:#a7b2be}
+:is(html.dark,html[data-theme="dark"]) #app .zeno-resdir-tabs button:not(.active),:is(html.dark,html[data-theme="dark"]) #app .zeno-resdir-action:not(.zeno-channel-zeno):not(.zeno-channel-naver){background:#202d3c;border-color:#415062;color:#dbe5f0}
+:is(html.dark,html[data-theme="dark"]) #app .zeno-resdir-back{color:#8fb8f0}
 </style>
 
 <style id="zeno-owner-search-list-20261125">
@@ -5377,16 +5400,27 @@ function zenoReservationDirectory(){
  const count=key=>key==='all'?rows.length:rows.filter(x=>x.k.includes(key)).length;
  const picked=rows.filter(x=>tab==='all'||x.k.includes(tab)).sort((a,b)=>a.h.name.localeCompare(b.h.name,'ko'));
  const card=({h,k})=>{
-  const phone=String(h.phone||'').trim(),valid=/^0[0-9 -]{8,15}$/.test(phone),m=h.reservationInfo?.methods||[];
+  const info=h.reservationInfo||{},m=Array.isArray(info.methods)?info.methods:[];
+  const phone=String(h.phone||'').trim(),valid=/^0[0-9 -]{8,15}$/.test(phone);
   const call=valid?'<a class="zeno-resdir-action" data-action="call-summary" data-id="'+e(h.id)+'" href="tel:'+e(phone.replace(/[^0-9]/g,''))+'">'+(m.includes('phone')?'전화 예약':'전화 문의')+'</a>':'';
   const n=zenoNaverAction(h),w=zenoWebsiteBookingUrl(h);
-  const z=h.linked?'<button class="zeno-resdir-action zeno-channel-zeno" type="button" data-action="book" data-id="'+e(h.id)+'">ZENO 예약</button>':'';
-  const na=zenoBookingActionLink(n?{...n,kind:'naver'}:null,h,'zeno-resdir-action');
-  const wa=zenoBookingActionLink(w?{url:w,label:'홈페이지 예약',kind:'website'}:null,h,'zeno-resdir-action');
-  const action=(tab==='zeno'?z:tab==='naver'?na:tab==='website'?wa:tab==='phone'?call:tab==='walkin'||tab==='unknown'?call:(z+na+wa+call))||call;
-  return '<article class="zeno-resdir-card"><button class="zeno-resdir-name" type="button" data-action="details" data-id="'+e(h.id)+'"><strong>'+e(h.name)+'</strong><small>'+e(h.region||'')+'</small>'+zenoReservationLine(h,Boolean(h.linked))+'</button><div class="zeno-resdir-actions">'+action+'<button class="zeno-resdir-action" type="button" data-action="details" data-id="'+e(h.id)+'">상세 정보</button></div></article>';
+  const plain=label=>'<span class="zeno-resdir-static">'+e(label)+'</span>';
+  const actions=[];
+  if(h.linked)actions.push('<button class="zeno-resdir-action zeno-channel-zeno" type="button" data-action="book" data-id="'+e(h.id)+'">ZENO 예약</button>');
+  if(k.includes('naver'))actions.push(n?zenoBookingActionLink({...n,kind:'naver'},h,'zeno-resdir-action'):plain('네이버 예약 · 링크 확인 중'));
+  if(k.includes('website'))actions.push(w?zenoBookingActionLink({url:w,label:'홈페이지 예약',kind:'website'},h,'zeno-resdir-action'):plain('홈페이지 예약 · 링크 확인 중'));
+  if(m.includes('app'))actions.push(plain('병원 자체 앱'));
+  if(k.includes('walkin'))actions.push(plain('예약 없이 방문'));
+  if(valid)actions.push(call);
+  else if(k.includes('phone'))actions.push(plain('전화 예약 · 번호 확인 필요'));
+  if(!actions.length)actions.push(plain('예약 방법 확인 필요'));
+  const policies={required:'사전 예약 필수',recommended:'사전 예약 권장',partial:'일부 진료 예약제'};
+  const policy=Object.prototype.hasOwnProperty.call(policies,info.policy)?policies[info.policy]:'';
+  const pending=info.evidenceStatus==='reported'?'이용자 제공 · 확인 중':((n&&!zenoListConfirmedNaverUrl(h))||(w&&info.officialLinkVerified!==true))?'링크 확인 중':'';
+  const note=[policy,pending].filter(Boolean).join(' · ');
+  return '<article class="zeno-resdir-card"><button class="zeno-resdir-name" type="button" data-action="details" data-id="'+e(h.id)+'" aria-label="'+e(h.name+' 상세 정보')+'"><span><strong>'+e(h.name)+'</strong><small>'+e(h.region||'')+'</small></span><span class="zeno-resdir-chevron" aria-hidden="true">›</span></button><div class="zeno-resdir-actions">'+actions.join('')+'</div>'+(note?'<p class="zeno-resdir-policy">'+e(note)+'</p>':'')+'</article>';
  };
- return '<header class="zeno-search-topbar">'+zenoBrandLogo()+'<h1>예약 병원 목록</h1></header><section class="zeno-resdir"><button type="button" class="zeno-resdir-back" data-nav="search">‹ 병원 찾기</button><p class="zeno-resdir-note">병원마다 다른 예약 방법을 확인하세요. 여러 예약 방식이 있는 병원은 각 목록에 포함됩니다.</p><div class="zeno-resdir-tabs" role="group" aria-label="예약 방법 선택">'+ZENO_RES_DIRECTORY_TABS.map(([id,label])=>'<button type="button" data-action="res-directory-tab" data-value="'+id+'" aria-pressed="'+String(tab===id)+'" class="'+(tab===id?'active':'')+'">'+e(label)+' <b>'+count(id)+'</b></button>').join('')+'</div><h2 aria-live="polite">'+e(ZENO_RES_DIRECTORY_TABS.find(x=>x[0]===tab)[1])+' '+picked.length+'곳</h2>'+(tab==='walkin'?'<p class="zeno-resdir-note">예약 없이 방문할 수 있으나 즉시 진료를 보장하지는 않습니다.</p>':'')+'<div class="zeno-resdir-list">'+(picked.map(card).join('')||'<p class="zeno-resdir-note">해당하는 병원이 없습니다.</p>')+'</div></section>';
+ return '<header class="zeno-search-topbar">'+zenoBrandLogo()+'<h1>예약 방법별 병원</h1></header><section class="zeno-resdir"><button type="button" class="zeno-resdir-back" data-nav="search">‹ 병원 찾기</button><p class="zeno-resdir-note">예약 방법별로 병원을 찾으세요. 중복 집계될 수 있습니다.</p><div class="zeno-resdir-tabs" role="group" aria-label="예약 방법 선택">'+ZENO_RES_DIRECTORY_TABS.map(([id,label])=>'<button type="button" data-action="res-directory-tab" data-value="'+id+'" aria-pressed="'+String(tab===id)+'" class="'+(tab===id?'active':'')+'">'+e(label)+' <b>'+count(id)+'</b></button>').join('')+'</div><h2 aria-live="polite">'+e(ZENO_RES_DIRECTORY_TABS.find(x=>x[0]===tab)[1])+' '+picked.length+'곳</h2>'+(tab==='walkin'?'<p class="zeno-resdir-note">예약 없이 방문할 수 있으나 즉시 진료를 보장하지는 않습니다.</p>':'')+'<div class="zeno-resdir-list">'+(picked.map(card).join('')||'<p class="zeno-resdir-note">해당하는 병원이 없습니다.</p>')+'</div></section>';
 }
 function searchPage(){
  const results=filteredHospitals(),fs=zenoActiveFilters();
