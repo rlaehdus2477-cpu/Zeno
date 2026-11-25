@@ -3530,6 +3530,16 @@ html.dark .zeno-fee-directory-price b,html[data-theme="dark"] .zeno-fee-director
 html.dark #app .zeno-review-links a,html[data-theme="dark"] #app .zeno-review-links a{background:transparent}
 #app #zeno-detail-fees .zeno-fee-help:has(button){display:flex;flex-wrap:wrap;gap:8px}
 </style>
+<style id="zeno-verified-review-ui">
+#app .zeno-review-message{background:var(--bg,#f7f9fb);border-radius:8px;padding:14px 12px;margin:10px 0;color:var(--sub);font-size:13px;line-height:1.5}
+#app .zeno-verified-review{padding:12px 0;border-bottom:1px solid var(--line)}
+#app .zeno-review-top{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+#app .zeno-review-top strong{font-size:14px}
+#app .zeno-verified-review p{white-space:pre-wrap;overflow-wrap:anywhere;color:var(--text);font-size:14px;line-height:1.65;margin:8px 0}
+#app .zeno-review-mine,#app .zeno-review-external{margin-top:20px;padding-top:14px;border-top:1px solid var(--line)}
+#app .zeno-review-count{font-size:12px;color:var(--sub)}
+#app .zeno-review-links a{min-height:44px;padding:8px 10px}
+</style>
 </head><body><div id="app" class="app"></div><script>
 'use strict';
 const APP_MODE='owner';
@@ -4871,9 +4881,32 @@ function zenoReviewDestinations(h){
  try{const u=new URL(h.kakaoReviewUrl||ZENO_REVIEW_PLACES[h.id]?.kakao);if(u.protocol==='https:'&&!u.username&&!u.password&&u.hostname==='place.map.kakao.com'&&/^\/\d+\/?$/.test(u.pathname)&&(h.kakaoReviewVerified===true||ZENO_REVIEW_PLACES[h.id]?.kakao===u.href))kakao=u.href}catch{}
  return [{name:'네이버 방문자 리뷰',url:naver,verified:naverVerified},{name:'카카오맵 후기',url:kakao,verified:!!kakao}];
 }
+const zenoPublicReviewCache=Object.create(null);
+function zenoPublicReviewCards(rows){
+ return rows.map(r=>'<article class="zeno-verified-review"><div class="zeno-review-top"><strong>방문 인증 · '+e(String(r.stars))+'점 / 5점</strong><small>'+e(r.date||'')+'</small></div><p>'+e(r.text||'')+'</p></article>').join('');
+}
 function zenoExternalReviewMarkup(h){
  const links=zenoReviewDestinations(h).filter(x=>x.url);
- return '<section class="zeno-review-sources" aria-label="외부 후기 확인"><h3>방문 후기</h3>'+ (links.length?'<div class="zeno-review-links">'+links.map(({name,url})=>'<a href="'+e(url)+'" target="_blank" rel="noopener noreferrer" aria-label="'+e(h.name+' '+name+' (외부 이동)')+'"><strong>'+e(name)+'</strong><span>후기 보기 ↗</span></a>').join('')+'</div><small>외부 후기 페이지로 이동합니다. 후기 원문과 평점은 각 플랫폼에서 제공하며 ZENO가 합산하지 않습니다.</small>':'<p>현재 등록된 외부 후기 링크가 없습니다.</p>')+'</section>';
+ const own=state.ownerToken?(state.reviews||[]).filter(r=>r.hospitalId===h.id):[];
+ const written=new Set(own.map(r=>r.bookingId));
+ const completed=state.ownerToken?(state.bookings||[]).filter(b=>b.hospitalId===h.id&&b.status==='done'&&!written.has(b.id)):[];
+ const saved=zenoPublicReviewCache[h.id];
+ const publicBody=!saved||saved.loading?'<p class="zeno-review-message" role="status">방문 후기를 불러오는 중이에요.</p>':saved.error?'<p class="zeno-review-message">후기를 불러오지 못했어요. <button type="button" class="btn secondary small" data-action="review-refresh" data-id="'+e(h.id)+'">다시 시도</button></p>':saved.rows.length?'<p class="zeno-review-count">최근 방문 인증 후기 '+saved.rows.length+'건</p>'+zenoPublicReviewCards(saved.rows):'<p class="zeno-review-message">아직 공개된 ZENO 방문 인증 후기가 없어요.</p>';
+ const ownBody=own.length||completed.length?'<div class="zeno-review-mine"><h3>내 방문 후기</h3>'+own.map(r=>'<article class="zeno-verified-review"><div class="zeno-review-top"><strong>'+e(String(r.stars))+'점 / 5점</strong><small>'+(r.public?'공개':'나만 보기')+'</small></div><p>'+e(r.text||'')+'</p><button type="button" class="btn secondary small" data-action="review-visibility" data-id="'+e(r.id)+'" data-public="'+(r.public?'false':'true')+'">'+(r.public?'공개 취소':'후기 공개하기')+'</button></article>').join('')+completed.map(b=>'<button type="button" class="btn secondary full" data-action="review" data-id="'+e(b.id)+'">방문 인증 후기 작성</button>').join('')+'</div>':'';
+ return '<section class="zeno-review-sources" aria-label="병원 방문 후기">'+(h.linked?'<h3> ZENO 방문 인증 후기</h3><small>진료가 완료된 예약에서 작성하고 공개에 동의한 후기입니다.</small>'+publicBody+ownBody:'<h3>방문 후기</h3>')+(links.length?'<div class="zeno-review-external"><h3>외부 후기</h3><div class="zeno-review-links">'+links.map(({name,url})=>'<a href="'+e(url)+'" target="_blank" rel="noopener noreferrer" aria-label="'+e(h.name+' '+name+' (외부 이동)')+'"><strong>'+e(name)+'</strong><span>원문 보기 ↗</span></a>').join('')+'</div><small>네이버·카카오 후기 원문과 평점은 외부 서비스에서 제공하며 ZENO에 합산하지 않습니다.</small></div>':(!h.linked?'<p class="zeno-review-message">ZENO에서 제공하는 후기가 아직 없어요.</p>':''))+'</section>';
+}
+function zenoPaintReviewPanel(hid){
+ if(state.modal?.type!=='details'||state.modal.id!==hid||state.detailTab!=='reviews')return;
+ const panel=document.getElementById('zeno-detail-reviews'),h=hospitalById(hid);
+ if(panel&&h)panel.innerHTML=zenoExternalReviewMarkup(h);
+}
+async function zenoLoadPublicReviews(hid,force=false){
+ const h=hospitalById(hid);if(!h?.linked)return;
+ const old=zenoPublicReviewCache[hid];if(old?.loading&&!force)return;
+ zenoPublicReviewCache[hid]={loading:true,rows:[]};zenoPaintReviewPanel(hid);
+ try{const result=await api('GET','/api/public/hospital-reviews?hospitalId='+encodeURIComponent(hid));zenoPublicReviewCache[hid]={rows:Array.isArray(result.reviews)?result.reviews:[]}}
+ catch{zenoPublicReviewCache[hid]={rows:[],error:true}}
+ zenoPaintReviewPanel(hid);
 }
 function zenoDetailPriceSummary(h,s){
  const rows=Array.isArray(s.prices)&&s.prices.length?s.prices.map(x=>
@@ -6701,7 +6734,7 @@ if(m.type==='pet'){title='우리 아이 등록';body=`<form id="pet-form">${zeno
 if(m.type==='record'){title='건강 기록 추가';let p=state.pets.find(x=>x.id===m.id);body=`<p class="desc">${e(p?.name)}의 건강 기록</p><form id="record-form"><input type="hidden" name="petId" value="${e(m.id)}"><div class="field"><label>기록 종류</label><select name="kind"><option>예방접종</option><option>건강검진</option><option>진료 기록</option><option>체중 변화</option><option>투약 기록</option><option>건강 메모</option></select></div><div class="field"><label>날짜</label><input type="date" name="date" value="${today()}" required></div><div class="field"><label>상세 내용</label><textarea name="memo" required maxlength="500" placeholder="검진 항목, 예방접종 종류 등"></textarea></div><button class="btn full" type="submit">기록 저장</button></form>`}
 if(m.type==='ask'){title='병원에 질문 보내기';body=`<div class="banner warning" style="margin-bottom:14px">답변 주체: 선택한 제휴 병원 계정 담당자입니다. 수의사 자격과 답변 시간은 검증되지 않았으며 실제 진료를 대신하지 않습니다.</div><form id="question-form"><div class="field"><label>답변을 요청할 병원</label><select name="hospitalId">${HOSPITALS.filter(x=>x.linked).map(x=>`<option value="${x.id}">${e(x.name)}</option>`).join('')}</select></div><div class="field"><label>반려동물 이름</label><input name="petName" maxlength="30" placeholder="예: 조림이"></div><div class="field"><label>궁금한 내용</label><textarea name="text" required maxlength="1200" placeholder="예: 예방접종 일정을 어떤 기준으로 잡는지 궁금합니다."></textarea></div><button class="btn full" type="submit">질문 등록</button></form>`}
 if(m.type==='propose'){title='예약 시간 다시 제안';body=`<form id="propose-form"><input type="hidden" name="bookingId" value="${e(m.id)}"><div class="field"><label>새로 제안할 날짜 및 시간</label><input name="proposedAt" type="datetime-local" required min="${today()}T00:00"></div><div class="field"><label>병원 안내 문구</label><textarea name="hospitalNote" maxlength="300" placeholder="제안 이유 또는 내원 안내"></textarea></div><button class="btn full" type="submit">보호자에게 시간 제안</button></form>`}
-if(m.type==='review'){title='진료 경험 후기';body=`<div class="banner">방문을 완료한 예약에 대해 후기를 작성할 수 있어요.</div><form id="review-form" style="margin-top:14px"><input type="hidden" name="bookingId" value="${e(m.id)}"><div class="field"><label>진료 경험 점수</label><select name="stars"><option value="5">★★★★★ (5점)</option><option value="4">★★★★ (4점)</option><option value="3">★★★ (3점)</option><option value="2">★★ (2점)</option><option value="1">★ (1점)</option></select></div><div class="field"><label>후기 내용</label><textarea name="text" required minlength="10" maxlength="800" placeholder="실제 방문 경험을 바탕으로 작성해 주세요."></textarea></div><button class="btn full" type="submit">후기 등록 · 100P 받기</button></form>`}
+if(m.type==='review'){title='진료 경험 후기';body=`<div class="banner">방문을 완료한 예약에 대해 후기를 작성할 수 있어요. 등록한 후기는 기본적으로 비공개이며 병원 후기 탭에서 직접 공개할 수 있습니다.</div><form id="review-form" style="margin-top:14px"><input type="hidden" name="bookingId" value="${e(m.id)}"><div class="field"><label>진료 경험 점수</label><select name="stars"><option value="5">★★★★★ (5점)</option><option value="4">★★★★ (4점)</option><option value="3">★★★ (3점)</option><option value="2">★★ (2점)</option><option value="1">★ (1점)</option></select></div><div class="field"><label>후기 내용</label><textarea name="text" required minlength="10" maxlength="800" placeholder="실제 방문 경험을 바탕으로 작성해 주세요."></textarea></div><button class="btn full" type="submit">후기 등록 · 100P 받기</button></form>`}
 if(m.type==='point'){let p=state.reviews.reduce((a,x)=>a+(x.points||0),0),discount=Math.min(p,1800),cost=1800-discount;title='멤버십 포인트 계산';body=`<p class="desc">멤버십 월 요금 <strong>1,800원</strong> · 현재 포인트 <strong>${p}P</strong></p><div class="panel" style="margin-top:17px;background:#f0f8ff"><div class="row-line"><span>월 요금</span><strong>1,800원</strong></div><div class="row-line"><span>보유 포인트 적용</span><strong>-${discount}P</strong></div><div class="row-line"><span>가상 결제 금액</span><strong style="font-size:27px;color:var(--blue)">${cost.toLocaleString()}원</strong></div></div><p class="notice">1P=1원 가정의 PPT 기반 시뮬레이션입니다. 실제 결제·포인트 사용·구독 등록은 되지 않습니다.</p>`}
 return `<div class="modalbg ${m.type==='book'?'zeno-book-backdrop':''}" data-action="modal-backdrop"><div class="modal ${wide?'wide':''} ${m.type==='details'?'zeno-hospital-detail':''} ${m.type==='book'?'zeno-book-modal':''}" role="dialog" aria-modal="true" aria-label="${e(title)}"><div class="modal-head"><h2>${e(title)}</h2>${m.type==='details'&&h?`<button type="button" class="zeno-detail-save" data-action="favorite" data-id="${e(h.id)}" aria-label="병원 저장">${state.favorites.includes(h.id)?"♥ 저장됨":"♡ 저장"}</button>`:''}<button class="close" data-action="close-modal" aria-label="닫기">×</button></div>${body}</div></div>`}
 
@@ -6786,6 +6819,7 @@ function openModal(type,id){
   state.modal={type,id,kind,service:chosen?.[0]||(h?.id==='soo'?'':(!state.specialty?choices[0]?.[0]:'')||''),step:'choose'};
  }else state.modal={type,id};
  render();
+ if(type==='details'&&state.detailTab==='reviews')zenoLoadPublicReviews(id);
  if(zenoDetailScrollY>0)window.scrollTo({left:0,top:zenoDetailScrollY,behavior:'instant'});
 }
 function zenoCloseModal(){
@@ -6861,7 +6895,9 @@ if(a==='vetqa-species'){const v=zenoVq();v.tab='all';v.species=val||'전체';zen
 if(a==='vetqa-mine'){const v=zenoVq();v.tab='mine';render();return}
 if(a==='vetqa-reload'){zenoVetqaLoad();return}
 if(a==='vetqa-delete'){if(!confirm('이 질문을 삭제할까요?'))return;try{await api('DELETE','/api/vetqa/'+encodeURIComponent(id));const v=zenoVq();v.openId=null;v.detail=null;toast('질문을 삭제했어요.');await zenoVetqaLoad()}catch(err){toast(err.message)}return}
-if(a==='detail-tab'){const dialog=el.closest('.modal'),selected=el.dataset.value;if(dialog){state.detailTab=selected;dialog.querySelectorAll('[data-detail-panel]').forEach(p=>{p.hidden=p.dataset.detailPanel!==selected});dialog.querySelectorAll('[data-action="detail-tab"]').forEach(b=>{const active=b.dataset.value===selected;b.classList.toggle('active',active);b.setAttribute('aria-selected',String(active))});const bar=dialog.querySelector('.zeno-detail-tabs');if(bar){const y=dialog.scrollTop+bar.getBoundingClientRect().top-dialog.getBoundingClientRect().top-54;dialog.scrollTop=Math.max(0,y);const tab=bar.querySelector('.zeno-detail-tab.active');if(tab){const x=tab.offsetLeft-bar.offsetLeft;bar.scrollLeft=Math.max(0,x-(bar.clientWidth-tab.offsetWidth)/2)}}}return}
+if(a==='review-refresh'){zenoLoadPublicReviews(id,true);return}
+if(a==='review-visibility'){const mine=(state.reviews||[]).find(r=>r.id===id);if(!mine||!state.ownerToken)return;const publish=el.dataset.public==='true';if(publish&&!window.confirm('이 후기의 별점과 내용, 작성 날짜가 모든 ZENO 이용자에게 공개됩니다. 보호자 이름·연락처·반려동물 이름 등 개인정보가 포함되지 않았는지 확인해 주세요. 공개하시겠어요?'))return;el.disabled=true;try{await api('PATCH','/api/reviews/'+encodeURIComponent(id)+'/visibility',{public:publish});mine.public=publish;await zenoLoadPublicReviews(mine.hospitalId,true);toast(publish?'후기를 공개했습니다.':'후기를 비공개로 전환했습니다.')}catch(err){toast(err.message);el.disabled=false}return}
+if(a==='detail-tab'){const dialog=el.closest('.modal'),selected=el.dataset.value;if(dialog){state.detailTab=selected;dialog.querySelectorAll('[data-detail-panel]').forEach(p=>{p.hidden=p.dataset.detailPanel!==selected});dialog.querySelectorAll('[data-action="detail-tab"]').forEach(b=>{const active=b.dataset.value===selected;b.classList.toggle('active',active);b.setAttribute('aria-selected',String(active))});const bar=dialog.querySelector('.zeno-detail-tabs');if(bar){const y=dialog.scrollTop+bar.getBoundingClientRect().top-dialog.getBoundingClientRect().top-54;dialog.scrollTop=Math.max(0,y);const tab=bar.querySelector('.zeno-detail-tab.active');if(tab){const x=tab.offsetLeft-bar.offsetLeft;bar.scrollLeft=Math.max(0,x-(bar.clientWidth-tab.offsetWidth)/2)}}if(selected==='reviews'&&state.modal?.type==='details')zenoLoadPublicReviews(state.modal.id)}return}
 if(a==='close-modal'){zenoCloseModal();return}if(a==='modal-backdrop'){if(ev.target===el)zenoCloseModal();return}
 if(a==='auth-mode'){state.authMode=val;state.authError='';if(val!=='login')state.authNotice='';render();return}
 if(a==='recovery-setup'){if(!state.ownerToken){navTo('login');return}openModal('recovery-setup');return}
