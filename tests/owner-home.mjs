@@ -62,7 +62,8 @@ for(const width of [320,360,390,412]){
   const m=await page.evaluate(()=>{
    const q=s=>document.querySelector(s),qa=s=>[...document.querySelectorAll(s)];
    const box=el=>{const r=el.getBoundingClientRect();return {top:r.top+scrollY,bottom:r.bottom+scrollY,left:r.left,right:r.right,h:r.height,w:r.width}};
-   const lines=el=>{const w=document.createTreeWalker(el,NodeFilter.SHOW_TEXT);const t=new Set();let n;while((n=w.nextNode())){if(!n.textContent.trim())continue;const r=document.createRange();r.selectNodeContents(n);for(const x of r.getClientRects())if(x.width>0)t.add(Math.round(x.top));}return t.size};
+   // 줄 수: 글자 크기가 다른 글자 조각의 top이 소수점 반올림으로 1px 갈라져도 같은 줄로 셈 (4px 이상 차이 날 때만 다른 줄)
+   const lines=el=>{const w=document.createTreeWalker(el,NodeFilter.SHOW_TEXT);const t=new Set();let n;while((n=w.nextNode())){if(!n.textContent.trim())continue;const r=document.createRange();r.selectNodeContents(n);for(const x of r.getClientRects())if(x.width>0)t.add(x.top);}return [...t].sort((a,b)=>a-b).filter((y,i,a)=>i===0||y-a[i-1]>4).length};
    const home=q('.zeno-home-v10');
    const fees=new Set([...ZENO_PUBLIC_FEES.map(v=>v.id),...ZENO_HEALTH_SCREENINGS.map(v=>v.id)]).size;
    const first=ZENO_PUBLIC_FEES.flatMap(v=>v.prices.filter(p=>p[0]==='초진 진찰료').map(p=>({id:v.id,min:+p[1],max:+p[2]})));

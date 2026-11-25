@@ -3613,6 +3613,34 @@ html body #app .zeno-home-v10 .zeno-home-services>h2{margin-bottom:8px!important
 :is(html.dark,html[data-theme="dark"]) body #app .zeno-home-v10 .zeno-home-service-grid>*{background:#1b2430!important;border-color:#334155!important;color:#e5e8eb!important}
 :is(html.dark,html[data-theme="dark"]) body #app .zeno-home-v10 .zeno-home-service-grid>* *{color:inherit!important}
 </style>
+<style id="zeno-home-top-polish-20261125">
+/* 2026-11-25 홈 상단 헤더와 '지금 진료 중인 병원' 정돈 */
+/* 헤더: 앱 헤더에서는 로고 아래 태그라인(PET MEDICAL PLATFORM)을 잘라 워드마크만 보이게 함. 로고 원본 파일은 그대로 */
+html body #app .zeno-home-v10 .zeno-v10-header{height:52px!important;min-height:52px!important}
+html body #app .zeno-home-v10 .zeno-v10-header img.zeno-global-brand{flex:0 0 80px!important;width:80px!important;min-width:80px!important;max-width:80px!important;height:23px!important;max-height:23px!important;object-fit:cover!important;object-position:left top!important}
+/* 지역 선택은 보조 요소: 굵기와 색을 한 단계 낮춤 */
+html body #app .zeno-home-v10 .zeno-v10-region-button,html body #app .zeno-home-v10 .zeno-v10-region-button span{font-weight:500!important;color:#4e5968!important}
+html body #app .zeno-home-v10 .zeno-v10-region-button svg{color:#4e5968!important}
+:is(html.dark,html[data-theme="dark"]) body #app .zeno-home-v10 :is(.zeno-v10-region-button,.zeno-v10-region-button span,.zeno-v10-region-button svg){color:#c3cad3!important}
+/* 섹션 제목 크기를 다른 홈 섹션(진료과목·진료비 비교)과 맞춤 */
+html body #app .zeno-home-v10 .zeno-v10-open-section .care-list-heading h2{font-size:17px!important;font-weight:700!important;line-height:24px!important}
+/* 가로 스크롤 카드가 여백 안쪽에서 잘리지 않고 화면 끝까지 이어지게 함 (첫 카드는 다른 섹션 왼쪽 선에 맞춤) */
+@media(max-width:599px){
+ html body #app .zeno-home-v10 .zeno-v10-open-rail{width:calc(100% + 32px)!important;max-width:none!important;box-sizing:border-box!important;margin-left:-16px!important;margin-right:-16px!important;padding-left:16px!important;padding-right:16px!important;scroll-padding-inline:16px!important}
+}
+@media(max-width:340px){
+ html body #app .zeno-home-v10 .zeno-v10-open-rail{width:calc(100% + 24px)!important;margin-left:-12px!important;margin-right:-12px!important;padding-left:12px!important;padding-right:12px!important;scroll-padding-inline:12px!important}
+}
+/* 카드 높이는 같게, 내용은 세로 가운데 정렬 (이름이 한 줄인 카드에 가운데 빈칸이 생기지 않게) */
+html body #app .zeno-home-v10 .zeno-v10-open-rail{align-items:stretch!important}
+html body #app .zeno-home-v10 .zeno-v10-open-card{align-items:center!important}
+html body #app .zeno-home-v10 .zeno-v10-open-card .zeno-home-rail-copy{display:flex!important;flex-direction:column!important;justify-content:center!important}
+/* 맨 끝 '더 많은 병원 찾기' 카드가 다른 카드보다 높아지지 않게 줄 간격만 줄임 */
+html body #app .zeno-home-v10 .zeno-v10-open-more{gap:2px!important}
+html body #app .zeno-home-v10 .zeno-v10-open-more :is(strong,small,span){line-height:1.3!important}
+/* 병원 이름: 최대 두 줄, 어절 단위 줄바꿈, 섹션 제목보다 한 단계 작게 */
+html body #app .zeno-home-v10 .zeno-v10-open-card strong{min-height:0!important;font-size:13.5px!important;line-height:17px!important;word-break:keep-all!important;overflow-wrap:anywhere!important}
+</style>
 </head><body><div id="app" class="app"></div><script>
 'use strict';
 const APP_MODE='owner';
@@ -5562,6 +5590,10 @@ function zenoHomeOtherStatus(h,date=new Date()){
  if(clock.now<span.end&&zenoReceptionClosedAt(h,clock.weekday,clock.now))return '접수 마감';
  return '진료시간 외';
 }
+/* 홈 카드 병원 이름: 띄어쓰기 없는 긴 이름이 글자 중간에서 끊기지 않도록 '24시' 뒤와 '동물' 앞에 줄바꿈 후보를 둔다 (필요할 때만 줄이 바뀜) */
+function zenoRailName(name){
+ return e(String(name||'')).replace(/^(24시)(?=\S)/,'$1<wbr>').replace(/([^\s>])(?=동물)/g,'$1<wbr>');
+}
 function zenoHomeOperatingRail(){
  const list=zenoHomeAreaHospitals();
  // Show the specifically registered timetable for Story hospital in the home rail.
@@ -5572,7 +5604,7 @@ function zenoHomeOperatingRail(){
   const p=(Array.isArray(h.photos)?h.photos:[]).find(x=>x.approved===true&&x.url);
   const img=p?'<img src="'+e(p.url)+'" alt="" class="'+(p.isLogo||p.fit==='contain'?'is-logo':'')+'" loading="lazy">':'';
   const badge=h.name==='동물병원 이야기'?'진료 중 · 등록시간 기준':h.id==='pub034'?zenoArkReferenceOpenLabel(h):h.is24?'24시간 운영':zenoHomeOpenLabel(h);
-  return '<button type="button" class="zeno-v10-open-card" data-action="details" data-id="'+e(h.id)+'"><span class="zeno-v10-mini-photo">'+(img||zenoCareIcon('일반 진료'))+'</span><span class="zeno-home-rail-copy"><strong>'+e(h.name)+'</strong><small>'+e(String(h.region||'').split('·').pop().trim())+'</small><span class="zeno-v10-hospital-badges"><span class="zeno-v10-badge is-open">'+e(String(badge).replace(/\s*\(?등록시간 기준\)?/g,'').replace(/\s*·\s*$/,''))+'</span></span>'+zenoHomeEmergencyStatusNote(h)+'</span></button>';
+  return '<button type="button" class="zeno-v10-open-card" data-action="details" data-id="'+e(h.id)+'"><span class="zeno-v10-mini-photo">'+(img||zenoCareIcon('일반 진료'))+'</span><span class="zeno-home-rail-copy"><strong>'+zenoRailName(h.name)+'</strong><small>'+e(String(h.region||'').split('·').pop().trim())+'</small><span class="zeno-v10-hospital-badges"><span class="zeno-v10-badge is-open">'+e(String(badge).replace(/\s*\(?등록시간 기준\)?/g,'').replace(/\s*·\s*$/,''))+'</span></span>'+zenoHomeEmergencyStatusNote(h)+'</span></button>';
  }).join('');
  const more='<button type="button" class="zeno-v10-open-more" data-action="show-all-hospitals" aria-label="전체 병원 목록으로 이동"><strong>더 많은 병원 찾기</strong><small>운영시간 미확인 병원도 살펴보기</small><span aria-hidden="true">전체 병원 ›</span></button>';
  return '<section class="zeno-v10-open-section"><div class="care-list-heading"><h2>지금 진료 중인 병원</h2><button data-action="show-all-hospitals">전체 병원 ›</button></div><p class="zeno-open-note">운영시간 기준 · 실제 접수는 전화 확인</p>'
