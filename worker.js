@@ -1,3 +1,4 @@
+import {readGoogleReviews,reserveGoogleReviewRequest} from './google-reviews.js';
 /* UX 2026-11-08 [9]: keep installed owner PWA chrome consistent with HTML meta. */
 const OWNER_MANIFEST = "{\"name\":\"ZENO 보호자용\",\"short_name\":\"ZENO 보호자\",\"description\":\"청주 반려동물 의료 정보와 진료 연결 서비스\",\"id\":\"/zeno-owner-blue\",\"start_url\":\"/owner\",\"scope\":\"/owner\",\"display\":\"standalone\",\"orientation\":\"any\",\"background_color\":\"#F8FAFC\",\"theme_color\":\"#F8FAFC\",\"lang\":\"ko\",\"icons\":[{\"src\":\"/icon-owner-192-v3.png?v=6\",\"sizes\":\"192x192\",\"type\":\"image/png\",\"purpose\":\"any maskable\"},{\"src\":\"/icon-owner-512-v3.png?v=6\",\"sizes\":\"512x512\",\"type\":\"image/png\",\"purpose\":\"any maskable\"}]}";
 const HOSPITAL_MANIFEST = "{\"name\":\"ZENO 동물병원용\",\"short_name\":\"ZENO 병원\",\"description\":\"청주 반려동물 의료 정보와 진료 연결 서비스\",\"id\":\"/hospital\",\"start_url\":\"/hospital\",\"scope\":\"/hospital\",\"display\":\"standalone\",\"orientation\":\"any\",\"background_color\":\"#F7F8FA\",\"theme_color\":\"#F7F8FA\",\"lang\":\"ko\",\"icons\":[{\"src\":\"/icon-hospital-mint-192-v4.png\",\"sizes\":\"192x192\",\"type\":\"image/png\",\"purpose\":\"any maskable\"},{\"src\":\"/icon-hospital-mint-512-v5.png\",\"sizes\":\"512x512\",\"type\":\"image/png\",\"purpose\":\"any maskable\"}]}";
@@ -288,7 +289,7 @@ function zenoGeoHospitals(){
  if(end<0)throw new HttpError('병원 주소 목록을 읽지 못했습니다.',500);
  let parsed;
  try{parsed=JSON.parse(OWNER_HTML.slice(start+marker.length,end))}catch{throw new HttpError('병원 주소 목록을 읽지 못했습니다.',500)}
- const list=(Array.isArray(parsed)?parsed:[]).filter(h=>h&&typeof h.id==='string'&&typeof h.address==='string'&&h.address.trim()).map(h=>({id:h.id,address:h.address}));
+ const list=(Array.isArray(parsed)?parsed:[]).filter(h=>h&&typeof h.id==='string'&&typeof h.address==='string'&&h.address.trim()).map(h=>({id:h.id,address:h.address,name:h.name,phone:h.phone}));
  if(!list.length)throw new HttpError('병원 주소 목록이 비어 있습니다.',500);
  zenoGeoHospitalList=list;
  return list;
@@ -829,6 +830,15 @@ if(/^\/api\/questions\/[^/]+$/.test(path)&&method==='PATCH'){
   db.prepare('SELECT * FROM questions WHERE id=?').bind(id)
  ]);
  return json({...question(updated.results[0]),pointsAwarded:credit.meta.changes?POINT_POLICY.answerPoints:0});
+}
+if(path==='/api/public/google-hospital-reviews'&&method==='GET'){
+ const id=clean(url.searchParams.get('hospitalId'),20);
+ const h=zenoGeoHospitals().find(x=>x.id===id);
+ assert(h,'병원 정보가 올바르지 않습니다.',400);
+ if(!env.GOOGLE_PLACES_API_KEY)return json({status:'not_configured'});
+ if(!await reserveGoogleReviewRequest(db))return json({status:'limit'});
+ try{return json(await readGoogleReviews(h,env.GOOGLE_PLACES_API_KEY))}
+ catch{return json({status:'unavailable'})}
 }
 // Public visibility is an explicit opt-in; existing private reviews remain private.
 if(path==='/api/public/hospital-reviews'&&method==='GET'){

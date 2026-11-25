@@ -4914,6 +4914,38 @@ function zenoClinicalFallbackMarkup(h,services){
 }
 const zenoPublicReviewCache=new Map();
 const zenoPublicReviewPending=new Set();
+let zenoGoogleReviewView=null;
+function zenoGoogleSafeUrl(value){
+ try{const u=new URL(value);return u.protocol==='https:'&&(/(^|\.)google\.(com|co\.kr)$|(^|\.)googleusercontent\.com$|^maps\.app\.goo\.gl$/.test(u.hostname))?u.href:''}catch{return ''}
+}
+function zenoGoogleLink(url,label){const safe=zenoGoogleSafeUrl(url);return safe?'<a href="'+e(safe)+'" target="_blank" rel="noopener noreferrer">'+e(label)+'</a>':''}
+function zenoGoogleReviewMarkup(h){
+ const d=zenoGoogleReviewView?.id===h.id?zenoGoogleReviewView.data:null;
+ const button='<button type="button" class="btn secondary small" data-action="google-review-load" data-id="'+e(h.id)+'">'+(d?'다시 조회':'Google 후기 불러오기')+'</button>';
+ let inner=button;
+ if(d?.status==='loading')inner='<p role="status">Google 후기를 불러오는 중입니다.</p>';
+ if(d?.status==='not_configured')inner='<p>Google 후기 연동 설정이 아직 완료되지 않았습니다.</p>';
+ if(d?.status==='unmatched')inner='<p>Google에서 동일 병원을 확인하지 못했습니다.</p>'+button;
+ if(d?.status==='limit')inner='<p>오늘 Google 후기 조회 한도에 도달했습니다.</p>';
+ if(d?.status==='unavailable')inner='<p>Google 후기 조회가 일시적으로 어렵습니다.</p>'+button;
+ if(d?.status==='ok'){
+  const rows=(d.reviews||[]).map(r=>{
+   const a=r.author||{},pic=zenoGoogleSafeUrl(a.photoUri),author=zenoGoogleLink(a.uri,a.displayName)||e(a.displayName||'');
+   return '<article class="zeno-review-entry"><div><strong style="display:flex;align-items:center;gap:6px">'+(pic?'<img src="'+e(pic)+'" width="28" height="28" style="border-radius:50%;object-fit:cover" alt="" referrerpolicy="no-referrer">':'')+author+'</strong><small>'+e(r.date||'')+'</small></div><p><strong>'+e(r.rating||'')+' / 5점</strong></p><p>'+e(r.text||'')+'</p><small>'+zenoGoogleLink(r.uri,'Google Maps 원문')+(r.flagUri?' · '+zenoGoogleLink(r.flagUri,'신고'):'')+'</small></article>';
+  }).join('');
+  const attrib=(d.attributions||[]).map(a=>zenoGoogleLink(a.providerUri,a.provider)||e(a.provider||'')).join(' · ');
+  inner=(d.rating==null?'<p>공개 평점이 없습니다.</p>':'<div class="zeno-review-summary"><strong>'+e(Number(d.rating).toFixed(1))+' / 5점</strong> · 전체 평가 '+e(d.count)+'건</div>')+'<p>관련도순 · 최대 5개 · Google 후기는 ZENO 방문 인증과 별개입니다.</p>'+(rows||'<p>표시할 후기 원문이 없습니다.</p>')+(attrib?'<small>'+attrib+'</small>':'');
+ }
+ return '<div class="zeno-review-external-note" style="border:1px solid var(--line);padding:12px;border-radius:8px"><h3>외부 후기</h3><span translate="no" style="font-size:14px;font-weight:400;white-space:nowrap">Google Maps</span>'+inner+'</div>';
+}
+async function zenoLoadGoogleReviews(id){
+ if(!id||zenoGoogleReviewView?.id===id&&zenoGoogleReviewView.data?.status==='loading')return;
+ const view={id,data:{status:'loading'}};zenoGoogleReviewView=view;
+ const paint=()=>{if(zenoGoogleReviewView===view&&state.modal?.type==='details'&&state.modal.id===id){const p=document.getElementById('zeno-detail-reviews'),h=hospitalById(id);if(p&&h)p.innerHTML=zenoExternalReviewMarkup(h)}};
+ paint();
+ try{view.data=await api('GET','/api/public/google-hospital-reviews?hospitalId='+encodeURIComponent(id));if(!['ok','not_configured','limit','unmatched','unavailable'].includes(view.data?.status))throw Error('invalid response')}catch{view.data={status:'unavailable'}}
+ paint();
+}
 function zenoExternalReviewMarkup(h){
  const data=zenoPublicReviewCache.get(h.id);
  let list='<p role="status">방문 후기를 불러오는 중입니다.</p>';
@@ -4927,7 +4959,7 @@ function zenoExternalReviewMarkup(h){
  const own=state.ownerToken?(state.reviews||[]).filter(r=>ids.has(r.bookingId)):[];
  const controls=done.filter(b=>!own.some(r=>r.bookingId===b.id)).map(b=>'<button class="btn secondary small" data-action="review" data-id="'+e(b.id)+'">방문 인증 후기 작성</button>').join('');
  const manage=own.map(r=>'<article class="zeno-review-entry"><p>'+e(r.text||'')+'</p><div><button class="btn secondary small" data-action="review-visibility" data-id="'+e(r.id)+'" data-value="public">익명 공개</button><button class="btn secondary small" data-action="review-visibility" data-id="'+e(r.id)+'" data-value="private">공개 철회</button></div></article>').join('');
- return '<section class="zeno-review-sources" aria-label="방문 후기"><h3>ZENO 방문 인증 후기</h3>'+list+controls+(manage?'<h3>내 후기 관리</h3>'+manage:'')+'<div class="zeno-review-external-note"><h3>네이버 · 카카오 후기</h3><p>외부 방문 후기 데이터는 제공 권한이 없어 연동되지 않았습니다.</p></div></section>';
+ return '<section class="zeno-review-sources" aria-label="방문 후기"><h3>ZENO 방문 인증 후기</h3>'+list+controls+(manage?'<h3>내 후기 관리</h3>'+manage:'')+zenoGoogleReviewMarkup(h)+'</section>';
 }
 async function zenoLoadHospitalReviews(id,force=false){
  if(!id||zenoPublicReviewPending.has(id))return;
@@ -6869,7 +6901,7 @@ function openModal(type,id){
   state.modal={type,id,kind,service:chosen?.[0]||(h?.id==='soo'?'':(!state.specialty?choices[0]?.[0]:'')||''),step:'choose'};
  }else state.modal={type,id};
  render();
- if(type==='details'&&state.detailTab==='reviews')zenoLoadHospitalReviews(id,true);
+ if(type==='details'){zenoGoogleReviewView=null;if(state.detailTab==='reviews')zenoLoadHospitalReviews(id,true);}
  if(zenoDetailScrollY>0)window.scrollTo({left:0,top:zenoDetailScrollY,behavior:'instant'});
 }
 function zenoCloseModal(){
@@ -6945,6 +6977,7 @@ if(a==='vetqa-species'){const v=zenoVq();v.tab='all';v.species=val||'전체';zen
 if(a==='vetqa-mine'){const v=zenoVq();v.tab='mine';render();return}
 if(a==='vetqa-reload'){zenoVetqaLoad();return}
 if(a==='vetqa-delete'){if(!confirm('이 질문을 삭제할까요?'))return;try{await api('DELETE','/api/vetqa/'+encodeURIComponent(id));const v=zenoVq();v.openId=null;v.detail=null;toast('질문을 삭제했어요.');await zenoVetqaLoad()}catch(err){toast(err.message)}return}
+if(a==='google-review-load'){await zenoLoadGoogleReviews(id);return}
 if(a==='review-retry'){await zenoLoadHospitalReviews(id,true);return}
 if(a==='review-visibility'){const publish=el.dataset.value==='public';if(publish&&!confirm('후기 본문과 별점, 작성일이 익명으로 공개됩니다. 개인정보가 포함되어 있지 않은지 확인하셨나요?'))return;try{await api('POST','/api/reviews/visibility',{reviewId:id,public:publish});toast(publish?'후기를 공개했습니다.':'후기 공개를 철회했습니다.');await zenoLoadHospitalReviews(state.modal?.id,true)}catch(err){toast(err.message)}return}
 if(a==='detail-tab'){const dialog=el.closest('.modal'),selected=el.dataset.value;if(selected==='reviews'&&state.modal?.type==='details')zenoLoadHospitalReviews(state.modal.id,true);if(dialog){state.detailTab=selected;dialog.querySelectorAll('[data-detail-panel]').forEach(p=>{p.hidden=p.dataset.detailPanel!==selected});dialog.querySelectorAll('[data-action="detail-tab"]').forEach(b=>{const active=b.dataset.value===selected;b.classList.toggle('active',active);b.setAttribute('aria-selected',String(active))});const bar=dialog.querySelector('.zeno-detail-tabs');if(bar){const y=dialog.scrollTop+bar.getBoundingClientRect().top-dialog.getBoundingClientRect().top-54;dialog.scrollTop=Math.max(0,y);const tab=bar.querySelector('.zeno-detail-tab.active');if(tab){const x=tab.offsetLeft-bar.offsetLeft;bar.scrollLeft=Math.max(0,x-(bar.clientWidth-tab.offsetWidth)/2)}}}return}
