@@ -3356,6 +3356,27 @@ html body #app .zeno-search-page .zeno-search-card .zeno-card-actions .zeno-card
 :is(html.dark,html[data-theme="dark"]) body #app .zeno-search-page .zeno-search-card .zeno-resv-website{background:transparent;border-color:#4b6fa8;color:#8fb8f0}
 :is(html.dark,html[data-theme="dark"]) body #app .zeno-search-page .zeno-search-card .zeno-resv-phone,:is(html.dark,html[data-theme="dark"]) body #app .zeno-search-page .zeno-search-card .zeno-resv-walkin{background:#243040;color:#c9d3de}
 </style>
+<style id="zeno-search-resv-text-20261125">
+/* 2026-11-25 예약 줄을 글자 한 줄로: 라벨 배경·테두리 없이 '·'로 구분, 누를 수 있는 항목만 파란 글자 */
+html body #app .zeno-search-page .zeno-search-card .zeno-list-resv{align-items:baseline;gap:5px;margin-top:3px}
+/* 정보 줄이 짧은 카드에서 사진 높이 때문에 예약 줄 위에 생기던 빈칸 제거:
+   사진은 카드 왼쪽 위에 고정하고, 글 영역 높이는 글 기준으로. 버튼 줄이 사진과 겹치지 않도록 최소 높이 유지 */
+html body #app .zeno-search-page .zeno-search-card .directory-main{position:relative!important;min-height:64px}
+html body #app .zeno-search-page .zeno-search-card .directory-main>.zeno-thumb{position:absolute!important;top:0;left:0}
+html body #app .zeno-search-page .zeno-search-card .directory-main>.directory-text{grid-column:2!important}
+html body #app .zeno-search-page .zeno-search-card:has(.zeno-list-resv) .directory-main{min-height:42px}
+html body #app .zeno-search-page .zeno-search-card .zeno-list-resv-label{line-height:1.45;color:#6b7684}
+html body #app .zeno-search-page .zeno-search-card .zeno-list-resv-chips{display:block;min-width:0;gap:0;font-size:13px;line-height:1.45;color:#333d4b;word-break:keep-all}
+html body #app .zeno-search-page .zeno-search-card .zeno-list-resv-chip,
+html body #app .zeno-search-page .zeno-search-card .zeno-list-resv-chip.is-unverified{display:inline;white-space:nowrap;height:auto;padding:0;border:0;border-radius:0;background:none;font-size:13px;font-weight:500;color:#333d4b}
+html body #app .zeno-search-page .zeno-search-card .zeno-list-resv-chip.is-verified::after{content:none}
+html body #app .zeno-search-page .zeno-search-card a.zeno-list-resv-chip.is-link{color:#1b64da;font-weight:600}
+html body #app .zeno-search-page .zeno-search-card .zeno-list-resv-chips>*+*::before{content:'·';display:inline-block;margin:0 5px;color:#8b95a1;font-weight:400}
+html body #app .zeno-search-page .zeno-search-card .zeno-list-resv-policy{display:inline;height:auto;margin:0;font-size:13px;color:#6b7684}
+:is(html.dark,html[data-theme="dark"]) body #app .zeno-search-page .zeno-search-card .zeno-list-resv-chip{background:none;color:#d1d6db}
+:is(html.dark,html[data-theme="dark"]) body #app .zeno-search-page .zeno-search-card a.zeno-list-resv-chip.is-link{color:#8fb8f0}
+</style>
+
 
 </head><body><div id="app" class="app"></div><script>
 'use strict';
@@ -4904,9 +4925,9 @@ function zenoListReservation(h,eligible){
  if(!chips.length&&!policy)chips.push(chip('phone','예약 여부 전화 문의',tel,true));
  // 미확인 표시는 줄 끝에 한 번만: 이용자 제공 정보 > 확인 전 외부 링크 순. '예약 방법 확인 필요'를 라벨마다 반복하지 않는다.
  const pending=info.evidenceStatus==='reported'?'이용자 제공 · 확인 중':unverified?'링크 확인 중':'';
- return '<div class="zeno-list-resv"><span class="zeno-list-resv-label">예약</span><span class="zeno-list-resv-chips">'+chips.join('')
-  +(policy?'<span class="zeno-list-resv-policy">'+e(policy)+'</span>':'')
-  +(pending?'<span class="zeno-list-resv-pending">'+e(pending)+'</span>':'')+'</span></div>';
+ // 2026-11-25: 목록은 한 줄 글자로 간결하게. 확인 중 여부는 목록에 표시하지 않고(상세 화면 안내), 링크 표시는 data 속성으로만 남긴다.
+ return '<div class="zeno-list-resv"'+(pending?' data-pending="'+e(pending)+'"':'')+'><span class="zeno-list-resv-label">예약</span><span class="zeno-list-resv-chips">'+chips.join('')
+  +(policy?'<span class="zeno-list-resv-policy">'+e(policy)+'</span>':'')+'</span></div>';
 }
 function zenoSearchHospitalCard(h){
  const photo=(Array.isArray(h.photos)?h.photos:[]).find(p=>p&&p.approved===true&&p.url);
