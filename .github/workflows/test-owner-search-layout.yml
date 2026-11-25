@@ -52,7 +52,7 @@ jobs:
               });
             });
             console.log(JSON.stringify(measurements,null,2));
-            assert.ok(measurements.some(r=>r.name.includes('다옴')&&r.buttons.some(b=>b.label==='네이버 예약')));
+            assert.ok(await page.evaluate(()=>[...document.querySelectorAll('.zeno-search-card')].some(c=>c.querySelector('strong').textContent.includes('다옴')&&c.querySelector('.zeno-list-resv .zeno-resv-naver.is-link'))),'다옴 네이버 예약 라벨 링크 없음');
             assert.ok(measurements.some(r=>r.buttons.some(b=>b.label==='예약')));
             for(const row of measurements){
               for(const b of row.buttons){
@@ -62,12 +62,12 @@ jobs:
               }
             }
             await page.evaluate(()=>{state.query='다옴';render();});
-            await page.locator('.zeno-list-naver-book').first().waitFor();
+            await page.locator('.zeno-resv-naver.is-link').first().waitFor();
             const session=await page.context().newCDPSession(page);
             await session.send('DOM.enable');
             await session.send('CSS.enable');
             const doc=await session.send('DOM.getDocument');
-            const {nodeId}=await session.send('DOM.querySelector',{nodeId:doc.root.nodeId,selector:'.zeno-list-naver-book'});
+            const {nodeId}=await session.send('DOM.querySelector',{nodeId:doc.root.nodeId,selector:'.zeno-resv-naver.is-link'});
             const platform=await session.send('CSS.getPlatformFontsForNode',{nodeId});
             console.log('Naver button actual glyph fonts:',JSON.stringify(platform.fonts));
             assert.ok(platform.fonts.some(f=>f.isCustomFont&&/Pretendard/i.test(f.familyName)),'Naver button did not render with Pretendard');
