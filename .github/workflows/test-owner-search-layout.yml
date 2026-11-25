@@ -3,6 +3,7 @@ on:
   pull_request:
     paths:
       - 'owner.html'
+      - 'tests/owner-search-card.mjs'
       - '.github/workflows/test-owner-search-layout.yml'
 permissions:
   contents: read
@@ -75,6 +76,10 @@ jobs:
             assert.ok(font.loaded>0,'Pretendard web font could not load; screenshot font is not verified');
           } finally {await browser.close();}
           JS
+      - name: Full search card check (320/360/390/412px, light/dark, label links, partner booking)
+        env:
+          SCREENSHOT_DIR: screenshots
+        run: node tests/owner-search-card.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
