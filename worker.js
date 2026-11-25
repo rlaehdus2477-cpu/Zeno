@@ -830,7 +830,27 @@ if(/^\/api\/questions\/[^/]+$/.test(path)&&method==='PATCH'){
  ]);
  return json({...question(updated.results[0]),pointsAwarded:credit.meta.changes?POINT_POLICY.answerPoints:0});
 }
-if(path==='/api/reviews'&&method==='POST'){const sess=await checkOwner(request,env);let ownerId=sess.ownerId;let row=await db.prepare('SELECT * FROM bookings WHERE id=?').bind(clean(data.bookingId,90)).first();assert(row&&row.owner_id===ownerId&&row.status==='done','완료된 본인 예약에만 후기를 작성할 수 있습니다.',403);let stars=Number(data.stars),reviewText=clean(data.text,800);assert(Number.isInteger(stars)&&stars>=1&&stars<=5&&reviewText.length>=10,'후기 내용과 별점을 확인해 주세요.');const r={id:crypto.randomUUID(),ownerId:row.owner_id,bookingId:row.id,hospitalId:row.hospital_id,stars,text:reviewText,points:100,createdAt:now()};try{await db.prepare('INSERT INTO reviews(id,owner_id,booking_id,hospital_id,stars,text,points,created_at) VALUES(?,?,?,?,?,?,?,?)').bind(r.id,r.ownerId,r.bookingId,r.hospitalId,r.stars,r.text,r.points,r.createdAt).run()}catch{throw new HttpError('이미 후기를 작성한 예약입니다.',409)}return json(r,201)}
+// Public visibility is an explicit opt-in; existing private reviews remain private.
+if(path==='/api/public/hospital-reviews'&&method==='GET'){
+ const id=clean(url.searchParams.get('hospitalId'),20);
+ assert(/^(soo|naeum|pub\d{3})$/.test(id),'병원 정보가 올바르지 않습니다.');
+ await db.prepare('CREATE TABLE IF NOT EXISTS review_publications (review_id TEXT PRIMARY KEY, published_at TEXT NOT NULL)').run();
+ const summary=await db.prepare('SELECT COUNT(*) AS count, AVG(r.stars) AS average FROM reviews r JOIN review_publications p ON p.review_id=r.id JOIN bookings b ON b.id=r.booking_id AND b.hospital_id=r.hospital_id AND b.owner_id=r.owner_id WHERE r.hospital_id=? AND b.status=\'done\'').bind(id).first();
+ const rows=await db.prepare('SELECT r.stars,r.text,substr(r.created_at,1,10) AS date FROM reviews r JOIN review_publications p ON p.review_id=r.id JOIN bookings b ON b.id=r.booking_id AND b.hospital_id=r.hospital_id AND b.owner_id=r.owner_id WHERE r.hospital_id=? AND b.status=\'done\' ORDER BY r.created_at DESC,r.id DESC LIMIT 50').bind(id).all();
+ return json({count:Number(summary?.count||0),average:summary?.average==null?null:Number(summary.average),reviews:(rows.results||[]).map(r=>({stars:r.stars,text:r.text,date:r.date}))});
+}
+if(path==='/api/reviews/visibility'&&method==='POST'){
+ const sess=await checkOwner(request,env);
+ const id=clean(data.reviewId,90);
+ const r=await db.prepare('SELECT r.id FROM reviews r JOIN bookings b ON b.id=r.booking_id AND b.owner_id=r.owner_id AND b.hospital_id=r.hospital_id WHERE r.id=? AND r.owner_id=? AND b.status=\'done\'').bind(id,sess.ownerId).first();
+ assert(r,'본인의 방문 후기만 변경할 수 있습니다.',403);
+ assert(typeof data.public==='boolean','공개 여부를 선택해 주세요.');
+ await db.prepare('CREATE TABLE IF NOT EXISTS review_publications (review_id TEXT PRIMARY KEY, published_at TEXT NOT NULL)').run();
+ if(data.public)await db.prepare('INSERT OR IGNORE INTO review_publications(review_id,published_at) VALUES(?,?)').bind(id,now()).run();
+ else await db.prepare('DELETE FROM review_publications WHERE review_id=?').bind(id).run();
+ return json({public:data.public});
+}
+if(path==='/api/reviews'&&method==='POST'){const sess=await checkOwner(request,env);let ownerId=sess.ownerId;let row=await db.prepare('SELECT * FROM bookings WHERE id=?').bind(clean(data.bookingId,90)).first();assert(row&&row.owner_id===ownerId&&row.status==='done','완료된 본인 예약에만 후기를 작성할 수 있습니다.',403);let stars=Number(data.stars),reviewText=clean(data.text,800);assert(Number.isInteger(stars)&&stars>=1&&stars<=5&&reviewText.length>=10,'후기 내용과 별점을 확인해 주세요.');const r={id:crypto.randomUUID(),ownerId:row.owner_id,bookingId:row.id,hospitalId:row.hospital_id,stars,text:reviewText,points:100,createdAt:now()};try{const stmt=db.prepare('INSERT INTO reviews(id,owner_id,booking_id,hospital_id,stars,text,points,created_at) VALUES(?,?,?,?,?,?,?,?)').bind(r.id,r.ownerId,r.bookingId,r.hospitalId,r.stars,r.text,r.points,r.createdAt);if(data.public===true){await db.prepare('CREATE TABLE IF NOT EXISTS review_publications (review_id TEXT PRIMARY KEY, published_at TEXT NOT NULL)').run();await db.batch([stmt,db.prepare('INSERT INTO review_publications(review_id,published_at) VALUES(?,?)').bind(r.id,r.createdAt)])}else await stmt.run()}catch{throw new HttpError('이미 후기를 작성한 예약입니다.',409)}return json(r,201)}
 return fail('해당 기능을 찾을 수 없습니다.',404)
 }
 export default{async fetch(request,env){try{return await handler(request,env)}catch(err){if(!(err instanceof HttpError))console.error('ZENO ERROR',err);return fail(err instanceof HttpError?err.message:'서버 오류가 발생했습니다. D1 테이블과 서버 설정을 확인하세요.',err instanceof HttpError?err.status:500)}}};

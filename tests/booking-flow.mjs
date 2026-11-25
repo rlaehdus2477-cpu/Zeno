@@ -236,6 +236,23 @@ async function main() {
     expect(ok.status === 201, `완료 후 후기 → ${ok.status} ${JSON.stringify(ok.data)}`);
     const again = await api('POST', '/api/reviews', {token: A, body: review});
     expect(again.status === 409, `두 번째 후기 → ${again.status} (409여야 함)`);
+    const url='/api/public/hospital-reviews?hospitalId=soo';
+    const isMine=x=>x.data?.reviews?.some(r=>r.text===review.text);
+    const initial=await api('GET',url);
+    expect(initial.status===200&&!isMine(initial),'공개 동의 전 후기가 노출됨');
+    const denied=await api('POST','/api/reviews/visibility',{token:B,body:{reviewId:ok.data.id,public:true}});
+    expect(denied.status===403,'다른 사람의 후기 공개 가능');
+    const published=await api('POST','/api/reviews/visibility',{token:A,body:{reviewId:ok.data.id,public:true}});
+    expect(published.status===200,'공개 동의 실패');
+    const listed=await api('GET',url);
+    expect(isMine(listed),'다른 보호자가 볼 수 있는 후기 누락');
+    const found=listed.data.reviews.find(r=>r.text===review.text);
+    expect(Object.keys(found).sort().join(',')==='date,stars,text','비공개 식별정보 노출');
+    const other=await api('GET','/api/public/hospital-reviews?hospitalId=naeum');
+    expect(other.status===200&&!isMine(other),'다른 병원에 후기 노출');
+    const removed=await api('POST','/api/reviews/visibility',{token:A,body:{reviewId:ok.data.id,public:false}});
+    expect(removed.status===200&&!isMine(await api('GET',url)),'공개 철회 실패');
+
   });
 }
 
