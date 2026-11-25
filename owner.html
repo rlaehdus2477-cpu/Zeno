@@ -3265,10 +3265,8 @@ html body #app .zeno-channel-phone,html body #app .zeno-channel-walkin{backgroun
 </style>
 <style id="zeno-search-card-cleanup-20261125">
 /* 꽉 찬 색 버튼은 ZENO 예약 하나만. 네이버 예약은 테두리형(초록은 예약 확정·성공 색과 겹치지 않게). */
-html body #app .zeno-search-page .zeno-search-card .zeno-card-actions a.zeno-channel-naver,
-html body #app .zeno-resdir-action.zeno-channel-naver{background:#fff!important;border:1px solid #b9dcc6!important;color:#03733a!important}
-:is(html.dark,html[data-theme="dark"]) body #app .zeno-search-page .zeno-search-card .zeno-card-actions a.zeno-channel-naver,
-:is(html.dark,html[data-theme="dark"]) body #app .zeno-resdir-action.zeno-channel-naver{background:transparent!important;border-color:#2f5d43!important;color:#6fd39a!important}
+html body #app .zeno-search-page .zeno-search-card .zeno-card-actions a.zeno-channel-naver{background:#fff!important;border:1px solid #b9dcc6!important;color:#03733a!important}
+:is(html.dark,html[data-theme="dark"]) body #app .zeno-search-page .zeno-search-card .zeno-card-actions a.zeno-channel-naver{background:transparent!important;border-color:#2f5d43!important;color:#6fd39a!important}
 #app .zeno-search-page .zeno-search-card .zeno-search-reservation-note{display:block;font-size:13px;line-height:1.45;color:#6b7684;word-break:keep-all}
 :is(html.dark,html[data-theme="dark"]) #app .zeno-search-page .zeno-search-card .zeno-search-reservation-note{color:#9aa6b2}
 #app .zeno-search-page .zeno-search-card{row-gap:8px!important}
@@ -3278,44 +3276,98 @@ html body .zeno-search-page>.zeno-status-legend{margin:2px 20px 4px!important}
 </style>
 <style id="zeno-reservation-directory-20261125">
 #app .zeno-resdir-entry{width:100%;display:flex;justify-content:space-between;align-items:center;padding:10px 12px;margin-top:8px;background:#f8fafc;color:#2458a4;border:1px solid #dbe5f0;border-radius:7px;font-weight:650;font-size:14px;cursor:pointer}
-.zeno-resdir{max-width:840px;margin:auto;padding:12px 12px 110px}
-.zeno-resdir-back{background:none;border:0;color:#2563eb;font-size:14px;font-weight:650;padding:8px 0;cursor:pointer}
-.zeno-resdir-note{font-size:13px;color:#64748b;line-height:1.5;margin:6px 0 12px}
-.zeno-resdir-tabs{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 18px}
-.zeno-resdir-tabs button{background:#fff;border:1px solid #dbe3ed;color:#475569;border-radius:6px;padding:8px 10px;font-size:13px;cursor:pointer}
-.zeno-resdir-tabs button.active{background:#2563eb;color:#fff;border-color:#2563eb}
-.zeno-resdir-tabs b{font-weight:650}
-.zeno-resdir h2{font-size:17px;margin:0 0 10px;color:#172b45}
-.zeno-resdir-list{display:grid;gap:8px}
-.zeno-resdir-card{background:#fff;border:1px solid #dbe3ed;border-radius:8px;padding:12px;min-width:0}
-.zeno-resdir-name{display:block;text-align:left;background:none;border:0;width:100%;padding:0;cursor:pointer;color:#172b45;min-width:0}
-.zeno-resdir-name strong{display:block;font-size:16px;line-height:1.4;word-break:keep-all}
-.zeno-resdir-name small{display:block;font-size:12px;color:#64748b;margin:2px 0 5px}
-.zeno-resdir-actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
-.zeno-resdir-action{display:inline-flex;align-items:center;justify-content:center;min-height:38px;padding:0 12px;border:1px solid #dbe3ed;background:#fff;border-radius:6px;font-size:13px;font-weight:650;color:#475569;text-decoration:none;cursor:pointer}
-#app .zeno-resdir{box-sizing:border-box;width:100%;padding:6px 12px 100px;font-family:var(--zeno-ui-font)}
-#app .zeno-resdir-back{font-size:13px;padding:6px 0}
-#app .zeno-resdir-note{font-size:12px;line-height:1.45;margin:3px 0 8px;word-break:keep-all}
-#app .zeno-resdir-tabs{gap:4px;margin:8px 0 12px;min-width:0}
-#app .zeno-resdir-tabs button{box-sizing:border-box;padding:0 8px;min-height:32px;font-size:12px;white-space:nowrap;font-family:var(--zeno-ui-font)}
-#app .zeno-resdir h2{font-size:14px;font-weight:650;margin:0 0 8px}
-#app .zeno-resdir-list{gap:0;border:1px solid #e4e8ef;border-radius:8px;background:#fff;overflow:hidden}
-#app .zeno-resdir-card{box-sizing:border-box;border:0;border-bottom:1px solid #e8edf2;border-radius:0;padding:11px 12px}
-#app .zeno-resdir-card:last-child{border-bottom:0}
-#app .zeno-resdir-name{display:flex;align-items:center;justify-content:space-between;gap:8px;font-family:var(--zeno-ui-font)}
-#app .zeno-resdir-name>span:first-child{min-width:0}
-#app .zeno-resdir-name strong{font-size:15px;font-weight:650;overflow-wrap:anywhere}
-#app .zeno-resdir-name small{margin:2px 0 0}
-#app .zeno-resdir-chevron{font-size:20px;color:#8b95a1;flex:none}
-#app .zeno-resdir-actions{align-items:center;gap:5px;margin-top:7px;min-width:0}
-#app .zeno-resdir-action{box-sizing:border-box;min-height:32px;padding:0 9px;font-size:12px;font-weight:600;white-space:nowrap;font-family:var(--zeno-ui-font)}
-#app .zeno-resdir-static{display:inline-flex;align-items:center;min-height:28px;font-size:12px;color:#6b7684;white-space:nowrap}
-#app .zeno-resdir-policy{font-size:12px;line-height:1.4;color:#6b7684;margin:5px 0 0}
-:is(html.dark,html[data-theme="dark"]) #app .zeno-resdir-list,:is(html.dark,html[data-theme="dark"]) #app .zeno-resdir-card{background:#182230;border-color:#344254}
-:is(html.dark,html[data-theme="dark"]) #app .zeno-resdir-name,:is(html.dark,html[data-theme="dark"]) #app .zeno-resdir h2{color:#edf3fb}
-:is(html.dark,html[data-theme="dark"]) #app .zeno-resdir-note,:is(html.dark,html[data-theme="dark"]) #app .zeno-resdir-name small,:is(html.dark,html[data-theme="dark"]) #app .zeno-resdir-policy,:is(html.dark,html[data-theme="dark"]) #app .zeno-resdir-static{color:#a7b2be}
-:is(html.dark,html[data-theme="dark"]) #app .zeno-resdir-tabs button:not(.active),:is(html.dark,html[data-theme="dark"]) #app .zeno-resdir-action:not(.zeno-channel-zeno):not(.zeno-channel-naver){background:#202d3c;border-color:#415062;color:#dbe5f0}
-:is(html.dark,html[data-theme="dark"]) #app .zeno-resdir-back{color:#8fb8f0}
+#app:has(.zeno-resdir){
+ --rd-surface:#fff;--rd-text:#191f28;--rd-muted:#536171;--rd-line:#e3e8ee;
+ --rd-soft:#f5f7fa;--rd-accent:#185ab2;--rd-selected:#edf4ff;--rd-selected-line:#95b7e6;
+ --rd-naver:#08733e;--rd-naver-line:#b9d9c7;--rd-logo-filter:none;
+}
+:is(html.dark,html[data-theme="dark"]) #app:has(.zeno-resdir){
+ --rd-surface:#17202b;--rd-text:#edf2f7;--rd-muted:#afbac7;--rd-line:#394655;
+ --rd-soft:#222f3e;--rd-accent:#a5caff;--rd-selected:#203854;--rd-selected-line:#54779f;
+ --rd-naver:#7cd9a3;--rd-naver-line:#416950;--rd-logo-filter:brightness(0) invert(1);
+}
+@media(prefers-color-scheme:dark){
+ html:not(.light):not([data-theme="light"]) #app:has(.zeno-resdir){
+  --rd-surface:#17202b;--rd-text:#edf2f7;--rd-muted:#afbac7;--rd-line:#394655;
+  --rd-soft:#222f3e;--rd-accent:#a5caff;--rd-selected:#203854;--rd-selected-line:#54779f;
+  --rd-naver:#7cd9a3;--rd-naver-line:#416950;--rd-logo-filter:brightness(0) invert(1);
+ }
+}
+@media(max-width:750px){
+ #app main.content:has(> .zeno-resdir){padding-inline:0!important;padding-top:0!important;background:var(--rd-surface)}
+ #app main.content:has(> .zeno-resdir)>.banner{margin:8px 16px;width:auto}
+ #app:has(.zeno-resdir)>.mobilebar{background:var(--rd-surface)!important;border-color:var(--rd-line)!important}
+ #app:has(.zeno-resdir)>.mobilebar button[data-nav]{color:var(--rd-muted)!important}
+ #app:has(.zeno-resdir)>.mobilebar button[aria-current="page"],#app:has(.zeno-resdir)>.mobilebar button[aria-current="page"] .ico{color:var(--rd-accent)!important}
+}
+.zeno-resdir{
+ --rd-gutter:clamp(14px,4vw,20px);
+ container-type:inline-size;box-sizing:border-box;width:100%;max-width:840px;margin:0 auto;
+ background:var(--rd-surface);color:var(--rd-text);font-family:var(--zeno-ui-font);
+}
+.zeno-resdir-header{
+ display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:6px;
+ min-height:56px;padding:0 var(--rd-gutter);border-bottom:1px solid var(--rd-line);
+}
+.zeno-resdir-back{
+ display:inline-flex;align-items:center;justify-self:start;gap:5px;min-height:44px;max-width:100%;
+ padding:0;border:0;background:transparent;color:var(--rd-text);cursor:pointer;
+}
+.zeno-resdir-back .zeno-global-brand{width:54px;min-width:0;height:20px;object-fit:contain;filter:var(--rd-logo-filter)}
+.zeno-resdir-arrow{display:block;flex:none;width:9px;height:9px;border:solid currentColor;border-width:0 1.6px 1.6px 0;transform:rotate(-45deg)}
+.zeno-resdir-back .zeno-resdir-arrow{margin-inline:3px 1px;transform:rotate(135deg)}
+.zeno-resdir-header h1{margin:0;font-size:1.125rem;font-weight:700;line-height:1.35;text-align:center;word-break:keep-all}
+.zeno-resdir-tabs{padding:10px var(--rd-gutter) 14px;border-bottom:1px solid var(--rd-line)}
+.zeno-resdir-tools{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
+.zeno-resdir-note{margin:0;font-size:.75rem;line-height:1.45;color:var(--rd-muted);word-break:keep-all}
+.zeno-resdir-tools .zeno-resdir-note{text-align:right}
+.zeno-resdir-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.zeno-resdir-tabs button{
+ display:flex;align-items:center;justify-content:space-between;gap:4px;min-width:0;min-height:36px;
+ padding:4px 7px;background:var(--rd-soft);color:var(--rd-text);border:1px solid transparent;
+ border-radius:6px;font-size:.8125rem;font-weight:500;line-height:1.35;text-align:start;word-break:keep-all;cursor:pointer;
+}
+.zeno-resdir-tabs b{flex:none;color:var(--rd-muted);font-size:.75rem;font-weight:650;font-variant-numeric:tabular-nums}
+.zeno-resdir-tools button{flex:none;justify-content:center;gap:6px;min-height:32px;padding-inline:10px}
+.zeno-resdir-tabs [aria-pressed="true"]{background:var(--rd-selected);border-color:var(--rd-selected-line);color:var(--rd-accent);font-weight:650}
+.zeno-resdir-tabs [aria-pressed="true"] b{color:inherit}
+.zeno-resdir-results{padding:14px var(--rd-gutter) 0}
+.zeno-resdir-results h2{margin:0;font-size:.9375rem;font-weight:650;line-height:1.4;color:var(--rd-text)}
+.zeno-resdir-results h2 span{color:var(--rd-accent);font-variant-numeric:tabular-nums}
+.zeno-resdir-results>.zeno-resdir-note{margin-top:4px}
+.zeno-resdir-list{margin-top:4px}
+.zeno-resdir-list>.zeno-resdir-note{padding:16px 0}
+.zeno-resdir-card{min-width:0;padding:10px 0;border-bottom:1px solid var(--rd-line)}
+.zeno-resdir-name{
+ display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;min-height:40px;
+ padding:0;border:0;background:transparent;color:var(--rd-text);text-align:start;cursor:pointer;
+}
+.zeno-resdir-name>span:first-child{min-width:0}
+.zeno-resdir-name strong{display:block;font-size:1rem;font-weight:650;line-height:1.35;word-break:keep-all;overflow-wrap:anywhere}
+.zeno-resdir-name small{display:flex;align-items:baseline;flex-wrap:wrap;gap:2px 7px;margin-top:2px;font-size:.75rem;line-height:1.45;color:var(--rd-muted)}
+.zeno-resdir-name small span+span{padding-inline-start:7px;border-inline-start:1px solid var(--rd-line)}
+.zeno-resdir-name .zeno-resdir-arrow{margin-right:3px;color:var(--rd-muted)}
+.zeno-resdir-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:stretch;gap:6px;margin-top:7px}
+.zeno-resdir-actions>:only-child{grid-column:1/-1}
+.zeno-resdir-action{
+ box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;min-width:0;min-height:40px;
+ padding:6px 8px;border:1px solid var(--rd-line);border-radius:6px;background:var(--rd-surface);color:var(--rd-text);
+ font:600 .8125rem/1.35 var(--zeno-ui-font);text-decoration:none;word-break:keep-all;cursor:pointer;
+}
+html body #app .zeno-resdir .zeno-channel-naver{background:var(--rd-surface)!important;border-color:var(--rd-naver-line)!important;color:var(--rd-naver)!important}
+html body #app .zeno-resdir .zeno-channel-website{background:var(--rd-surface)!important;border-color:var(--rd-selected-line)!important;color:var(--rd-accent)!important}
+.zeno-resdir-static{align-self:center;font-size:.8125rem;line-height:1.4;color:var(--rd-muted);word-break:keep-all}
+.zeno-resdir :is(button,a):focus-visible{outline:2px solid var(--rd-accent);outline-offset:-2px}
+@container (max-width:22rem){
+ .zeno-resdir-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@container (min-width:38rem){
+ .zeno-resdir-card{display:grid;grid-template-columns:minmax(0,1fr) minmax(210px,36%);align-items:center;gap:20px}
+ .zeno-resdir-actions{margin:0}
+}
+@container (min-width:44rem){
+ .zeno-resdir-grid{grid-template-columns:repeat(6,minmax(0,1fr))}
+}
 </style>
 
 <style id="zeno-owner-search-list-20261125">
@@ -3964,9 +4016,10 @@ function nav(){
  const menu=APP_MODE==='hospital'?
  [['bookings','예약 관리'],['emergency','진료 상태'],['qa','문의 답변'],['more','병원 정보']]:
  [['home','홈'],['search','병원 찾기'],['vetqa','수의사 Q&A'],['emergency','응급 진료'],['pets','내 아이'],['bookings','내 예약'],['qa','진료 전 질문'],/* CHANGED: unreleased points navigation hidden. */['prices','진료비 비교'],['more','더 보기']];
+ const ownerSection=state.page==='reservation-directory'?'search':state.page;
  const item=(m,mobile=false)=>APP_MODE==='hospital'?
  '<button class="'+(mobile?'':'navlink ')+(state.hTab===m[0]?'active':'')+'" data-action="h-tab" data-value="'+e(m[0])+'"><span class="ico">'+zenoNavIcon(m[0])+'</span><b>'+e(m[1])+'</b></button>':
- '<button class="'+(mobile?'':'navlink ')+(state.page===m[0]?'active':'')+'" data-nav="'+e(m[0])+'"'+(state.page===m[0]?' aria-current="page"':'')+'><span class="ico">'+zenoTabIcon(m[0],state.page===m[0])+'</span><b>'+e(mobile&&m[0]==='vetqa'?'Q&A':m[1])+'</b></button>';
+ '<button class="'+(mobile?'':'navlink ')+(ownerSection===m[0]?'active':'')+'" data-nav="'+e(m[0])+'"'+(ownerSection===m[0]?' aria-current="page"':'')+'><span class="ico">'+zenoTabIcon(m[0])+'</span><b>'+e(mobile&&m[0]==='vetqa'?'Q&A':m[1])+'</b></button>';
  return '<aside class="sidebar"><div class="brand"><img class="original-logo" alt="ZENO" src="/brand-wordmark-v4.webp"></div>'
  +'<p class="side-caption">'+(APP_MODE==='hospital'?'병원 운영':'보호자 서비스')+'</p><nav>'+menu.map(m=>item(m)).join('')+'</nav>'
  +'<div class="sidelow"><strong>ZENO</strong>'+(APP_MODE==='owner'?state.ownerToken?'<button class="btn secondary small full" data-action="owner-logout">로그아웃</button>':'<button class="btn secondary small full" data-nav="login">로그인</button>':'')+'</div></aside>'
@@ -5433,10 +5486,29 @@ function zenoReservationDirectory(){
   const policies={required:'사전 예약 필수',recommended:'사전 예약 권장',partial:'일부 진료 예약제'};
   const policy=Object.prototype.hasOwnProperty.call(policies,info.policy)?policies[info.policy]:'';
   const pending=info.evidenceStatus==='reported'?'이용자 제공 · 확인 중':((n&&!zenoListConfirmedNaverUrl(h))||(w&&info.officialLinkVerified!==true))?'링크 확인 중':'';
-  const note=[policy,pending].filter(Boolean).join(' · ');
-  return '<article class="zeno-resdir-card"><button class="zeno-resdir-name" type="button" data-action="details" data-id="'+e(h.id)+'" aria-label="'+e(h.name+' 상세 정보')+'"><span><strong>'+e(h.name)+'</strong><small>'+e(h.region||'')+'</small></span><span class="zeno-resdir-chevron" aria-hidden="true">›</span></button><div class="zeno-resdir-actions">'+actions.join('')+'</div>'+(note?'<p class="zeno-resdir-policy">'+e(note)+'</p>':'')+'</article>';
+  const meta=[h.region,policy,pending].filter(Boolean).map(label=>'<span>'+e(label)+'</span>').join('');
+  const metaId='zeno-resdir-meta-'+e(h.id);
+  return '<article class="zeno-resdir-card">'
+   +'<button class="zeno-resdir-name" type="button" data-action="details" data-id="'+e(h.id)+'" aria-label="'+e(h.name+' 상세 정보')+'"'+(meta?' aria-describedby="'+metaId+'"':'')+'>'
+   +'<span><strong>'+e(h.name)+'</strong>'+(meta?'<small id="'+metaId+'">'+meta+'</small>':'')+'</span>'
+   +'<span class="zeno-resdir-arrow" aria-hidden="true"></span></button>'
+   +'<div class="zeno-resdir-actions">'+actions.join('')+'</div></article>';
  };
- return '<header class="zeno-search-topbar">'+zenoBrandLogo()+'<h1>예약 방법별 병원</h1></header><section class="zeno-resdir"><button type="button" class="zeno-resdir-back" data-nav="search">‹ 병원 찾기</button><p class="zeno-resdir-note">예약 방법별로 병원을 찾으세요. 중복 집계될 수 있습니다.</p><div class="zeno-resdir-tabs" role="group" aria-label="예약 방법 선택">'+ZENO_RES_DIRECTORY_TABS.map(([id,label])=>'<button type="button" data-action="res-directory-tab" data-value="'+id+'" aria-pressed="'+String(tab===id)+'" class="'+(tab===id?'active':'')+'">'+e(label)+' <b>'+count(id)+'</b></button>').join('')+'</div><h2 aria-live="polite">'+e(ZENO_RES_DIRECTORY_TABS.find(x=>x[0]===tab)[1])+' '+picked.length+'곳</h2>'+(tab==='walkin'?'<p class="zeno-resdir-note">예약 없이 방문할 수 있으나 즉시 진료를 보장하지는 않습니다.</p>':'')+'<div class="zeno-resdir-list">'+(picked.map(card).join('')||'<p class="zeno-resdir-note">해당하는 병원이 없습니다.</p>')+'</div></section>';
+ const filterButton=([id,label])=>{
+  const total=count(id);
+  return '<button type="button" data-action="res-directory-tab" data-value="'+id+'" aria-pressed="'+String(tab===id)+'" aria-label="'+e(label+' '+total+'곳')+'">'
+   +'<span>'+e(label)+'</span> <b>'+total+'</b></button>';
+ };
+ const selectedLabel=ZENO_RES_DIRECTORY_TABS.find(([id])=>id===tab)[1];
+ return '<section class="zeno-resdir" aria-labelledby="zeno-resdir-title"><header class="zeno-resdir-header">'
+  +'<button type="button" class="zeno-resdir-back" data-nav="search" aria-label="병원 찾기로 돌아가기"><span class="zeno-resdir-arrow" aria-hidden="true"></span>'+zenoBrandLogo()+'</button>'
+  +'<h1 id="zeno-resdir-title">예약 방법별 병원</h1></header>'
+  +'<div class="zeno-resdir-tabs" role="group" aria-label="예약 방법 선택"><div class="zeno-resdir-tools">'
+  +filterButton(ZENO_RES_DIRECTORY_TABS[0])+'<p class="zeno-resdir-note">한 병원이 여러 방법에 포함될 수 있어요.</p></div>'
+  +'<div class="zeno-resdir-grid">'+ZENO_RES_DIRECTORY_TABS.slice(1).map(filterButton).join('')+'</div></div>'
+  +'<div class="zeno-resdir-results"><h2 aria-live="polite">'+e(selectedLabel)+' <span>'+picked.length+'곳</span></h2>'
+  +(tab==='walkin'?'<p class="zeno-resdir-note">예약 없이 방문할 수 있으나 즉시 진료를 보장하지는 않습니다.</p>':'')
+  +'<div class="zeno-resdir-list">'+(picked.map(card).join('')||'<p class="zeno-resdir-note">해당하는 병원이 없습니다.</p>')+'</div></div></section>';
 }
 function searchPage(){
  const results=filteredHospitals(),fs=zenoActiveFilters();
@@ -6658,7 +6730,13 @@ if(a.startsWith('zeno-intake-')){
  return;
 }
 
-if(a==='res-directory-tab'){if(ZENO_RES_DIRECTORY_TABS.some(x=>x[0]===val)){state.resDirectoryTab=val;window.scrollTo({top:0,behavior:'instant'});render()}return}
+if(a==='res-directory-tab'){
+ if(ZENO_RES_DIRECTORY_TABS.some(([id])=>id===val)){
+  state.resDirectoryTab=val;window.scrollTo({top:0,behavior:'instant'});render();
+  document.querySelector('.zeno-resdir-tabs [aria-pressed="true"]')?.focus({preventScroll:true});
+ }
+ return;
+}
 if(a==='vetqa-ask'){if(!state.ownerToken){toast('질문하려면 로그인해 주세요.');state.pendingPage='vetqa';navTo('login');return}const v=zenoVq();v.composing=true;v.openId=null;if(state.page!=='vetqa')navTo('vetqa');else render();setTimeout(()=>document.getElementById('vq-species')?.focus(),0);return}
 if(a==='vetqa-cancel'){const v=zenoVq();v.composing=false;v.draft={};render();return}
 if(a==='vetqa-open'){zenoVetqaOpen(id);return}
