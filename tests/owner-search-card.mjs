@@ -436,7 +436,13 @@ for(const width of [320,360,390,412]){
   assert.ok((await review.innerText()).includes('공개 후기 <img src=x>'));
   assert.equal(await review.locator('article img').count(),0,'후기 HTML 이스케이프 실패');
   assert.ok((await review.innerText()).includes('두 번째 보호자 후기'));
-  assert.ok((await review.innerText()).includes('외부 방문 후기 데이터는 제공 권한이 없어 연동되지 않았습니다.'));
+  assert.ok((await review.innerText()).includes('Google Maps'));
+  assert.ok(await review.locator('[data-action="google-review-load"]').isVisible());
+  await page.evaluate(()=>{const id=state.modal.id;zenoGoogleReviewView={id,data:{status:'ok',rating:4.2,count:9,reviews:[{rating:4,text:'Google test <img src=x>',date:'1일 전',author:{displayName:'테스트 작성자'},uri:'https://www.google.com/maps/'}]}};document.getElementById('zeno-detail-reviews').innerHTML=zenoExternalReviewMarkup(hospitalById(id));});
+  assert.ok((await review.innerText()).includes('Google test <img src=x>'));
+  assert.ok((await review.innerText()).includes('전체 평가 9건'));
+  assert.equal(await review.locator('a').count(),1,'Google individual review source link');
+  assert.equal(await review.locator('article img').count(),0,'Google 후기 HTML 이스케이프 실패');
   assert.ok(await review.evaluate(el=>el.scrollWidth<=el.clientWidth+1),'후기 탭 가로 넘침');
 
   await page.evaluate(()=>{state.modal=null;state.page='prices';state.priceCategory='전체 병원';render();});

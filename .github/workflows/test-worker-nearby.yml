@@ -4,6 +4,8 @@ on:
   pull_request:
     paths:
       - "worker.js"
+      - "google-reviews.js"
+      - "tests/google-reviews.mjs"
       - "owner.html"
       - "tests/test-worker-nearby-coordinates.mjs"
       - "tests/zeno-release-guards.mjs"
@@ -26,3 +28,6 @@ jobs:
         run: node tests/zeno-release-guards.mjs
       - name: Nearby coordinate API regression test (mock D1 + mock NAVER)
         run: node tests/test-worker-nearby-coordinates.mjs
+
+      - name: Google Places review matching and API tests (mock only)
+        run: node tests/google-reviews.mjs
