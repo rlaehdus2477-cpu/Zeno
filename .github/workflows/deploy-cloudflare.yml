@@ -224,7 +224,7 @@ jobs:
                 const mobileOwner=await (await get(mobilePath)).text();
               if(!mobileOwner.includes("const ZENO_OWNER_UI_REVISION='"+expectedOwnerRevision+"'") ||
                  !mobileOwner.includes('#app .zeno-search-page .zeno-search-card .zeno-card-actions') ||
-                 !mobileOwner.includes('zenoDeclaredSpecialtyLine(h,false,2,true)+zenoSearchReservationNote(h,')){
+                 !mobileOwner.includes('zenoListCareLine(h)+contextHtml') || !mobileOwner.includes('zenoListReservation(h,eligible)') || !mobileOwner.includes('zenoListHoursSort(rows)')){
                   throw Error(mobilePath+' still serves the previous hospital list');
                 }
                 if(reservationSnapshot(mobileOwner)!==expectedReservationSnapshot)throw Error(mobilePath+' reservation information differs from release data');
