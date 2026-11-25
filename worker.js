@@ -54,7 +54,7 @@ async function ensureBookingDetails(db){
  await db.prepare("CREATE TABLE IF NOT EXISTS booking_details (booking_id TEXT PRIMARY KEY, owner_phone TEXT NOT NULL DEFAULT '', breed TEXT NOT NULL DEFAULT '', age TEXT NOT NULL DEFAULT '', weight TEXT NOT NULL DEFAULT '', visit_type TEXT NOT NULL DEFAULT '', created_at TEXT NOT NULL)").run();
 }
 function question(row){return row&&{id:row.id,ownerId:row.owner_id,hospitalId:row.hospital_id,petName:row.pet_name,text:row.text,answer:row.answer,status:row.status,createdAt:row.created_at,updatedAt:row.updated_at}}
-function review(row){return row&&{id:row.id,ownerId:row.owner_id,bookingId:row.booking_id,hospitalId:row.hospital_id,stars:row.stars,text:row.text,points:row.points,createdAt:row.created_at}}
+function review(row){return row&&{id:row.id,ownerId:row.owner_id,bookingId:row.booking_id,hospitalId:row.hospital_id,stars:row.stars,text:row.text,points:row.points,createdAt:row.created_at,public:row.is_public===1}}
 
 let zenoOpsInit=null,zenoRequestsInit=null;
 function ensureHospitalOps(db){
@@ -495,6 +495,23 @@ if(path==='/api/hospital/point-ads'&&method==='POST'){
  validateHospital(hid);await checkHospital(request,env,hid);
  return redeemHomeAd(db,hid,data);
 }
+// Public reviews are opt-in only. Never expose owner, booking or review identifiers.
+if(path==='/api/public/hospital-reviews'&&method==='GET'){
+ const hid=clean(url.searchParams.get('hospitalId'),90);validateHospital(hid);
+ await db.prepare('CREATE TABLE IF NOT EXISTS public_review_visibility (review_id TEXT PRIMARY KEY, published_at TEXT NOT NULL)').run();
+ const rows=await db.prepare("SELECT r.stars,r.text,substr(r.created_at,1,10) AS review_date FROM reviews r JOIN public_review_visibility p ON p.review_id=r.id JOIN bookings b ON b.id=r.booking_id AND b.owner_id=r.owner_id AND b.hospital_id=r.hospital_id WHERE r.hospital_id=? AND b.status='done' ORDER BY r.created_at DESC LIMIT 100").bind(hid).all();
+ return json({reviews:(rows.results||[]).map(r=>({stars:r.stars,text:r.text,date:r.review_date}))});
+}
+if(/^\/api\/reviews\/[A-Za-z0-9-]{8,90}\/visibility$/.test(path)&&method==='PATCH'){
+ const sess=await checkOwner(request,env);const rid=path.split('/')[3];
+ assert(typeof data.public==='boolean','공개 여부를 선택해 주세요.');
+ const row=await db.prepare('SELECT r.id,b.status FROM reviews r JOIN bookings b ON b.id=r.booking_id AND b.owner_id=r.owner_id AND b.hospital_id=r.hospital_id WHERE r.id=? AND r.owner_id=?').bind(rid,sess.ownerId).first();
+ assert(row,'본인 후기를 찾을 수 없습니다.',404);
+ await db.prepare('CREATE TABLE IF NOT EXISTS public_review_visibility (review_id TEXT PRIMARY KEY, published_at TEXT NOT NULL)').run();
+ if(data.public){assert(row.status==='done','완료된 방문 후기만 공개할 수 있습니다.',403);await db.prepare('INSERT OR IGNORE INTO public_review_visibility(review_id,published_at) VALUES(?,?)').bind(rid,now()).run()}
+ else await db.prepare('DELETE FROM public_review_visibility WHERE review_id=?').bind(rid).run();
+ return json({public:data.public});
+}
 if(path==='/api/public/vetqa'&&method==='GET'){
  await ensureVetqa(db);
  const where=["q.status='open'"],args=[];
@@ -569,7 +586,7 @@ if(/^\/api\/hospital\/vetqa\/[A-Za-z0-9-]{8,60}\/answer$/.test(path)&&method==='
  assert(saved.meta.changes,'질문을 찾을 수 없습니다.',404);
  return json({...vetqaAnswer(answer.results[0]),pointsAwarded:credit.meta.changes?POINT_POLICY.answerPoints:0});
 }
-if(path==='/api/bootstrap'&&method==='GET'){const session=await checkOwner(request,env);let owner=session.ownerId;await ensureOwnerPetPhotoTable(db);await ensureHospitalOps(db);const [settings,bookings,questions,reviews]=await Promise.all([db.prepare('SELECT s.*,o.emergency_status,o.updated_at AS emergency_updated_at FROM hospital_settings s LEFT JOIN hospital_operational_status o ON o.hospital_id=s.hospital_id').all(),db.prepare('SELECT * FROM bookings WHERE owner_id=? ORDER BY created_at DESC LIMIT 150').bind(owner).all(),db.prepare('SELECT * FROM questions WHERE owner_id=? ORDER BY created_at DESC LIMIT 120').bind(owner).all(),db.prepare('SELECT * FROM reviews WHERE owner_id=? ORDER BY created_at DESC LIMIT 120').bind(owner).all()]);const ss=Object.fromEntries([...IDS].map(id=>[id,DEFAULT()]));for(const x of(settings.results||[]))ss[x.hospital_id]=savedSettings(x);const user=await db.prepare('SELECT id,username,display_name,profile_json FROM owners WHERE id=?').bind(owner).first();const photoRows=await db.prepare('SELECT pet_id,image_data FROM owner_pet_photos WHERE owner_id=? LIMIT 20').bind(owner).all();const petPhotos=Object.fromEntries((photoRows.results||[]).map(p=>[p.pet_id,p.image_data]));assert(user,'사용자 계정을 찾을 수 없습니다.',401);return json({profile:profileParse(user.profile_json),petPhotos,owner:{id:user.id,username:user.username,displayName:user.display_name},settings:ss,bookings:(bookings.results||[]).map(booking),questions:(questions.results||[]).map(question),reviews:(reviews.results||[]).map(review)})}
+if(path==='/api/bootstrap'&&method==='GET'){const session=await checkOwner(request,env);let owner=session.ownerId;await ensureOwnerPetPhotoTable(db);await ensureHospitalOps(db);await db.prepare('CREATE TABLE IF NOT EXISTS public_review_visibility (review_id TEXT PRIMARY KEY, published_at TEXT NOT NULL)').run();const [settings,bookings,questions,reviews]=await Promise.all([db.prepare('SELECT s.*,o.emergency_status,o.updated_at AS emergency_updated_at FROM hospital_settings s LEFT JOIN hospital_operational_status o ON o.hospital_id=s.hospital_id').all(),db.prepare('SELECT * FROM bookings WHERE owner_id=? ORDER BY created_at DESC LIMIT 150').bind(owner).all(),db.prepare('SELECT * FROM questions WHERE owner_id=? ORDER BY created_at DESC LIMIT 120').bind(owner).all(),db.prepare('SELECT r.*,CASE WHEN p.review_id IS NULL THEN 0 ELSE 1 END AS is_public FROM reviews r LEFT JOIN public_review_visibility p ON p.review_id=r.id WHERE r.owner_id=? ORDER BY r.created_at DESC LIMIT 120').bind(owner).all()]);const ss=Object.fromEntries([...IDS].map(id=>[id,DEFAULT()]));for(const x of(settings.results||[]))ss[x.hospital_id]=savedSettings(x);const user=await db.prepare('SELECT id,username,display_name,profile_json FROM owners WHERE id=?').bind(owner).first();const photoRows=await db.prepare('SELECT pet_id,image_data FROM owner_pet_photos WHERE owner_id=? LIMIT 20').bind(owner).all();const petPhotos=Object.fromEntries((photoRows.results||[]).map(p=>[p.pet_id,p.image_data]));assert(user,'사용자 계정을 찾을 수 없습니다.',401);return json({profile:profileParse(user.profile_json),petPhotos,owner:{id:user.id,username:user.username,displayName:user.display_name},settings:ss,bookings:(bookings.results||[]).map(booking),questions:(questions.results||[]).map(question),reviews:(reviews.results||[]).map(review)})}
 
 if(path==='/api/auth/register'&&method==='POST'){
  assert(env.SESSION_SECRET,'서버 비밀키가 아직 설정되지 않았습니다.',503);
