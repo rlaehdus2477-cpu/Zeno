@@ -3377,6 +3377,15 @@ html body #app .zeno-search-page .zeno-search-card .zeno-list-resv-policy{displa
 :is(html.dark,html[data-theme="dark"]) body #app .zeno-search-page .zeno-search-card a.zeno-list-resv-chip.is-link{color:#8fb8f0}
 
 /* Compact public fee directory: prices visible without opening cards. */
+.zeno-fee-directory-item{display:block;margin:2px 0}
+.zeno-fee-directory-price .zeno-fee-directory-label{white-space:nowrap;overflow-wrap:normal;flex-shrink:0}
+.zeno-fee-directory-price b.zeno-fee-unpublished{color:#697b8a;font-weight:500}
+.zeno-fee-directory-condition{display:block;text-align:right;color:#52677a;font-size:11px;line-height:1.4;white-space:nowrap}
+.zeno-fee-directory-extra{display:block;color:#52677a;font-size:11.5px;line-height:1.5;margin-top:5px;white-space:nowrap}
+.zeno-fee-directory-date{display:block;color:#52677a;font-size:11px;line-height:1.4;margin-top:3px;white-space:nowrap}
+html.dark .zeno-fee-directory-price b.zeno-fee-unpublished,html[data-theme="dark"] .zeno-fee-directory-price b.zeno-fee-unpublished{color:#a5b4c2}
+html.dark .zeno-fee-directory-condition,html[data-theme="dark"] .zeno-fee-directory-condition,html.dark .zeno-fee-directory-extra,html[data-theme="dark"] .zeno-fee-directory-extra,html.dark .zeno-fee-directory-date,html[data-theme="dark"] .zeno-fee-directory-date{color:#c6d5e4}
+
 .zeno-fee-directory{display:block;background:#fff;border:1px solid #dce5ed;border-radius:10px;overflow:hidden;margin:8px 0 14px}
 .zeno-fee-directory .zeno-fee-directory-row{appearance:none;display:block;box-sizing:border-box;text-align:left;width:100%;padding:10px 12px;margin:0;border:0;border-bottom:1px solid #e3e9ef;border-radius:0;background:transparent;color:inherit;box-shadow:none;font:inherit;cursor:pointer}
 .zeno-fee-directory .zeno-fee-directory-row:last-child{border-bottom:0}
@@ -6296,14 +6305,49 @@ function zenoFeeCareNoPriceMarkup(name){
    +'<small>초진 진찰료는 검사·약·처치·수술 비용과 다를 수 있습니다. 방문 전 병원에 비용을 확인해 주세요.</small>'
    +'</section>';
 }
+const ZENO_FEE_REFERENCE_ITEMS=['초진 진찰료','개 종합백신','고양이 종합백신'];
+function zenoFeeIsPromo(note){return /행사가|프로모션|감사이벤트|이벤트 가격|행사 가격/.test(String(note||''))}
+function zenoFeeShortCondition(note){
+ const n=String(note||''),bits=[];
+ if(/체중|\d\s*kg/i.test(n))bits.push('체중별');
+ if(/진료시간|통상시간 외|시간외|시간 외/.test(n))bits.push('시간별');
+ if(/진찰료.*?포함 여부|추가 진찰료 확인/.test(n))bits.push('진찰료 포함 확인');
+ else if(/진찰료[^·]*별도 확인/.test(n))bits.push('진찰료 별도 확인');
+ else if(/진찰료.*별도/.test(n))bits.push('진찰료 별도');
+ if(/1회/.test(n))bits.push('1회 기준');
+ if(/검사·처치비 별도/.test(n))bits.push('검사·처치비 별도 확인');
+ if(/기본 진찰료|기본 신체검사/.test(n))bits.push('기본 진찰');
+ return bits.slice(0,2).join(' · ');
+}
+function zenoFeeExtraDisclosure(prices,health){
+ const extra=prices.filter(p=>!ZENO_FEE_REFERENCE_ITEMS.includes(p[0]));
+ const names=[];
+ if(health.length||extra.some(p=>/건강검진|CT 검진|내시경 검진|정밀검진/.test(p[0])))names.push('건강검진');
+ if(extra.some(p=>/중성화/.test(p[0])))names.push('중성화');
+ if(extra.some(p=>/스케일링/.test(p[0])))names.push('스케일링');
+ if(extra.some(p=>/슬개골|수술|절골술|교정술/.test(p[0])&&!/중성화/.test(p[0])))names.push('수술');
+ if(extra.some(p=>/검사|엑스레이|초음파/.test(p[0])&&!/건강검진|CT 검진|내시경 검진|정밀검진/.test(p[0])))names.push('검사');
+ if(extra.some(p=>/입원/.test(p[0])))names.push('입원');
+ if(extra.some(p=>/백신|예방접종/.test(p[0])))names.push('예방접종');
+ if(!extra.length&&!health.length)return '';
+ const promo=extra.some(p=>zenoFeeIsPromo(p[3]));
+ return (names.length?names.slice(0,2).join('·')+(names.length>2?' 등':''):'다른 항목')+' 가격 공개'+(promo?' · 행사가':'');
+}
 function zenoAllFeeHospitals(){
  const ids=[...new Set([...ZENO_PUBLIC_FEES.map(v=>v.id),...ZENO_HEALTH_SCREENINGS.map(v=>v.id)])];
- return '<div class="zeno-fee-subhead"><h2>병원별 공개 진료비</h2><p>전체 '+ids.length+'곳 · 대표 공개가격 · 항목과 조건이 서로 다릅니다.</p></div><div class="zeno-fee-directory">'+ids.map(id=>{
-  const h=hospitalById(id),v=zenoPublishedFee(id),health=ZENO_HEALTH_SCREENINGS.filter(g=>g.id===id);if(!h)return '';
-  const prices=v?.prices||[];
-  const chosen=id==='pub007'?prices.filter(p=>p[0].includes('A 기본 건강검진')):prices.slice(0,2);
-  const previews=chosen.length?chosen.map(p=>[p[0],zenoFeeAmount(p[1],p[2])]):health.slice(0,2).flatMap(g=>g.programs.slice(0,1).map(p=>[g.species+' '+p[0],zenoFeeAmount(p[1],p[1])]));
-  return '<button type="button" class="zeno-fee-directory-row" data-action="details" data-fee-direct="true" data-id="'+e(id)+'" aria-label="'+e(h.name)+' 공개 진료비 전체 보기"><span class="zeno-fee-directory-head"><strong>'+e(h.name)+'</strong><span aria-hidden="true" class="zeno-fee-directory-arrow">›</span></span>'+previews.map(p=>'<span class="zeno-fee-directory-price"><span>'+e(p[0])+'</span><b>'+e(p[1])+'</b></span>').join('')+'</button>';
+ const clinics=ids.map(id=>{
+  const h=hospitalById(id),v=zenoPublishedFee(id),health=ZENO_HEALTH_SCREENINGS.filter(g=>g.id===id),prices=v?.prices||[];
+  const reference=ZENO_FEE_REFERENCE_ITEMS.map(label=>({label,price:prices.find(p=>p[0]===label)}));
+  return {id,h,v,health,prices,reference,count:reference.filter(x=>x.price).length};
+ }).filter(x=>x.h).sort((a,b)=>b.count-a.count||a.h.name.localeCompare(b.h.name,'ko'));
+ return '<div class="zeno-fee-subhead"><h2>병원별 공개 진료비</h2><p>전체 '+clinics.length+'곳 · 기준 항목 공개가 많은 순</p></div><div class="zeno-fee-directory">'+clinics.map(({id,h,v,health,prices,reference})=>{
+  const extra=zenoFeeExtraDisclosure(prices,health);
+  const date=v?.checked||health[0]?.checked||'';
+  return '<button type="button" class="zeno-fee-directory-row" data-action="details" data-fee-direct="true" data-id="'+e(id)+'" aria-label="'+e(h.name)+' 공개 진료비 전체 보기"><span class="zeno-fee-directory-head"><strong>'+e(h.name)+'</strong><span aria-hidden="true" class="zeno-fee-directory-arrow">›</span></span>'+reference.map(({label,price:p})=>{
+   const condition=p?zenoFeeShortCondition(p[3]):'';
+   const promo=p&&zenoFeeIsPromo(p[3]);
+   return '<span class="zeno-fee-directory-item"><span class="zeno-fee-directory-price"><span class="zeno-fee-directory-label">'+e(label)+'</span><b class="'+(p?'':'zeno-fee-unpublished')+'">'+(p?e(zenoFeeAmount(p[1],p[2])):'미공개')+'</b></span>'+((condition||promo)?'<span class="zeno-fee-directory-condition">'+e([promo?'행사가':'',condition].filter(Boolean).join(' · '))+'</span>':'')+'</span>';
+  }).join('')+(extra?'<span class="zeno-fee-directory-extra">'+e(extra)+'</span>':'')+(date?'<span class="zeno-fee-directory-date">자료 기준일 '+e(date)+'</span>':'')+'</button>';
  }).join('')+'</div>';
 }
 function pricesPage(){
@@ -6318,12 +6362,14 @@ function pricesPage(){
  const quickFees=['전체 병원','초진 진찰료','건강검진','고양이 종합백신','개 종합백신','엑스레이'];
  const feeChip=c=>'<button type="button" class="filter'+(selected===c?' active':'')+'" aria-pressed="'+(selected===c)+'" data-action="price-category" data-value="'+e(c)+'">'+e(c)+'</button>';
  const priceChips=quickFees.map(feeChip).join('');
- const extraChips=ZENO_FEE_CATEGORIES.filter(c=>!quickFees.includes(c)).map(feeChip).join('');
+ const extraCategories=ZENO_FEE_CATEGORIES.filter(c=>!quickFees.includes(c));
+ const extraChips=extraCategories.map(feeChip).join('');
+ const moreCount=extraCategories.length+ZENO_FEE_CARE_CATEGORIES.length;
  const mixedUnits=['혈액화학검사','엑스레이','초음파 검사','입원료','입원비(1일)','심장사상충 예방(제품별)','상담료','CT 검사','평일 주간 진찰료','일요일 진찰료','응급·야간 진찰료'].includes(selected);
  const rows=ZENO_PUBLIC_FEES.flatMap(v=>v.prices.filter(p=>p[0]===priceKey||(isNeuter&&['수컷 중성화','암컷 중성화','강아지 암컷 중성화','고양이 암컷 중성화','강아지 수컷 중성화','고양이 수컷 중성화'].includes(p[0]))).map(p=>({id:v.id,name:hospitalById(v.id)?.name||'병원명 확인',url:p[4]||v.url,checked:v.checked,source:v.source,price:p})));
- if(!mixedUnits)rows.sort((a,b)=>a.price[1]-b.price[1]);
+ rows.sort((a,b)=>a.name.localeCompare(b.name,'ko'));
  const priceCaution=mixedUnits
-  ?'병원마다 검사 개수·부위·체중·포함 항목이 달라 가격순으로 정렬하지 않았습니다.':'같은 항목도 진료 조건에 따라 총비용이 달라질 수 있습니다.';
+  ?'병원 이름순 · 검사 개수·부위·체중·포함 항목을 확인해 주세요.':'병원 이름순 · 같은 항목도 진료 조건에 따라 총비용이 달라질 수 있습니다.';
  const official=rows.map(r=>{
   const note=String(r.price[3]||'');
   const intro=note.split(' · ').slice(0,2).join(' · ');
@@ -6341,7 +6387,7 @@ function pricesPage(){
   :'해당 비용 항목 공식 가격 '+rows.length+'곳';
  return topbar('진료비 비교','')
   +'<div class="zeno-fee-intro"><strong>청주 동물병원 공개 진료비</strong><p>전체 병원에서 공개 가격표를 찾아보거나 진료 항목별로 비교할 수 있습니다. 실제 결제금액은 진료 조건에 따라 달라질 수 있습니다.</p><small>최근 자료 확인 2026.11.25 · '+amountNote+'</small></div>'
-  +'<section class="zeno-fee-section zeno-fee-compact"><div class="zeno-fee-choices" role="group" aria-label="비교할 가격 항목">'+priceChips+'</div><details class="zeno-fee-more"'+(!quickFees.includes(selected)?' open':'')+'><summary>전체 진료 항목'+(!quickFees.includes(selected)?' · '+e(selected):'')+'</summary><div class="zeno-fee-choices" role="group" aria-label="추가 가격 항목">'+extraChips+'</div><h2>진료 분야</h2><div class="zeno-fee-care-grid" role="group" aria-label="진료 분야 선택">'+careChips+'</div></details></section>'
+  +'<section class="zeno-fee-section zeno-fee-compact"><div class="zeno-fee-choices" role="group" aria-label="비교할 가격 항목">'+priceChips+'</div><details class="zeno-fee-more"'+(!quickFees.includes(selected)?' open':'')+'><summary>다른 항목 더 보기 ('+moreCount+'개)'+(!quickFees.includes(selected)?' · '+e(selected):'')+'</summary><div class="zeno-fee-choices" role="group" aria-label="추가 가격 항목">'+extraChips+'</div><h2>진료 분야</h2><div class="zeno-fee-care-grid" role="group" aria-label="진료 분야 선택">'+careChips+'</div></details></section>'
   +(isAll?zenoAllFeeHospitals():noCarePrices?zenoFeeCareNoPriceMarkup(selected)
    :isHealth?zenoHealthCheckPriceMarkup()
    :isNeuter?'<div class="zeno-fee-subhead"><h2>중성화 수술</h2><p>병원 공개가격 '+new Set(rows.map(r=>r.id)).size+'곳 · 수컷·암컷 및 마취 방식에 따라 가격이 달라집니다. 행사 적용 조건과 검사·약제·회복관리비를 확인해 주세요.</p></div>'+official+'<div class="zeno-fee-subhead"><h2>보호자 견적 사례</h2><p>다음 사례는 공식 게시가격이 아니며 가격순 비교에 포함하지 않습니다.</p></div>'+estimates
