@@ -1,0 +1,83 @@
+name: Test owner search layout at 360px
+on:
+  pull_request:
+    paths:
+      - 'owner.html'
+      - '.github/workflows/test-owner-search-layout.yml'
+permissions:
+  contents: read
+jobs:
+  layout:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save --no-package-lock playwright
+      - run: npx playwright install --with-deps chromium
+      - name: Render complete owner HTML and check actual buttons
+        run: |
+          mkdir -p screenshots
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          import assert from 'node:assert/strict';
+          import {chromium} from 'playwright';
+          const html=fs.readFileSync('owner.html','utf8');
+          const browser=await chromium.launch({headless:true});
+          const page=await browser.newPage({viewport:{width:360,height:800},deviceScaleFactor:2,isMobile:true,hasTouch:true,locale:'ko-KR',colorScheme:'light'});
+          try {
+            await page.route('http://zeno.test/**',async route=>{
+              if(new URL(route.request().url()).pathname==='/owner')return route.fulfill({status:200,contentType:'text/html; charset=utf-8',body:html});
+              return route.fulfill({status:503,contentType:'application/json',body:'{}'});
+            });
+            await page.goto('http://zeno.test/owner',{waitUntil:'domcontentloaded'});
+            await page.evaluate(()=>{state.page='search';state.query='';render();});
+            await page.locator('.zeno-search-card').first().waitFor();
+            const font=await page.evaluate(async()=>{
+              try {const loaded=await document.fonts.load('600 14px "Pretendard Variable"','네이버 예약 길찾기 전화');await document.fonts.ready;return {loaded:loaded.length,faces:[...document.fonts].filter(f=>f.status==='loaded').map(f=>f.family)};}catch(error){return {loaded:0,error:String(error)};}
+            });
+            console.log('Actual font load:',JSON.stringify(font));
+            await page.screenshot({path:'screenshots/full-list-360.png'});
+            const measurements=await page.evaluate(()=>{
+              return [...document.querySelectorAll('.zeno-search-card')].filter(card=>card.querySelectorAll('.zeno-card-actions .zeno-card-action').length===3).map(card=>{
+                const row=card.querySelector('.zeno-card-actions'),rr=row.getBoundingClientRect();
+                const buttons=[...row.querySelectorAll('.zeno-card-action')].map(el=>{
+                  const rect=el.getBoundingClientRect(),css=getComputedStyle(el),node=[...el.childNodes].find(n=>n.nodeType===Node.TEXT_NODE&&n.textContent.trim());
+                  const range=document.createRange();range.selectNodeContents(node);
+                  const tr=range.getBoundingClientRect();
+                  return {label:el.textContent.trim(),x:rect.x,y:rect.y,width:rect.width,height:rect.height,right:rect.right,whiteSpace:css.whiteSpace,font:css.fontFamily,paddingLeft:css.paddingLeft,paddingRight:css.paddingRight,textLines:range.getClientRects().length,textFits:tr.left>=rect.left-0.5&&tr.right<=rect.right+0.5,icon:!!el.querySelector('svg'),scrollFits:el.scrollWidth<=el.clientWidth+1};
+                });
+                return {name:card.querySelector('strong').textContent,rowRight:rr.right,buttons};
+              });
+            });
+            console.log(JSON.stringify(measurements,null,2));
+            assert.ok(measurements.some(r=>r.name.includes('다옴')&&r.buttons.some(b=>b.label==='네이버 예약')));
+            assert.ok(measurements.some(r=>r.buttons.some(b=>b.label==='예약')));
+            for(const row of measurements){
+              for(const b of row.buttons){
+                assert.ok(b.font.includes('Pretendard Variable'));assert.equal(b.whiteSpace,'nowrap');assert.equal(b.height,44);assert.equal(b.textLines,1);assert.ok(b.textFits&&b.scrollFits,b.label+' clipped');assert.ok(b.right<=row.rowRight+1);assert.ok(Math.abs(b.y-row.buttons[0].y)<1);
+                if(['전화','길찾기'].includes(b.label))assert.ok(b.icon);
+                if(b.label==='네이버 예약'){assert.ok(b.width>=84);assert.equal(b.paddingLeft,'12px');assert.equal(b.paddingRight,'12px');}
+              }
+            }
+            await page.evaluate(()=>{state.query='다옴';render();});
+            await page.locator('.zeno-list-naver-book').first().waitFor();
+            const session=await page.context().newCDPSession(page);
+            await session.send('DOM.enable');
+            await session.send('CSS.enable');
+            const doc=await session.send('DOM.getDocument');
+            const {nodeId}=await session.send('DOM.querySelector',{nodeId:doc.root.nodeId,selector:'.zeno-list-naver-book'});
+            const platform=await session.send('CSS.getPlatformFontsForNode',{nodeId});
+            console.log('Naver button actual glyph fonts:',JSON.stringify(platform.fonts));
+            assert.ok(platform.fonts.some(f=>f.isCustomFont&&/Pretendard/i.test(f.familyName)),'Naver button did not render with Pretendard');
+            await page.screenshot({path:'screenshots/daom-search-360.png'});
+            assert.ok(font.loaded>0,'Pretendard web font could not load; screenshot font is not verified');
+          } finally {await browser.close();}
+          JS
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: owner-search-360-screenshots
+          path: screenshots/
+          if-no-files-found: warn
