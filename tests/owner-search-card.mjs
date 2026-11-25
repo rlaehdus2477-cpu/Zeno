@@ -429,6 +429,7 @@ for(const width of [320,360,390,412]){
   assert.ok(await review.isVisible(),'후기 탭 미표시');
   assert.equal(await review.locator('a').count(),0,'후기 탭 외부 이동 금지');
   assert.ok((await review.innerText()).includes('ZENO 방문 인증 후기'));
+  await page.waitForFunction(()=>!zenoPublicReviewPending.has(state.modal.id));
   await page.evaluate(()=>{const id=state.modal.id;zenoPublicReviewCache.set(id,{count:2,average:4.5,reviews:[{stars:5,text:'공개 후기 <img src=x>',date:'2026-11-25'},{stars:4,text:'두 번째 보호자 후기',date:'2026-11-24'}]});document.getElementById('zeno-detail-reviews').innerHTML=zenoExternalReviewMarkup(hospitalById(id));});
   assert.ok((await review.innerText()).includes('4.5 / 5점'));
   assert.ok((await review.innerText()).includes('공개 후기 2건'));
