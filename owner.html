@@ -3057,12 +3057,12 @@ html.dark .zeno-search-page .zeno-nearby-note,html[data-theme="dark"] .zeno-sear
 .zeno-vq-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.zeno-vq-actions .btn{flex:1;min-width:88px}
 .zeno-vq-form h3{margin:0 0 10px}.zeno-vq-emergency{margin:0 0 12px;font-size:14px}.zeno-vq-emergency .link{padding:0;font-size:inherit}
 .zeno-vq-loading{color:var(--sub);font-size:14px;padding:16px 0}
-.zeno-home-vetqa,.zeno-pets-bookings{margin:22px 0}
-.zeno-home-vetqa header,.zeno-pets-bookings header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-.zeno-home-vetqa h2,.zeno-pets-bookings h2{font-size:18px;margin:0}
-.zeno-home-vetqa header button,.zeno-pets-bookings header button{background:none;border:0;color:var(--sub);font-size:14px}
+.zeno-home-vetqa,.zeno-home-fees,.zeno-pets-bookings{margin:22px 0}
+.zeno-home-vetqa header,.zeno-home-fees header,.zeno-pets-bookings header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.zeno-home-vetqa h2,.zeno-home-fees h2,.zeno-pets-bookings h2{font-size:18px;margin:0}
+.zeno-home-vetqa header button,.zeno-home-fees header button,.zeno-pets-bookings header button{background:none;border:0;color:var(--sub);font-size:14px}
 .zeno-home-vetqa .zeno-vq-list{margin-bottom:10px}
-.zeno-home-vetqa .care-symptoms svg{width:20px;height:20px;flex:none;color:var(--blue)}
+.zeno-home-vetqa .care-symptoms svg,.zeno-home-fees .care-symptoms svg{width:20px;height:20px;flex:none;color:var(--blue)}
 .zeno-pets-booking-next{display:flex;flex-direction:column;align-items:flex-start;gap:3px;width:100%;text-align:left;border:1px solid var(--line);border-radius:12px;padding:14px 16px;background:#fff;color:var(--text)}
 .zeno-pets-booking-next strong{font-size:16px}.zeno-pets-booking-next span{font-size:14px;color:var(--sub)}.zeno-pets-booking-next small{font-size:13px;color:var(--blue)}
 </style><style id="zeno-tabbar-v2">
@@ -5442,14 +5442,14 @@ function home(){
  +'<section class="care-launcher" aria-label="진료 분야로 찾기"><header><h2>진료과목</h2><button data-action="home-care-open" aria-haspopup="dialog" aria-expanded="'+state.homeCarePickerOpen+'">전체 과목 ›</button></header>'
  +'<div class="care-shortcuts">'+[['내과','내과'],['외과','외과'],['치과·구강','치과'],['피부·귀','피부과'],['특수동물','특수동물']].map(([value,label])=>'<button type="button" data-action="specialty" data-value="'+e(value)+'"><span>'+zenoCareIcon(value)+'</span>'+e(label)+'</button>').join('')+'</div>'
  +'<button class="care-symptoms" data-nav="symptoms">'+zenoHomeSmallIcon('help')+'<strong>증상으로 진료과목 찾기</strong><span aria-hidden="true">›</span></button></section>'
- +zenoHomeVetqa()
+ +zenoHomeFees()
  +'<div id="zeno-home-ads">'+zenoHomeAdCards()+'</div>'
  +'<section class="zeno-home-utilities" aria-label="조건별 병원 찾기"><h2>조건별 병원 찾기</h2><div class="zeno-home-utility-list"><button type="button" class="zeno-home-utility-row" data-nav="reservation-directory"><span class="zeno-home-utility-icon">'+zenoNavIcon('bookings')+'</span><span class="zeno-home-utility-copy"><strong>예약 방법별 병원 목록</strong><small>전화·네이버·홈페이지·방문 접수</small></span><span class="zeno-home-utility-chevron" aria-hidden="true">›</span></button>'
  +'<button type="button" class="zeno-home-utility-row" data-action="night-shortcut"><span class="zeno-home-utility-icon">'+zenoHomeSmallIcon('moon')+'</span><span class="zeno-home-utility-copy"><strong>야간 진료</strong><small>밤 시간 진료가 안내된 병원</small></span><span class="zeno-home-utility-chevron" aria-hidden="true">›</span></button>'
  +'<button type="button" class="zeno-home-utility-row" data-action="around-clock-shortcut"><span class="zeno-home-utility-icon">'+zenoHomeSmallIcon('urgent')+'</span><span class="zeno-home-utility-copy"><strong>24시간 운영 병원</strong><small>응급 접수는 전화로 확인</small></span><span class="zeno-home-utility-chevron" aria-hidden="true">›</span></button>'
  +'</div></section>'
  +zenoHomeBookingPreview()
- +'<section class="zeno-home-services" aria-label="내 서비스"><h2>내 서비스</h2><div class="zeno-home-service-grid">'+[['bookings','내 예약'],['qa','진료 전 질문'],['prices','진료비 비교'],['pets','내 아이 기록']].map(([nav,label])=>'<button type="button" data-nav="'+nav+'"><span class="zeno-home-service-icon">'+zenoTabIcon(nav==='pets'?'pet-record':nav)+'</span><span>'+label+'</span></button>').join('')+'</div></section>'
+ +'<section class="zeno-home-services" aria-label="내 서비스"><h2>내 서비스</h2><div class="zeno-home-service-grid">'+[['bookings','내 예약'],['qa','진료 전 질문'],['vetqa','수의사 Q&A'],['pets','내 아이 기록']].map(([nav,label])=>'<button type="button" data-nav="'+nav+'"><span class="zeno-home-service-icon">'+zenoTabIcon(nav==='pets'?'pet-record':nav)+'</span><span>'+label+'</span></button>').join('')+'</div></section>'
  +picker+'</div>';
 }
 const ZENO_RES_DIRECTORY_TABS=[['all','전체'],['zeno','ZENO 예약'],['naver','네이버 예약'],['website','홈페이지 예약'],['phone','전화 예약'],['walkin','예약 없이 방문'],['unknown','기타·확인 필요']];
@@ -5792,6 +5792,10 @@ function vetqaPage(){
  +(v.error?'<div class="banner warning">'+e(v.error)+' <button class="btn secondary small" data-action="vetqa-reload">다시 시도</button></div>':'')
  +(!v.loaded&&v.loading?'<p class="zeno-vq-loading" role="status">불러오는 중…</p>':list.length?'<div class="zeno-vq-list">'+list.map(zenoVetqaCard).join('')+'</div>':'<div class="empty"><strong>'+(v.tab==='mine'?'아직 올린 질문이 없어요.':v.q?'검색 결과가 없어요.':'아직 질문이 없어요.')+'</strong><p>'+(v.q?'다른 단어로 찾아보거나 직접 질문해 보세요.':'첫 질문을 남겨 보세요.')+'</p></div>')
  +'<p class="zeno-disclaimer">답변은 일반적인 안내이며 진단·처방을 대신하지 않습니다. 예약한 병원에 1:1로 묻고 싶다면 더 보기 › 진료 전 질문을 이용해 주세요.</p>';
+}
+function zenoHomeFees(){
+ return '<section class="zeno-home-fees" aria-label="진료비 비교"><header><h2>진료비 비교</h2><button type="button" data-nav="prices">전체 보기 ›</button></header>'
+ +'<button type="button" class="care-symptoms" data-nav="prices">'+zenoTabIcon('prices')+'<strong>병원별 공개 진료비 비교</strong><span aria-hidden="true">›</span></button></section>';
 }
 function zenoHomeVetqa(){
  const v=zenoVq();
