@@ -1,4 +1,4 @@
-name: Test owner search layout at 360px
+name: Test complete owner search layout at 360 and 390px
 on:
   pull_request:
     paths:
@@ -40,7 +40,7 @@ jobs:
             console.log('Actual font load:',JSON.stringify(font));
             await page.screenshot({path:'screenshots/full-list-360.png'});
             const measurements=await page.evaluate(()=>{
-              return [...document.querySelectorAll('.zeno-search-card')].filter(card=>card.querySelectorAll('.zeno-card-actions .zeno-card-action').length===3).map(card=>{
+              return [...document.querySelectorAll('.zeno-search-card')].map(card=>{
                 const row=card.querySelector('.zeno-card-actions'),rr=row.getBoundingClientRect();
                 const buttons=[...row.querySelectorAll('.zeno-card-action')].map(el=>{
                   const rect=el.getBoundingClientRect(),css=getComputedStyle(el),node=[...el.childNodes].find(n=>n.nodeType===Node.TEXT_NODE&&n.textContent.trim());
@@ -48,19 +48,38 @@ jobs:
                   const tr=range.getBoundingClientRect();
                   return {label:el.textContent.trim(),x:rect.x,y:rect.y,width:rect.width,height:rect.height,right:rect.right,whiteSpace:css.whiteSpace,font:css.fontFamily,paddingLeft:css.paddingLeft,paddingRight:css.paddingRight,textLines:range.getClientRects().length,textFits:tr.left>=rect.left-0.5&&tr.right<=rect.right+0.5,icon:!!el.querySelector('svg'),scrollFits:el.scrollWidth<=el.clientWidth+1};
                 });
-                return {name:card.querySelector('strong').textContent,rowRight:rr.right,buttons};
+                const note=row.querySelector('.zeno-search-reservation-note'), nr=note?.getBoundingClientRect();
+                return {name:card.querySelector('strong').textContent,rowRight:rr.right,cardHeight:card.getBoundingClientRect().height,buttons,note:note?{label:note.textContent, fits:note.scrollWidth<=note.clientWidth+1&&nr.right<=rr.right+1, left:nr.left}:null};
               });
             });
             console.log(JSON.stringify(measurements,null,2));
             assert.ok(measurements.some(r=>r.name.includes('다옴')&&r.buttons.some(b=>b.label==='네이버 예약')));
             assert.ok(measurements.some(r=>r.buttons.some(b=>b.label==='예약')));
             for(const row of measurements){
+              assert.ok(row.cardHeight<=145,row.name+' too tall: '+row.cardHeight);
+              if(row.note){assert.ok(row.note.fits,row.name+' reservation note clipped');assert.ok(row.note.left>=row.buttons.at(-1).right-1,row.name+' note overlaps');assert.ok(!row.note.label.includes(' · '),row.name+' duplicate note');assert.ok(row.buttons.length<=2,row.name+' redundant note');}
               for(const b of row.buttons){
                 assert.ok(b.font.includes('Pretendard Variable'));assert.equal(b.whiteSpace,'nowrap');assert.equal(b.height,44);assert.equal(b.textLines,1);assert.ok(b.textFits&&b.scrollFits,b.label+' clipped');assert.ok(b.right<=row.rowRight+1);assert.ok(Math.abs(b.y-row.buttons[0].y)<1);
                 if(['전화','길찾기'].includes(b.label))assert.ok(b.icon);
-                if(b.label==='네이버 예약'){assert.ok(b.width>=84);assert.equal(b.paddingLeft,'12px');assert.equal(b.paddingRight,'12px');}
+                if(['네이버 예약','네이버 확인','홈페이지 예약'].includes(b.label)){assert.ok(b.width>=84);assert.equal(b.paddingLeft,'12px');assert.equal(b.paddingRight,'12px');}
               }
             }
+            assert.ok(measurements.some(r=>r.name.includes('이야기')&&r.note?.label==='예약 없이 방문'));
+            for(const name of ['달동물병원','청주이음','두근동물병원','봄봄'])assert.ok(measurements.some(r=>r.name.includes(name)&&r.buttons.some(b=>b.label==='네이버 확인')&&!r.note),name+' missing separate action');
+            await page.locator('.zeno-search-card').first().evaluate(el=>el.scrollIntoView({block:'start'}));
+            await page.screenshot({path:'screenshots/list-cards-360.png'});
+            await page.setViewportSize({width:390,height:844});
+            await page.evaluate(()=>{state.query='';render();});
+            await page.locator('.zeno-search-card').first().waitFor();
+            const compact=await page.evaluate(()=>[...document.querySelectorAll('.zeno-search-card')].map(card=>{
+              const row=card.querySelector('.zeno-card-actions'),r=row.getBoundingClientRect(),actions=[...row.children].filter(el=>el.getBoundingClientRect().width>0);
+              return {name:card.querySelector('strong').textContent,height:card.getBoundingClientRect().height, fits:actions.every(el=>{const b=el.getBoundingClientRect();return b.right<=r.right+1&&b.left>=r.left-1&&el.scrollWidth<=el.clientWidth+1;}),overlap:actions.some((el,i)=>i>0&&el.getBoundingClientRect().left<actions[i-1].getBoundingClientRect().right-1)};
+            }));
+            for(const card of compact){assert.ok(card.fits&&!card.overlap,card.name+' overflow at 390');assert.ok(card.height<=145,card.name+' too tall at 390');}
+            await page.screenshot({path:'screenshots/full-list-390.png'});
+            await page.locator('.zeno-search-card').first().evaluate(el=>el.scrollIntoView({block:'start'}));
+            await page.screenshot({path:'screenshots/list-cards-390.png'});
+            await page.setViewportSize({width:360,height:800});
             await page.evaluate(()=>{state.query='다옴';render();});
             await page.locator('.zeno-list-naver-book').first().waitFor();
             const session=await page.context().newCDPSession(page);
