@@ -3332,7 +3332,7 @@ html body #app .zeno-search-page .zeno-search-card .zeno-list-reservation-link{c
 <style id="zeno-search-card-layout-20261125b">
 /* 2026-11-25 병원 찾기 카드: 예약 방법을 PPT와 같은 라벨로(링크 있으면 눌러서 이동), 버튼은 한 줄을 같은 너비로. */
 html body #app .zeno-search-page .zeno-search-card .zeno-list-resv{display:flex;gap:6px;align-items:flex-start;margin:6px 0 0 76px;min-width:0;font-size:13px;line-height:1.45;color:#4e5968}
-html body #app .zeno-search-page .zeno-search-card .zeno-list-resv-label{flex:none;line-height:24px;color:#8b95a1}
+html body #app .zeno-search-page .zeno-search-card .zeno-list-resv-label{flex:none;line-height:24px;color:#6b7684}
 html body #app .zeno-search-page .zeno-search-card .zeno-list-resv-chips{display:flex;flex-wrap:wrap;gap:4px;min-width:0}
 html body #app .zeno-search-page .zeno-search-card .zeno-list-resv-chip{display:inline-flex;align-items:center;height:24px;padding:0 8px;border-radius:6px;font-size:12.5px;font-weight:600;white-space:nowrap;border:1px solid transparent;box-sizing:border-box}
 html body #app .zeno-search-page .zeno-search-card .zeno-list-resv,html body #app .zeno-search-page .zeno-search-card .zeno-list-resv *{font-family:var(--zeno-ui-font)!important}
@@ -3340,17 +3340,19 @@ html body #app .zeno-search-page .zeno-search-card .zeno-list-resv-chip.is-link{
 html body #app .zeno-search-page .zeno-search-card .zeno-list-resv-chip.is-verified::after{content:'';width:9px;height:9px;margin-left:3px;background:currentColor;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 2h6v6M10 2 3 9'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 2h6v6M10 2 3 9'/%3E%3C/svg%3E") center/contain no-repeat}
 html body #app .zeno-search-page .zeno-search-card .zeno-list-resv-chip.is-unverified{border-style:dashed}
 html body #app .zeno-search-page .zeno-search-card .zeno-list-resv-chip.is-link:focus-visible{outline:2px solid #2563eb;outline-offset:2px}
-html body #app .zeno-search-page .zeno-search-card .zeno-list-resv-pending{display:inline-flex;align-items:center;height:24px;font-size:12px;color:#8b95a1;margin-left:2px;white-space:nowrap}
+html body #app .zeno-search-page .zeno-search-card .zeno-list-resv-pending{display:inline-flex;align-items:center;height:24px;font-size:12px;color:#6b7684;margin-left:2px;white-space:nowrap}
 html body #app .zeno-search-page .zeno-search-card .zeno-resv-naver{background:#e9f7ef;border-color:#bfe3cc;color:#03733a}
 html body #app .zeno-search-page .zeno-search-card .zeno-resv-website{background:#fff;border-color:#93b5e6;color:#1d4ed8}
 html body #app .zeno-search-page .zeno-search-card .zeno-resv-phone,html body #app .zeno-search-page .zeno-search-card .zeno-resv-walkin{background:#f2f4f6;color:#4e5968}
 html body #app .zeno-search-page .zeno-search-card .zeno-list-resv-policy{display:inline-flex;align-items:center;height:24px;font-size:12.5px;color:#6b7684;margin-left:2px}
 html body #app .zeno-search-page .zeno-search-card .zeno-card-actions,html body #app .zeno-search-page .zeno-search-card .zeno-card-actions.has-book{gap:6px!important;margin:10px 0 0!important}
+/* 예약 버튼만 1px 테두리가 있어 flex 분배 시 2px 넓어지던 문제: 모든 버튼에 같은 두께의 투명 테두리 */
+html body #app .zeno-search-page .zeno-search-card .zeno-card-actions .zeno-card-call{border:1px solid transparent!important}
 html body #app .zeno-search-page .zeno-search-card .zeno-card-actions .zeno-card-action{flex:1 1 0!important;width:auto!important;min-width:0!important;max-width:none!important;height:40px!important;min-height:40px!important;padding:0 12px!important;font-size:14px!important;border-radius:8px!important}
 /* 기존 다크 모드에서 병원명이 배경색과 같아 보이지 않던 문제 보완 */
 :is(html.dark,html[data-theme="dark"]) body #app .zeno-search-page .zeno-search-card:not(.list-closed) .directory-text>strong{color:#f2f4f6!important}
 :is(html.dark,html[data-theme="dark"]) body #app .zeno-search-page .zeno-search-card .zeno-resv-naver{background:#173a27;border-color:#2f5d43;color:#6fd39a}
-:is(html.dark,html[data-theme="dark"]) body #app .zeno-search-page .zeno-search-card .zeno-list-resv-pending,:is(html.dark,html[data-theme="dark"]) body #app .zeno-search-page .zeno-search-card .zeno-list-resv-policy{color:#9aa6b2}
+:is(html.dark,html[data-theme="dark"]) body #app .zeno-search-page .zeno-search-card .zeno-list-resv-pending,:is(html.dark,html[data-theme="dark"]) body #app .zeno-search-page .zeno-search-card .zeno-list-resv-policy,:is(html.dark,html[data-theme="dark"]) body #app .zeno-search-page .zeno-search-card .zeno-list-resv-label{color:#a7b2be}
 :is(html.dark,html[data-theme="dark"]) body #app .zeno-search-page .zeno-search-card .zeno-resv-website{background:transparent;border-color:#4b6fa8;color:#8fb8f0}
 :is(html.dark,html[data-theme="dark"]) body #app .zeno-search-page .zeno-search-card .zeno-resv-phone,:is(html.dark,html[data-theme="dark"]) body #app .zeno-search-page .zeno-search-card .zeno-resv-walkin{background:#243040;color:#c9d3de}
 </style>
@@ -4881,9 +4883,10 @@ function zenoListReservation(h,eligible){
  const safe=url=>/^https:\/\/[^\s"'<>]+$/i.test(url)||/^tel:[0-9]{9,12}$/.test(url)?url:'';
  const confirmedNaver=zenoListConfirmedNaverUrl(h);
  let unverified=false;
- const chip=(kind,label,url,verified)=>{
+ const chip=(kind,label,url,verified,needsLink)=>{
   const href=safe(url||'');
-  if(!href)return '<span class="zeno-list-resv-chip zeno-resv-'+kind+'">'+e(label)+'</span>';
+  // 네이버·홈페이지 예약으로 등록됐지만 쓸 수 있는 주소가 없으면 누를 수 없는 글자 라벨 + 줄 끝 '링크 확인 중'
+  if(!href){if(needsLink)unverified=true;return '<span class="zeno-list-resv-chip zeno-resv-'+kind+'">'+e(label)+'</span>';}
   const external=/^https:/i.test(href);
   if(external&&!verified)unverified=true;
   return '<a class="zeno-list-resv-chip zeno-resv-'+kind+' is-link'+(external?(verified?' is-verified':' is-unverified'):'')+'" href="'+e(href)+'"'
@@ -4891,8 +4894,8 @@ function zenoListReservation(h,eligible){
    +' aria-label="'+e(h.name+' '+label+(external&&!verified?' (링크 확인 중)':''))+'">'+e(label)+'</a>';
  };
  const chips=[];
- if(methods.includes('naver')){const url=zenoNaverBookingUrl(h);chips.push(chip('naver','네이버 예약',url,Boolean(confirmedNaver)&&confirmedNaver===url));}
- if(methods.includes('official'))chips.push(chip('website','홈페이지 예약',zenoWebsiteBookingUrl(h),info.officialLinkVerified===true));
+ if(methods.includes('naver')){const url=zenoNaverBookingUrl(h);chips.push(chip('naver','네이버 예약',url,Boolean(confirmedNaver)&&confirmedNaver===url,true));}
+ if(methods.includes('official'))chips.push(chip('website','홈페이지 예약',zenoWebsiteBookingUrl(h),info.officialLinkVerified===true,true));
  if(methods.includes('phone'))chips.push(chip('phone','전화 예약',tel,true));
  if(methods.includes('app'))chips.push(chip('phone','병원 자체 앱','',false));
  if(zenoWalkInAllowed(h)||methods.includes('walkin'))chips.push(chip('walkin','예약 없이 방문','',false));

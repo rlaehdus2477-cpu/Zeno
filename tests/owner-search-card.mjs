@@ -1,46 +1,108 @@
 // 병원 찾기 카드 렌더링·예약 라벨 검증 (전체 owner.html을 실제 브라우저로 렌더링)
 // 실행: node tests/owner-search-card.mjs  (playwright 필요)
-// 화면 캡처: screenshots/search-card-<폭>-<light|dark>.png
+// 환경변수
+//   ZENO_OWNER_HTML        검사할 owner.html 경로 (기본: 저장소 owner.html)
+//   SCREENSHOT_DIR         캡처 저장 폴더 (기본: screenshots)
+//   ZENO_LOCAL_PRETENDARD  jsDelivr에 접근할 수 없는 로컬 환경에서만, pretendard 패키지의 dist/web/variable 폴더
+//   PLAYWRIGHT_REQUIRE_FROM playwright 위치 (전역 설치 등)
 import fs from 'node:fs';
 import path from 'node:path';
 import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
+import {fileURLToPath} from 'node:url';
 
 let chromium;
 try{({chromium}=await import('playwright'));}
 catch{({chromium}=createRequire(process.env.PLAYWRIGHT_REQUIRE_FROM||import.meta.url)('playwright'));}
 
-const html=fs.readFileSync(new URL('../owner.html',import.meta.url),'utf8');
+const htmlPath=process.env.ZENO_OWNER_HTML||fileURLToPath(new URL('../owner.html',import.meta.url));
+const html=fs.readFileSync(htmlPath,'utf8');
 const shots=process.env.SCREENSHOT_DIR||'screenshots';
 fs.mkdirSync(shots,{recursive:true});
-// 로컬에서 jsDelivr에 접근할 수 없을 때만: Pretendard 패키지 폴더(dist/web/variable)를 지정하면 같은 파일로 대신 응답한다.
 const localFont=process.env.ZENO_LOCAL_PRETENDARD||'';
+
+// ---- 원본 데이터: 앱이 실행되기 전의 HOSPITALS 원문을 직접 읽어 기대값을 만든다 ----
+const dataLine=html.split('\n').find(line=>line.startsWith('const HOSPITALS='));
+assert.ok(dataLine,'owner.html에서 HOSPITALS 원본을 찾지 못함');
+const SOURCE=JSON.parse(dataLine.slice('const HOSPITALS='.length).replace(/;\s*$/,''));
+const byId=new Map(SOURCE.map(h=>[h.id,h]));
+const httpsUrl=v=>{try{const u=new URL(String(v||''));return u.protocol==='https:'?u.href:''}catch{return ''}};
+const validPhone=p=>/^0[0-9 -]{8,15}$/.test(String(p||'').trim());
+function expectedButtons(h){
+ const out=['전화'];
+ if(h.address)out.push('길찾기');
+ if(h.linked)out.push('예약');
+ return out;
+}
+// 네이버 예약 주소로 인정하는 형식(앱 규칙과 별도로 테스트에 고정)
+function naverUsable(h){
+ const url=httpsUrl(h.reservationUrl);if(!url)return '';
+ const u=new URL(url);
+ if(['m.place.naver.com','place.naver.com'].includes(u.hostname)&&/^\/(?:pet|hospital|place)\/\d+\/booking\/?$/.test(u.pathname))return url;
+ if(u.hostname==='booking.naver.com'&&/^\/booking\/\d+\/bizes\/\d+/.test(u.pathname))return url;
+ if(h.reservationInfo?.naverLinkStatus==='official-booking-tab'&&u.hostname==='map.naver.com'&&/^\/p\/entry\/place\/\d+$/.test(u.pathname)&&/^\/booking(?:\?|$)/.test(u.searchParams.get('placePath')||''))return url;
+ return '';
+}
+function websiteUsable(h){
+ const url=httpsUrl(h.reservationUrl);if(!url)return '';
+ const u=new URL(url);
+ return !u.username&&!u.password&&!/(^|\.)naver\.com$/i.test(u.hostname)?url:'';
+}
+function naverVerified(h){
+ const i=h.reservationInfo||{};
+ if(i.naverLinkVerified===false)return false;
+ return i.naverLinkVerified===true||['direct','official-booking-tab'].includes(i.naverLinkStatus);
+}
+// 병원 상태별 확인 문구 (정확히 0개 또는 1개)
+function expectedPending(h){
+ if(h.linked)return null;
+ const i=h.reservationInfo||{},m=Array.isArray(i.methods)?i.methods:[];
+ if(i.evidenceStatus==='reported')return '제보 정보 · 확인 중';
+ if(m.includes('naver')&&(!naverUsable(h)||!naverVerified(h)))return '링크 확인 중';
+ if(m.includes('official')&&(!websiteUsable(h)||i.officialLinkVerified!==true))return '링크 확인 중';
+ return null;
+}
+function expectedLinks(h){
+ if(h.linked)return [];
+ const i=h.reservationInfo||{},m=Array.isArray(i.methods)?i.methods:[];
+ const out=[];
+ if(m.includes('naver')&&naverUsable(h))out.push({label:'네이버 예약',href:naverUsable(h)});
+ if(m.includes('official')&&websiteUsable(h))out.push({label:'홈페이지 예약',href:websiteUsable(h)});
+ const tel=validPhone(h.phone)?'tel:'+String(h.phone).replace(/[^0-9]/g,''):'';
+ if(m.includes('phone')&&tel)out.push({label:'전화 예약',href:tel});
+ const hasAny=m.includes('naver')||m.includes('official')||m.includes('phone')||m.includes('app')||m.includes('walkin')||['optional','walkin'].includes(i.policy);
+ const policy=['required','recommended','partial'].includes(i.policy);
+ if(!hasAny&&!policy&&tel)out.push({label:'예약 여부 전화 문의',href:tel});
+ return out;
+}
 
 const browser=await chromium.launch({headless:true});
 async function openPage({width,scheme}){
  const context=await browser.newContext({viewport:{width,height:800},deviceScaleFactor:2,isMobile:true,hasTouch:true,locale:'ko-KR',colorScheme:scheme});
  const page=await context.newPage();
- await context.route('http://zeno.test/**',route=>new URL(route.request().url()).pathname==='/owner'
-  ?route.fulfill({status:200,contentType:'text/html; charset=utf-8',body:html})
-  :route.fulfill({status:503,contentType:'application/json',body:'{}'}));
+ const external=[];
+ // 외부 예약처에는 접속하지 않고 요청 주소만 기록한다 (route는 나중에 등록한 것이 먼저 처리됨)
+ await context.route(/^https:\/\//,route=>{
+  const u=new URL(route.request().url());
+  if(u.hostname==='cdn.jsdelivr.net')return route.fallback();
+  if(route.request().resourceType()==='document')external.push(u.href);
+  return route.fulfill({status:200,contentType:'text/html',body:'<title>external test page</title>'});
+ });
  if(localFont){
   await context.route('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/**',route=>{
    const file=path.join(localFont,new URL(route.request().url()).pathname.split('/dist/web/variable/')[1]||'');
    return fs.existsSync(file)?route.fulfill({status:200,body:fs.readFileSync(file),contentType:file.endsWith('.css')?'text/css':'font/woff2',headers:{'access-control-allow-origin':'*'}}):route.fulfill({status:404,body:''});
   });
  }
- // 외부 예약 페이지는 실제로 접속하지 않는다.
- await context.route(/^https:\/\/(m\.place\.naver\.com|booking\.naver\.com|naver\.me|[^/]+)\/.*/,route=>{
-  const u=new URL(route.request().url());
-  if(u.hostname==='cdn.jsdelivr.net')return route.fallback();
-  return route.fulfill({status:200,contentType:'text/html',body:'<title>external</title>'});
- });
+ await context.route('http://zeno.test/**',route=>new URL(route.request().url()).pathname==='/owner'
+  ?route.fulfill({status:200,contentType:'text/html; charset=utf-8',body:html})
+  :route.fulfill({status:503,contentType:'application/json',body:'{}'}));
  await page.goto('http://zeno.test/owner',{waitUntil:'domcontentloaded'});
- await page.evaluate(theme=>{try{document.documentElement.dataset.theme=theme;document.documentElement.classList.toggle('dark',theme==='dark')}catch{}state.page='search';state.query='';render();},scheme);
+ await page.evaluate(theme=>{document.documentElement.dataset.theme=theme;document.documentElement.classList.toggle('dark',theme==='dark');state.page='search';state.query='';render();},scheme);
  await page.locator('.zeno-search-card').first().waitFor();
- const font=await page.evaluate(async()=>{const loaded=await document.fonts.load('600 14px "Pretendard Variable"','네이버 예약 전화 길찾기 예약 없이 방문');await document.fonts.ready;return loaded.length;});
+ const font=await page.evaluate(async()=>{const loaded=await document.fonts.load('600 14px "Pretendard Variable"','네이버 예약 전화 길찾기 예약 없이 방문 링크 확인 중');await document.fonts.ready;return loaded.length;});
  assert.ok(font>0,'Pretendard 웹 글꼴을 불러오지 못함 ('+width+'px '+scheme+')');
- return {context,page};
+ return {context,page,external};
 }
 async function glyphFonts(page,selector){
  const session=await page.context().newCDPSession(page);
@@ -52,135 +114,230 @@ async function glyphFonts(page,selector){
 }
 
 const report=[];
+const measured={};
 for(const width of [320,360,390,412]){
  for(const scheme of ['light','dark']){
   const {context,page}=await openPage({width,scheme});
   const result=await page.evaluate(()=>{
-   const out={overflowX:document.documentElement.scrollWidth-innerWidth,cards:[]};
    const lines=el=>{const walker=document.createTreeWalker(el,NodeFilter.SHOW_TEXT);const tops=new Set();let n;while((n=walker.nextNode())){if(!n.textContent.trim())continue;const r=document.createRange();r.selectNodeContents(n);for(const x of r.getClientRects())if(x.width>0)tops.add(Math.round(x.top));}return tops.size;};
-   for(const card of document.querySelectorAll('.zeno-search-card')){
+   const rgb=c=>(c.match(/[\d.]+/g)||[]).map(Number);
+   const lum=c=>{const v=rgb(c).slice(0,3).map(x=>{x/=255;return x<=.03928?x/12.92:((x+.055)/1.055)**2.4});return .2126*v[0]+.7152*v[1]+.0722*v[2]};
+   const clear=c=>{const v=rgb(c);return v.length===4&&v[3]===0};
+   const bgOf=el=>{for(let n=el;n;n=n.parentElement){const c=getComputedStyle(n).backgroundColor;if(!clear(c))return c}return 'rgb(255, 255, 255)'};
+   const ratio=el=>{const a=lum(getComputedStyle(el).color),b=lum(bgOf(el));return Math.round((Math.max(a,b)+.05)/(Math.min(a,b)+.05)*100)/100};
+   const measure=el=>{const r=el.getBoundingClientRect(),cs=getComputedStyle(el);return {label:el.textContent.trim(),left:r.left,right:r.right,y:r.top,width:r.width,height:Math.round(r.height),lines:lines(el),fits:el.scrollWidth<=el.clientWidth+1,whiteSpace:cs.whiteSpace,font:cs.fontFamily,href:el.getAttribute('href')||'',tag:el.tagName,contrast:ratio(el)};};
+   const cards=[...document.querySelectorAll('.zeno-search-card')].map(card=>{
     const cr=card.getBoundingClientRect();
-    const id=card.querySelector('.directory-main')?.dataset.id;
-    const h=(typeof HOSPITALS!=='undefined'?HOSPITALS:[]).find(x=>x.id===id)||{};
-    const measure=el=>{const r=el.getBoundingClientRect(),cs=getComputedStyle(el);return {label:el.textContent.trim(),left:r.left,right:r.right,y:r.top,height:Math.round(r.height),lines:lines(el),fits:el.scrollWidth<=el.clientWidth+1,whiteSpace:cs.whiteSpace,font:cs.fontFamily,href:el.getAttribute('href')||'',tag:el.tagName};};
-    out.cards.push({name:card.querySelector('strong').textContent,id,linked:Boolean(h.linked),left:cr.left,right:cr.right,
+    return {id:card.querySelector('.directory-main')?.dataset.id,name:card.querySelector('strong').textContent,left:cr.left,right:cr.right,closed:card.classList.contains('list-closed'),
+     nameContrast:ratio(card.querySelector('strong')),
      buttons:[...card.querySelectorAll('.zeno-card-actions .zeno-card-action')].map(measure),
      chips:[...card.querySelectorAll('.zeno-list-resv-chip')].map(measure),
-     resv:card.querySelector('.zeno-list-resv')?(()=>{const r=card.querySelector('.zeno-list-resv').getBoundingClientRect();return {right:r.right,lines:card.querySelector('.zeno-list-resv').textContent}})():null,
-     book:card.querySelectorAll('[data-action="book"]').length,
-     contrast:(()=>{const rgb=c=>(c.match(/[\d.]+/g)||[]).slice(0,3).map(Number);const lum=c=>{const v=rgb(c).map(x=>{x/=255;return x<=.03928?x/12.92:((x+.055)/1.055)**2.4});return .2126*v[0]+.7152*v[1]+.0722*v[2]};let bgEl=card,bg='rgba(0, 0, 0, 0)';while(bgEl&&/rgba\(0, 0, 0, 0\)|transparent/.test(bg=getComputedStyle(bgEl).backgroundColor))bgEl=bgEl.parentElement;if(/rgba\(0, 0, 0, 0\)|transparent/.test(bg))bg='rgb(255, 255, 255)';const ratio=el=>{const a=lum(getComputedStyle(el).color),b=lum(bg);return (Math.max(a,b)+.05)/(Math.min(a,b)+.05)};return {name:ratio(card.querySelector('strong')),chips:[...card.querySelectorAll('.zeno-list-resv-chip')].map(el=>{const own=getComputedStyle(el).backgroundColor;const a=lum(getComputedStyle(el).color),b=lum(/rgba\(0, 0, 0, 0\)/.test(own)?bg:own);return (Math.max(a,b)+.05)/(Math.min(a,b)+.05)})}})(),
-     closed:card.classList.contains('list-closed'),
-     pending:[...card.querySelectorAll('.zeno-list-resv-pending')].map(x=>x.textContent),
-     text:card.textContent});
-   }
-   return out;
+     resvLabel:card.querySelector('.zeno-list-resv-label')?measure(card.querySelector('.zeno-list-resv-label')):null,
+     pending:[...card.querySelectorAll('.zeno-list-resv-pending')].map(measure),
+     policy:[...card.querySelectorAll('.zeno-list-resv-policy')].map(measure),
+     book:[...card.querySelectorAll('[data-action="book"]')].map(b=>b.dataset.id),
+     text:card.textContent};
+   });
+   return {overflowX:document.documentElement.scrollWidth-innerWidth,cards};
   });
   const tag=width+'px '+scheme;
   assert.ok(result.overflowX<=0,tag+' 가로 넘침 '+result.overflowX+'px');
-  assert.ok(result.cards.length>=50,tag+' 카드 수 '+result.cards.length);
-  let three=0,two=0,chipCount=0;
+  // 전체 병원 ID가 원본 데이터와 정확히 일치
+  assert.deepEqual(result.cards.map(c=>c.id).sort(),SOURCE.map(h=>h.id).sort(),tag+' 카드 ID가 원본 병원 목록과 다름');
+  let maxDiff=0;
   for(const c of result.cards){
-   // 제휴 병원만 ZENO 예약 버튼, 비제휴 병원에는 없음
-   assert.equal(c.book,c.linked?1:0,tag+' '+c.name+' 예약 버튼 수');
-   if(c.buttons.length===3)three++;else if(c.buttons.length===2)two++;
+   const h=byId.get(c.id);const who=tag+' '+c.name;
+   // 병원별 버튼 구성 (전화·길찾기·제휴만 예약)
+   assert.deepEqual(c.buttons.map(b=>b.label),expectedButtons(h),who+' 버튼 구성');
+   assert.deepEqual(c.book,h.linked?[h.id]:[],who+' ZENO 예약 버튼');
+   const widths=c.buttons.map(b=>b.width);
+   const diff=Math.max(...widths)-Math.min(...widths);maxDiff=Math.max(maxDiff,diff);
+   assert.ok(diff<=1,who+' 버튼 너비 차이 '+widths.map(w=>w.toFixed(2)).join('/'));
    for(const b of c.buttons){
-    assert.equal(b.height,40,tag+' '+c.name+' '+b.label+' 높이');
-    assert.equal(b.lines,1,tag+' '+c.name+' '+b.label+' 줄바꿈');
-    assert.ok(b.fits,tag+' '+c.name+' '+b.label+' 잘림');
+    assert.equal(b.height,40,who+' '+b.label+' 높이');
+    assert.equal(b.lines,1,who+' '+b.label+' 줄바꿈');
+    assert.ok(b.fits,who+' '+b.label+' 잘림');
     assert.equal(b.whiteSpace,'nowrap');
-    assert.ok(b.font.includes('Pretendard Variable'),tag+' 버튼 글꼴');
-    assert.ok(b.left>=c.left-1&&b.right<=c.right+1,tag+' '+c.name+' '+b.label+' 카드 밖으로 나감');
-    assert.ok(Math.abs(b.y-c.buttons[0].y)<1,tag+' '+c.name+' 버튼 줄 어긋남');
+    assert.ok(b.font.includes('Pretendard Variable'),who+' 버튼 글꼴');
+    assert.ok(b.left>=c.left-1&&b.right<=c.right+1,who+' '+b.label+' 카드 밖으로 나감');
+    assert.ok(Math.abs(b.y-c.buttons[0].y)<1,who+' 버튼 줄 어긋남');
    }
+   if(!c.closed)assert.ok(c.nameContrast>=4.5,who+' 병원명 대비 '+c.nameContrast);
+   // 예약 줄: 링크 라벨 주소가 원본 주소·전화번호와 일치
+   const links=c.chips.filter(x=>x.tag==='A').map(x=>({label:x.label,href:x.href}));
+   assert.deepEqual(links,expectedLinks(h),who+' 예약 라벨 링크');
    for(const ch of c.chips){
-    chipCount++;
-    assert.equal(ch.lines,1,tag+' '+c.name+' 라벨 '+ch.label+' 줄바꿈');
-    assert.ok(ch.fits,tag+' '+c.name+' 라벨 '+ch.label+' 잘림');
+    if(ch.tag!=='A')assert.equal(ch.href,'',who+' 링크 없는 라벨에 href');
+    assert.equal(ch.lines,1,who+' 라벨 '+ch.label+' 줄바꿈');
+    assert.ok(ch.fits,who+' 라벨 '+ch.label+' 잘림');
     assert.equal(ch.whiteSpace,'nowrap');
-    assert.ok(ch.font.includes('Pretendard Variable'),tag+' 라벨 글꼴');
-    assert.ok(ch.right<=c.right+1,tag+' '+c.name+' 라벨 '+ch.label+' 카드 밖으로 나감');
-    if(ch.tag==='A')assert.match(ch.href,/^(https:\/\/[^\s]+|tel:[0-9]{9,12})$/,tag+' '+c.name+' 허용되지 않은 링크 '+ch.href);
-    else assert.equal(ch.href,'',tag+' 링크 없는 라벨에 href');
+    assert.ok(ch.font.includes('Pretendard Variable'),who+' 라벨 글꼴');
+    assert.ok(ch.right<=c.right+1,who+' 라벨 '+ch.label+' 카드 밖으로 나감');
+    assert.ok(ch.contrast>=4.5,who+' 라벨 '+ch.label+' 대비 '+ch.contrast);
    }
-   if(!c.closed)assert.ok(c.contrast.name>=4.5,tag+' '+c.name+' 병원명 대비 부족 '+c.contrast.name.toFixed(2));
-   for(const r of c.contrast.chips)assert.ok(r>=4.5,tag+' '+c.name+' 예약 라벨 대비 부족 '+r.toFixed(2));
-   if(!c.linked)assert.ok(c.resv,tag+' '+c.name+' 예약 줄 없음');
-   assert.ok(c.pending.length<=1,tag+' '+c.name+' 확인 문구 중복');
-   assert.ok(!c.text.includes('예약 방법 확인 필요'),tag+' '+c.name+' 예약 방법 확인 필요 문구 노출');
+   if(!h.linked){
+    assert.ok(c.resvLabel,who+' 예약 줄 없음');
+    assert.ok(c.resvLabel.contrast>=4.5,who+" '예약' 글자 대비 "+c.resvLabel.contrast);
+   }
+   for(const x of [...c.pending,...c.policy]){
+    assert.ok(x.contrast>=4.5,who+" '"+x.label+"' 대비 "+x.contrast);
+    assert.ok(x.right<=c.right+1,who+" '"+x.label+"' 카드 밖으로 나감");
+   }
+   // 확인 문구: 상태별 정확한 문구와 개수
+   const want=expectedPending(h);
+   assert.deepEqual(c.pending.map(x=>x.label),want?[want]:[],who+' 확인 문구');
+   assert.ok(!c.text.includes('예약 방법 확인 필요'),who+" '예약 방법 확인 필요' 노출");
+   measured[tag]=measured[tag]||{};
+   if(c.buttons.length===3&&!measured[tag].partner)measured[tag].partner=widths.map(w=>w.toFixed(2)).join(' / ');
+   for(const x of [c.resvLabel,...c.pending].filter(Boolean)){
+    const key=x===c.resvLabel?'예약':x.label;
+    measured[tag][key]=Math.min(measured[tag][key]??99,x.contrast);
+   }
   }
-  assert.ok(three>=3&&two>=10&&chipCount>=50,tag+' 버튼 3개 카드 '+three+' · 2개 카드 '+two+' · 라벨 '+chipCount);
-  // 실제 그려진 글자의 글꼴 (Pretendard 확인)
-  for(const sel of ['.zeno-search-card .zeno-list-resv-chip.zeno-resv-naver','.zeno-search-card .zeno-card-actions .zeno-card-call','.zeno-search-card .zeno-card-book']){
+  // 실제 그려진 글자의 글꼴
+  for(const sel of ['.zeno-search-card .zeno-list-resv-chip.zeno-resv-naver','.zeno-search-card .zeno-list-resv-pending','.zeno-search-card .zeno-card-actions .zeno-card-call','.zeno-search-card .zeno-card-book']){
    const fonts=await glyphFonts(page,sel);
    assert.ok(fonts.some(f=>f.isCustomFont&&/Pretendard/i.test(f.familyName)),tag+' '+sel+' Pretendard 아님: '+JSON.stringify(fonts));
   }
-  await page.evaluate(()=>window.scrollTo(0,0));
-  await page.locator('.zeno-search-card').nth(+(process.env.SHOT_CARD||3)).scrollIntoViewIfNeeded();
+  const three=result.cards.filter(c=>c.buttons.length===3).length,two=result.cards.filter(c=>c.buttons.length===2).length;
+  const m=measured[tag];
+  report.push(tag+': 카드 '+result.cards.length+'곳 원본 일치 (버튼3 '+three+' · 버튼2 '+two+') · 버튼 너비 차 최대 '+maxDiff.toFixed(2)+'px · 제휴 버튼 '+m.partner+' · 대비 예약 '+m['예약']+' / 링크 확인 중 '+m['링크 확인 중']+' / 제보 정보 · 확인 중 '+m['제보 정보 · 확인 중']);
+  // 캡처: 320px 확인 문구가 줄바꿈된 카드 / 360px 제휴 카드
+  if(width===320){
+   const idx=await page.evaluate(()=>[...document.querySelectorAll('.zeno-search-card')].findIndex(c=>{const p=c.querySelector('.zeno-list-resv-pending'),f=c.querySelector('.zeno-list-resv-chip');return p&&f&&p.getBoundingClientRect().top>f.getBoundingClientRect().top+2}));
+   if(idx>=0)await page.locator('.zeno-search-card').nth(idx).screenshot({path:path.join(shots,'card-320-'+scheme+'-pending-wrap.png')});
+  }
+  if(width===360)await page.locator('.zeno-search-card:has([data-action="book"])').first().screenshot({path:path.join(shots,'card-360-'+scheme+'-partner.png')});
+  await page.locator('.zeno-search-card').nth(4).scrollIntoViewIfNeeded();
   await page.screenshot({path:path.join(shots,'search-card-'+width+'-'+scheme+'.png')});
-  report.push(tag+': 카드 '+result.cards.length+' (버튼3 '+three+' · 버튼2 '+two+') · 라벨 '+chipCount);
   await context.close();
  }
 }
 
-// 라벨 클릭: 외부 링크만 새 창으로 열리고, 병원 상세·ZENO 예약 화면은 열리지 않는다.
+// ---- URL이 없거나 쓸 수 없는 네이버·홈페이지, 제보 정보: 테스트 입력으로 직접 확인 ----
 {
  const {context,page}=await openPage({width:360,scheme:'light'});
- const naver=page.locator('.zeno-search-card .zeno-resv-naver.is-link').first();
- await naver.scrollIntoViewIfNeeded();
- const [popup]=await Promise.all([context.waitForEvent('page'),naver.click()]);
- assert.match(popup.url(),/^https:\/\//,'라벨 클릭 시 https 외부 링크가 아님');
- await popup.close();
- let st=await page.evaluate(()=>({page:state.page,modal:Boolean(state.modal),pending:state.pendingAction||null}));
- assert.equal(st.page,'search','라벨 클릭 후 화면이 바뀜');
- assert.equal(st.modal,false,'라벨 클릭 후 상세/예약 창이 열림');
- assert.equal(st.pending,null,'라벨 클릭이 ZENO 예약으로 이어짐');
- // 키보드: Tab 포커스 + Enter 로 열림
- const kb=page.locator('.zeno-search-card .zeno-resv-naver.is-link').nth(1);
- await kb.focus();
- assert.equal(await kb.evaluate(el=>document.activeElement===el&&el.tabIndex>=0),true,'라벨에 키보드 포커스 불가');
- const [popup2]=await Promise.all([context.waitForEvent('page'),page.keyboard.press('Enter')]);
- assert.match(popup2.url(),/^https:\/\//);await popup2.close();
- // 전화 예약: tel 링크, 앱 화면 변화 없음
- const tel=page.locator('.zeno-search-card .zeno-resv-phone.is-link').first();
- assert.match(await tel.getAttribute('href'),/^tel:[0-9]{9,12}$/);
- await page.evaluate(()=>document.addEventListener('click',e=>{if(e.target.closest('a[href^="tel:"]'))e.preventDefault()},{capture:true,once:true}));
- await tel.click();
- st=await page.evaluate(()=>({page:state.page,modal:Boolean(state.modal)}));
- assert.deepEqual(st,{page:'search',modal:false},'전화 예약 라벨 클릭 후 앱 화면이 바뀜');
- // https·tel 이외 주소 차단
- const blocked=await page.evaluate(()=>{
-  const base={id:'t',name:'테스트',phone:'043-000-0000',linked:false};
-  return ['javascript:alert(1)','http://example.com/booking','data:text/html,x','https://evil.example/"onmouseover="x'].map(url=>
-   zenoListReservation({...base,reservationUrl:url,reservationInfo:{methods:['naver','official']}},false));
- });
- for(const markup of blocked){
-  const hrefs=[...markup.matchAll(/href="([^"]*)"/g)].map(m=>m[1]);
-  assert.ok(hrefs.every(h=>/^(https:\/\/|tel:)/.test(h)),'차단되어야 할 주소가 링크로 생성됨: '+hrefs.join(','));
-  assert.ok(!/javascript:|http:\/\/|data:|onmouseover="/.test(markup),'위험한 주소가 화면에 남음');
+ const cases=[
+  {name:'네이버 주소 없음',h:{reservationInfo:{methods:['naver','phone']}},link:['tel:0430000000'],pending:'링크 확인 중',plain:['네이버 예약']},
+  {name:'네이버 형식 아님',h:{reservationUrl:'https://example.com/x',reservationInfo:{methods:['naver']}},link:[],pending:'링크 확인 중',plain:['네이버 예약']},
+  {name:'홈페이지 주소 없음',h:{reservationInfo:{methods:['official']}},link:[],pending:'링크 확인 중',plain:['홈페이지 예약']},
+  {name:'홈페이지 http',h:{reservationUrl:'http://example.com/book',reservationInfo:{methods:['official']}},link:[],pending:'링크 확인 중',plain:['홈페이지 예약']},
+  {name:'제보 정보 + 네이버 주소 없음',h:{reservationInfo:{methods:['naver','walkin'],evidenceStatus:'reported'}},link:[],pending:'제보 정보 · 확인 중',plain:['네이버 예약','예약 없이 방문']},
+  {name:'확인된 네이버',h:{reservationUrl:'https://m.place.naver.com/pet/123/booking',reservationInfo:{methods:['naver'],naverLinkVerified:true}},link:['https://m.place.naver.com/pet/123/booking'],pending:null,plain:[]},
+  {name:'확인 전 네이버',h:{reservationUrl:'https://m.place.naver.com/pet/123/booking',reservationInfo:{methods:['naver'],naverLinkVerified:false}},link:['https://m.place.naver.com/pet/123/booking'],pending:'링크 확인 중',plain:[]},
+  {name:'확인 끝난 전화 예약',h:{reservationInfo:{methods:['phone'],evidenceStatus:'verified'}},link:['tel:0430000000'],pending:null,plain:[]},
+  {name:'javascript 주소',h:{reservationUrl:'javascript:alert(1)',reservationInfo:{methods:['naver','official']}},link:[],pending:'링크 확인 중',plain:['네이버 예약','홈페이지 예약']},
+  {name:'data 주소',h:{reservationUrl:'data:text/html,x',reservationInfo:{methods:['official']}},link:[],pending:'링크 확인 중',plain:['홈페이지 예약']},
+ ];
+ for(const t of cases){
+  const got=await page.evaluate(h=>{
+   const box=document.createElement('div');box.innerHTML=zenoListReservation({id:'t',name:'테스트',phone:'043-000-0000',linked:false,...h},false);
+   return {links:[...box.querySelectorAll('a')].map(a=>a.getAttribute('href')),plain:[...box.querySelectorAll('span.zeno-list-resv-chip')].map(x=>x.textContent),pending:[...box.querySelectorAll('.zeno-list-resv-pending')].map(x=>x.textContent),text:box.textContent};
+  },t.h);
+  assert.deepEqual(got.links,t.link,t.name+' 링크');
+  assert.deepEqual(got.plain,t.plain,t.name+' 누를 수 없는 라벨');
+  assert.deepEqual(got.pending,t.pending?[t.pending]:[],t.name+' 확인 문구');
+  assert.ok(!got.text.includes('예약 방법 확인 필요'),t.name+" '예약 방법 확인 필요' 노출");
  }
- report.push('라벨 클릭: 외부 링크만 열림 · 상세/예약 창 없음 · 키보드 Enter 작동 · tel 확인 · 비허용 주소 차단');
+ report.push('확인 문구 입력 사례 '+cases.length+'개 (네이버·홈페이지 주소 없음, 제보 정보, 확인 완료, 비허용 주소) 통과');
  await context.close();
 }
 
-// 제휴 병원 3곳: 기존 ZENO 예약 → 예약 창 + 진료 전 문진(AI 정리) 유지
+// ---- 라벨 클릭·키보드: 모든 외부 라벨이 그 병원 저장 주소로 열리고, 검색 화면은 그대로 ----
+{
+ const {context,page,external}=await openPage({width:360,scheme:'light'});
+ const targets=await page.evaluate(()=>[...document.querySelectorAll('.zeno-search-card a.zeno-list-resv-chip[href^="https:"]')].map(a=>({id:a.closest('.zeno-search-card').querySelector('.directory-main').dataset.id,label:a.textContent.trim()})));
+ assert.ok(targets.length>0,'외부 예약 라벨 없음');
+ let opened=0;
+ for(const t of targets){
+  const h=byId.get(t.id);
+  const expected=t.label==='네이버 예약'?naverUsable(h):websiteUsable(h);
+  assert.ok(expected,h.name+' '+t.label+' 저장된 주소가 없는데 링크가 생김');
+  const link=page.locator('.zeno-search-card:has(.directory-main[data-id="'+t.id+'"]) a.zeno-list-resv-chip',{hasText:t.label});
+  // 하단 메뉴에 가리지 않도록 화면 가운데로 옮긴 뒤 클릭
+  await link.evaluate(el=>el.scrollIntoView({block:'center',behavior:'instant'}));
+  const before=await page.evaluate(()=>scrollY);
+  const [popup]=await Promise.all([context.waitForEvent('page'),link.click()]);
+  await popup.waitForLoadState('domcontentloaded');
+  assert.equal(popup.url(),expected,h.name+' '+t.label+' 최종 주소가 저장된 주소와 다름');
+  await popup.close();
+  const st=await page.evaluate(()=>({page:state.page,modal:state.modal,pending:state.pendingAction||null,y:scrollY,cards:document.querySelectorAll('.zeno-search-card').length}));
+  assert.deepEqual({page:st.page,modal:st.modal,pending:st.pending},{page:'search',modal:null,pending:null},h.name+' 라벨 클릭 후 앱 상태 변경');
+  assert.equal(st.cards,SOURCE.length,h.name+' 라벨 클릭 후 검색 목록 변경');
+  assert.ok(Math.abs(st.y-before)<2,h.name+' 라벨 클릭 후 스크롤 이동 '+before+'→'+st.y);
+  opened++;
+ }
+ assert.equal(external.length,opened,'열린 외부 주소 수');
+ // 전화 라벨: 그 병원 번호
+ const tels=await page.evaluate(()=>[...document.querySelectorAll('.zeno-search-card a.zeno-list-resv-chip[href^="tel:"]')].map(a=>({id:a.closest('.zeno-search-card').querySelector('.directory-main').dataset.id,href:a.getAttribute('href')})));
+ assert.ok(tels.length>0,'전화 예약 라벨 없음');
+ for(const t of tels)assert.equal(t.href,'tel:'+String(byId.get(t.id).phone).replace(/[^0-9]/g,''),byId.get(t.id).name+' 전화 라벨 번호');
+ // 실제 Tab 이동 → 포커스 테두리 → Enter
+ const first=targets[0];
+ const card=page.locator('.zeno-search-card:has(.directory-main[data-id="'+first.id+'"])');
+ await card.evaluate(el=>el.scrollIntoView({block:'center',behavior:'instant'}));
+ await card.locator('.directory-main').focus();
+ const order=[];
+ for(let i=0;i<4;i++){
+  await page.keyboard.press('Tab');
+  const f=await page.evaluate(()=>{const a=document.activeElement;const cs=getComputedStyle(a);return {cls:String(a.className),text:a.textContent.trim(),outline:cs.outlineStyle,width:cs.outlineWidth,visible:a.matches(':focus-visible')}});
+  order.push(f);
+  if(/zeno-list-resv-chip/.test(f.cls)&&f.text===first.label)break;
+ }
+ const focused=order[order.length-1];
+ assert.ok(/zeno-list-resv-chip/.test(focused.cls)&&focused.text===first.label,'Tab으로 예약 라벨에 도달하지 못함: '+JSON.stringify(order));
+ assert.ok(focused.visible&&focused.outline==='solid'&&parseFloat(focused.width)>=2,'포커스 테두리 없음: '+JSON.stringify(focused));
+ const expectedFirst=first.label==='네이버 예약'?naverUsable(byId.get(first.id)):websiteUsable(byId.get(first.id));
+ const [kbPopup]=await Promise.all([context.waitForEvent('page'),page.keyboard.press('Enter')]);
+ await kbPopup.waitForLoadState('domcontentloaded');
+ assert.equal(kbPopup.url(),expectedFirst,'Enter로 연 주소');
+ await kbPopup.close();
+ assert.deepEqual(await page.evaluate(()=>({page:state.page,modal:state.modal})),{page:'search',modal:null},'Enter 후 검색 화면 유지');
+ report.push('외부 라벨 '+opened+'개: 새 창 주소가 병원 저장 주소와 일치 · 검색 화면/스크롤 유지 · 전화 라벨 '+tels.length+'개 번호 일치 · Tab→포커스 테두리→Enter 확인');
+ await context.close();
+}
+
+// ---- 제휴 3곳: 예약 → 진료 선택 → 예약 정보 → 문진 시작하기 → 항목 선택 (제출하지 않음) ----
 {
  const {context,page}=await openPage({width:360,scheme:'light'});
- const partners=await page.evaluate(()=>HOSPITALS.filter(h=>h.linked).map(h=>({id:h.id,name:h.name})));
- assert.equal(partners.length,3,'제휴 병원 수 '+partners.length);
+ const partners=SOURCE.filter(h=>h.linked).map(h=>({id:h.id,name:h.name}));
+ assert.deepEqual(partners.map(p=>p.name).sort(),['24시청주나음동물메디컬','수동물병원','티플러스동물메디컬센터'].sort(),'제휴 병원 목록');
+ let posted=0;
+ page.on('request',r=>{if(r.method()==='POST'&&/booking|reserv/i.test(r.url()))posted++;});
+ const shown=async loc=>loc.evaluate(el=>{const r=el.getBoundingClientRect();if(r.width<1||r.height<1)return false;for(let n=el;n;n=n.parentElement){const cs=getComputedStyle(n);if(cs.display==='none'||cs.visibility==='hidden'||Number(cs.opacity)===0)return false}return true});
  for(const p of partners){
-  await page.evaluate(()=>{state.ownerToken='test-token';state.page='search';state.query='';render();});
+  await page.evaluate(()=>{state.ownerToken='test-token';state.modal=null;state.page='search';state.query='';render();});
   const btn=page.locator('.zeno-search-card [data-action="book"][data-id="'+p.id+'"]');
   await btn.scrollIntoViewIfNeeded();await btn.click();
-  assert.deepEqual(await page.evaluate(()=>({type:state.modal?.type,id:state.modal?.id})),{type:'book',id:p.id},p.name+' ZENO 예약 창이 열리지 않음');
-  if(!(await page.evaluate(()=>state.modal.service)))await page.locator('[data-action="zeno-book-service"]').first().click();
-  await page.locator('[data-action="zeno-book-next"]').first().click();
-  await page.locator('.zi-intake').first().waitFor({state:'attached',timeout:5000});
-  const ok=await page.evaluate(()=>Boolean(document.querySelector('.zi-intake'))&&document.body.textContent.includes('진료 전 문진'));
-  assert.ok(ok,p.name+' 예약 창에 진료 전 문진 없음');
-  await page.screenshot({path:path.join(shots,'book-'+p.id+'-360.png')});
+  assert.deepEqual(await page.evaluate(()=>({type:state.modal?.type,id:state.modal?.id})),{type:'book',id:p.id},p.name+' ZENO 예약 창');
+  const service=page.locator('[data-action="zeno-book-service"]').first();
+  if(await service.count())await service.click();
+  const next=page.locator('[data-action="zeno-book-next"]').first();
+  assert.ok(await next.isEnabled(),p.name+' 다음 버튼 비활성');
+  await next.click();
+  await page.locator('#booking-form').waitFor({timeout:5000});
+  const intake=page.locator('.zi-intake').first();
+  assert.ok(await shown(intake),p.name+' 진료 전 문진이 화면에 보이지 않음');
+  const summary=intake.locator('summary',{hasText:'문진 시작하기'});
+  await summary.scrollIntoViewIfNeeded();
+  assert.ok(await shown(summary),p.name+" '문진 시작하기'가 보이지 않음");
+  await summary.click();
+  const chip=intake.locator('.zi-chip').first();
+  assert.ok(await shown(chip),p.name+' 문진 증상 항목이 펼쳐지지 않음');
+  await chip.click();
+  assert.equal(await chip.getAttribute('aria-pressed'),'true',p.name+' 문진 증상 선택 실패');
+  const select=intake.locator('#zi-onset');
+  await select.scrollIntoViewIfNeeded();
+  assert.ok(await shown(select),p.name+' 문진 항목이 펼쳐지지 않음');
+  const value=await select.evaluate(s=>[...s.options].find(o=>o.value)?.value||'');
+  assert.ok(value,p.name+' 문진 선택지 없음');
+  await select.selectOption(value);
+  assert.equal(await select.inputValue(),value,p.name+' 문진 항목 선택 실패');
+  await intake.screenshot({path:path.join(shots,'intake-'+p.id+'-360.png')});
   await page.evaluate(()=>{try{zenoCloseModal()}catch{state.modal=null;render()}});
  }
- report.push('제휴 병원 '+partners.map(p=>p.name).join('·')+': 예약 창·진료 전 문진 유지');
+ assert.equal(posted,0,'테스트 중 예약 요청이 전송됨');
+ report.push('제휴 3곳 '+partners.map(p=>p.name).join('·')+': 예약 → 진료 선택 → 예약 정보 → 문진 시작하기 → 항목 선택 (제출 없음)');
  await context.close();
 }
 await browser.close();
