@@ -4902,8 +4902,8 @@ function zenoListReservation(h,eligible){
  const policies={required:'사전 예약 필수',recommended:'사전 예약 권장',partial:'일부 진료 예약제'};
  const policy=Object.prototype.hasOwnProperty.call(policies,info.policy)?policies[info.policy]:'';
  if(!chips.length&&!policy)chips.push(chip('phone','예약 여부 전화 문의',tel,true));
- // 미확인 표시는 줄 끝에 한 번만: 이용자 제보 정보 > 확인 전 외부 링크 순. '예약 방법 확인 필요'를 라벨마다 반복하지 않는다.
- const pending=info.evidenceStatus==='reported'?'제보 정보 · 확인 중':unverified?'링크 확인 중':'';
+ // 미확인 표시는 줄 끝에 한 번만: 이용자 제공 정보 > 확인 전 외부 링크 순. '예약 방법 확인 필요'를 라벨마다 반복하지 않는다.
+ const pending=info.evidenceStatus==='reported'?'이용자 제공 · 확인 중':unverified?'링크 확인 중':'';
  return '<div class="zeno-list-resv"><span class="zeno-list-resv-label">예약</span><span class="zeno-list-resv-chips">'+chips.join('')
   +(policy?'<span class="zeno-list-resv-policy">'+e(policy)+'</span>':'')
   +(pending?'<span class="zeno-list-resv-pending">'+e(pending)+'</span>':'')+'</span></div>';
