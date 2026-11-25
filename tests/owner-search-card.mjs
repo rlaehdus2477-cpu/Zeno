@@ -24,6 +24,8 @@ const localFont=process.env.ZENO_LOCAL_PRETENDARD||'';
 // ---- 원본 데이터: 앱이 실행되기 전의 HOSPITALS 원문을 직접 읽어 기대값을 만든다 ----
 const dataLine=html.split('\n').find(line=>line.startsWith('const HOSPITALS='));
 assert.ok(dataLine,'owner.html에서 HOSPITALS 원본을 찾지 못함');
+// 운영 배포 점검과 같은 금지어: 보호자용 화면 원문에 '제보'가 있으면 안 된다
+assert.ok(!html.includes('제보'),"owner.html에 '제보' 문구가 있음 (운영 배포 점검에서 자동 복구됨)");
 const SOURCE=JSON.parse(dataLine.slice('const HOSPITALS='.length).replace(/;\s*$/,''));
 const byId=new Map(SOURCE.map(h=>[h.id,h]));
 const httpsUrl=v=>{try{const u=new URL(String(v||''));return u.protocol==='https:'?u.href:''}catch{return ''}};
@@ -57,7 +59,7 @@ function naverVerified(h){
 function expectedPending(h){
  if(h.linked)return null;
  const i=h.reservationInfo||{},m=Array.isArray(i.methods)?i.methods:[];
- if(i.evidenceStatus==='reported')return '제보 정보 · 확인 중';
+ if(i.evidenceStatus==='reported')return '이용자 제공 · 확인 중';
  if(m.includes('naver')&&(!naverUsable(h)||!naverVerified(h)))return '링크 확인 중';
  if(m.includes('official')&&(!websiteUsable(h)||i.officialLinkVerified!==true))return '링크 확인 중';
  return null;
@@ -201,7 +203,7 @@ for(const width of [320,360,390,412]){
   }
   const three=result.cards.filter(c=>c.buttons.length===3).length,two=result.cards.filter(c=>c.buttons.length===2).length;
   const m=measured[tag];
-  report.push(tag+': 카드 '+result.cards.length+'곳 원본 일치 (버튼3 '+three+' · 버튼2 '+two+') · 버튼 너비 차 최대 '+maxDiff.toFixed(2)+'px · 제휴 버튼 '+m.partner+' · 대비 예약 '+m['예약']+' / 링크 확인 중 '+m['링크 확인 중']+' / 제보 정보 · 확인 중 '+m['제보 정보 · 확인 중']);
+  report.push(tag+': 카드 '+result.cards.length+'곳 원본 일치 (버튼3 '+three+' · 버튼2 '+two+') · 버튼 너비 차 최대 '+maxDiff.toFixed(2)+'px · 제휴 버튼 '+m.partner+' · 대비 예약 '+m['예약']+' / 링크 확인 중 '+m['링크 확인 중']+' / 이용자 제공 · 확인 중 '+m['이용자 제공 · 확인 중']);
   // 캡처: 320px 확인 문구가 줄바꿈된 카드 / 360px 제휴 카드
   if(width===320){
    const idx=await page.evaluate(()=>[...document.querySelectorAll('.zeno-search-card')].findIndex(c=>{const p=c.querySelector('.zeno-list-resv-pending'),f=c.querySelector('.zeno-list-resv-chip');return p&&f&&p.getBoundingClientRect().top>f.getBoundingClientRect().top+2}));
@@ -222,7 +224,7 @@ for(const width of [320,360,390,412]){
   {name:'네이버 형식 아님',h:{reservationUrl:'https://example.com/x',reservationInfo:{methods:['naver']}},link:[],pending:'링크 확인 중',plain:['네이버 예약']},
   {name:'홈페이지 주소 없음',h:{reservationInfo:{methods:['official']}},link:[],pending:'링크 확인 중',plain:['홈페이지 예약']},
   {name:'홈페이지 http',h:{reservationUrl:'http://example.com/book',reservationInfo:{methods:['official']}},link:[],pending:'링크 확인 중',plain:['홈페이지 예약']},
-  {name:'제보 정보 + 네이버 주소 없음',h:{reservationInfo:{methods:['naver','walkin'],evidenceStatus:'reported'}},link:[],pending:'제보 정보 · 확인 중',plain:['네이버 예약','예약 없이 방문']},
+  {name:'이용자 제공 + 네이버 주소 없음',h:{reservationInfo:{methods:['naver','walkin'],evidenceStatus:'reported'}},link:[],pending:'이용자 제공 · 확인 중',plain:['네이버 예약','예약 없이 방문']},
   {name:'확인된 네이버',h:{reservationUrl:'https://m.place.naver.com/pet/123/booking',reservationInfo:{methods:['naver'],naverLinkVerified:true}},link:['https://m.place.naver.com/pet/123/booking'],pending:null,plain:[]},
   {name:'확인 전 네이버',h:{reservationUrl:'https://m.place.naver.com/pet/123/booking',reservationInfo:{methods:['naver'],naverLinkVerified:false}},link:['https://m.place.naver.com/pet/123/booking'],pending:'링크 확인 중',plain:[]},
   {name:'확인 끝난 전화 예약',h:{reservationInfo:{methods:['phone'],evidenceStatus:'verified'}},link:['tel:0430000000'],pending:null,plain:[]},
@@ -239,7 +241,7 @@ for(const width of [320,360,390,412]){
   assert.deepEqual(got.pending,t.pending?[t.pending]:[],t.name+' 확인 문구');
   assert.ok(!got.text.includes('예약 방법 확인 필요'),t.name+" '예약 방법 확인 필요' 노출");
  }
- report.push('확인 문구 입력 사례 '+cases.length+'개 (네이버·홈페이지 주소 없음, 제보 정보, 확인 완료, 비허용 주소) 통과');
+ report.push('확인 문구 입력 사례 '+cases.length+'개 (네이버·홈페이지 주소 없음, 이용자 제공, 확인 완료, 비허용 주소) 통과');
  await context.close();
 }
 
