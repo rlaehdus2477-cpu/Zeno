@@ -427,15 +427,25 @@ for(const width of [320,360,390,412]){
   assert.equal(await page.evaluate(()=>state.detailTab),'reviews','후기 탭 이동 실패');
   const review=page.locator('#zeno-detail-reviews');
   assert.ok(await review.isVisible(),'후기 탭 미표시');
-  assert.equal(await review.locator('a').count(),1);
-  assert.equal(await review.locator('a').getAttribute('href'),'https://m.place.naver.com/pet/1844060752/review/visitor');
-  assert.equal(await review.locator('.zeno-review-unavailable').count(),0);
+  assert.equal(await review.locator('a').count(),0,'후기 탭에서 외부 페이지 이동 금지');
+  assert.ok((await review.innerText()).includes('내 방문 후기'));
+  assert.ok((await review.innerText()).includes('외부 후기 데이터는 아직 연동되지 않았습니다.'));
   assert.ok(!(await review.innerText()).includes('확인 중'));
-  const daom=await page.evaluate(()=>zenoReviewDestinations(hospitalById('pub016')));
-  assert.equal(daom[0].url,'https://m.place.naver.com/pet/1149787205/review/visitor');
-  assert.equal(daom[1].url,'https://place.map.kakao.com/1012593963');
-  assert.equal(await review.locator('a[href*="/search/"]').count(),0);
-  assert.ok((await review.innerText()).includes('ZENO가 합산하지 않습니다'),'후기 출처 안내 누락');
+  const ownReviews=await page.evaluate(()=>{
+   const saved={token:state.ownerToken,bookings:state.bookings,reviews:state.reviews};
+   try{
+    state.ownerToken='test-owner';
+    state.bookings=[{id:'own-done',hospitalId:'pub016',status:'done'},{id:'other-done',hospitalId:'pub059',status:'done'},{id:'not-done',hospitalId:'pub016',status:'pending'},{id:'new-done',hospitalId:'pub016',status:'done'}];
+    state.reviews=[{bookingId:'own-done',stars:5,text:'내 후기 <img src=x>',createdAt:'2026-11-25T01:00:00Z'},{bookingId:'other-done',stars:1,text:'다른 병원 후기'},{bookingId:'not-done',stars:1,text:'미완료 후기'}];
+    const markup=zenoExternalReviewMarkup(hospitalById('pub016'));
+    state.ownerToken='';
+    return {markup,guest:zenoExternalReviewMarkup(hospitalById('pub016'))};
+   }finally{state.ownerToken=saved.token;state.bookings=saved.bookings;state.reviews=saved.reviews;}
+  });
+  assert.ok(ownReviews.markup.includes('내 후기 &lt;img src=x&gt;'),'내 후기 본문 누락 또는 이스케이프 실패');
+  assert.ok(!ownReviews.markup.includes('다른 병원 후기')&&!ownReviews.markup.includes('미완료 후기'),'다른 병원 또는 미완료 후기 노출');
+  assert.ok(ownReviews.markup.includes('data-id="new-done"'),'완료 예약 후기 작성 버튼 누락');
+  assert.ok(!ownReviews.guest.includes('내 후기 &lt;'),'비로그인 상태 후기 노출');
   assert.ok(await review.evaluate(el=>el.scrollWidth<=el.clientWidth+1),'후기 탭 가로 넘침');
 
   await page.evaluate(()=>{state.modal=null;state.page='prices';state.priceCategory='전체 병원';render();});
