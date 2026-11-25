@@ -358,18 +358,64 @@ for(const width of [320,360,390,412]){
   assert.ok(await rows.count()>=10,'공개 진료비 병원 누락');
   const eum=page.locator('.zeno-fee-directory-row[data-id="pub007"]');
   assert.equal(await eum.count(),1,'이음 가격 목록 누락');
-  assert.ok((await eum.innerText()).includes('980,000원'),'고양이 기본 검진 가격 누락');
-  assert.ok((await eum.innerText()).includes('960,000'),'강아지 기본 검진 가격 누락');
+  assert.equal(await eum.locator('.zeno-fee-unpublished').count(),3,'이음 기준 항목은 모두 미공개');
+  assert.ok((await eum.innerText()).includes('건강검진 가격 공개'),'이음 건강검진 공개 안내 누락');
+  assert.ok(!(await eum.innerText()).includes('980,000원'),'전체 병원에 고양이 검진 금액 노출');
+  assert.ok(!(await eum.innerText()).includes('960,000'),'전체 병원에 강아지 검진 금액 노출');
+  const comparison=await page.evaluate(()=>{
+   const keys=['초진 진찰료','개 종합백신','고양이 종합백신'];
+   const collator=new Intl.Collator('ko');
+   const ids=[...new Set([...ZENO_PUBLIC_FEES.map(x=>x.id),...ZENO_HEALTH_SCREENINGS.map(x=>x.id)])];
+   const expected=ids.map(id=>{
+    const fee=ZENO_PUBLIC_FEES.find(v=>v.id===id);
+    const prices=keys.map(key=>fee?.prices.find(p=>p[0]===key));
+    return {id,name:HOSPITALS.find(h=>h.id===id).name,count:prices.filter(Boolean).length,prices:prices.map(p=>p?Number(p[1]).toLocaleString('ko-KR')+(p[1]===p[2]?'':' ~ '+Number(p[2]).toLocaleString('ko-KR'))+'원':'미공개'),date:fee?.checked||ZENO_HEALTH_SCREENINGS.find(g=>g.id===id)?.checked||''};
+   }).sort((a,b)=>b.count-a.count||collator.compare(a.name,b.name));
+   const actual=[...document.querySelectorAll('.zeno-fee-directory-row')].map(el=>({
+    id:el.dataset.id,labels:[...el.querySelectorAll('.zeno-fee-directory-label')].map(x=>x.textContent),prices:[...el.querySelectorAll('.zeno-fee-directory-price b')].map(x=>x.textContent),
+    missing:[...el.querySelectorAll('.zeno-fee-directory-price b')].map(x=>x.classList.contains('zeno-fee-unpublished')),
+    date:el.querySelector('.zeno-fee-directory-date')?.textContent||'',extra:el.querySelector('.zeno-fee-directory-extra')?.textContent||'',text:el.innerText
+   }));
+   return {expected,actual,keys,more:document.querySelector('.zeno-fee-more summary').textContent,hiddenCount:document.querySelectorAll('.zeno-fee-more .filter').length};
+  });
+  assert.deepEqual(comparison.actual.map(x=>x.id),comparison.expected.map(x=>x.id),'공개 개수→이름순 정렬 실패');
+  for(let i=0;i<comparison.actual.length;i++){
+   const a=comparison.actual[i],x=comparison.expected[i];
+   assert.deepEqual(a.labels,comparison.keys,a.id+' 기준 항목 순서');
+   assert.deepEqual(a.prices,x.prices,a.id+' 원본 가격 불일치');
+   assert.deepEqual(a.missing,x.prices.map(p=>p==='미공개'),a.id+' 미공개 스타일');
+   assert.ok(a.date.includes(x.date),a.id+' 자료 기준일 누락');
+   for(const match of a.text.matchAll(/([0-9][0-9,]*)\s*(?:~|원)/g))assert.ok(Number(match[1].replace(/,/g,''))<100000,a.id+' 10만원 이상 금액 노출');
+   assert.ok(!/[0-9]/.test(a.extra),a.id+' 추가 공개 안내에 금액 표시');
+  }
+  for(const id of ['pub028','pub054'])assert.ok(comparison.actual.find(a=>a.id===id)?.extra.includes('행사가'),id+' 행사 표시 누락');
+  assert.ok((await page.locator('.zeno-fee-directory-row[data-id="naeum"]').innerText()).includes('체중별 · 시간별'),'체중 및 시간 조건 누락');
+  assert.ok((await page.locator('.zeno-fee-directory-row[data-id="pub016"]').innerText()).includes('진찰료 별도 · 1회 기준'),'접종 조건 누락');
+  assert.equal(comparison.more,'다른 항목 더 보기 ('+comparison.hiddenCount+'개)','더 보기 항목 수');
+  assert.ok((await page.locator('.zeno-fee-subhead').first().innerText()).includes('기준 항목 공개가 많은 순'),'정렬 안내 누락');
   assert.equal(await page.locator('.zeno-fee-compact>.zeno-fee-choices .filter').count(),6,'기본 항목 개수');
   assert.equal(await page.locator('.zeno-fee-more').getAttribute('open'),null,'추가 항목은 기본 접힘');
-  const layout=await page.evaluate(()=>[...document.querySelectorAll('.zeno-fee-directory-row')].map(el=>({width:el.clientWidth,scroll:el.scrollWidth,rect:el.getBoundingClientRect().height})));
-  assert.ok(layout.every(x=>x.scroll<=x.width+1&&x.rect<=125),'가격 목록 넘침 또는 높이 과다: '+JSON.stringify(layout));
+  const layout=await page.evaluate(()=>[...document.querySelectorAll('.zeno-fee-directory-row')].map(el=>{
+   const outer=el.getBoundingClientRect();
+   const textNodes=[...el.querySelectorAll('.zeno-fee-directory-head strong,.zeno-fee-directory-label,.zeno-fee-directory-price b,.zeno-fee-directory-condition,.zeno-fee-directory-extra,.zeno-fee-directory-date')].map(n=>{
+    const range=document.createRange();range.selectNodeContents(n);
+    const rects=[...range.getClientRects()].filter(r=>r.width>0);
+    const lines=new Set(rects.map(r=>Math.round(r.top))).size;
+    return {text:n.textContent,lines,fits:rects.every(r=>r.left>=outer.left-1&&r.right<=outer.right+1&&r.top>=outer.top-1&&r.bottom<=outer.bottom+1)};
+   });
+   return {id:el.dataset.id,width:el.clientWidth,scroll:el.scrollWidth,rect:outer.height,textNodes};
+  }));
+  assert.ok(layout.every(x=>x.scroll<=x.width+1&&x.rect<=210&&x.textNodes.every(n=>n.lines===1&&n.fits)),'가격 목록 줄바꿈·잘림·넘침 또는 높이 과다: '+JSON.stringify(layout.filter(x=>x.scroll>x.width+1||x.rect>210||x.textNodes.some(n=>n.lines!==1||!n.fits))));
   await page.screenshot({path:path.join(shots,'fees-'+width+'-'+scheme+'.png')});
   await eum.click();
   assert.equal(await page.evaluate(()=>state.detailTab),'fees','이음 가격 탭 이동 실패');
   assert.ok(await page.locator('#zeno-detail-fees').isVisible(),'공개 가격 탭 미표시');
   assert.ok((await page.locator('#zeno-detail-fees').innerText()).includes('2,250,000원'),'이음 상세 금액 누락');
   await page.evaluate(()=>{state.modal=null;state.page='prices';state.priceCategory='전체 병원';render();});
+  await page.locator('.zeno-fee-compact>.zeno-fee-choices [data-value="초진 진찰료"]').click();
+  const names=await page.locator('.zeno-fee-card .zeno-fee-top strong').allTextContents();
+  assert.ok(names.length>1,'초진 비교 가격 누락');
+  assert.deepEqual(names,[...names].sort((a,b)=>a.localeCompare(b,'ko')),'개별 항목 가격순 정렬 금지');
   await page.locator('.zeno-fee-compact>.zeno-fee-choices [data-value="건강검진"]').click();
   assert.ok((await page.locator('.zeno-health-clinic').first().innerText()).includes('이음'),'건강검진 비교에서 이음 누락');
   await page.locator('[data-action="health-check-species"][data-value="고양이"]').click();
@@ -377,6 +423,6 @@ for(const width of [320,360,390,412]){
   await context.close();
  }
 }
-report.push('진료비 비교 320/360/390/412px 라이트·다크: 전체 목록 가격 노출, 필터 접힘, 상세 탭 이동, 강아지/고양이 검진 비교 확인');
+report.push('진료비 비교 320/360/390/412px 라이트·다크: 고정 3항목·미공개·원본 가격·고액 숨김·공개 개수/이름순·조건·행사가·기준일·한 줄/가로 넘침·필터 개수·상세 탭·종별 검진 비교 확인');
 await browser.close();
 console.log('PASS owner search card\n- '+report.join('\n- '));
