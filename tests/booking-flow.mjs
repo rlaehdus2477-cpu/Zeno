@@ -236,6 +236,25 @@ async function main() {
     expect(ok.status === 201, `완료 후 후기 → ${ok.status} ${JSON.stringify(ok.data)}`);
     const again = await api('POST', '/api/reviews', {token: A, body: review});
     expect(again.status === 409, `두 번째 후기 → ${again.status} (409여야 함)`);
+    const publicUrl='/api/public/hospital-reviews?hospitalId=soo';
+    const visibilityUrl='/api/reviews/'+ok.data.id+'/visibility';
+    const initial=await api('GET',publicUrl);
+    expect(initial.status===200&&initial.data.reviews.length===0,'기존 및 신규 후기 기본 비공개');
+    const denied=await api('PATCH',visibilityUrl,{token:B,body:{public:true}});
+    expect(denied.status===404,'다른 보호자 공개 변경 금지');
+    const publish=await api('PATCH',visibilityUrl,{token:A,body:{public:true}});
+    expect(publish.status===200&&publish.data.public===true,'본인 명시적 공개');
+    const visible=await api('GET',publicUrl);
+    expect(visible.status===200&&visible.data.reviews.length===1,'공개 후기 1건');
+    const publicRow=visible.data.reviews[0];
+    expect(publicRow.text===review.text&&publicRow.stars===5,'후기 원문과 별점');
+    expect(Object.keys(publicRow).sort().join(',')==='date,stars,text','공개 응답 개인정보·내부 식별자 제외');
+    const other=await api('GET','/api/public/hospital-reviews?hospitalId=naeum');
+    expect(other.status===200&&other.data.reviews.length===0,'다른 병원 후기 분리');
+    const withdrawn=await api('PATCH',visibilityUrl,{token:A,body:{public:false}});
+    expect(withdrawn.status===200&&withdrawn.data.public===false,'공개 철회');
+    const after=await api('GET',publicUrl);
+    expect(after.status===200&&after.data.reviews.length===0,'공개 철회 즉시 숨김');
   });
 }
 
