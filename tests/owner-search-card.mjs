@@ -429,7 +429,11 @@ for(const width of [320,360,390,412]){
   assert.ok(await review.isVisible(),'후기 탭 미표시');
   assert.equal(await review.locator('a').count(),1);
   assert.equal(await review.locator('a').getAttribute('href'),'https://m.place.naver.com/pet/1844060752/review/visitor');
-  assert.equal(await review.locator('.zeno-review-unavailable').count(),1);
+  assert.equal(await review.locator('.zeno-review-unavailable').count(),0);
+  assert.ok(!(await review.innerText()).includes('확인 중'));
+  const daom=await page.evaluate(()=>zenoReviewDestinations(hospitalById('pub016')));
+  assert.equal(daom[0].url,'https://m.place.naver.com/pet/1149787205/review/visitor');
+  assert.equal(daom[1].url,'https://place.map.kakao.com/1012593963');
   assert.equal(await review.locator('a[href*="/search/"]').count(),0);
   assert.ok((await review.innerText()).includes('ZENO가 합산하지 않습니다'),'후기 출처 안내 누락');
   assert.ok(await review.evaluate(el=>el.scrollWidth<=el.clientWidth+1),'후기 탭 가로 넘침');
