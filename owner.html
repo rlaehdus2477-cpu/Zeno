@@ -3329,6 +3329,16 @@ html body #app .zeno-search-page .zeno-search-card .zeno-list-reservation-link{c
 :is(html.dark,html[data-theme="dark"]) body #app .zeno-search-page .zeno-search-card .zeno-card-context .list-closed{color:#f18a80!important}
 :is(html.dark,html[data-theme="dark"]) body #app .zeno-search-page .zeno-search-card .zeno-card-context,:is(html.dark,html[data-theme="dark"]) body #app .zeno-search-page .zeno-search-card .zeno-card-context .directory-region,:is(html.dark,html[data-theme="dark"]) body #app .zeno-search-page .zeno-search-card .zeno-card-context .list-check,:is(html.dark,html[data-theme="dark"]) body #app .zeno-search-page .zeno-search-card .zeno-card-actions .zeno-search-reservation-note{color:#9aa6b2!important}
 </style>
+<style id="zeno-search-card-layout-20261125b">
+/* 2026-11-25 병원 찾기 카드 레이아웃 정리: 예약 안내는 버튼 줄에서 빼서 정보 줄로, 버튼은 한 줄을 고르게 나눠 같은 크기로. */
+html body #app .zeno-search-page .zeno-search-card .zeno-list-resv{display:flex;gap:5px;align-items:baseline;margin:0;min-width:0;max-width:100%;font-size:13px;line-height:1.45;color:#4e5968}
+html body #app .zeno-search-page .zeno-search-card .zeno-list-resv-label{flex:none;color:#8b95a1}
+html body #app .zeno-search-page .zeno-search-card .zeno-list-resv .zeno-search-reservation-note{display:block;min-width:0;font-size:13px!important;line-height:1.45;color:#4e5968!important;white-space:normal;word-break:keep-all;margin:0;text-align:left}
+html body #app .zeno-search-page .zeno-search-card .zeno-card-actions,html body #app .zeno-search-page .zeno-search-card .zeno-card-actions.has-book{gap:6px!important;margin:10px 0 0!important}
+html body #app .zeno-search-page .zeno-search-card .zeno-card-actions .zeno-card-action,html body #app .zeno-search-page .zeno-search-card .zeno-card-actions .zeno-card-action.zeno-list-naver-book{flex:1 1 0!important;width:auto!important;min-width:0!important;max-width:none!important;height:40px!important;min-height:40px!important;padding:0 12px!important;font-size:14px!important;border-radius:8px!important}
+:is(html.dark,html[data-theme="dark"]) body #app .zeno-search-page .zeno-search-card .zeno-list-resv,:is(html.dark,html[data-theme="dark"]) body #app .zeno-search-page .zeno-search-card .zeno-list-resv .zeno-search-reservation-note{color:#c9d3de!important}
+</style>
+
 </head><body><div id="app" class="app"></div><script>
 'use strict';
 const APP_MODE='owner';
@@ -4847,16 +4857,15 @@ function zenoListConfirmedNaverUrl(h){
 }
 function zenoListReservation(h,eligible){
  if(eligible||zenoListConfirmedNaverUrl(h))return '';
- const external=zenoExternalBookingAction(h);
  const note=zenoSearchReservationNote(h,{phoneButton:false,bookButton:false,external:null});
- const text=note.replace(/^<span[^>]*>|<\/span>$/g,'');
+ let text=note.replace(/^<span[^>]*>|<\/span>$/g,'');
+ // 2026-11-25: 다른 예약 방법이 함께 있으면 '예약 방법 확인 필요'를 같이 띄우지 않는다 ('예약 없이 방문 · 예약 방법 확인 필요' 모순 방지).
+ const parts=text.split(' · ');
+ if(parts.length>1)text=parts.filter(part=>part!=='예약 방법 확인 필요').join(' · ');
  if(!text)return '';
- // Preserve previously registered links in the text, but do not promote unverified links to buttons.
- if(!external)return '<span class="zeno-search-reservation-note" title="'+text+'">'+text+'</span>';
- const label=external.label;
- const link='<a class="zeno-list-reservation-link" href="'+e(external.url)+'" target="_blank" rel="noopener noreferrer">'+e(label)+'</a>';
- const rest=text.split(' · ').filter(part=>part!==label).join(' · ');
- return '<span class="zeno-search-reservation-note" title="'+text+'">'+link+(rest?' · '+rest:'')+'</span>';
+ // 카드 정보 영역(상세 열기 버튼) 안에 한 줄로 넣으므로 링크 없이 글자로만 표시한다.
+ // 확인 전 링크는 버튼으로 올리지 않으며, 등록된 링크는 상세 화면·예약 방법별 목록에서 그대로 열 수 있다.
+ return '<span class="zeno-list-resv"><span class="zeno-list-resv-label">예약</span><span class="zeno-search-reservation-note" title="'+text+'">'+text+'</span></span>';
 }
 function zenoSearchHospitalCard(h){
  const photo=(Array.isArray(h.photos)?h.photos:[]).find(p=>p&&p.approved===true&&p.url);
@@ -4894,7 +4903,7 @@ function zenoSearchHospitalCard(h){
  // Details, published fees, hours and directions remain available by tapping the hospital row.
  return '<article class="directory-item zeno-hospital-card zeno-search-card '+status.kind+'"><button type="button" class="directory-main" data-action="details" data-id="'+e(h.id)+'" aria-label="'+e(h.name)+' 상세 정보, 진료비, 운영시간 및 위치">'
   +photoHtml+'<span class="directory-text"><strong>'+e(h.name)+'</strong><span class="zeno-card-context"><span class="zeno-search-status '+status.kind+'" title="'+e(status.detail)+'">'+e(status.text)+'</span>'+(region?'<span class="zeno-list-separator" aria-hidden="true">·</span><span class="directory-region" title="'+e(region)+'">'+e(region)+'</span>':'')+'</span>'+nearbyDistance+directHtml
-  +zenoListCareLine(h)+contextHtml+'</span></button><div class="zeno-card-actions'+(book||naverBook?' has-book':'')+'">'+call+route+book+naverBook+zenoListReservation(h,eligible)+'</div></article>';
+  +zenoListCareLine(h)+zenoListReservation(h,eligible)+contextHtml+'</span></button><div class="zeno-card-actions'+(book||naverBook?' has-book':'')+'">'+call+route+book+naverBook+'</div></article>';
 }
 
 function zenoPartnerFirst(a,b){

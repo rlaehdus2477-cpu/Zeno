@@ -56,9 +56,9 @@ jobs:
             assert.ok(measurements.some(r=>r.buttons.some(b=>b.label==='예약')));
             for(const row of measurements){
               for(const b of row.buttons){
-                assert.ok(b.font.includes('Pretendard Variable'));assert.equal(b.whiteSpace,'nowrap');assert.equal(b.height,44);assert.equal(b.textLines,1);assert.ok(b.textFits&&b.scrollFits,b.label+' clipped');assert.ok(b.right<=row.rowRight+1);assert.ok(Math.abs(b.y-row.buttons[0].y)<1);
+                assert.ok(b.font.includes('Pretendard Variable'));assert.equal(b.whiteSpace,'nowrap');assert.equal(b.height,40);assert.equal(b.textLines,1);assert.ok(b.textFits&&b.scrollFits,b.label+' clipped');assert.ok(b.right<=row.rowRight+1);assert.ok(Math.abs(b.y-row.buttons[0].y)<1);
                 if(['전화','길찾기'].includes(b.label))assert.ok(b.icon);
-                if(b.label==='네이버 예약'){assert.ok(b.width>=84);assert.equal(b.paddingLeft,'12px');assert.equal(b.paddingRight,'12px');}
+                if(b.label==='네이버 예약'){assert.ok(b.width>=72);assert.equal(b.paddingLeft,'12px');assert.equal(b.paddingRight,'12px');}
               }
             }
             await page.evaluate(()=>{state.query='다옴';render();});
