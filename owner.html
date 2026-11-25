@@ -4823,8 +4823,40 @@ function zenoClinicalFallbackMarkup(h,services){
  return '<section class="section zeno-detail-departments"><h3>진료 가능 과목</h3>'+zenoDetailDepartments(h,services)+'</section>'
   +zenoRepresentativeSpecialtySection(h);
 }
+// Place IDs matched to public listings; live review page availability is not yet verified.
+const ZENO_REVIEW_PLACES={
+ "naeum": {
+  "naver": "https://map.naver.com/p/entry/place/34590093",
+  "source": "https://cbuy.kr/충북-청주시-상당구-동물병원-업체-정보-추천-top-7/"
+ },
+ "pub059": {
+  "naver": "https://map.naver.com/p/entry/place/1898591215",
+  "source": "https://cbuy.kr/충북-청주시-상당구-동물병원-업체-정보-추천-top-7/"
+ },
+ "pub057": {
+  "naver": "https://map.naver.com/p/entry/place/37673522",
+  "source": "https://cbuy.kr/충북-청주시-상당구-동물병원-업체-정보-추천-top-7/"
+ },
+ "pub056": {
+  "naver": "https://map.naver.com/p/entry/place/11886346",
+  "source": "https://cbuy.kr/충북-청주시-상당구-동물병원-업체-정보-추천-top-7/"
+ },
+ "pub016": {
+  "naver": "https://map.naver.com/p/entry/place/1149787205",
+  "source": "https://www.24daomamc.com/",
+  "kakao": "https://place.map.kakao.com/1012593963"
+ },
+ "pub026": {
+  "naver": "https://map.naver.com/p/entry/place/17485142",
+  "source": "https://cbuy.kr/충북-청주시-흥덕구-동물병원-업체-정보-추천-top-5/"
+ },
+ "pub019": {
+  "naver": "https://map.naver.com/p/entry/place/36683177",
+  "source": "https://cbuy.kr/충북-청주시-흥덕구-동물병원-업체-정보-추천-top-5/"
+ }
+};
 function zenoReviewDestinations(h){
- const naverCandidates=[h.naverReviewUrl,h.reservationUrl,h.reservationInfo?.sourceUrl];
+ const naverCandidates=[h.naverReviewUrl,ZENO_REVIEW_PLACES[h.id]?.naver,h.reservationUrl,h.reservationInfo?.sourceUrl];
  let naver='',naverVerified=false,kakao='';
  for(const raw of naverCandidates){
   try{
@@ -4836,12 +4868,12 @@ function zenoReviewDestinations(h){
    if(entry){naver='https://m.place.naver.com/pet/'+entry[1]+'/review/visitor';break}
   }catch{}
  }
- try{const u=new URL(h.kakaoReviewUrl);if(u.protocol==='https:'&&!u.username&&!u.password&&u.hostname==='place.map.kakao.com'&&/^\/\d+\/?$/.test(u.pathname)&&h.kakaoReviewVerified===true)kakao=u.href}catch{}
+ try{const u=new URL(h.kakaoReviewUrl||ZENO_REVIEW_PLACES[h.id]?.kakao);if(u.protocol==='https:'&&!u.username&&!u.password&&u.hostname==='place.map.kakao.com'&&/^\/\d+\/?$/.test(u.pathname)&&(h.kakaoReviewVerified===true||ZENO_REVIEW_PLACES[h.id]?.kakao===u.href))kakao=u.href}catch{}
  return [{name:'네이버 방문자 리뷰',url:naver,verified:naverVerified},{name:'카카오맵 후기',url:kakao,verified:!!kakao}];
 }
 function zenoExternalReviewMarkup(h){
- const links=zenoReviewDestinations(h);
- return '<section class="zeno-review-sources" aria-label="외부 후기 확인"><h3>방문 후기</h3><p>병원별 후기 페이지를 직접 확인하세요.</p><div class="zeno-review-links">'+links.map(({name,url,verified})=>url?'<a href="'+e(url)+'" target="_blank" rel="noopener noreferrer" aria-label="'+e(h.name+' '+name+' (외부 이동)')+'"><strong>'+e(name)+'</strong><span>후기 보기 ↗'+(verified?'':' · 연결 확인 중')+'</span></a>':'<div class="zeno-review-unavailable"><strong>'+e(name)+'</strong><span>후기 링크 확인 중</span></div>').join('')+'</div><small>장소별 링크가 없는 경우 지도 검색으로 이동하지 않습니다. 후기 원문·평점은 각 플랫폼에서 제공하며 ZENO가 합산하지 않습니다.</small></section>';
+ const links=zenoReviewDestinations(h).filter(x=>x.url);
+ return '<section class="zeno-review-sources" aria-label="외부 후기 확인"><h3>방문 후기</h3>'+ (links.length?'<div class="zeno-review-links">'+links.map(({name,url})=>'<a href="'+e(url)+'" target="_blank" rel="noopener noreferrer" aria-label="'+e(h.name+' '+name+' (외부 이동)')+'"><strong>'+e(name)+'</strong><span>후기 보기 ↗</span></a>').join('')+'</div><small>외부 후기 페이지로 이동합니다. 후기 원문과 평점은 각 플랫폼에서 제공하며 ZENO가 합산하지 않습니다.</small>':'<p>현재 등록된 외부 후기 링크가 없습니다.</p>')+'</section>';
 }
 function zenoDetailPriceSummary(h,s){
  const rows=Array.isArray(s.prices)&&s.prices.length?s.prices.map(x=>
