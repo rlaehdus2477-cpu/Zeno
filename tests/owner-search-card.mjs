@@ -423,6 +423,18 @@ for(const width of [320,360,390,412]){
   assert.equal(await page.evaluate(()=>state.detailTab),'fees','이음 가격 탭 이동 실패');
   assert.ok(await page.locator('#zeno-detail-fees').isVisible(),'공개 가격 탭 미표시');
   assert.ok((await page.locator('#zeno-detail-fees').innerText()).includes('2,250,000원'),'이음 상세 금액 누락');
+  await page.locator('#zeno-detail-fees [data-value="reviews"]').click();
+  assert.equal(await page.evaluate(()=>state.detailTab),'reviews','후기 탭 이동 실패');
+  const review=page.locator('#zeno-detail-reviews');
+  assert.ok(await review.isVisible(),'후기 탭 미표시');
+  assert.equal(await review.locator('a').count(),2,'후기 출처 개수');
+  const clinic=byId.get('pub007');
+  const query=encodeURIComponent([clinic.name,clinic.address].filter(Boolean).join(' '));
+  assert.equal(await review.locator('a').nth(0).getAttribute('href'),'https://map.naver.com/p/search/'+query);
+  assert.equal(await review.locator('a').nth(1).getAttribute('href'),'https://map.kakao.com/link/search/'+query);
+  assert.ok((await review.innerText()).includes('ZENO가 합산하지 않습니다'),'후기 출처 안내 누락');
+  assert.ok(await review.evaluate(el=>el.scrollWidth<=el.clientWidth+1),'후기 탭 가로 넘침');
+
   await page.evaluate(()=>{state.modal=null;state.page='prices';state.priceCategory='전체 병원';render();});
   await page.locator('.zeno-fee-compact>.zeno-fee-choices [data-value="건강검진"]').click();
   assert.ok((await page.locator('.zeno-health-clinic').first().innerText()).includes('이음'),'건강검진 비교에서 이음 누락');
