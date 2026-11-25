@@ -427,15 +427,15 @@ for(const width of [320,360,390,412]){
   assert.equal(await page.evaluate(()=>state.detailTab),'reviews','후기 탭 이동 실패');
   const review=page.locator('#zeno-detail-reviews');
   assert.ok(await review.isVisible(),'후기 탭 미표시');
-  assert.equal(await review.locator('a').count(),1);
-  assert.equal(await review.locator('a').getAttribute('href'),'https://m.place.naver.com/pet/1844060752/review/visitor');
-  assert.equal(await review.locator('.zeno-review-unavailable').count(),0);
-  assert.ok(!(await review.innerText()).includes('확인 중'));
-  const daom=await page.evaluate(()=>zenoReviewDestinations(hospitalById('pub016')));
-  assert.equal(daom[0].url,'https://m.place.naver.com/pet/1149787205/review/visitor');
-  assert.equal(daom[1].url,'https://place.map.kakao.com/1012593963');
-  assert.equal(await review.locator('a[href*="/search/"]').count(),0);
-  assert.ok((await review.innerText()).includes('ZENO가 합산하지 않습니다'),'후기 출처 안내 누락');
+  assert.equal(await review.locator('a').count(),0,'후기 탭 외부 이동 금지');
+  assert.ok((await review.innerText()).includes('ZENO 방문 인증 후기'));
+  await page.evaluate(()=>{const id=state.modal.id;zenoPublicReviewCache.set(id,{count:2,average:4.5,reviews:[{stars:5,text:'공개 후기 <img src=x>',date:'2026-11-25'},{stars:4,text:'두 번째 보호자 후기',date:'2026-11-24'}]});document.getElementById('zeno-detail-reviews').innerHTML=zenoExternalReviewMarkup(hospitalById(id));});
+  assert.ok((await review.innerText()).includes('4.5 / 5점'));
+  assert.ok((await review.innerText()).includes('공개 후기 2건'));
+  assert.ok((await review.innerText()).includes('공개 후기 <img src=x>'));
+  assert.equal(await review.locator('article img').count(),0,'후기 HTML 이스케이프 실패');
+  assert.ok((await review.innerText()).includes('두 번째 보호자 후기'));
+  assert.ok((await review.innerText()).includes('외부 방문 후기 데이터는 제공 권한이 없어 연동되지 않았습니다.'));
   assert.ok(await review.evaluate(el=>el.scrollWidth<=el.clientWidth+1),'후기 탭 가로 넘침');
 
   await page.evaluate(()=>{state.modal=null;state.page='prices';state.priceCategory='전체 병원';render();});
