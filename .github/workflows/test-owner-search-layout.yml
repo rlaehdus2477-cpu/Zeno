@@ -56,13 +56,21 @@ jobs:
             assert.ok(measurements.some(r=>r.buttons.some(b=>b.label==='예약')));
             for(const row of measurements){
               for(const b of row.buttons){
-                assert.equal(b.whiteSpace,'nowrap');assert.equal(b.height,44);assert.equal(b.textLines,1);assert.ok(b.textFits&&b.scrollFits,b.label+' clipped');assert.ok(b.right<=row.rowRight+1);assert.ok(Math.abs(b.y-row.buttons[0].y)<1);
+                assert.ok(b.font.includes('Pretendard Variable'));assert.equal(b.whiteSpace,'nowrap');assert.equal(b.height,44);assert.equal(b.textLines,1);assert.ok(b.textFits&&b.scrollFits,b.label+' clipped');assert.ok(b.right<=row.rowRight+1);assert.ok(Math.abs(b.y-row.buttons[0].y)<1);
                 if(['전화','길찾기'].includes(b.label))assert.ok(b.icon);
                 if(b.label==='네이버 예약'){assert.ok(b.width>=84);assert.equal(b.paddingLeft,'12px');assert.equal(b.paddingRight,'12px');}
               }
             }
             await page.evaluate(()=>{state.query='다옴';render();});
             await page.locator('.zeno-list-naver-book').first().waitFor();
+            const session=await page.context().newCDPSession(page);
+            await session.send('DOM.enable');
+            await session.send('CSS.enable');
+            const doc=await session.send('DOM.getDocument');
+            const {nodeId}=await session.send('DOM.querySelector',{nodeId:doc.root.nodeId,selector:'.zeno-list-naver-book'});
+            const platform=await session.send('CSS.getPlatformFontsForNode',{nodeId});
+            console.log('Naver button actual glyph fonts:',JSON.stringify(platform.fonts));
+            assert.ok(platform.fonts.some(f=>f.isCustomFont&&/Pretendard/i.test(f.familyName)),'Naver button did not render with Pretendard');
             await page.screenshot({path:'screenshots/daom-search-360.png'});
             assert.ok(font.loaded>0,'Pretendard web font could not load; screenshot font is not verified');
           } finally {await browser.close();}
