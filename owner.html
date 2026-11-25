@@ -3521,6 +3521,9 @@ html.dark .zeno-fee-directory-price b,html[data-theme="dark"] .zeno-fee-director
 #app .zeno-review-sources p,#app .zeno-review-sources small{display:block;margin:6px 0 10px;color:var(--sub);font-size:12px;line-height:1.55}
 #app .zeno-review-links{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
 #app .zeno-review-links a{box-sizing:border-box;min-height:56px;display:flex;flex-direction:column;justify-content:center;gap:4px;padding:9px 10px;border:1px solid var(--line);border-radius:8px;color:var(--text);background:var(--surface,#fff);text-decoration:none;min-width:0}
+#app .zeno-review-links .zeno-review-unavailable{box-sizing:border-box;min-height:56px;display:flex;flex-direction:column;justify-content:center;gap:4px;padding:9px 10px;border:1px solid var(--line);border-radius:8px;color:var(--sub);min-width:0}
+#app .zeno-review-links .zeno-review-unavailable strong{font-size:14px}
+#app .zeno-review-links .zeno-review-unavailable span{font-size:12px}
 #app .zeno-review-links a strong{font-size:14px}
 #app .zeno-review-links a span{font-size:12px;color:var(--sub)}
 #app .zeno-review-links a:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
@@ -4820,10 +4823,25 @@ function zenoClinicalFallbackMarkup(h,services){
  return '<section class="section zeno-detail-departments"><h3>진료 가능 과목</h3>'+zenoDetailDepartments(h,services)+'</section>'
   +zenoRepresentativeSpecialtySection(h);
 }
+function zenoReviewDestinations(h){
+ const naverCandidates=[h.naverReviewUrl,h.reservationUrl,h.reservationInfo?.sourceUrl];
+ let naver='',naverVerified=false,kakao='';
+ for(const raw of naverCandidates){
+  try{
+   const u=new URL(raw);
+   if(u.protocol!=='https:'||u.username||u.password)continue;
+   const direct=['m.place.naver.com','place.naver.com'].includes(u.hostname)&&u.pathname.match(/^\/(pet|hospital|place)\/(\d+)(?:\/|$)/);
+   const entry=u.hostname==='map.naver.com'&&u.pathname.match(/^\/p\/entry\/place\/(\d+)\/?$/);
+   if(direct){naver='https://m.place.naver.com/'+direct[1]+'/'+direct[2]+'/review/visitor';naverVerified=raw===h.naverReviewUrl&&h.naverReviewVerified===true;break}
+   if(entry){naver='https://m.place.naver.com/pet/'+entry[1]+'/review/visitor';break}
+  }catch{}
+ }
+ try{const u=new URL(h.kakaoReviewUrl);if(u.protocol==='https:'&&!u.username&&!u.password&&u.hostname==='place.map.kakao.com'&&/^\/\d+\/?$/.test(u.pathname)&&h.kakaoReviewVerified===true)kakao=u.href}catch{}
+ return [{name:'네이버 방문자 리뷰',url:naver,verified:naverVerified},{name:'카카오맵 후기',url:kakao,verified:!!kakao}];
+}
 function zenoExternalReviewMarkup(h){
- const q=encodeURIComponent([h.name,h.address].filter(Boolean).join(' '));
- const links=[['네이버 지도','https://map.naver.com/p/search/'+q],['카카오맵','https://map.kakao.com/link/search/'+q]];
- return '<section class="zeno-review-sources" aria-label="외부 후기 확인"><h3>방문 후기</h3><p>두 플랫폼의 병원 후기를 확인해 보세요.</p><div class="zeno-review-links">'+links.map(([name,url])=>'<a href="'+e(url)+'" target="_blank" rel="noopener noreferrer" aria-label="'+e(h.name+' '+name+' 후기 검색 (외부 이동)')+'"><strong>'+e(name)+'</strong><span>후기 검색 ↗</span></a>').join('')+'</div><small>각 지도에서 병원명과 주소를 확인한 뒤 후기 탭을 선택하세요. 후기 원문·평점은 각 플랫폼에서 제공하며 ZENO가 합산하지 않습니다.</small></section>';
+ const links=zenoReviewDestinations(h);
+ return '<section class="zeno-review-sources" aria-label="외부 후기 확인"><h3>방문 후기</h3><p>병원별 후기 페이지를 직접 확인하세요.</p><div class="zeno-review-links">'+links.map(({name,url,verified})=>url?'<a href="'+e(url)+'" target="_blank" rel="noopener noreferrer" aria-label="'+e(h.name+' '+name+' (외부 이동)')+'"><strong>'+e(name)+'</strong><span>후기 보기 ↗'+(verified?'':' · 연결 확인 중')+'</span></a>':'<div class="zeno-review-unavailable"><strong>'+e(name)+'</strong><span>후기 링크 확인 중</span></div>').join('')+'</div><small>장소별 링크가 없는 경우 지도 검색으로 이동하지 않습니다. 후기 원문·평점은 각 플랫폼에서 제공하며 ZENO가 합산하지 않습니다.</small></section>';
 }
 function zenoDetailPriceSummary(h,s){
  const rows=Array.isArray(s.prices)&&s.prices.length?s.prices.map(x=>
