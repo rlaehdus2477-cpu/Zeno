@@ -3315,7 +3315,8 @@ html body #app .zeno-search-page .zeno-search-card .zeno-card-actions .zeno-card
 html body #app .zeno-search-page .zeno-search-card .zeno-card-actions .zeno-card-call{background:#f2f4f6!important;border:0!important;color:#333d4b!important}
 html body #app .zeno-search-page .zeno-search-card .zeno-card-actions .zeno-card-call:disabled{color:#8b95a1!important}
 html body #app .zeno-search-page .zeno-search-card .zeno-card-actions svg{width:16px;height:16px;flex:none}
-html body #app .zeno-search-page .zeno-search-card .zeno-card-actions .zeno-search-reservation-note{margin-left:auto;text-align:right;flex:1 1 86px;min-width:0;max-width:100%;font-size:12px!important;line-height:1.4;color:#6b7684!important;overflow-wrap:anywhere;word-break:keep-all}
+html body #app .zeno-search-page .zeno-search-card .zeno-card-actions .zeno-search-reservation-note{margin-left:auto;text-align:right;flex:1 1 0;min-width:0;max-width:100%;font-size:12px!important;line-height:1.4;color:#6b7684!important;overflow-wrap:anywhere;word-break:keep-all}
+@media(max-width:420px){html body #app .zeno-search-page .zeno-search-card .zeno-card-actions .zeno-card-book{flex-basis:64px!important;width:64px!important;min-width:64px!important;max-width:64px!important}html body #app .zeno-search-page .zeno-search-card .zeno-card-actions .zeno-search-reservation-note{min-width:36px}}
 html body #app .zeno-search-page .zeno-search-card .zeno-list-reservation-link{color:inherit;text-decoration:underline;text-underline-offset:2px}
 :is(html.dark,html[data-theme="dark"]) body #app .zeno-search-page .zeno-search-card .zeno-list-care{color:#d1d6db}
 :is(html.dark,html[data-theme="dark"]) body #app .zeno-search-page .zeno-search-card.list-closed .directory-text>strong{color:#9aa6b2!important}
@@ -4814,7 +4815,7 @@ function zenoListHours(h){
  if(/^오늘 휴진/.test(raw.text))return {text:'오늘 휴진',kind:'list-closed',rank:2,detail:raw.text};
  if(h.is24||raw.kind.includes('is-open'))return {text:'진료시간 중',kind:'list-open',rank:0,detail:raw.text};
  // An overnight emergency service, a break, or reception cutoff is not ordinary open care.
- return {text:raw.text.split(' · ')[0],kind:'list-check',rank:1,detail:raw.text};
+ return {text:h.emergency24&&!h.is24?'24시간 응급 · 수용 전화 확인':raw.text.split(' · ')[0],kind:'list-check',rank:1,detail:raw.text};
 }
 function zenoListHoursSort(rows){
  if(zenoHasFilter('내 주변'))return rows;
@@ -4834,7 +4835,6 @@ function zenoListCareLine(h){
  return '<span class="zeno-list-care'+(focus.length?' is-focus':'')+'" title="'+e(items.join(' · '))+'"><span class="zeno-list-care-label">'+label+'</span><span class="zeno-list-care-text">'+e(visible.join(' · '))+'</span>'+(!focus.length&&items.length>visible.length?'<span class="zeno-list-care-more">외 '+(items.length-visible.length)+'개</span>':'')+'</span>';
 }
 function zenoListReservation(h,eligible){
- const methods=Array.isArray(h.reservationInfo?.methods)?h.reservationInfo.methods:[];
  const external=zenoExternalBookingAction(h);
  const note=zenoSearchReservationNote(h,{phoneButton:false,bookButton:eligible,external:null});
  if(!external)return note;
