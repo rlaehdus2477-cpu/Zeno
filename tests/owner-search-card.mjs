@@ -349,5 +349,34 @@ for(const width of [320,360,390,412]){
  report.push('제휴 3곳 '+partners.map(p=>p.name).join('·')+': 예약 → 진료 선택 → 예약 정보 → 문진 시작하기 → 항목 선택 (제출 없음)');
  await context.close();
 }
+// 진료비 비교: 기본 목록에 실제 공개 금액, 작은 화면 가로 넘침 방지, 이음 상세 이동
+for(const width of [320,360,390,412]){
+ for(const scheme of ['light','dark']){
+  const {context,page}=await openPage({width,scheme});
+  await page.evaluate(()=>{state.page='prices';state.priceCategory='전체 병원';state.modal=null;render();});
+  const rows=page.locator('.zeno-fee-directory-row');
+  assert.ok(await rows.count()>=10,'공개 진료비 병원 누락');
+  const eum=page.locator('.zeno-fee-directory-row[data-id="pub007"]');
+  assert.equal(await eum.count(),1,'이음 가격 목록 누락');
+  assert.ok((await eum.innerText()).includes('980,000원'),'고양이 기본 검진 가격 누락');
+  assert.ok((await eum.innerText()).includes('960,000'),'강아지 기본 검진 가격 누락');
+  assert.equal(await page.locator('.zeno-fee-compact>.zeno-fee-choices .filter').count(),6,'기본 항목 개수');
+  assert.equal(await page.locator('.zeno-fee-more').getAttribute('open'),null,'추가 항목은 기본 접힘');
+  const layout=await page.evaluate(()=>[...document.querySelectorAll('.zeno-fee-directory-row')].map(el=>({width:el.clientWidth,scroll:el.scrollWidth,rect:el.getBoundingClientRect().height})));
+  assert.ok(layout.every(x=>x.scroll<=x.width+1&&x.rect<=125),'가격 목록 넘침 또는 높이 과다: '+JSON.stringify(layout));
+  await page.screenshot({path:path.join(shots,'fees-'+width+'-'+scheme+'.png')});
+  await eum.click();
+  assert.equal(await page.evaluate(()=>state.detailTab),'fees','이음 가격 탭 이동 실패');
+  assert.ok(await page.locator('#zeno-detail-fees').isVisible(),'공개 가격 탭 미표시');
+  assert.ok((await page.locator('#zeno-detail-fees').innerText()).includes('2,250,000원'),'이음 상세 금액 누락');
+  await page.evaluate(()=>{state.modal=null;state.page='prices';state.priceCategory='전체 병원';render();});
+  await page.locator('.zeno-fee-compact>.zeno-fee-choices [data-value="건강검진"]').click();
+  assert.ok((await page.locator('.zeno-health-clinic').first().innerText()).includes('이음'),'건강검진 비교에서 이음 누락');
+  await page.locator('[data-action="health-check-species"][data-value="고양이"]').click();
+  assert.ok((await page.locator('.zeno-health-clinic').first().innerText()).includes('2,250,000원'),'고양이 건강검진 비교 금액 누락');
+  await context.close();
+ }
+}
+report.push('진료비 비교 320/360/390/412px 라이트·다크: 전체 목록 가격 노출, 필터 접힘, 상세 탭 이동, 강아지/고양이 검진 비교 확인');
 await browser.close();
 console.log('PASS owner search card\n- '+report.join('\n- '));
