@@ -427,11 +427,10 @@ for(const width of [320,360,390,412]){
   assert.equal(await page.evaluate(()=>state.detailTab),'reviews','후기 탭 이동 실패');
   const review=page.locator('#zeno-detail-reviews');
   assert.ok(await review.isVisible(),'후기 탭 미표시');
-  assert.equal(await review.locator('a').count(),2,'후기 출처 개수');
-  const clinic=byId.get('pub007');
-  const query=encodeURIComponent([clinic.name,clinic.address].filter(Boolean).join(' '));
-  assert.equal(await review.locator('a').nth(0).getAttribute('href'),'https://map.naver.com/p/search/'+query);
-  assert.equal(await review.locator('a').nth(1).getAttribute('href'),'https://map.kakao.com/link/search/'+query);
+  assert.equal(await review.locator('a').count(),1);
+  assert.equal(await review.locator('a').getAttribute('href'),'https://m.place.naver.com/pet/1844060752/review/visitor');
+  assert.equal(await review.locator('.zeno-review-unavailable').count(),1);
+  assert.equal(await review.locator('a[href*="/search/"]').count(),0);
   assert.ok((await review.innerText()).includes('ZENO가 합산하지 않습니다'),'후기 출처 안내 누락');
   assert.ok(await review.evaluate(el=>el.scrollWidth<=el.clientWidth+1),'후기 탭 가로 넘침');
 
