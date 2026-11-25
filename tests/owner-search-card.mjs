@@ -115,7 +115,7 @@ for(const width of [320,360,390,412]){
    assert.ok(fonts.some(f=>f.isCustomFont&&/Pretendard/i.test(f.familyName)),tag+' '+sel+' Pretendard 아님: '+JSON.stringify(fonts));
   }
   await page.evaluate(()=>window.scrollTo(0,0));
-  await page.locator('.zeno-search-card').nth(3).scrollIntoViewIfNeeded();
+  await page.locator('.zeno-search-card').nth(+(process.env.SHOT_CARD||3)).scrollIntoViewIfNeeded();
   await page.screenshot({path:path.join(shots,'search-card-'+width+'-'+scheme+'.png')});
   report.push(tag+': 카드 '+result.cards.length+' (버튼3 '+three+' · 버튼2 '+two+') · 라벨 '+chipCount);
   await context.close();
