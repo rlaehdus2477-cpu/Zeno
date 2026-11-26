@@ -875,12 +875,18 @@ const ZP_RECEIPT_SQL=[
  "CREATE TABLE IF NOT EXISTS receipts (id TEXT PRIMARY KEY, owner_id TEXT NOT NULL, pet_id TEXT NOT NULL, hospital_id TEXT NOT NULL DEFAULT '', hospital_name TEXT NOT NULL, visit_date TEXT NOT NULL, total INTEGER NOT NULL CHECK(total BETWEEN 0 AND 100000000), items_json TEXT NOT NULL DEFAULT '[]', memo TEXT NOT NULL DEFAULT '', source TEXT NOT NULL DEFAULT 'manual' CHECK(source IN ('manual','photo')), ocr_status TEXT NOT NULL DEFAULT '', created_at TEXT NOT NULL, updated_at TEXT NOT NULL)",
  "CREATE INDEX IF NOT EXISTS receipts_owner ON receipts(owner_id,visit_date DESC)",
  "CREATE TABLE IF NOT EXISTS receipt_photos (id TEXT PRIMARY KEY, owner_id TEXT NOT NULL, receipt_id TEXT, mime TEXT NOT NULL, image_data TEXT NOT NULL, created_at TEXT NOT NULL)",
- "CREATE INDEX IF NOT EXISTS receipt_photos_owner ON receipt_photos(owner_id,receipt_id)"
+ "CREATE INDEX IF NOT EXISTS receipt_photos_owner ON receipt_photos(owner_id,receipt_id)",
+ /* 2026-11-27: 같은 날 여러 아이를 함께 진료받은 영수증 1장을 아이별 금액으로 나눠 저장합니다.
+    receipts.pet_id는 첫 번째 아이(예전 기록 호환), 아이별 금액은 receipt_pets에 둡니다. 행이 없는 예전 영수증은 pet_id 한 마리 = 총액입니다. */
+ "CREATE TABLE IF NOT EXISTS receipt_pets (receipt_id TEXT NOT NULL, owner_id TEXT NOT NULL, pet_id TEXT NOT NULL, amount INTEGER NOT NULL CHECK(amount BETWEEN 0 AND 100000000), sort INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(receipt_id,pet_id))",
+ "CREATE INDEX IF NOT EXISTS receipt_pets_owner ON receipt_pets(owner_id,receipt_id)"
 ];
 ZP_SQL.push(...ZP_RECEIPT_SQL);
-function zpReceipt(r){
+function zpReceipt(r,splits){
  let items=[];try{items=JSON.parse(r.items_json||'[]')}catch{}
- return {id:r.id,petId:r.pet_id,hospitalId:r.hospital_id,hospitalName:r.hospital_name,visitDate:r.visit_date,total:r.total,items,memo:r.memo,source:r.source,ocrStatus:r.ocr_status,hasPhoto:!!r.photo_id,createdAt:r.created_at,updatedAt:r.updated_at};
+ const own=(splits||[]).filter(x=>x.receipt_id===r.id).sort((a,b)=>a.sort-b.sort).map(x=>({petId:x.pet_id,amount:x.amount}));
+ const pets=own.length?own:[{petId:r.pet_id,amount:r.total}];
+ return {id:r.id,petId:r.pet_id,pets,hospitalId:r.hospital_id,hospitalName:r.hospital_name,visitDate:r.visit_date,total:r.total,items,memo:r.memo,source:r.source,ocrStatus:r.ocr_status,hasPhoto:!!r.photo_id,createdAt:r.created_at,updatedAt:r.updated_at};
 }
 function zpReceiptItems(list){
  if(!Array.isArray(list))return [];
@@ -890,18 +896,35 @@ function zpReceiptItems(list){
   return x;
  });
 }
+async function zpReceiptSplits(db,ownerId,ids){
+ if(ids&&!ids.length)return [];
+ const q=ids?'SELECT * FROM receipt_pets WHERE owner_id=? AND receipt_id IN ('+ids.map(()=>'?').join(',')+')':'SELECT * FROM receipt_pets WHERE owner_id=?';
+ return (await db.prepare(q).bind(ownerId,...(ids||[])).all()).results||[];
+}
+async function zpReceiptRow(db,ownerId,id){
+ const row=await db.prepare('SELECT r.*,p.id AS photo_id FROM receipts r LEFT JOIN receipt_photos p ON p.receipt_id=r.id WHERE r.id=?').bind(id).first();
+ return zpReceipt(row,await zpReceiptSplits(db,ownerId,[id]));
+}
 async function zpReceiptInput(db,ownerId,data){
- const petId=clean(data.petId,90);
- const pets=await zpOwnerPets(db,ownerId);
- assert(pets.some(p=>p.id===petId),'내 아이에 등록된 반려동물을 선택해 주세요.');
+ const owned=await zpOwnerPets(db,ownerId);
+ const total=Number(data.total);
+ assert(Number.isInteger(total)&&total>=0&&total<=100000000,'총 결제 금액을 원 단위로 입력해 주세요.');
+ /* 예전 화면은 petId 하나만 보냅니다. 그때는 그 아이 한 마리 = 총액으로 봅니다. */
+ const raw=Array.isArray(data.pets)?data.pets:[{petId:data.petId,amount:total}];
+ assert(raw.length>=1,'아이를 한 마리 이상 선택해 주세요.');
+ assert(raw.length<=10,'한 영수증에는 아이를 10마리까지 나눌 수 있습니다.');
+ const pets=raw.map(x=>({petId:clean(x?.petId,90),amount:raw.length===1&&(x?.amount===undefined||x?.amount===null||x?.amount==='')?total:Number(x?.amount)}));
+ assert(pets.every(x=>owned.some(p=>p.id===x.petId)),'내 아이에 등록된 반려동물을 선택해 주세요.');
+ assert(new Set(pets.map(x=>x.petId)).size===pets.length,'같은 아이가 두 번 선택되었습니다.');
+ assert(pets.every(x=>Number.isInteger(x.amount)&&x.amount>=0&&x.amount<=100000000),'아이별 금액을 원 단위로 입력해 주세요.');
+ assert(pets.reduce((a,x)=>a+x.amount,0)===total,'아이별 금액의 합이 총 결제 금액과 같아야 합니다.');
+ const petId=pets[0].petId;
  const hospitalId=clean(data.hospitalId,30),hospitalName=clean(data.hospitalName,60);
  assert(!hospitalId||/^(?:pub[0-9]{3}|[a-z][a-z0-9]{1,25})$/.test(hospitalId),'병원을 확인해 주세요.');
  assert(hospitalName.length>=2,'병원 이름을 입력해 주세요.');
  const visitDate=clean(data.visitDate,10);
  assert(/^\d{4}-\d{2}-\d{2}$/.test(visitDate)&&visitDate<=zpKstToday()&&visitDate>='2000-01-01','진료일을 확인해 주세요.');
- const total=Number(data.total);
- assert(Number.isInteger(total)&&total>=0&&total<=100000000,'총 결제 금액을 원 단위로 입력해 주세요.');
- return {petId,hospitalId,hospitalName,visitDate,total,items:zpReceiptItems(data.items),memo:clean(data.memo,300)};
+ return {petId,pets,hospitalId,hospitalName,visitDate,total,items:zpReceiptItems(data.items),memo:clean(data.memo,300)};
 }
 /* 문자 인식: 결과는 초안일 뿐이며, 읽을 수 없는 값은 비워 둡니다. */
 function zpOcrDraft(text){
@@ -940,6 +963,10 @@ zpRoute('POST','/api/pass/receipts/photo',async({request,env,db,data})=>{
  const ocr=data.ocr===false?{status:'skipped',draft:null}:await zpRunOcr(env,image);
  return json({photoId:id,ocr:{status:ocr.status,draft:ocr.draft}},201);
 });
+function zpReceiptPetStmts(db,ownerId,id,pets){
+ return [db.prepare('DELETE FROM receipt_pets WHERE receipt_id=? AND owner_id=?').bind(id,ownerId)]
+  .concat(pets.map((x,i)=>db.prepare('INSERT INTO receipt_pets(receipt_id,owner_id,pet_id,amount,sort) VALUES(?,?,?,?,?)').bind(id,ownerId,x.petId,x.amount,i)));
+}
 zpRoute('POST','/api/pass/receipts',async({request,env,db,data})=>{
  const s=await zpRequirePass(request,env);
  const v=await zpReceiptInput(db,s.ownerId,data);
@@ -952,25 +979,29 @@ zpRoute('POST','/api/pass/receipts',async({request,env,db,data})=>{
  }
  const id=crypto.randomUUID(),at=now();
  const stmts=[db.prepare('INSERT INTO receipts(id,owner_id,pet_id,hospital_id,hospital_name,visit_date,total,items_json,memo,source,ocr_status,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)').bind(id,s.ownerId,v.petId,v.hospitalId,v.hospitalName,v.visitDate,v.total,JSON.stringify(v.items),v.memo,photoId?'photo':'manual',clean(data.ocrStatus,12),at,at)];
+ stmts.push(...zpReceiptPetStmts(db,s.ownerId,id,v.pets));
  if(photoId)stmts.push(db.prepare('UPDATE receipt_photos SET receipt_id=? WHERE id=? AND owner_id=?').bind(id,photoId,s.ownerId));
  await db.batch(stmts);
- const row=await db.prepare('SELECT r.*,p.id AS photo_id FROM receipts r LEFT JOIN receipt_photos p ON p.receipt_id=r.id WHERE r.id=?').bind(id).first();
- return json(zpReceipt(row),201);
+ return json(await zpReceiptRow(db,s.ownerId,id),201);
 });
 zpRoute('GET','/api/receipts',async({request,env,db})=>{
  const s=await checkOwner(request,env);
  const rows=await db.prepare('SELECT r.*,p.id AS photo_id FROM receipts r LEFT JOIN receipt_photos p ON p.receipt_id=r.id WHERE r.owner_id=? ORDER BY r.visit_date DESC,r.created_at DESC LIMIT 2000').bind(s.ownerId).all();
- return json({receipts:(rows.results||[]).map(zpReceipt)});
+ const splits=await zpReceiptSplits(db,s.ownerId,null);
+ return json({receipts:(rows.results||[]).map(r=>zpReceipt(r,splits))});
 });
 zpRoute('GET','/api/receipts/export',async({request,env,db,url})=>{
  const s=await checkOwner(request,env);
  const pets=await zpOwnerPets(db,s.ownerId),petName=id=>pets.find(p=>p.id===id)?.name||'등록 해제된 아이';
  const rows=(await db.prepare('SELECT * FROM receipts WHERE owner_id=? ORDER BY visit_date,created_at').bind(s.ownerId).all()).results||[];
+ const splits=await zpReceiptSplits(db,s.ownerId,null);
+ const full=rows.map(r=>zpReceipt(r,splits));
  if(url.searchParams.get('format')==='json'){
-  return new Response(JSON.stringify({exportedAt:now(),receipts:rows.map(r=>({...zpReceipt(r),petName:petName(r.pet_id)}))},null,1),{headers:{'content-type':'application/json; charset=utf-8','content-disposition':'attachment; filename="zeno-receipts.json"','cache-control':'no-store'}});
+  return new Response(JSON.stringify({exportedAt:now(),receipts:full.map(r=>({...r,petName:r.pets.map(x=>petName(x.petId)).join(', '),pets:r.pets.map(x=>({...x,petName:petName(x.petId)}))}))},null,1),{headers:{'content-type':'application/json; charset=utf-8','content-disposition':'attachment; filename="zeno-receipts.json"','cache-control':'no-store'}});
  }
  const q=v=>{const t=String(v??'');return /[",\n\r]/.test(t)||/^[=+\-@]/.test(t)?'"'+(/^[=+\-@]/.test(t)?"'":'')+t.replace(/"/g,'""')+'"':t};
- const lines=[['진료일','아이','병원','총 결제 금액','세부 항목','메모'].join(',')].concat(rows.map(r=>{let items=[];try{items=JSON.parse(r.items_json||'[]')}catch{}return [r.visit_date,petName(r.pet_id),r.hospital_name,r.total,items.map(i=>i.name+' '+i.amount).join(' / '),r.memo].map(q).join(',')}));
+ /* 아이별로 한 줄씩 씁니다. 여러 아이를 함께 진료받은 영수증은 같은 영수증 번호로 묶입니다. */
+ const lines=[['진료일','아이','아이별 금액','병원','영수증 총 결제 금액','함께 진료한 아이','세부 항목','메모','영수증 번호'].join(',')].concat(full.flatMap(r=>r.pets.map(x=>[r.visitDate,petName(x.petId),x.amount,r.hospitalName,r.total,r.pets.length>1?r.pets.map(y=>petName(y.petId)).join(' / '):'',r.items.map(i=>i.name+' '+i.amount).join(' / '),r.memo,r.id.slice(0,8)].map(q).join(','))));
  return new Response('﻿'+lines.join('\r\n'),{headers:{'content-type':'text/csv; charset=utf-8','content-disposition':'attachment; filename="zeno-receipts.csv"','cache-control':'no-store'}});
 });
 zpRoute('GET',/^\/api\/receipts\/([a-zA-Z0-9-]{8,60})\/photo$/,async({request,env,db,params})=>{
@@ -984,14 +1015,14 @@ zpRoute('PATCH',/^\/api\/receipts\/([a-zA-Z0-9-]{8,60})$/,async({request,env,db,
  const row=await db.prepare('SELECT * FROM receipts WHERE id=?').bind(params[0]).first();
  assert(row&&row.owner_id===s.ownerId,'본인의 영수증만 수정할 수 있습니다.',403);
  const v=await zpReceiptInput(db,s.ownerId,data);
- await db.prepare('UPDATE receipts SET pet_id=?,hospital_id=?,hospital_name=?,visit_date=?,total=?,items_json=?,memo=?,updated_at=? WHERE id=?').bind(v.petId,v.hospitalId,v.hospitalName,v.visitDate,v.total,JSON.stringify(v.items),v.memo,now(),row.id).run();
- return json(zpReceipt(await db.prepare('SELECT r.*,p.id AS photo_id FROM receipts r LEFT JOIN receipt_photos p ON p.receipt_id=r.id WHERE r.id=?').bind(row.id).first()));
+ await db.batch([db.prepare('UPDATE receipts SET pet_id=?,hospital_id=?,hospital_name=?,visit_date=?,total=?,items_json=?,memo=?,updated_at=? WHERE id=?').bind(v.petId,v.hospitalId,v.hospitalName,v.visitDate,v.total,JSON.stringify(v.items),v.memo,now(),row.id),...zpReceiptPetStmts(db,s.ownerId,row.id,v.pets)]);
+ return json(await zpReceiptRow(db,s.ownerId,row.id));
 });
 zpRoute('DELETE',/^\/api\/receipts\/([a-zA-Z0-9-]{8,60})$/,async({request,env,db,params})=>{
  const s=await checkOwner(request,env);
  const row=await db.prepare('SELECT owner_id FROM receipts WHERE id=?').bind(params[0]).first();
  assert(row&&row.owner_id===s.ownerId,'본인의 영수증만 삭제할 수 있습니다.',403);
- await db.batch([db.prepare('DELETE FROM receipt_photos WHERE receipt_id=? AND owner_id=?').bind(params[0],s.ownerId),db.prepare('DELETE FROM receipts WHERE id=? AND owner_id=?').bind(params[0],s.ownerId)]);
+ await db.batch([db.prepare('DELETE FROM receipt_photos WHERE receipt_id=? AND owner_id=?').bind(params[0],s.ownerId),db.prepare('DELETE FROM receipt_pets WHERE receipt_id=? AND owner_id=?').bind(params[0],s.ownerId),db.prepare('DELETE FROM receipts WHERE id=? AND owner_id=?').bind(params[0],s.ownerId)]);
  return json({ok:true});
 });
 /* <<< PASS-CORE */
