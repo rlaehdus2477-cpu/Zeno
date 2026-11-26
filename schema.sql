@@ -274,4 +274,15 @@ CREATE TABLE IF NOT EXISTS receipt_photos (
   created_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS receipt_photos_owner ON receipt_photos(owner_id,receipt_id);
+-- PASS 04 보완 (2026-11-27): 같은 날 여러 아이를 함께 진료받은 영수증 1장을 아이별 금액으로 나눠 저장
+-- receipts.pet_id는 첫 번째 아이(예전 기록 호환), 행이 없는 예전 영수증은 pet_id 한 마리 = 총액
+CREATE TABLE IF NOT EXISTS receipt_pets (
+  receipt_id TEXT NOT NULL,
+  owner_id TEXT NOT NULL,
+  pet_id TEXT NOT NULL,
+  amount INTEGER NOT NULL CHECK(amount BETWEEN 0 AND 100000000),
+  sort INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY(receipt_id,pet_id)
+);
+CREATE INDEX IF NOT EXISTS receipt_pets_owner ON receipt_pets(owner_id,receipt_id);
 -- PASS 03 보완 (2026-11-27): 일반 사료 41개(제조사 공식 자료) 추가, 아이별 하루 급여량·체형·활동량은 pass_prefs(kind='nutrition')에 저장

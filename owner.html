@@ -7480,6 +7480,16 @@ setInterval(()=>{if(document.hidden||state.ownerToken||!state.serverReady)return
 .zp-tag.mute{background:#f1f3f5;color:#5d6b78}
 .zp-check{display:flex;gap:8px;align-items:flex-start;margin:12px 0;font-size:13px;line-height:1.5;color:#4f6880}
 .zp-check input{margin-top:3px;width:16px;height:16px;flex:0 0 16px}
+.zp-rc-pets{border:0;margin:0;padding:0;min-width:0}
+.zp-rc-pets legend{padding:0;margin-bottom:4px;font-size:13px;font-weight:600;color:#4f6880}
+.zp-rc-pets legend .zp-help{font-weight:400;margin-left:4px}
+.zp-rc-pet{display:flex;align-items:center;gap:8px;min-height:44px;border-bottom:1px solid #edf1f5}
+.zp-rc-pet .zp-check{flex:1;margin:0;align-items:center;min-height:44px;font-size:15px;color:#142e4c;cursor:pointer}
+.zp-rc-pet .zp-check input{margin-top:0;width:20px;height:20px;flex-basis:20px}
+.zp-rc-pet .zp-rc-amt{width:132px;flex:0 0 132px;min-height:44px;padding:8px 10px;text-align:right}
+.zp-rc-sumrow{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:6px}
+.zp-rc-split{border:0;background:none;min-height:44px;padding:8px 0;color:#1f63b4;font-size:13px;font-weight:600;cursor:pointer;flex:0 0 auto}
+.zp-rc-split-list{display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:2px;font-size:12px;color:#4f6880}
 .zp-btn{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 16px;border-radius:10px;border:1px solid #1689fa;background:#1689fa;color:#fff;font-size:15px;font-weight:600;cursor:pointer;width:100%}
 .zp-btn.secondary{background:#fff;color:#1d5f9c;border-color:#d3e1ef}
 .zp-btn.small{min-height:36px;width:auto;font-size:13px;padding:0 12px}
@@ -8124,6 +8134,29 @@ async function zpRcLoad(){
  if(state.page==='pass'&&zpState().view==='receipts')render();
 }
 function zpRcPetName(id){return (state.pets||[]).find(p=>p.id===id)?.name||'등록 해제된 아이'}
+/* 2026-11-27: 영수증 1장에 여러 아이 + 아이별 금액. 예전 기록은 pet 한 마리 = 총액 */
+function zpRcPetsOf(x){return x.pets&&x.pets.length?x.pets:[{petId:x.petId,amount:x.total}]}
+function zpRcShare(x,ids){return ids?zpRcPetsOf(x).filter(p=>ids.includes(p.petId)).reduce((a,p)=>a+p.amount,0):x.total}
+function zpRcSync(form){
+ const r=zpRc(),f=r.form;if(!f||!form)return;
+ const d=new FormData(form),ids=d.getAll('petIds').map(String),old=f.pets||[];
+ const order=[...old.map(x=>x.petId).filter(id=>ids.includes(id)),...ids.filter(id=>!old.some(x=>x.petId===id))];
+ f.pets=order.map(id=>({petId:id,amount:d.has('amt_'+id)?String(d.get('amt_'+id)||''):(old.find(x=>x.petId===id)?.amount??'')}));
+ Object.assign(f,{hospitalName:d.get('hospitalName'),visitDate:d.get('visitDate'),total:d.get('total'),itemsText:d.get('items'),memo:d.get('memo')});
+}
+function zpRcSumText(form){
+ const d=new FormData(form),ids=d.getAll('petIds');
+ return zpRcSumOf(ids.map(id=>d.get('amt_'+id)),d.get('total'));
+}
+function zpRcSumOf(amounts,totalRaw){
+ if(amounts.length<2)return '';
+ const sum=amounts.reduce((a,v)=>a+(Number(v)||0),0),total=Number(totalRaw)||0,gap=total-sum;
+ return '아이별 합계 '+zpWon(sum)+(gap===0?' · 총 결제 금액과 같아요':gap>0?' · '+zpWon(gap)+' 남았어요':' · '+zpWon(-gap)+' 많아요');
+}
+document.addEventListener('input',ev=>{
+ const form=ev.target?.closest?.('form[data-zp-form="rc-save"]');if(!form)return;
+ const out=form.querySelector('#zp-rc-sum');if(out)out.textContent=zpRcSumText(form);
+});
 function zpRcItemsText(items){return (items||[]).map(i=>i.name+' '+i.amount).join('\n')}
 function zpRcParseItems(text){return String(text||'').split('\n').map(l=>l.trim()).filter(Boolean).map(l=>{const m=l.match(/^(.*?)[\s:]+(-?[\d,]+)\s*원?$/);return m?{name:m[1].trim(),amount:Number(m[2].replace(/,/g,''))}:{name:l,amount:NaN}})}
 async function zpRcCompress(file){
@@ -8146,22 +8179,31 @@ function zpRcForm(){
  return '<form class="zp-form zp-box" data-zp-form="rc-save" style="padding:16px">'
   +(f.id?'':'<div class="zp-field"><label for="zp-rc-photo">영수증 사진 (선택)</label><input id="zp-rc-photo" type="file" accept="image/*" data-zp-file="rc"'+(r.busy?' disabled':'')+'><p class="zp-help">사진은 본인만 볼 수 있어요. 올리면 글자를 자동으로 읽어 아래 칸을 채워요.</p></div>')
   +(f.status?'<p class="'+(f.statusTone==='error'?'zp-error':'zp-muted')+'" role="status">'+e(f.status)+'</p>':'')
-  +'<div class="zp-field"><label for="zp-rc-pet">아이</label><select id="zp-rc-pet" name="petId" required>'+pets.map(p=>'<option value="'+e(p.id)+'"'+(f.petId===p.id?' selected':'')+'>'+e(p.name)+'</option>').join('')+'</select></div>'
   +'<div class="zp-field"><label for="zp-rc-hospital">병원</label><input id="zp-rc-hospital" name="hospitalName" list="zp-rc-hospitals" maxlength="60" required value="'+e(f.hospitalName||'')+'"><datalist id="zp-rc-hospitals">'+names+'</datalist><p class="zp-help">제휴·비제휴 병원 모두 등록할 수 있어요.</p></div>'
   +'<div class="zp-field-row"><div class="zp-field"><label for="zp-rc-date">진료일</label><input id="zp-rc-date" name="visitDate" type="date" max="'+today()+'" required value="'+e(f.visitDate||'')+'"></div><div class="zp-field"><label for="zp-rc-total">총 결제 금액(원)</label><input id="zp-rc-total" name="total" type="number" inputmode="numeric" min="0" required value="'+e(f.total??'')+'"></div></div>'
+  +zpRcPetField(f,pets)
   +'<div class="zp-field"><label for="zp-rc-items">세부 항목 (한 줄에 "항목 금액", 선택)</label><textarea id="zp-rc-items" name="items" placeholder="진찰료 10000&#10;혈액검사 45000">'+e(f.itemsText||'')+'</textarea></div>'
   +'<div class="zp-field"><label for="zp-rc-memo">메모 (선택)</label><input id="zp-rc-memo" name="memo" maxlength="300" value="'+e(f.memo||'')+'"></div>'
   +(f.photoId?'<p class="zp-help">자동 인식 값은 틀릴 수 있어요. 영수증과 비교해 확인한 뒤 저장해 주세요.</p>':'')
   +'<div class="zp-btn-row"><button type="button" class="zp-btn secondary" data-zp="rc-close">닫기</button><button type="submit" class="zp-btn"'+(r.busy?' disabled':'')+'>저장</button></div></form>';
 }
-function zpRcStats(list){
+function zpRcPetField(f,pets){
+ const sel=f.pets||[],multi=sel.length>1;
+ return '<fieldset class="zp-field zp-rc-pets"><legend>아이 <span class="zp-help">함께 진료받았다면 모두 선택해 주세요</span></legend>'
+  +pets.map(p=>{const s=sel.find(x=>x.petId===p.id);return '<div class="zp-rc-pet"><label class="zp-check"><input type="checkbox" name="petIds" value="'+e(p.id)+'"'+(s?' checked':'')+'><span>'+e(p.name)+'</span></label>'
+   +(multi&&s?'<input class="zp-rc-amt" name="amt_'+e(p.id)+'" type="number" inputmode="numeric" min="0" required aria-label="'+e(p.name)+' 금액(원)" placeholder="금액(원)" value="'+e(s.amount??'')+'">':'')+'</div>'}).join('')
+  +(multi?'<div class="zp-rc-sumrow"><p class="zp-help" id="zp-rc-sum" role="status">'+e(zpRcSumOf(sel.map(x=>x.amount),f.total))+'</p><button type="button" class="zp-rc-split" data-zp="rc-split">똑같이 나누기</button></div>':'')
+  +'</fieldset>';
+}
+function zpRcStats(list,ids){
  const r=zpRc(),currentYear=today().slice(0,4),years=[...new Set([currentYear,...list.map(x=>x.visitDate.slice(0,4))])].sort().reverse();
  const year=years.includes(r.year)?r.year:currentYear;
  const inYear=list.filter(x=>x.visitDate.startsWith(year));
- const months=Array.from({length:12},(_,i)=>inYear.filter(x=>Number(x.visitDate.slice(5,7))===i+1).reduce((a,x)=>a+x.total,0));
+ const months=Array.from({length:12},(_,i)=>inYear.filter(x=>Number(x.visitDate.slice(5,7))===i+1).reduce((a,x)=>a+zpRcShare(x,ids),0));
  const max=Math.max(1,...months);
- const byPet=[...new Set(list.map(x=>x.petId))].map(id=>[id,inYear.filter(x=>x.petId===id).reduce((a,x)=>a+x.total,0)]).filter(x=>x[1]>0);
- return '<section class="zp-section"><div class="zp-section-head"><h2>'+year+'년 의료비</h2><span>'+zpWon(inYear.reduce((a,x)=>a+x.total,0))+'</span></div>'
+ const petIds=[...new Set(list.flatMap(x=>zpRcPetsOf(x).map(p=>p.petId)))].filter(id=>!ids||ids.includes(id));
+ const byPet=petIds.map(id=>[id,inYear.reduce((a,x)=>a+zpRcShare(x,[id]),0)]).filter(x=>x[1]>0);
+ return '<section class="zp-section"><div class="zp-section-head"><h2>'+year+'년 의료비</h2><span>'+zpWon(inYear.reduce((a,x)=>a+zpRcShare(x,ids),0))+'</span></div>'
   +(years.length>1?'<div class="zp-chips" role="group" aria-label="연도">'+years.map(y=>'<button type="button" class="zp-chip" data-zp="rc-year" data-value="'+y+'" aria-pressed="'+(y===year)+'">'+y+'</button>').join('')+'</div>':'')
   +'<div class="zp-box" style="padding:12px 16px"><div class="zp-bars" role="img" aria-label="'+year+'년 월별 의료비">'+months.map((v,i)=>'<div class="zp-bar"><span style="height:'+Math.round(v/max*100)+'%;'+(v===0?'min-height:0;visibility:hidden':'')+'"></span><small>'+(i+1)+'</small></div>').join('')+'</div>'
   +months.map((v,i)=>v?'<div class="zp-kv"><span>'+(i+1)+'월</span><b>'+zpWon(v)+'</b></div>':'').join('')+'</div>'
@@ -8179,16 +8221,17 @@ ZP_VIEWS.receipts={
   if(!active)body+=r.list.length?'<section class="zp-gate"><strong>PASS를 해지한 상태예요</strong><p>저장한 영수증은 계속 보고 내보낼 수 있어요. 새 영수증 등록은 PASS에서 할 수 있어요.</p></section>':zpGate('영수증 통합 관리');
   if(active&&!(state.pets||[]).length)return body+'<section class="zp-gate"><strong>등록한 아이가 없어요</strong><p>내 아이에서 아이를 먼저 등록해 주세요.</p><button type="button" class="zp-btn" data-nav="pets">내 아이 등록하기</button></section>';
   if(r.form)return body+zpRcForm();
-  const pets=[...new Set([...(state.pets||[]).map(x=>x.id),...r.list.map(x=>x.petId)])];
-  const selected=r.selectedPets||[];
-  const list=r.list.filter(x=>r.pet==='all'||selected.includes(x.petId));
-  const total=list.reduce((a,x)=>a+x.total,0);
+  const pets=[...new Set([...(state.pets||[]).map(x=>x.id),...r.list.flatMap(x=>zpRcPetsOf(x).map(p=>p.petId))])];
+  const selected=r.selectedPets||[],ids=r.pet==='all'?null:selected;
+  const list=r.list.filter(x=>!ids||zpRcPetsOf(x).some(p=>ids.includes(p.petId)));
+  const total=list.reduce((a,x)=>a+zpRcShare(x,ids),0);
   body+='<section class="zp-plan"><div class="zp-plan-head"><strong>'+zpWon(total)+'</strong><span class="zp-tag mute">'+(r.pet==='all'?'전체 아이':'선택한 아이')+' 의료비 합계</span></div><p>영수증 '+list.length+'건 · 아이 '+(r.pet==='all'?pets.length:selected.length)+'마리</p>'
    +(active?'<div class="zp-btn-row"><button type="button" class="zp-btn" data-zp="rc-new">영수증 추가</button></div>':'')+'</section>';
   body+='<div class="zp-chips" role="group" aria-label="아이 선택">'+[['all','전체']].concat(pets.map(id=>[id,zpRcPetName(id)])).map(([id,n])=>'<button type="button" class="zp-chip" data-zp="rc-pet" data-value="'+e(id)+'" aria-pressed="'+(id==='all'?r.pet==='all':r.pet!=='all'&&selected.includes(id))+'">'+e(n)+'</button>').join('')+'</div>';
-  body+=zpRcStats(list);
+  body+=zpRcStats(list,ids);
   if(!list.length)return body+'<div class="zp-box"><p class="zp-empty">선택한 아이의 영수증이 없어요.</p></div>';
-  body+='<section class="zp-section"><div class="zp-section-head"><h2>영수증</h2><span>'+list.length+'건</span></div><div class="zp-box">'+list.map(x=>'<div class="zp-item"><div class="zp-item-top"><strong>'+e(x.hospitalName)+'</strong><b>'+zpWon(x.total)+'</b></div><small>'+e(x.visitDate+' · '+zpRcPetName(x.petId)+(x.source==='photo'?' · 사진':''))+'</small>'
+  body+='<section class="zp-section"><div class="zp-section-head"><h2>영수증</h2><span>'+list.length+'건</span></div><div class="zp-box">'+list.map(x=>'<div class="zp-item"><div class="zp-item-top"><strong>'+e(x.hospitalName)+'</strong><b>'+zpWon(zpRcShare(x,ids))+'</b></div>'+(ids&&zpRcShare(x,ids)!==x.total?'<small>영수증 전체 '+zpWon(x.total)+'</small>':'')+'<small>'+e(x.visitDate+' · '+zpRcPetsOf(x).map(p=>zpRcPetName(p.petId)).join(', ')+(x.source==='photo'?' · 사진':''))+'</small>'
+   +(zpRcPetsOf(x).length>1?'<div class="zp-rc-split-list">'+zpRcPetsOf(x).map(p=>'<span>'+e(zpRcPetName(p.petId))+' '+zpWon(p.amount)+'</span>').join('')+'</div>':'')
    +(x.items.length?'<details class="zp-fee-note"><summary>세부 항목 '+x.items.length+'개</summary>'+x.items.map(i=>'<div class="zp-kv"><span>'+e(i.name)+'</span><b>'+zpWon(i.amount)+'</b></div>').join('')+'</details>':'')
    +(x.memo?'<p>'+e(x.memo)+'</p>':'')
    +(r.photoUrls[x.id]?'<img class="zp-photo" src="'+e(r.photoUrls[x.id])+'" alt="'+e(x.visitDate)+' 영수증 사진">':'')
@@ -8200,9 +8243,10 @@ ZP_VIEWS.receipts={
   const r=zpRc();
   if(a==='rc-pet'){const id=el.dataset.value;if(id==='all'){r.pet='all';r.selectedPets=[]}else{const ids=r.pet==='all'?[]:(r.selectedPets||[]);r.selectedPets=ids.includes(id)?ids.filter(x=>x!==id):[...ids,id];r.pet=r.selectedPets.length?'selected':'all'}render();return}
   if(a==='rc-year'){r.year=el.dataset.value;render();return}
-  if(a==='rc-new'){r.form={petId:(state.pets||[]).find(x=>r.pet!=='all'&&r.selectedPets.includes(x.id))?.id||(state.pets[0]?.id||''),visitDate:today()};render();return}
+  if(a==='rc-new'){const pre=(state.pets||[]).filter(x=>r.pet!=='all'&&r.selectedPets.includes(x.id)).map(x=>({petId:x.id,amount:''}));r.form={pets:pre.length?pre:(state.pets?.length===1?[{petId:state.pets[0].id,amount:''}]:[]),visitDate:today()};render();return}
+  if(a==='rc-split'){const form=el.closest('form');zpRcSync(form);const f=r.form;if(!f)return;const t=Number(f.total);if(!(f.pets.length>1)||!Number.isInteger(t)||t<0||String(f.total??'')===''){toast('총 결제 금액을 먼저 입력해 주세요.');return}const n=f.pets.length,base=Math.floor(t/n);f.pets.forEach((p,i)=>p.amount=String(base+(i===0?t-base*n:0)));render();return}
   if(a==='rc-close'){r.form=null;render();return}
-  if(a==='rc-edit'){const x=r.list.find(y=>y.id===el.dataset.id);if(!x)return;r.form={id:x.id,petId:x.petId,hospitalName:x.hospitalName,visitDate:x.visitDate,total:x.total,itemsText:zpRcItemsText(x.items),memo:x.memo};render();return}
+  if(a==='rc-edit'){const x=r.list.find(y=>y.id===el.dataset.id);if(!x)return;r.form={id:x.id,pets:zpRcPetsOf(x).map(p=>({petId:p.petId,amount:String(p.amount)})),hospitalName:x.hospitalName,visitDate:x.visitDate,total:x.total,itemsText:zpRcItemsText(x.items),memo:x.memo};render();return}
   if(a==='rc-delete'){if(!confirm('이 영수증과 사진을 삭제할까요?'))return;try{await api('DELETE','/api/receipts/'+encodeURIComponent(el.dataset.id));toast('삭제했어요.')}catch(err){toast(err.message)}await zpRcLoad();return}
   if(a==='rc-photo'||a==='rc-export'){
    const path=a==='rc-photo'?'/api/receipts/'+encodeURIComponent(el.dataset.id)+'/photo':'/api/receipts/export?format='+el.dataset.value;
@@ -8216,9 +8260,10 @@ ZP_VIEWS.receipts={
   }
  },
  async change(el){
+  if(el.name==='petIds'&&zpRc().form){zpRcSync(el.closest('form'));render();const amt=document.querySelector('form[data-zp-form="rc-save"] input[name="amt_'+CSS.escape(el.value)+'"]');if(amt&&el.checked&&!amt.value)amt.focus();return}
   if(el.dataset.zpFile!=='rc'||!el.files?.[0])return;
   const r=zpRc(),f=r.form;if(!f)return;
-  const form=el.closest('form');if(form){const d=new FormData(form);Object.assign(f,{petId:d.get('petId'),hospitalName:d.get('hospitalName'),visitDate:d.get('visitDate'),total:d.get('total'),itemsText:d.get('items'),memo:d.get('memo')})}
+  const form=el.closest('form');if(form)zpRcSync(form);
   r.busy=true;f.status='사진을 올리고 글자를 읽고 있어요.';f.statusTone='';render();
   try{
    const image=await zpRcCompress(el.files[0]);
@@ -8240,9 +8285,18 @@ ZP_VIEWS.receipts={
   const r=zpRc(),f=r.form,d=new FormData(form);
   const items=zpRcParseItems(d.get('items'));
   if(items.some(i=>!Number.isFinite(i.amount))){toast('세부 항목은 "항목 금액" 형식으로 적어 주세요.');return}
+  zpRcSync(form);
+  const sel=f.pets||[];
+  if(!sel.length){toast('아이를 한 마리 이상 선택해 주세요.');return}
+  const totalNum=Number(d.get('total'));
+  const pets=sel.length===1?[{petId:sel[0].petId,amount:totalNum}]:sel.map(x=>({petId:x.petId,amount:Number(x.amount)}));
+  if(sel.length>1){
+   if(sel.some(x=>String(x.amount??'').trim()==='')||pets.some(x=>!Number.isInteger(x.amount)||x.amount<0)){toast('아이별 금액을 원 단위로 입력해 주세요.');return}
+   if(pets.reduce((a,x)=>a+x.amount,0)!==totalNum){toast('아이별 금액의 합이 총 결제 금액과 같아야 해요.');return}
+  }
   const name=String(d.get('hospitalName')||'').trim(),hit=HOSPITALS.find(h=>h.name===name);
-  const body={petId:d.get('petId'),hospitalId:hit?hit.id:'',hospitalName:name,visitDate:d.get('visitDate'),total:Number(d.get('total')),items,memo:d.get('memo')||''};
-  Object.assign(f,{petId:body.petId,hospitalName:name,visitDate:body.visitDate,total:d.get('total'),itemsText:d.get('items'),memo:body.memo});
+  const body={petId:pets[0].petId,pets,hospitalId:hit?hit.id:'',hospitalName:name,visitDate:d.get('visitDate'),total:Number(d.get('total')),items,memo:d.get('memo')||''};
+  Object.assign(f,{hospitalName:name,visitDate:body.visitDate,total:d.get('total'),itemsText:d.get('items'),memo:body.memo});
   r.busy=true;render();
   try{
    if(f.id)await api('PATCH','/api/receipts/'+encodeURIComponent(f.id),body);

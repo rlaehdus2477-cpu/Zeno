@@ -292,6 +292,38 @@ async function sectionReceipts() {
     const up = await api('POST', '/api/pass/receipts/photo', {token: A, body: {image: big, ocr: false}});
     expect(up.status === 201, '큰 사진 저장 실패 ' + up.status + ' ' + JSON.stringify(up.data));
   });
+  await check('C5', '같은 날 두 아이를 함께 진료한 영수증 1장: 아이별 금액 저장·검증·수정·내보내기', async () => {
+    const base = {petId: 'cat1', hospitalId: '', hospitalName: '센트동물병원', visitDate: kstDate(-1), total: 150000, items: [], memo: ''};
+    const two = [{petId: 'cat1', amount: 80000}, {petId: 'dog1', amount: 70000}];
+    expect((await api('POST', '/api/pass/receipts', {token: A, body: {...base, pets: [{petId: 'cat1', amount: 80000}, {petId: 'dog1', amount: 60000}]}})).status === 400, '합계가 총액과 다른데 저장됨');
+    expect((await api('POST', '/api/pass/receipts', {token: A, body: {...base, pets: [{petId: 'cat1', amount: 75000}, {petId: 'cat1', amount: 75000}]}})).status === 400, '같은 아이 중복 저장됨');
+    expect((await api('POST', '/api/pass/receipts', {token: A, body: {...base, pets: [{petId: 'cat1', amount: 80000}, {petId: 'other', amount: 70000}]}})).status === 400, '남의 아이 포함 저장됨');
+    expect((await api('POST', '/api/pass/receipts', {token: A, body: {...base, pets: []}})).status === 400, '아이 없이 저장됨');
+    expect((await api('POST', '/api/pass/receipts', {token: A, body: {...base, pets: [{petId: 'cat1', amount: -1}, {petId: 'dog1', amount: 150001}]}})).status === 400, '음수 금액 저장됨');
+    for (const amount of [null, '', ' ', false]) {
+      expect((await api('POST', '/api/pass/receipts', {token: A, body: {...base, pets: [{petId: 'cat1', amount}, {petId: 'dog1', amount: 150000}]}})).status === 400, '빈 금액 또는 불리언 허용');
+    }
+    expect((await api('POST', '/api/pass/receipts', {token: A, body: {...base, total: null, pets: [{petId: 'cat1', amount: 0}]}})).status === 400, '빈 총액 허용');
+    const ok = await api('POST', '/api/pass/receipts', {token: A, body: {...base, pets: two}});
+    expect(ok.status === 201 && ok.data.pets.length === 2 && ok.data.pets[1].amount === 70000 && ok.data.petId === 'cat1', '두 아이 저장 실패 ' + JSON.stringify(ok.data));
+    const id = ok.data.id;
+    const list = (await api('GET', '/api/receipts', {token: A})).data.receipts;
+    const mine = list.find(x => x.id === id);
+    expect(mine && mine.pets.map(x => x.petId).join() === 'cat1,dog1', '목록에 아이별 금액 없음');
+    expect(list.filter(x => x.id !== id).every(x => x.pets.length === 1 && x.pets[0].amount === x.total), '예전 한 마리 영수증 호환 깨짐');
+    const ed = await api('PATCH', `/api/receipts/${id}`, {token: A, body: {...base, total: 160000, pets: [{petId: 'dog1', amount: 100000}, {petId: 'cat1', amount: 60000}]}});
+    expect(ed.status === 200 && ed.data.pets[0].petId === 'dog1' && ed.data.pets[0].amount === 100000 && ed.data.petId === 'dog1', '아이별 금액 수정 실패');
+    const one = await api('PATCH', `/api/receipts/${id}`, {token: A, body: {...base, pets: [{petId: 'cat1'}]}});
+    expect(one.status === 200 && one.data.pets.length === 1 && one.data.pets[0].amount === 150000, '한 마리로 되돌리기 실패');
+    await api('PATCH', `/api/receipts/${id}`, {token: A, body: {...base, pets: two}});
+    const csv = await api('GET', '/api/receipts/export', {token: A});
+    const rows = csv.data.split('\r\n').filter(l => l.includes('센트동물병원'));
+    expect(rows.length === 2 && rows.some(l => l.includes('노아,80000')) && rows.some(l => l.includes('콩이,70000')), 'CSV 아이별 줄 없음\n' + rows.join('\n'));
+    const js = await api('GET', '/api/receipts/export?format=json', {token: A});
+    expect(js.data.receipts.find(x => x.id === id).pets.map(x => x.petName).join() === '노아,콩이', 'JSON 아이 이름 없음');
+    expect((await api('DELETE', `/api/receipts/${id}`, {token: A})).status === 200, '삭제 실패');
+    expect(!(await api('GET', '/api/receipts', {token: A})).data.receipts.some(x => x.id === id), '삭제 후 남음');
+  });
 }
 
 const SECTIONS = [sectionCore, sectionRx, sectionFees, sectionNutrition, sectionReceipts];
