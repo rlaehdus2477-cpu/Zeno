@@ -287,6 +287,13 @@ jobs:
                   if(!record.includes('"name":"'+name+'"')||!record.includes(expected)||!record.includes('"careFields":'))throw Error(view+' incomplete clinic profile '+name);
                 }
               }
+              // ZENO PASS (2026-11-26): UI 모듈이 실제로 배포되고, PASS·영수증·병원 처방식 API가 로그인 없이 열리지 않는지 확인
+              if(!owner.includes('id="zeno-pass-module"')||!owner.includes("state.page==='pass'?zenoPassPage()"))throw Error('ZENO PASS owner module missing in production');
+              if(!hospital.includes('function zpHospitalRxSection(')||!hospital.includes("['rx','pill','처방식']"))throw Error('Hospital prescription-diet tab missing in production');
+              for(const p of ['/api/pass','/api/pass/rx-stock','/api/pass/fee-plan','/api/pass/nutrition','/api/receipts','/api/receipts/export','/api/hospital/rx']){
+                const r=await fetch(base+p,{headers:{'Cache-Control':'no-cache'},signal:AbortSignal.timeout(20000)});
+                if(r.status!==401)throw Error('ZENO PASS route '+p+' must require login but returned HTTP '+r.status);
+              }
               const revision=await (await get('/api/ui-version?ui='+nonce)).json();
               if(revision?.owner!==expectedOwnerRevision)throw Error('Owner UI version not deployed: '+JSON.stringify(revision)+' expected '+expectedOwnerRevision);
               if(!owner.includes("const ZENO_OWNER_UI_REVISION='"+expectedOwnerRevision+"'"))throw Error('Owner page revision not synchronized with Worker: '+expectedOwnerRevision);
