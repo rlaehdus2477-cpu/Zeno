@@ -5,6 +5,7 @@ on:
       - 'owner.html'
       - 'tests/owner-search-card.mjs'
       - 'tests/owner-home.mjs'
+      - 'tests/owner-symptom-search.mjs'
       - '.github/workflows/test-owner-search-layout.yml'
 permissions:
   contents: read
@@ -85,6 +86,8 @@ jobs:
         env:
           SCREENSHOT_DIR: screenshots
         run: node tests/owner-home.mjs
+      - name: Symptom-guided hospital search
+        run: node tests/owner-symptom-search.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
