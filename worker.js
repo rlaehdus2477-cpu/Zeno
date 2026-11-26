@@ -719,6 +719,57 @@ zpRoute('PUT','/api/pass/fee-plan',async({request,env,db,data})=>{
  await zpSetPref(db,s.ownerId,'fee-plan',{items});
  return json({plan:{items}});
 });
+/* ===== PASS 03 · 반려동물별 맞춤 영양 관리 =====
+   사료 정보는 ZP_FEED_CATALOG(제조사 공식 자료)만 씁니다. 판매가는 보호자가 직접 입력한 값만 계산에 씁니다.
+   처방식은 수의사 진단·권고를 입력한 아이에게만 정보로 보여 줍니다. */
+const ZP_CONDITIONS=['신장 질환','당뇨병','위장관 질환','식이 알레르기','간 질환'];
+function zpNutritionClean(p){
+ const neutered=['yes','no','unknown'].includes(p?.neutered)?p.neutered:'unknown';
+ const conditions=Array.isArray(p?.conditions)?[...new Set(p.conditions.filter(c=>ZP_CONDITIONS.includes(c)))]:[];
+ const allergies=Array.isArray(p?.allergies)?[...new Set(p.allergies.map(a=>clean(a,12)).filter(Boolean))].slice(0,8):[];
+ let budget=p?.budgetMonthly===null||p?.budgetMonthly===''||p?.budgetMonthly===undefined?null:Number(p.budgetMonthly);
+ assert(budget===null||(Number.isInteger(budget)&&budget>=0&&budget<=1000000),'월 예산은 0~1,000,000원 사이로 입력해 주세요.');
+ const vetRecommended=p?.vetRecommended===true;
+ assert(!vetRecommended||conditions.length>0,'수의사 처방식 권고를 선택했다면 진단받은 질환을 함께 골라 주세요.');
+ return {neutered,conditions,vetRecommended,allergies,budgetMonthly:budget,updatedAt:now()};
+}
+zpRoute('GET','/api/pass/nutrition',async({request,env,db})=>{
+ const s=await zpRequirePass(request,env);
+ const [pets,store]=await Promise.all([zpOwnerPets(db,s.ownerId),zpGetPref(db,s.ownerId,'nutrition',{profiles:{},prices:{}})]);
+ return json({
+  pets:pets.map(p=>({id:p.id,name:p.name,species:p.species,age:p.age,weight:p.weight})),
+  profiles:store.profiles||{},prices:store.prices||{},
+  catalog:ZP_FEED_CATALOG.map(zpFeedPublic),conditions:ZP_CONDITIONS,
+  generalCatalogStatus:ZP_FEED_CATALOG.some(p=>p.kind==='일반식')?'ready':'preparing'
+ });
+});
+zpRoute('PUT',/^\/api\/pass\/nutrition\/profile\/([a-zA-Z0-9_-]{1,90})$/,async({request,env,db,data,params})=>{
+ const s=await zpRequirePass(request,env);
+ const pets=await zpOwnerPets(db,s.ownerId);
+ assert(pets.some(p=>p.id===params[0]),'내 아이에 등록된 반려동물만 저장할 수 있습니다.',404);
+ const store=await zpGetPref(db,s.ownerId,'nutrition',{profiles:{},prices:{}});
+ store.profiles=store.profiles||{};
+ for(const id of Object.keys(store.profiles))if(!pets.some(p=>p.id===id))delete store.profiles[id];
+ store.profiles[params[0]]=zpNutritionClean(data);
+ await zpSetPref(db,s.ownerId,'nutrition',store);
+ return json({profile:store.profiles[params[0]]});
+});
+zpRoute('PUT','/api/pass/nutrition/prices',async({request,env,db,data})=>{
+ const s=await zpRequirePass(request,env);
+ const p=ZP_FEED_BY_ID.get(clean(data.productId,60));
+ assert(p,'제품을 확인해 주세요.',404);
+ const store=await zpGetPref(db,s.ownerId,'nutrition',{profiles:{},prices:{}});
+ store.prices=store.prices||{};
+ if(data.price===null){delete store.prices[p.id]}
+ else{
+  const price=Number(data.price),packageG=Number(data.packageG);
+  assert(Number.isInteger(price)&&price>=100&&price<=2000000,'구매 가격을 원 단위로 입력해 주세요.');
+  assert(p.packages.includes(packageG),'제조사 표기 포장 단위를 선택해 주세요.');
+  store.prices[p.id]={price,packageG,updatedAt:now()};
+ }
+ await zpSetPref(db,s.ownerId,'nutrition',store);
+ return json({prices:store.prices});
+});
 /* <<< PASS-CORE */
 async function handler(request,env){const url=new URL(request.url),path=url.pathname,method=request.method;
 if(path==='/api/ping'&&method==='GET'){

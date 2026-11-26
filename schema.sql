@@ -246,3 +246,4 @@ CREATE TABLE IF NOT EXISTS rx_alerts (
 );
 CREATE INDEX IF NOT EXISTS rx_alerts_product ON rx_alerts(hospital_id,product_id,status);
 -- PASS 02 공개 진료비 통합 비교: 비교 설정은 pass_prefs(kind='fee-plan')에 저장 (가격 자료는 공개 가격표만 사용)
+-- PASS 03 맞춤 영양 관리: 아이별 정보·입력 가격은 pass_prefs(kind='nutrition')에 저장, 사료 자료는 worker.js의 ZP_FEED_CATALOG(제조사 공식 페이지 확인값)
