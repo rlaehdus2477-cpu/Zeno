@@ -417,6 +417,87 @@ function ensureVetqa(db){
 const vetqaQuestion=(r,full=false)=>({id:r.id,title:r.title,body:full?r.body:String(r.body||'').slice(0,140),species:r.species,field:r.field,answerCount:Number(r.answer_count||0),lastAnsweredAt:r.last_answered_at||null,createdAt:r.created_at});
 const vetqaAnswer=r=>({id:r.id,questionId:r.question_id,hospitalId:r.hospital_id,vetName:r.vet_name||'',body:r.body,createdAt:r.created_at,updatedAt:r.updated_at});
 const VETQA_LIST_SQL="SELECT q.*,(SELECT COUNT(*) FROM vetqa_answers a WHERE a.question_id=q.id AND a.status='visible') AS answer_count,(SELECT MAX(a.created_at) FROM vetqa_answers a WHERE a.question_id=q.id AND a.status='visible') AS last_answered_at FROM vetqa_questions q";
+/* >>> PASS-CORE */
+/* ===== ZENO PASS (2026-11-26) =====
+   월 1,800원 보호자 멤버십. 현재는 실결제 없는 시범 운영입니다.
+   - 모든 PASS 기능 권한은 서버에서 pass_memberships 테이블로 확인합니다.
+   - 해지 후에도 본인이 만든 기록(영수증·확보 요청)은 열람·내보내기할 수 있습니다.
+   - 병원 제휴비·판매 수수료는 받지 않습니다. 가격·재고·영양 정보는 확인된 값만 다룹니다. */
+const ZP_PRICE_KRW=1800;
+const ZP_SQL=[
+ "CREATE TABLE IF NOT EXISTS pass_memberships (owner_id TEXT PRIMARY KEY, status TEXT NOT NULL CHECK(status IN ('active','cancelled')), plan TEXT NOT NULL DEFAULT 'monthly-1800', billing TEXT NOT NULL DEFAULT 'pilot-free', started_at TEXT NOT NULL, cancelled_at TEXT, updated_at TEXT NOT NULL)",
+ "CREATE TABLE IF NOT EXISTS pass_prefs (owner_id TEXT NOT NULL, kind TEXT NOT NULL, value_json TEXT NOT NULL, updated_at TEXT NOT NULL, PRIMARY KEY(owner_id,kind))"
+];
+let zpInit=null;
+function zpEnsure(db){
+ if(!zpInit)zpInit=db.batch(ZP_SQL.map(sql=>db.prepare(sql))).catch(err=>{zpInit=null;throw err});
+ return zpInit;
+}
+const ZP_ROUTES=[];
+function zpRoute(method,pattern,fn){ZP_ROUTES.push({method,pattern,fn})}
+async function zpDispatch(request,env,path,method,url,data){
+ if(!path.startsWith('/api/pass')&&!path.startsWith('/api/receipts')&&!path.startsWith('/api/hospital/rx'))return null;
+ for(const r of ZP_ROUTES){
+  if(r.method!==method)continue;
+  const m=typeof r.pattern==='string'?(r.pattern===path?[path]:null):path.match(r.pattern);
+  if(!m)continue;
+  await zpEnsure(env.DB);
+  return r.fn({request,env,db:env.DB,path,method,url,data,params:m.slice(1)});
+ }
+ return null;
+}
+function zpMembershipView(row){
+ const active=row?.status==='active';
+ return {active,status:row?.status||'none',plan:'monthly',priceKrw:ZP_PRICE_KRW,billing:'pilot-free',
+  startedAt:row?.started_at||null,cancelledAt:row?.cancelled_at||null,
+  notice:'시범 운영 중에는 결제가 이루어지지 않습니다. 유료 전환 전에 별도로 안내하고 동의를 받습니다.'};
+}
+async function zpMembership(db,ownerId){
+ await zpEnsure(db);
+ return db.prepare('SELECT * FROM pass_memberships WHERE owner_id=?').bind(ownerId).first();
+}
+/* PASS 전용 기능의 서버 권한 확인. 클라이언트 표시와 관계없이 여기서 거절합니다. */
+async function zpRequirePass(request,env){
+ const session=await checkOwner(request,env);
+ const row=await zpMembership(env.DB,session.ownerId);
+ assert(row?.status==='active','ZENO PASS 회원 전용 기능입니다. PASS 시범 이용을 시작한 뒤 이용해 주세요.',403);
+ return session;
+}
+async function zpGetPref(db,ownerId,kind,fallback){
+ const row=await db.prepare('SELECT value_json FROM pass_prefs WHERE owner_id=? AND kind=?').bind(ownerId,kind).first();
+ if(!row)return fallback;
+ try{return JSON.parse(row.value_json)}catch{return fallback}
+}
+async function zpSetPref(db,ownerId,kind,value){
+ const body=JSON.stringify(value);
+ assert(body.length<=12000,'저장할 내용이 너무 많습니다.',413);
+ await db.prepare('INSERT INTO pass_prefs(owner_id,kind,value_json,updated_at) VALUES(?,?,?,?) ON CONFLICT(owner_id,kind) DO UPDATE SET value_json=excluded.value_json,updated_at=excluded.updated_at').bind(ownerId,kind,body,now()).run();
+}
+const zpKstToday=()=>new Date(Date.now()+9*3600e3).toISOString().slice(0,10);
+async function zpOwnerPets(db,ownerId){
+ const row=await db.prepare('SELECT profile_json FROM owners WHERE id=?').bind(ownerId).first();
+ return profileParse(row?.profile_json).pets;
+}
+
+zpRoute('GET','/api/pass',async({request,env,db})=>{
+ const s=await checkOwner(request,env);
+ return json({pass:zpMembershipView(await zpMembership(db,s.ownerId))});
+});
+zpRoute('POST','/api/pass/start',async({request,env,db,data})=>{
+ const s=await checkOwner(request,env);
+ assert(data.agree===true,'시범 운영 안내를 확인하고 동의해 주세요.');
+ const at=now();
+ await db.prepare("INSERT INTO pass_memberships(owner_id,status,plan,billing,started_at,cancelled_at,updated_at) VALUES(?,'active','monthly-1800','pilot-free',?,NULL,?) ON CONFLICT(owner_id) DO UPDATE SET status='active',started_at=CASE WHEN pass_memberships.status='active' THEN pass_memberships.started_at ELSE excluded.started_at END,cancelled_at=NULL,updated_at=excluded.updated_at").bind(s.ownerId,at,at).run();
+ return json({pass:zpMembershipView(await zpMembership(db,s.ownerId))});
+});
+zpRoute('POST','/api/pass/cancel',async({request,env,db})=>{
+ const s=await checkOwner(request,env);
+ const at=now();
+ const r=await db.prepare("UPDATE pass_memberships SET status='cancelled',cancelled_at=?,updated_at=? WHERE owner_id=? AND status='active'").bind(at,at,s.ownerId).run();
+ assert((r.meta?.changes||0)>0,'이용 중인 PASS가 없습니다.',409);
+ return json({pass:zpMembershipView(await zpMembership(db,s.ownerId))});
+});
+/* <<< PASS-CORE */
 async function handler(request,env){const url=new URL(request.url),path=url.pathname,method=request.method;
 if(path==='/api/ping'&&method==='GET'){
  const configured=!!(env.DB&&env.SESSION_SECRET&&env.HOSPITAL_SOO_PIN&&env.HOSPITAL_NAEUM_PIN&&env.HOSPITAL_TPLUS_PIN);
@@ -447,13 +528,14 @@ if(path==='/api/ui-version'&&method==='GET')return json({owner:OWNER_UI_REVISION
 if(!path.startsWith('/api/'))return new Response('Not found',{status:404});
 if(!env.DB)return fail('D1 데이터베이스 연결이 필요합니다. SETUP.md를 확인하세요.',503);
 const db=env.DB;let data={};if(['POST','PATCH','PUT'].includes(method)){
- const maxBody=method==='PUT'&&/^\/api\/pet-photos\/[a-zA-Z0-9_-]{1,90}$/.test(path)?90000:18000;
+ const maxBody=method==='PUT'&&/^\/api\/pet-photos\/[a-zA-Z0-9_-]{1,90}$/.test(path)?90000:(method==='POST'&&path==='/api/pass/receipts/photo'?1400000:18000);
  const size=Number(request.headers.get('content-length')||0);
  assert(size<=maxBody,'요청이 너무 큽니다.',413);
  const raw=await request.text();assert(new TextEncoder().encode(raw).length<=maxBody,'요청이 너무 큽니다.',413);
  try{data=JSON.parse(raw)}catch{throw new HttpError('요청 형식이 올바르지 않습니다.')}
  assert(data&&typeof data==='object'&&!Array.isArray(data),'요청 형식이 올바르지 않습니다.');
 }
+{const zpRes=await zpDispatch(request,env,path,method,url,data);if(zpRes)return zpRes;}
 if(path==='/api/public/hospital-coordinates'&&method==='GET'){
  assert(env.DB,'병원 위치 데이터베이스를 사용할 수 없습니다.',503);
  assert(env.NAVER_MAPS_CLIENT_ID&&env.NAVER_MAPS_CLIENT_SECRET,'내 주변 검색을 위한 네이버 지도 설정이 아직 완료되지 않았습니다.',503);

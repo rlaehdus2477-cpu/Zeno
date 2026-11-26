@@ -185,3 +185,21 @@ CREATE TABLE IF NOT EXISTS hospital_point_entries (
 );
 CREATE INDEX IF NOT EXISTS hospital_point_history ON hospital_point_entries(hospital_id,created_at DESC);
 CREATE INDEX IF NOT EXISTS hospital_home_ads ON hospital_point_entries(expires_at) WHERE kind='home_ad';
+
+-- ZENO PASS (2026-11-26): 월 1,800원 멤버십. 시범 운영 중에는 결제가 없습니다(billing='pilot-free').
+CREATE TABLE IF NOT EXISTS pass_memberships (
+  owner_id TEXT PRIMARY KEY,
+  status TEXT NOT NULL CHECK(status IN ('active','cancelled')),
+  plan TEXT NOT NULL DEFAULT 'monthly-1800',
+  billing TEXT NOT NULL DEFAULT 'pilot-free',
+  started_at TEXT NOT NULL,
+  cancelled_at TEXT,
+  updated_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS pass_prefs (
+  owner_id TEXT NOT NULL,
+  kind TEXT NOT NULL,
+  value_json TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  PRIMARY KEY(owner_id,kind)
+);

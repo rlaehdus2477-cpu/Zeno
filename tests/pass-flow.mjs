@@ -1,0 +1,114 @@
+// ZENO PASS 자동 테스트 (2026-11-26)
+// - worker.js를 wrangler dev --local로 띄우고, 임시 로컬 D1에서만 실행합니다.
+// - 운영 데이터베이스(--remote)에는 접속하지 않습니다. 비밀번호·비밀키는 테스트 전용 가짜 값입니다.
+// 실행: node tests/pass-flow.mjs
+import {spawn, spawnSync} from 'node:child_process';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+
+const PORT = Number(process.env.ZENO_PASS_TEST_PORT || 8798);
+const BASE = `http://127.0.0.1:${PORT}`;
+const SECRET = 'zeno-pass-test-only-secret';
+const PINS = {soo: 'soo-test-pin', naeum: 'naeum-test-pin', pub045: 'tplus-test-pin'};
+const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
+const PERSIST = fs.mkdtempSync(path.join(os.tmpdir(), 'zeno-pass-d1-'));
+const WRANGLER = path.join(ROOT, 'node_modules', '.bin', 'wrangler');
+
+const results = [];
+async function check(no, title, fn) {
+  const cur = {no, title, ok: true, notes: []};
+  try { await fn(); } catch (err) { cur.ok = false; cur.notes.push(err.message); }
+  results.push(cur);
+  console.log(`${cur.ok ? 'PASS' : 'FAIL'}  ${no}. ${title}${cur.ok ? '' : '\n      → ' + cur.notes.join('\n      → ')}`);
+}
+function expect(cond, message) { if (!cond) throw new Error(message); }
+async function api(method, url, {token, body} = {}) {
+  const res = await fetch(BASE + url, {
+    method,
+    headers: {'content-type': 'application/json', ...(token ? {authorization: 'Bearer ' + token} : {})},
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+  const type = res.headers.get('content-type') || '';
+  let data = null;
+  if (type.includes('json')) { try { data = await res.json(); } catch {} }
+  else { data = await res.text(); }
+  return {status: res.status, data, type};
+}
+const kstDate = d => new Date(Date.now() + 9 * 3600e3 + d * 86400e3).toISOString().slice(0, 10);
+
+function run(cmd, args) {
+  const r = spawnSync(cmd, args, {cwd: ROOT, encoding: 'utf8'});
+  if (r.status !== 0) throw new Error(`${cmd} ${args.join(' ')} 실패\n${r.stdout}\n${r.stderr}`);
+}
+let server;
+async function startServer() {
+  run(WRANGLER, ['d1', 'execute', 'zeno-live-db', '--local', '--persist-to', PERSIST, '--file=schema.sql']);
+  const vars = [['SESSION_SECRET', SECRET], ['HOSPITAL_SOO_PIN', PINS.soo], ['HOSPITAL_NAEUM_PIN', PINS.naeum], ['HOSPITAL_TPLUS_PIN', PINS.pub045]]
+    .flatMap(([k, v]) => ['--var', `${k}:${v}`]);
+  server = spawn(WRANGLER, ['dev', '--local', '--persist-to', PERSIST, '--ip', '127.0.0.1', '--port', String(PORT), ...vars],
+    {cwd: ROOT, detached: true, stdio: ['ignore', 'pipe', 'pipe']});
+  let log = '';
+  server.stdout.on('data', d => { log += d; });
+  server.stderr.on('data', d => { log += d; });
+  for (let i = 0; i < 90; i++) {
+    await new Promise(r => setTimeout(r, 1000));
+    try { const r = await api('GET', '/api/ping'); if (r.status === 200 && r.data?.connected) return; } catch {}
+  }
+  throw new Error('로컬 서버가 시작되지 않았습니다.\n' + log.slice(-3000));
+}
+function stopServer() {
+  if (server?.pid) { try { process.kill(-server.pid, 'SIGTERM'); } catch {} }
+  fs.rmSync(PERSIST, {recursive: true, force: true});
+}
+async function register(name) {
+  const r = await api('POST', '/api/auth/register', {body: {username: name, password: 'test-password-' + name.slice(-4), displayName: name}});
+  if (r.status !== 201) throw new Error('보호자 가입 실패: ' + JSON.stringify(r));
+  return {token: r.data.token, id: r.data.owner.id};
+}
+async function hospitalLogin(id) {
+  const r = await api('POST', '/api/login', {body: {hospitalId: id, pin: PINS[id]}});
+  if (r.status !== 200) throw new Error('병원 로그인 실패: ' + JSON.stringify(r));
+  return r.data.token;
+}
+
+const ctx = {};
+async function sectionCore() {
+  ctx.A = await register('pass_owner_a');
+  ctx.B = await register('pass_owner_b');
+  await check('P1', 'PASS 상태: 비로그인 401, 가입 직후 미가입', async () => {
+    expect((await api('GET', '/api/pass')).status === 401, '비로그인 조회가 401이 아님');
+    const r = await api('GET', '/api/pass', {token: ctx.A.token});
+    expect(r.status === 200 && r.data.pass.active === false && r.data.pass.status === 'none', '가입 직후 상태 이상: ' + JSON.stringify(r.data));
+    expect(r.data.pass.priceKrw === 1800 && r.data.pass.billing === 'pilot-free', '요금·결제 표시 이상');
+  });
+  await check('P2', 'PASS 시작: 동의 없으면 거절, 동의하면 이용 중', async () => {
+    const no = await api('POST', '/api/pass/start', {token: ctx.A.token, body: {}});
+    expect(no.status === 400, '동의 없이 시작됨: ' + no.status);
+    const ok = await api('POST', '/api/pass/start', {token: ctx.A.token, body: {agree: true}});
+    expect(ok.status === 200 && ok.data.pass.active, '시작 실패: ' + JSON.stringify(ok.data));
+    const b = await api('GET', '/api/pass', {token: ctx.B.token});
+    expect(b.data.pass.active === false, '다른 보호자에게 PASS가 적용됨');
+  });
+  await check('P3', 'PASS 해지·재시작', async () => {
+    const c = await api('POST', '/api/pass/cancel', {token: ctx.A.token, body: {}});
+    expect(c.status === 200 && c.data.pass.status === 'cancelled' && c.data.pass.cancelledAt, '해지 실패');
+    const again = await api('POST', '/api/pass/cancel', {token: ctx.A.token, body: {}});
+    expect(again.status === 409, '중복 해지가 409가 아님: ' + again.status);
+    const re = await api('POST', '/api/pass/start', {token: ctx.A.token, body: {agree: true}});
+    expect(re.status === 200 && re.data.pass.active, '재시작 실패');
+  });
+}
+
+const SECTIONS = [sectionCore];
+let fatal = null;
+try {
+  await startServer();
+  console.log('로컬 서버 준비 완료 (로컬 D1 전용)\n');
+  for (const section of SECTIONS) await section();
+} catch (err) { fatal = err; }
+stopServer();
+if (fatal) { console.error('\n테스트 실행 실패: ' + fatal.message); process.exit(1); }
+const failed = results.filter(r => !r.ok);
+console.log(`\n결과: ${results.length - failed.length}/${results.length} 통과`);
+process.exit(failed.length ? 1 : 0);
