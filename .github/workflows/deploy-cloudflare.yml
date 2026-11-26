@@ -176,6 +176,9 @@ jobs:
       - name: ZENO PASS nutrition calculation tests (blocks deploy on failure)
         run: node tests/pass-nutrition-unit.mjs
 
+      - name: Symptom hospital finder tests (blocks deploy on failure)
+        run: node tests/symptom-finder-unit.mjs
+
       - name: Deploy existing Worker and D1 binding
         id: deploy
         run: |

@@ -43,3 +43,5 @@ jobs:
           NO_PROXY: "127.0.0.1,localhost"
       - name: ZENO PASS nutrition calculation tests
         run: node tests/pass-nutrition-unit.mjs
+      - name: Symptom hospital finder tests
+        run: node tests/symptom-finder-unit.mjs
