@@ -534,8 +534,82 @@ const ZP_FEED_CATALOG=[
   feeding:[[2,126],[4,212],[6,288],[8,357],[10,422]],
   url:'https://www.royalcanin.com/kr/dogs/products/vet-products/hepatic-4022'}
 ];
+function zpFeedPublic(p){return {...p,checked:p.checked||ZP_FEED_SOURCE_CHECKED,source:p.source||'제조사 공식 제품 페이지'}}
+/* ===== PASS 03 · 일반 사료 목록 (확인일 2026-11-27) =====
+   제조사 공식 페이지(로얄캐닌 코리아·힐스 코리아·오리젠/아카나 APAC 한국어)와 오리젠 공식 수입사 자료에서 확인한 값만 넣었습니다.
+   - analysis: basis 'asFed'(등록성분·보장 분석) 또는 'dryMatter'(힐스 공식 페이지의 건물 기준 평균값). 확인 못 한 값은 null(화면 '미확인').
+   - energy: 대사에너지 kcal/kg. 공식 페이지에 없으면 null.
+   - feeding: 제조사 급여표 그대로. rows.w=[하한kg,상한kg](한 점이면 같은 값), v=열별 하루 급여량(g, 또는 [최소,최대], 없으면 null).
+     cols의 act/bc/stage는 보호자 프로필(활동량·체형·연령)에 맞는 열을 고르기 위한 표시입니다.
+   - 판매가는 넣지 않습니다. 광고·제휴 여부와 관계없이 브랜드·제품명 가나다순으로만 보여 줍니다. */
+const ZP_FEED_CHECKED_GENERAL='2026-11-27';
+const ZP_RC_KR='https://www.royalcanin.com/kr/';
+const ZP_HILLS_KR='https://www.hillspet.co.kr/';
+const ZP_ACANA_KR='https://apac.acana.com/ko-KR/';
+const ZP_ORIJEN_IMPORTER='https://www.doowonpet.co.kr/orijen/';
+function zpG(o){return {kind:'일반식',checked:ZP_FEED_CHECKED_GENERAL,source:'제조사 공식 제품 페이지',packages:[],features:[],claims:[],conditions:[],ingredients:null,energy:null,feeding:null,...o}}
+const zpAF=(protein,fat,fiber,ash,moisture)=>({basis:'asFed',protein,fat,fiber,ash,moisture});
+const zpDM=(protein,fat,fiber)=>({basis:'dryMatter',protein,fat,fiber,ash:null,moisture:null});
+const ZP_ORIJEN_DOG_COLS=[{label:'활발한 성견',act:'high'},{label:'덜 활발한 성견',act:'low'}];
+const ZP_ORIJEN_DOG_ROWS=[{w:[2,5],v:[[40,90],[30,60]]},{w:[5,10],v:[[90,150],[60,120]]},{w:[10,20],v:[[150,240],[120,160]]},{w:[20,30],v:[[240,330],[160,240]]},{w:[30,40],v:[[330,420],[240,280]]},{w:[40,50],v:[[420,480],[280,330]]},{w:[50,60],v:[[480,570],[330,390]]}];
+const ZP_ORIJEN_CAT_FEEDING={unit:'g',cols:[{label:'마른 고양이',bc:'thin'},{label:'중성화 고양이',neutered:true},{label:'시니어',stage:'senior'}],rows:[{w:[2,3],v:[[33,43],[26,33],null]},{w:[3,4],v:[[43,65],[33,43],null]},{w:[4,5],v:[[65,74],[43,52],[43,52]]},{w:[5,6],v:[[74,86],[52,65],[52,65]]},{w:[6,8],v:[[86,97],[65,74],[65,86]]},{w:[8,10],v:[[97,114],[74,86],[86,114]]}]};
+const ZP_FEED_GENERAL=[
+ /* 로얄캐닌 코리아 (영양정보는 제조사 표기: '로얄캐닌 글로벌 기본 정보로 국내 표시사항과 일부 다를 수 있음') */
+ zpG({id:'rc-cat-indoor-27',brand:'로얄캐닌',name:'인도어',species:'고양이',form:'건식',lifeStage:'adult',ageText:'생후 12개월 이후 실내 반려묘',features:['실내','체중 관리','소화'],claims:['소화율이 높은 L.I.P 단백질로 변 양·냄새 감소에 도움','적절한 지방 함량으로 체중 유지에 도움'],analysis:zpAF(27,13,4,7.3,null),url:ZP_RC_KR+'cats/products/retail-products/indoor-27-2529'}),
+ zpG({id:'rc-cat-indoor-7plus',brand:'로얄캐닌',name:'인도어 7+',species:'고양이',form:'건식',lifeStage:'senior',ageText:'생후 7년 이후 실내 노령묘',features:['실내','노령'],claims:['그린티폴리페놀·비타민C·EPA·DHA 항산화 영양소로 노령묘 활력 유지에 도움'],analysis:zpAF(27,13,3.6,6.9,null),packages:[400,1500,3500],url:ZP_RC_KR+'cats/products/retail-products/indoor-7+-2548'}),
+ zpG({id:'rc-cat-indoor-gravy',brand:'로얄캐닌',name:'인도어 파우치 그레이비',species:'고양이',form:'습식',lifeStage:'adult',ageText:'생후 12개월 이후 실내 반려묘',features:['실내','체중 관리','소화'],claims:['소화율이 높은 L.I.P 단백질 포함','적절한 지방 함량'],analysis:zpAF(7.7,1.3,1.9,2,83.6),feeding:{unit:'파우치',cols:[{label:'습식만 급여'}],rows:[{w:[4,4],v:[2.5]}]},url:ZP_RC_KR+'cats/products/retail-products/indoor-sterilized-morsels-in-gravy-1278'}),
+ zpG({id:'rc-dog-mini-indoor-adult',brand:'로얄캐닌',name:'미니 인도어 어덜트',species:'강아지',form:'건식',lifeStage:'adult',ageText:'소형 실내 성견 (시작 월령은 공식 페이지에서 미확인)',features:['실내','소화','체중 관리'],claims:['프리바이오틱스·고소화 단백질로 변 냄새·양 감소와 소화기 건강에 도움','적절한 칼로리로 건강한 체중 유지에 도움'],analysis:zpAF(19,12,2.8,7.4,10.5),url:ZP_RC_KR+'dogs/products/retail-products/mini-indoor-adult-2434'}),
+ zpG({id:'rc-dog-mini-coat-care',brand:'로얄캐닌',name:'미니 코트 케어',species:'강아지',form:'건식',lifeStage:'adult',ageText:'생후 10개월 이후 소형견(성견 시 10kg 미만)',features:['피부·피모'],claims:['건강한 털 관리가 필요한 소형견용 건강기능사료'],analysis:zpAF(30,16,2.4,5.9,null),feeding:{unit:'g',cols:[{label:'저활동',act:'low'},{label:'보통활동',act:'normal'},{label:'고활동',act:'high'}],rows:[{w:[1,1],v:[24,28,32]},{w:[3,3],v:[56,65,73]},{w:[6,6],v:[94,109,123]}]},url:ZP_RC_KR+'dogs/products/retail-products/mini-coat-care-1220'}),
+ zpG({id:'rc-dog-mini-digestive-care',brand:'로얄캐닌',name:'미니 다이제스티브 케어',species:'강아지',form:'건식',lifeStage:'adult',ageText:'생후 10개월 이후 소형견(성견 시 10kg 미만)',features:['소화'],claims:['프리바이오틱스·섬유질·L.I.P 단백질로 건강한 변 상태 관리에 도움'],analysis:zpAF(28,20,2.8,6.7,9),feeding:{unit:'g',cols:[{label:'정상 활동',act:'normal'},{label:'고 활동',act:'high'}],rows:[{w:[2,2],v:[38,43]},{w:[3,3],v:[51,59]},{w:[4,4],v:[63,73]}]},url:ZP_RC_KR+'dogs/products/retail-products/mini-digestive-care-2447'}),
+ zpG({id:'rc-dog-x-small-adult',brand:'로얄캐닌',name:'엑스스몰 어덜트',species:'강아지',form:'건식',lifeStage:'adult',ageText:'생후 10개월 이후 초소형견(성견 시 4kg 미만)',features:['치아','면역'],claims:['EPA·DHA·비타민C로 면역 기능에 도움','칼슘 흡착 성분으로 치석 형성 감소에 도움'],analysis:zpAF(22,16,2.5,5.6,10.5),feeding:{unit:'g',cols:[{label:'저활동',act:'low'},{label:'정상활동',act:'normal'},{label:'고활동',act:'high'}],rows:[{w:[1,1],v:[24,27,31]},{w:[1.5,1.5],v:[32,37,42]},{w:[2,2],v:[40,46,52]}]},url:ZP_RC_KR+'dogs/products/retail-products/x-small-adult-1003'}),
+ zpG({id:'rc-dog-mini-adult-pouch',brand:'로얄캐닌',name:'미니 어덜트 파우치',species:'강아지',form:'습식',lifeStage:'adult',ageText:'생후 10개월 이후 소형견(성견 시 10kg 미만)',features:['체중 관리'],claims:['반려견에게 맞춘 칼로리로 이상적인 체중 유지에 도움'],analysis:zpAF(5.6,3.2,1.8,1.6,84.1),feeding:{unit:'파우치',cols:[{label:'습식만 급여'}],rows:[{w:[2,2],v:[2.25]},{w:[4,4],v:[4]},{w:[5,5],v:[4.5]},{w:[6,6],v:[5.25]},{w:[8,8],v:[6.5]},{w:[10,10],v:[7.75]}]},url:ZP_RC_KR+'dogs/products/retail-products/mini-adult-1096'}),
+ zpG({id:'rc-dog-medium-adult',brand:'로얄캐닌',name:'미디엄 어덜트',species:'강아지',form:'건식',lifeStage:'adult',ageText:'생후 12개월 이후 중형견(성견 시 11~25kg)',features:['면역'],claims:['고품질 단백질로 근육량 유지에 도움','비타민 C·E와 프리바이오틱스로 면역 기능에 도움'],analysis:zpAF(25,14,1.3,6.1,null),packages:[4000,10000],url:ZP_RC_KR+'dogs/products/retail-products/medium-adult-3004'}),
+ zpG({id:'rc-dog-maxi-adult',brand:'로얄캐닌',name:'맥시 어덜트',species:'강아지',form:'건식',lifeStage:'adult',ageText:'생후 15개월 이후 대형견(성견 시 26~45kg)',features:['소화','관절'],claims:['고소화 단백질과 섬유소로 소화기 건강에 도움','미네랄·영양소 조합으로 뼈와 관절 유지에 도움'],analysis:zpAF(24,15,2.3,7.5,10.5),url:ZP_RC_KR+'dogs/products/retail-products/maxi-adult-3007'}),
+ zpG({id:'rc-dog-pomeranian-adult',brand:'로얄캐닌',name:'포메라니안 어덜트',species:'강아지',form:'건식',lifeStage:'adult',ageText:'생후 8개월 이후 포메라니안',features:['관절','피부·피모','소화'],claims:['관절·인대 건강에 도움','피부·털 영양 공급에 도움','편안한 소화와 장 건강에 도움'],analysis:zpAF(24,14,2.6,5.9,10.5),url:ZP_RC_KR+'dogs/products/retail-products/pomeranian-adult-1255'}),
+ zpG({id:'rc-dog-mini-schnauzer-adult',brand:'로얄캐닌',name:'미니어처 슈나우저 어덜트',species:'강아지',form:'건식',lifeStage:'adult',ageText:'생후 10개월 이후 슈나우저',features:['피부·피모','치아'],claims:['아미노산으로 자연스러운 피모색 유지에 도움','칼슘 흡착 성분으로 치석 형성 감소에 도움'],analysis:zpAF(25,12,2,8,null),packages:[3000],url:ZP_RC_KR+'dogs/products/retail-products/miniature-schnauzer-adult-2220'}),
+ zpG({id:'rc-dog-mini-indoor-puppy',brand:'로얄캐닌',name:'미니 인도어 퍼피',species:'강아지',form:'건식',lifeStage:'young',ageText:'소형 실내 어린 강아지 (월령은 공식 페이지에서 미확인)',features:['실내','소화','면역'],claims:['비타민 E·C로 면역 기능 유지에 도움','DHA로 두뇌 발달에 도움','프리바이오틱스·고소화 단백질로 변 냄새·양 감소에 도움'],analysis:zpAF(27,18,1.5,7.9,null),url:ZP_RC_KR+'dogs/products/retail-products/puppy-indoor---mini-2433'}),
+ /* 힐스 코리아: 공식 페이지는 건물(Dry Matter) 기준 평균값과 대사에너지를 공개합니다. 등록성분(급여 상태 기준)은 미확인으로 둡니다. */
+ zpG({id:'hills-cat-adult-light',brand:'힐스',name:'사이언스 다이어트 어덜트 라이트 치킨 레시피',species:'고양이',form:'건식',lifeStage:'adult',ageText:'1세~6세 이하 (1세 미만·임신·수유 비추천)',features:['체중 관리','피부·피모','소화'],claims:['힐스 어덜트 건사료 대비 저칼로리, L-카르니틴 함유','오메가 6·비타민 E로 피부·모질 건강에 도움'],analysis:zpDM(38.3,8.5,6),energy:3171,url:ZP_HILLS_KR+'cat-food/science-diet-adult-light-dry'}),
+ zpG({id:'hills-cat-adult-chicken',brand:'힐스',name:'사이언스 다이어트 어덜트 치킨 레시피',species:'고양이',form:'건식',lifeStage:'adult',ageText:'성묘 (1세 미만·임신·수유 비추천)',analysis:zpDM(34.6,18,1.6),energy:3873,packages:[490,2000,10000],feeding:{unit:'g',cols:[{label:'하루 급여량'}],rows:[{w:[1.8,1.8],v:[30]},{w:[2.7,2.7],v:[45]},{w:[3.6,3.6],v:[65]},{w:[4.5,4.5],v:[65]},{w:[5.4,5.4],v:[80]},{w:[6.4,6.4],v:[85]},{w:[7.3,7.3],v:[95]}]},url:ZP_HILLS_KR+'cat-food/science-diet-adult-original-dry'}),
+ zpG({id:'hills-dog-adult-small-bites',brand:'힐스',name:'사이언스 다이어트 어덜트 스몰 바이트 치킨&보리',species:'강아지',form:'건식',lifeStage:'adult',ageText:'성견 (시작 연령은 공식 페이지에서 미확인)',analysis:zpDM(24,15.1,1.7),energy:3683,packages:[2000,6800,12000],url:ZP_HILLS_KR+'dog-food/science-diet-adult-small-bites-dry'}),
+ zpG({id:'hills-dog-adult7-small-bites',brand:'힐스',name:'사이언스 다이어트 어덜트 7+ 스몰 바이트',species:'강아지',form:'건식',lifeStage:'senior',ageText:'7세 이상, 작은 키블 선호견',features:['피부·피모','노령'],claims:['7세 이상에게 필요한 칼로리와 모질 지원'],analysis:zpDM(19,13.7,2.4),energy:3558,packages:[2000,6800,12000],url:ZP_HILLS_KR+'dog-food/science-diet-mature-adult-small-bites-dry'}),
+ zpG({id:'hills-dog-adult11-small-mini',brand:'힐스',name:'사이언스 다이어트 어덜트 11+ 스몰 앤 미니',species:'강아지',form:'건식',lifeStage:'senior',ageText:'11세 이상 소형견',features:['소화','노령'],claims:['한입 크기 키블, 소화기 건강을 위한 프리바이오틱 섬유질 함유'],analysis:zpDM(22.5,17.9,1.8),energy:3807,packages:[2040],url:ZP_HILLS_KR+'dog-food/science-diet-senior-11-small-paws-dry'}),
+ zpG({id:'hills-dog-adult-large',brand:'힐스',name:'사이언스 다이어트 어덜트 라지 브리드 치킨 & 보리',species:'강아지',form:'건식',lifeStage:'adult',ageText:'대형 성견',analysis:zpDM(23.9,14.7,2.1),energy:3657,packages:[6800,15000],feeding:{unit:'g',cols:[{label:'하루 급여량'}],rows:[{w:[23,23],v:[320]},{w:[27,27],v:[365]},{w:[36,36],v:[445]},{w:[41,41],v:[495]}]},url:ZP_HILLS_KR+'dog-food/science-diet-adult-large-breed-dry'}),
+ zpG({id:'hills-dog-adult6-large',brand:'힐스',name:'사이언스 다이어트 어덜트 6+ 라지 브리드',species:'강아지',form:'건식',lifeStage:'senior',ageText:'6세 이상 대형견(25~50kg), 5세 이상 초대형견(50kg 이상)',features:['관절','피부·피모','노령'],claims:['6세 이상 대형견의 칼로리·관절 건강·모질 지원'],analysis:zpDM(18.7,13.5,2.4),energy:3550,packages:[6800,12000],url:ZP_HILLS_KR+'dog-food/science-diet-mature-adult-large-breed-dry'}),
+ /* 오리젠: 오리지널 독·캣은 제조사 한국어 페이지, 나머지는 공식 수입사 페이지(제조사 사양 기준) */
+ zpG({id:'orijen-dog-original',brand:'오리젠',name:'오리지널 독',species:'강아지',form:'건식',lifeStage:'all',ageText:'전 연령 (14주 미만 그레이트 데인 제외)',features:['고단백'],analysis:zpAF(38,18,5,9,12),energy:3860,feeding:{unit:'g',cols:ZP_ORIJEN_DOG_COLS,rows:ZP_ORIJEN_DOG_ROWS},url:'https://apac.orijenpetfoods.com/ko-KR/ap-ori-ns-original.html'}),
+ zpG({id:'orijen-dog-six-fish',brand:'오리젠',name:'식스피쉬 독',species:'강아지',form:'건식',lifeStage:'all',ageText:'전 연령',features:['고단백'],analysis:zpAF(38,18,5,8.5,12),energy:3880,feeding:{unit:'g',cols:ZP_ORIJEN_DOG_COLS,rows:ZP_ORIJEN_DOG_ROWS},source:'공식 수입사 자료(제조사 사양 기준)',url:ZP_ORIJEN_IMPORTER}),
+ zpG({id:'orijen-dog-small-breed',brand:'오리젠',name:'스몰브리드',species:'강아지',form:'건식',lifeStage:'all',ageText:'전 연령 (급여표는 소형 성견 기준)',features:['고단백'],analysis:zpAF(39,18,4,9,12),energy:3900,feeding:{unit:'g',cols:ZP_ORIJEN_DOG_COLS,rows:[{w:[1,2],v:[[30,45],[15,30]]},{w:[2,3],v:[[45,60],[30,40]]},{w:[3,4],v:[[60,75],[40,45]]},{w:[4,5],v:[[75,80],[45,48]]},{w:[5,6],v:[[80,90],[48,60]]},{w:[6,7],v:[[90,105],[60,75]]},{w:[7,8],v:[[105,120],[75,80]]},{w:[8,9],v:[[120,135],[80,90]]},{w:[9,10],v:[[135,150],[90,105]]}]},source:'공식 수입사 자료(제조사 사양 기준)',url:ZP_ORIJEN_IMPORTER}),
+ zpG({id:'orijen-dog-marine-small',brand:'오리젠',name:'마린피쉬 스몰브리드',species:'강아지',form:'건식',lifeStage:'all',ageText:'전 연령 (급여표는 소형 성견 기준)',features:['고단백'],analysis:zpAF(40,15,4,10,12),energy:3710,feeding:{unit:'g',cols:ZP_ORIJEN_DOG_COLS,rows:[{w:[1,1],v:[30,15]},{w:[2,2],v:[45,30]},{w:[3,3],v:[60,40]},{w:[5,5],v:[90,60]},{w:[7,7],v:[120,80]},{w:[9,9],v:[150,96]}]},source:'공식 수입사 자료(제조사 사양 기준)',url:ZP_ORIJEN_IMPORTER}),
+ zpG({id:'orijen-dog-senior',brand:'오리젠',name:'시니어 독',species:'강아지',form:'건식',lifeStage:'senior',ageText:'노령견',features:['노령','고단백'],analysis:zpAF(38,15,6,8,12),energy:3710,feeding:{unit:'g',cols:[{label:'활발한 노령견',act:'high'},{label:'덜 활발한 노령견',act:'low'}],rows:[{w:[2,5],v:[[60,90],[30,60]]},{w:[5,10],v:[[90,160],[60,105]]},{w:[10,20],v:[[160,270],[105,180]]},{w:[20,30],v:[[270,360],[180,240]]},{w:[30,40],v:[[360,450],[240,300]]},{w:[40,50],v:[[450,540],[300,360]]},{w:[50,60],v:[[540,600],[360,400]]}]},source:'공식 수입사 자료(제조사 사양 기준)',url:ZP_ORIJEN_IMPORTER}),
+ zpG({id:'orijen-dog-fit-trim',brand:'오리젠',name:'피트앤트림 독',species:'강아지',form:'건식',lifeStage:'adult',ageText:'체중 관리가 필요한 성견',features:['체중 관리','고단백'],analysis:zpAF(40,13,8,8,12),energy:3530,feeding:{unit:'g',cols:[{label:'과체중 성견',bc:'over'},{label:'체중 유지',bc:'ideal'}],rows:[{w:[5,10],v:[[60,90],[60,120]]},{w:[10,20],v:[[90,180],[120,180]]},{w:[20,30],v:[[180,240],[180,270]]},{w:[30,40],v:[[240,300],[270,320]]},{w:[40,50],v:[[300,360],[320,360]]},{w:[50,60],v:[[360,390],[360,420]]}]},source:'공식 수입사 자료(제조사 사양 기준)',url:ZP_ORIJEN_IMPORTER}),
+ zpG({id:'orijen-dog-puppy',brand:'오리젠',name:'퍼피',species:'강아지',form:'건식',lifeStage:'young',ageText:'소·중형견 자견',features:['고단백'],analysis:zpAF(38,20,5,8,12),energy:4000,feeding:{unit:'g',byAdult:true,cols:[{label:'성견 5kg 예상'},{label:'성견 10kg 예상'},{label:'성견 20kg 예상'}],rows:[{w:[2,2],v:[85,85,85]},{w:[5,5],v:[85,130,160]},{w:[10,10],v:[null,160,195]},{w:[15,15],v:[null,null,260]},{w:[20,20],v:[null,null,215]}]},source:'공식 수입사 자료(제조사 사양 기준)',url:ZP_ORIJEN_IMPORTER}),
+ zpG({id:'orijen-dog-puppy-small',brand:'오리젠',name:'퍼피 스몰브리드',species:'강아지',form:'건식',lifeStage:'young',ageText:'소형견 자견',features:['고단백'],analysis:zpAF(38,20,4,9,12),energy:4000,feeding:{unit:'g',byAdult:true,cols:[{label:'성견 2kg 예상'},{label:'성견 5kg 예상'},{label:'성견 7kg 예상'},{label:'성견 7kg 이상'}],rows:[{w:[1,1],v:[42,42,42,42]},{w:[2,2],v:[42,63,78,78]},{w:[3,3],v:[null,83,83,109]},{w:[5,5],v:[null,78,125,125]},{w:[7,7],v:[null,null,94,156]},{w:[9,9],v:[null,null,null,125]}]},source:'공식 수입사 자료(제조사 사양 기준)',url:ZP_ORIJEN_IMPORTER}),
+ zpG({id:'orijen-dog-puppy-large',brand:'오리젠',name:'퍼피 라지',species:'강아지',form:'건식',lifeStage:'young',ageText:'대형견 자견',features:['고단백'],analysis:zpAF(38,16,6,8,12),energy:3760,feeding:{unit:'g',byAdult:true,cols:[{label:'성견 30kg 예상'},{label:'성견 50kg 예상'},{label:'성견 70kg 예상'}],rows:[{w:[5,5],v:[160,160,160]},{w:[10,10],v:[270,270,270]},{w:[20,20],v:[360,450,450]},{w:[30,30],v:[320,480,630]},{w:[40,40],v:[null,450,630]},{w:[50,50],v:[null,440,720]},{w:[60,60],v:[null,null,630]},{w:[70,70],v:[null,null,600]}]},source:'공식 수입사 자료(제조사 사양 기준)',url:ZP_ORIJEN_IMPORTER}),
+ zpG({id:'orijen-cat-original',brand:'오리젠',name:'오리지널 캣',species:'고양이',form:'건식',lifeStage:'all',ageText:'전 연령',features:['고단백'],analysis:zpAF(40,20,3,8,10),energy:4160,feeding:ZP_ORIJEN_CAT_FEEDING,url:'https://apac.orijenpetfoods.com/ko-KR/ap-ori-ns-catkitten.html'}),
+ zpG({id:'orijen-cat-six-fish',brand:'오리젠',name:'식스피쉬 캣',species:'고양이',form:'건식',lifeStage:'all',ageText:'전 연령',features:['고단백'],analysis:zpAF(40,19,3,9,10),energy:4070,feeding:ZP_ORIJEN_CAT_FEEDING,source:'공식 수입사 자료(제조사 사양 기준)',url:ZP_ORIJEN_IMPORTER}),
+ zpG({id:'orijen-cat-fit-trim',brand:'오리젠',name:'피트앤트림 캣',species:'고양이',form:'건식',lifeStage:'adult',ageText:'체중 관리가 필요한 고양이',features:['체중 관리','고단백'],analysis:zpAF(42,15,6,10,10),energy:3710,feeding:{unit:'g',cols:[{label:'체중 감량',bc:'over'},{label:'체중 유지',bc:'ideal'}],rows:[{w:[2,3],v:[null,[31,42]]},{w:[3,4],v:[null,[42,50]]},{w:[4,5],v:[[50,63],[50,63]]},{w:[5,6],v:[[50,63],[63,71]]},{w:[6,8],v:[[63,75],[71,83]]},{w:[8,10],v:[[75,83],[83,94]]}]},source:'공식 수입사 자료(제조사 사양 기준)',url:ZP_ORIJEN_IMPORTER}),
+ zpG({id:'orijen-cat-kitten',brand:'오리젠',name:'키튼',species:'고양이',form:'건식',lifeStage:'young',ageText:'자묘 (생후 5~52주)',features:['고단백'],analysis:zpAF(40,20,3,9,10),energy:4120,feeding:{unit:'g',cols:[{label:'5~19주'},{label:'20~29주'},{label:'30~37주'},{label:'38~52주'}],rows:[{w:[0.5,1],v:[[33,65],[16,33],[16,26],[16,26]]},{w:[1,2],v:[[65,114],[33,65],[26,43],[26,33]]},{w:[2,3],v:[[114,173],[65,87],[43,65],[33,49]]},{w:[3,4],v:[[173,243],[87,114],[65,98],[49,65]]},{w:[4,5],v:[null,[114,163],[98,113],[65,87]]},{w:[5,6],v:[null,null,[113,146],[87,98]]},{w:[6,7],v:[null,null,null,[98,113]]}]},source:'공식 수입사 자료(제조사 사양 기준)',url:ZP_ORIJEN_IMPORTER}),
+ /* 아카나: 제조사 APAC 한국어 페이지 (급여표는 페이지에서 확인하지 못해 미확인) */
+ zpG({id:'acana-dog-adult-small',brand:'아카나',name:'어덜트 스몰 브리드 독 레시피',species:'강아지',form:'건식',lifeStage:'adult',ageText:'성견 (소형견)',analysis:zpAF(31,17,5,7,12),energy:3510,url:ZP_ACANA_KR+'ap-ns-aca-adult-small.html'}),
+ zpG({id:'acana-dog-light-fit',brand:'아카나',name:'라이트 앤 피트',species:'강아지',form:'건식',lifeStage:'adult',ageText:'성견',features:['체중 관리'],claims:['다른 아카나 도그 레시피 대비 낮은 칼로리로 건강한 체중 유지에 도움'],analysis:zpAF(35,11,8,7,12),energy:3070,url:ZP_ACANA_KR+'ap-ns-aca-light-fit.html'}),
+ zpG({id:'acana-dog-sport-agility',brand:'아카나',name:'스포츠 앤 어질리티',species:'강아지',form:'건식',lifeStage:'all',ageText:'전 생애 단계 (대형견 성장기 제외)',features:['활동량 많음','고단백'],claims:['풍부한 동물성 단백질과 칼로리로 활동적인 반려견에게 에너지 제공'],analysis:zpAF(35,22,5,8,12),energy:3725,url:ZP_ACANA_KR+'ap-ns-aca-sport-agility.html'}),
+ zpG({id:'acana-dog-puppy-small',brand:'아카나',name:'퍼피 스몰 브리드',species:'강아지',form:'건식',lifeStage:'young',ageText:'소형견 자견 (전 생애 단계 영양 기준 충족, 14주 미만 그레이트 데인 제외)',analysis:zpAF(33,20,5,7,12),energy:3660,url:ZP_ACANA_KR+'ap-ns-aca-puppy-small.html'}),
+ zpG({id:'acana-dog-grasslands',brand:'아카나',name:'하이스트 프로틴 그래스랜드',species:'강아지',form:'건식',lifeStage:'unknown',ageText:'미확인',features:['고단백'],analysis:zpAF(35,17,6,8,12),energy:3810,url:ZP_ACANA_KR+'ap-ns-aca-grasslands.html'}),
+ zpG({id:'acana-cat-indoor-entree',brand:'아카나',name:'인도어 앙트레',species:'고양이',form:'건식',lifeStage:'adult',ageText:'성묘',features:['실내'],analysis:zpAF(37,14,6,9,10),energy:3630,url:ZP_ACANA_KR+'ap-ns-aca-indoor-entree-cat.html'}),
+ zpG({id:'acana-cat-bountiful-catch',brand:'아카나',name:'바운티풀 캐치',species:'고양이',form:'건식',lifeStage:'adult',ageText:'성묘',analysis:zpAF(34,16,4,9,10),energy:3800,url:ZP_ACANA_KR+'ap-ns-aca-bountiful-catch-cat.html'}),
+ zpG({id:'acana-cat-homestead-harvest',brand:'아카나',name:'홈스테드 하베스트',species:'고양이',form:'건식',lifeStage:'adult',ageText:'성묘',analysis:zpAF(34,16,4,8,10),energy:3760,url:ZP_ACANA_KR+'ap-ns-aca-homestead-cat.html'})
+];
+/* 요청 브랜드 중 공식 한국어 제품 자료를 확인하지 못한 브랜드: 제품을 등록하지 않고 상태만 보여 줍니다. */
+const ZP_FEED_BRANDS=[
+ {brand:'로얄캐닌',status:'ready'},{brand:'퓨리나 프로플랜',status:'unverified',note:'국내 유통 제품의 공식 성분 자료를 확인하지 못했어요.'},
+ {brand:'힐스',status:'ready'},{brand:'오리젠',status:'ready'},{brand:'아카나',status:'ready'},
+ {brand:'뉴트로',status:'unverified',note:'국내 공식 제품 자료를 확인하지 못했어요.'},{brand:'시그니처바이',status:'unverified',note:'공식 제품 성분 자료를 확인하지 못했어요.'}
+];
+/* 처방식 급여표(이전 형식 [체중kg, 하루 g])를 일반 사료와 같은 표 형식으로 맞춥니다. 값은 그대로입니다. */
+for(const p of ZP_FEED_CATALOG)if(Array.isArray(p.feeding))p.feeding={unit:'g',cols:[{label:'정상 체중'}],rows:p.feeding.map(([w,g])=>({w:[w,w],v:[g]}))};
+ZP_FEED_CATALOG.push(...ZP_FEED_GENERAL);
 const ZP_FEED_BY_ID=new Map(ZP_FEED_CATALOG.map(p=>[p.id,p]));
-function zpFeedPublic(p){return {...p,checked:ZP_FEED_SOURCE_CHECKED,source:'제조사 공식 제품 페이지'}}
 /* ===== PASS 01 · 제휴병원 처방식 재고 확인 =====
    병원이 직접 입력한 재고 상태(있음/적음/문의 필요/품절)와 마지막 확인 시각만 보여 줍니다.
    정확한 수량 관리와 전자차트(EMR) 연동은 하지 않습니다. 결제는 방문 시 병원에서 현장 결제합니다. */
@@ -730,16 +804,18 @@ function zpNutritionClean(p){
  let budget=p?.budgetMonthly===null||p?.budgetMonthly===''||p?.budgetMonthly===undefined?null:Number(p.budgetMonthly);
  assert(budget===null||(Number.isInteger(budget)&&budget>=0&&budget<=1000000),'월 예산은 0~1,000,000원 사이로 입력해 주세요.');
  const vetRecommended=p?.vetRecommended===true;
+ const bodyCondition=['thin','ideal','over','unknown'].includes(p?.bodyCondition)?p.bodyCondition:'unknown';
+ const activity=['low','normal','high','unknown'].includes(p?.activity)?p.activity:'unknown';
  assert(!vetRecommended||conditions.length>0,'수의사 처방식 권고를 선택했다면 진단받은 질환을 함께 골라 주세요.');
- return {neutered,conditions,vetRecommended,allergies,budgetMonthly:budget,updatedAt:now()};
+ return {neutered,bodyCondition,activity,conditions,vetRecommended,allergies,budgetMonthly:budget,updatedAt:now()};
 }
 zpRoute('GET','/api/pass/nutrition',async({request,env,db})=>{
  const s=await zpRequirePass(request,env);
- const [pets,store]=await Promise.all([zpOwnerPets(db,s.ownerId),zpGetPref(db,s.ownerId,'nutrition',{profiles:{},prices:{}})]);
+ const [pets,store]=await Promise.all([zpOwnerPets(db,s.ownerId),zpGetPref(db,s.ownerId,'nutrition',{profiles:{},prices:{},daily:{}})]);
  return json({
   pets:pets.map(p=>({id:p.id,name:p.name,species:p.species,age:p.age,weight:p.weight})),
-  profiles:store.profiles||{},prices:store.prices||{},
-  catalog:ZP_FEED_CATALOG.map(zpFeedPublic),conditions:ZP_CONDITIONS,
+  profiles:store.profiles||{},prices:store.prices||{},daily:store.daily||{},
+  catalog:ZP_FEED_CATALOG.map(zpFeedPublic),conditions:ZP_CONDITIONS,brands:ZP_FEED_BRANDS,
   generalCatalogStatus:ZP_FEED_CATALOG.some(p=>p.kind==='일반식')?'ready':'preparing'
  });
 });
@@ -764,11 +840,32 @@ zpRoute('PUT','/api/pass/nutrition/prices',async({request,env,db,data})=>{
  else{
   const price=Number(data.price),packageG=Number(data.packageG);
   assert(Number.isInteger(price)&&price>=100&&price<=2000000,'구매 가격을 원 단위로 입력해 주세요.');
-  assert(p.packages.includes(packageG),'제조사 표기 포장 단위를 선택해 주세요.');
+  assert(Number.isInteger(packageG)&&packageG>=10&&packageG<=100000,'제품 용량을 g 단위로 입력해 주세요. (10g~100kg)');
   store.prices[p.id]={price,packageG,updatedAt:now()};
  }
  await zpSetPref(db,s.ownerId,'nutrition',store);
  return json({prices:store.prices});
+});
+/* 아이별 하루 급여량(보호자 입력). 비우면 제조사 급여표 기준 값(있을 때만)으로 계산합니다. */
+zpRoute('PUT','/api/pass/nutrition/daily',async({request,env,db,data})=>{
+ const s=await zpRequirePass(request,env);
+ const p=ZP_FEED_BY_ID.get(clean(data.productId,60));
+ assert(p,'제품을 확인해 주세요.',404);
+ const petId=clean(data.petId,90);
+ const pets=await zpOwnerPets(db,s.ownerId);
+ assert(pets.some(x=>x.id===petId),'내 아이에 등록된 반려동물만 저장할 수 있습니다.',404);
+ const store=await zpGetPref(db,s.ownerId,'nutrition',{profiles:{},prices:{},daily:{}});
+ store.daily=store.daily||{};
+ for(const id of Object.keys(store.daily))if(!pets.some(x=>x.id===id))delete store.daily[id];
+ store.daily[petId]=store.daily[petId]||{};
+ if(data.dailyG===null)delete store.daily[petId][p.id];
+ else{
+  const g=Number(data.dailyG);
+  assert(Number.isFinite(g)&&g>=1&&g<=5000&&Math.round(g*10)===g*10,'하루 급여량을 g 단위로 입력해 주세요. (1~5,000g)');
+  store.daily[petId][p.id]=g;
+ }
+ await zpSetPref(db,s.ownerId,'nutrition',store);
+ return json({daily:store.daily});
 });
 /* ===== PASS 04 · 다묘·다견 영수증 통합 관리 =====
    영수증 사진은 본인만 볼 수 있게 D1에 비공개 저장하고, 공개 주소를 만들지 않습니다.

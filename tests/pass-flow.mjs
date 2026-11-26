@@ -192,30 +192,52 @@ async function sectionFees() {
 
 async function sectionNutrition() {
   const A = ctx.A.token, B = ctx.B.token;
-  await api('PUT', '/api/profile', {token: A, body: {pets: [{id: 'cat1', name: '노아', species: '고양이', age: '5살', weight: '4kg', homeHospitalId: ''}], records: [], favorites: []}});
-  await check('N1', '영양 관리: PASS 전용, 공식 자료 목록·내 아이 연동', async () => {
+  await api('PUT', '/api/profile', {token: A, body: {pets: [{id: 'cat1', name: '노아', species: '고양이', age: '5살', weight: '4kg', homeHospitalId: ''}, {id: 'dog1', name: '콩이', species: '강아지', age: '3살', weight: '3kg', homeHospitalId: ''}], records: [], favorites: []}});
+  await check('N1', '영양 관리: PASS 전용, 공식 출처 있는 일반 사료·처방식 목록, 브랜드 상태', async () => {
     expect((await api('GET', '/api/pass/nutrition', {token: B})).status === 403, 'PASS 없는 보호자 조회됨');
     const r = await api('GET', '/api/pass/nutrition', {token: A});
-    expect(r.status === 200 && r.data.pets[0].id === 'cat1' && r.data.catalog.length >= 1, '조회 실패');
-    expect(r.data.catalog.every(p => p.url.startsWith('https://www.royalcanin.com/kr/') && p.checked), '출처 없는 제품 있음');
-    expect(r.data.generalCatalogStatus === 'preparing', '일반 사료 준비 상태 표시 이상');
+    expect(r.status === 200 && r.data.pets.length === 2, '조회 실패');
+    const gen = r.data.catalog.filter(p => p.kind === '일반식'), rx = r.data.catalog.filter(p => p.kind === '처방식');
+    expect(gen.length >= 30 && rx.length === 6, '사료 수 이상 ' + gen.length + '/' + rx.length);
+    expect(r.data.generalCatalogStatus === 'ready', '일반 사료 상태가 준비 중');
+    const official = /^https:\/\/(www\.royalcanin\.com\/kr\/|www\.hillspet\.co\.kr\/|apac\.acana\.com\/ko-KR\/|apac\.orijenpetfoods\.com\/ko-KR\/|www\.doowonpet\.co\.kr\/orijen\/)/;
+    expect(r.data.catalog.every(p => official.test(p.url) && p.checked && p.source), '공식 출처·확인일 없는 제품 있음');
+    expect(gen.every(p => p.analysis && ['asFed', 'dryMatter'].includes(p.analysis.basis) && ['건식', '습식'].includes(p.form) && ['강아지', '고양이'].includes(p.species)), '일반 사료 필드 누락');
+    expect(gen.every(p => !p.price && !p.priceKrw), '판매가가 들어 있음');
+    const brands = Object.fromEntries(r.data.brands.map(b => [b.brand, b.status]));
+    expect(brands['퓨리나 프로플랜'] === 'unverified' && !gen.some(p => p.brand === '퓨리나 프로플랜'), '미확인 브랜드 제품이 등록됨');
+    expect(gen.filter(p => p.species === '고양이').length >= 10 && gen.filter(p => p.species === '강아지').length >= 20, '종별 제품 수 이상');
   });
-  await check('N2', '아이 정보 저장: 처방식 권고는 진단 질환 필요, 남의 아이·잘못된 값 거절', async () => {
+  await check('N2', '아이 정보 저장: 체형·활동량, 처방식 권고는 진단 필요, 남의 아이·잘못된 값 거절', async () => {
     expect((await api('PUT', '/api/pass/nutrition/profile/cat1', {token: A, body: {vetRecommended: true, conditions: []}})).status === 400, '진단 없이 권고 저장됨');
     expect((await api('PUT', '/api/pass/nutrition/profile/nope', {token: A, body: {}})).status === 404, '없는 아이 저장됨');
     expect((await api('PUT', '/api/pass/nutrition/profile/cat1', {token: A, body: {budgetMonthly: -1}})).status === 400, '음수 예산 저장됨');
-    const ok = await api('PUT', '/api/pass/nutrition/profile/cat1', {token: A, body: {neutered: 'yes', conditions: ['신장 질환', '없는질환'], vetRecommended: true, allergies: ['닭'], budgetMonthly: 60000}});
-    expect(ok.status === 200 && ok.data.profile.conditions.join() === '신장 질환' && ok.data.profile.vetRecommended, '저장 실패 ' + JSON.stringify(ok.data));
+    const ok = await api('PUT', '/api/pass/nutrition/profile/cat1', {token: A, body: {neutered: 'yes', bodyCondition: 'over', activity: 'low', conditions: ['신장 질환', '없는질환'], vetRecommended: true, allergies: ['닭'], budgetMonthly: 60000}});
+    expect(ok.status === 200 && ok.data.profile.conditions.join() === '신장 질환' && ok.data.profile.bodyCondition === 'over' && ok.data.profile.activity === 'low', '저장 실패 ' + JSON.stringify(ok.data));
+    const bad = await api('PUT', '/api/pass/nutrition/profile/dog1', {token: A, body: {bodyCondition: 'huge', activity: 'x'}});
+    expect(bad.status === 200 && bad.data.profile.bodyCondition === 'unknown' && bad.data.profile.activity === 'unknown', '잘못된 체형·활동량이 그대로 저장됨');
     expect((await api('PUT', '/api/pass/nutrition/profile/cat1', {token: B, body: {}})).status === 403, 'PASS 없는 보호자 저장됨');
   });
-  await check('N3', '구매 가격: 제조사 포장 단위만, 저장·삭제', async () => {
-    expect((await api('PUT', '/api/pass/nutrition/prices', {token: A, body: {productId: 'rc-cat-renal-select-dry', price: 50000, packageG: 3000}})).status === 400, '없는 포장 단위 저장됨');
-    const ok = await api('PUT', '/api/pass/nutrition/prices', {token: A, body: {productId: 'rc-cat-renal-select-dry', price: 50000, packageG: 2000}});
-    expect(ok.status === 200 && ok.data.prices['rc-cat-renal-select-dry'].price === 50000, '가격 저장 실패');
+  await check('N3', '가격·용량·하루 급여량: 저장·수정·삭제, 아이별 분리, 값 검증', async () => {
+    const pid = 'rc-cat-indoor-27';
+    expect((await api('PUT', '/api/pass/nutrition/prices', {token: A, body: {productId: pid, price: 50000, packageG: 5}})).status === 400, '너무 작은 용량 저장됨');
+    expect((await api('PUT', '/api/pass/nutrition/prices', {token: A, body: {productId: 'nope', price: 50000, packageG: 2000}})).status === 404, '없는 제품 저장됨');
+    expect((await api('PUT', '/api/pass/nutrition/prices', {token: A, body: {productId: pid, price: 52000, packageG: 4000}})).status === 200, '가격 저장 실패');
+    const up = await api('PUT', '/api/pass/nutrition/prices', {token: A, body: {productId: pid, price: 48000, packageG: 4000}});
+    expect(up.data.prices[pid].price === 48000, '가격 수정 실패');
+    expect((await api('PUT', '/api/pass/nutrition/daily', {token: A, body: {petId: 'cat1', productId: pid, dailyG: 0}})).status === 400, '0g 저장됨');
+    expect((await api('PUT', '/api/pass/nutrition/daily', {token: A, body: {petId: 'ghost', productId: pid, dailyG: 50}})).status === 404, '없는 아이 급여량 저장됨');
+    const d = await api('PUT', '/api/pass/nutrition/daily', {token: A, body: {petId: 'cat1', productId: pid, dailyG: 55.5}});
+    expect(d.status === 200 && d.data.daily.cat1[pid] === 55.5 && !d.data.daily.dog1, '급여량 저장 실패');
+    expect((await api('PUT', '/api/pass/nutrition/daily', {token: B, body: {petId: 'cat1', productId: pid, dailyG: 50}})).status === 403, 'PASS 없는 보호자 저장됨');
     const r = await api('GET', '/api/pass/nutrition', {token: A});
-    expect(r.data.profiles.cat1.budgetMonthly === 60000 && r.data.prices['rc-cat-renal-select-dry'], '다시 불러온 값 다름');
-    const del = await api('PUT', '/api/pass/nutrition/prices', {token: A, body: {productId: 'rc-cat-renal-select-dry', price: null}});
-    expect(del.status === 200 && !del.data.prices['rc-cat-renal-select-dry'], '가격 삭제 실패');
+    expect(r.data.prices[pid].packageG === 4000 && r.data.daily.cat1[pid] === 55.5, '다시 불러온 값 다름');
+    // 계산식 확인: 48,000원 / 4,000g × 55.5g = 666원/일, 30일 19,980원, 소진 72일
+    const day = 48000 / 4000 * 55.5;
+    expect(Math.round(day) === 666 && Math.round(day * 30) === 19980 && Math.floor(4000 / 55.5) === 72, '비용 계산식 확인 실패');
+    const del = await api('PUT', '/api/pass/nutrition/prices', {token: A, body: {productId: pid, price: null}});
+    const deld = await api('PUT', '/api/pass/nutrition/daily', {token: A, body: {petId: 'cat1', productId: pid, dailyG: null}});
+    expect(del.status === 200 && !del.data.prices[pid] && !deld.data.daily.cat1[pid], '삭제 실패');
   });
 }
 
