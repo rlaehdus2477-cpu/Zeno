@@ -8324,7 +8324,16 @@ ZP_VIEWS.receipts={
 .zs-chip:disabled{opacity:.4;cursor:default}
 .zs-search{width:100%;box-sizing:border-box;min-height:44px;margin-bottom:12px;padding:10px 14px;border:1px solid #d6e2ee;border-radius:10px;font-size:16px;color:#142e4c;background:#fff}
 .zs-group{margin-bottom:12px}
-.zs-group h3{font-size:12px;font-weight:600;color:#6b7f94;margin:0 0 6px}
+.zs-group h3{font-size:13px;font-weight:600;color:#52677b;margin:0 0 6px}
+.zs-page .zs-step{margin-top:16px}
+.zs-page .zs-step h2{font-size:16px;margin-bottom:8px}
+.zs-page .zs-chip{border-radius:8px;font-weight:500;min-height:44px;padding:7px 10px;line-height:1.35}
+.zs-page .zs-group{margin-bottom:12px}
+.zs-page .zs-symptom-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.zs-page .zs-symptom-grid .zs-chip{width:100%;min-width:0;white-space:normal;overflow-wrap:anywhere;font-size:14px;text-align:left}
+.zs-page .zs-search{border-radius:8px;margin-bottom:10px}
+.zs-page .zs-chip:focus-visible{outline:2px solid #477ca8;outline-offset:2px}
+@media(max-width:320px){.zs-page .zs-symptom-grid{grid-template-columns:1fr}}
 .zs-help{font-size:13px;line-height:1.5;color:#6b7f94;margin:-4px 0 10px}
 .zs-flags{display:flex;flex-direction:column;background:#fff;border:1px solid #e5ebf1;border-radius:12px;overflow:hidden}
 .zs-flag{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border-bottom:1px solid #edf1f5;font-size:14px;line-height:1.45;color:#2f4f6e;cursor:pointer}
@@ -8414,6 +8423,7 @@ const ZS_SYMPTOMS=[
  {id:'neuter',label:'중성화 수술을 상담하고 싶어요',group:'검진·예방',fields:['중성화수술'],keys:['중성화','수술'],flags:[]},
  {id:'unsure',label:'어디가 아픈지 잘 모르겠어요',group:'잘 모르겠어요',fields:['일반 진료','내과'],keys:['모르','이상'],flags:['gum','noEat']}
 ];
+const ZS_SHORT_LABELS={"appetite":"식욕 저하","vomit":"구토","diarrhea":"설사·묽은 변","constipation":"변비·배변 곤란","swallow":"이물질 삼킴 의심","itch":"피부 긁기·핥기","hairloss":"탈모·피부 발적","ear":"귀 털기·냄새","lump":"혹·덩어리","eye":"눈곱·충혈·눈 비빔","eyeClose":"눈을 못 뜸·눈 혼탁","mouth":"입 냄새·잇몸 발적","drool":"침 흘림·한쪽으로 씹기","limp":"다리 절뚝거림","stairs":"점프·계단 회피","cough":"기침","sneeze":"재채기·콧물","tired":"쉽게 지침·숨참","urineOften":"잦은 배뇨·화장실 방문","urineBlood":"혈뇨·배뇨 통증","drink":"물 많이 마심","lethargy":"기운 없음·활동 감소","weight":"체중 감소·급증","checkup":"건강검진·예방접종","neuter":"중성화 상담","unsure":"어디가 아픈지 모르겠어요"};
 const ZS_GROUPS=['먹기·소화','피부·귀','눈','입·이빨','뼈·관절','숨·심장','소변','전신·행동','검진·예방','잘 모르겠어요'];
 function zs(){if(!state.zs)state.zs={who:'',species:'',exotic:'',symptoms:[],flags:[],q:'',openOnly:false,catRoom:true,more:false};return state.zs}
 function zsWhoOptions(){
@@ -8501,12 +8511,12 @@ zenoSymptomPage=function(){
  html+='</section>';
  if(!sp)return html+'</div>';
  const q=z.q.replace(/\s+/g,'');
- const matches=s=>!q||s.label.replace(/\s+/g,'').includes(q)||s.keys.some(k=>k.includes(q)||q.includes(k));
+ const matches=s=>!q||s.label.replace(/\s+/g,'').includes(q)||(ZS_SHORT_LABELS[s.id]||'').replace(/\s+/g,'').includes(q)||s.keys.some(k=>k.includes(q)||q.includes(k));
  const shown=ZS_SYMPTOMS.filter(matches);
- html+='<section class="zs-step"><h2><span>2</span>어떤 증상이 있나요? <small>최대 3개</small></h2>'
+ html+='<section class="zs-step"><h2><span>2</span>어떤 증상이 있나요? <small>'+sel.length+'/3 선택</small></h2>'
   +'<label class="sr-only" for="zs-q">증상 검색</label><input id="zs-q" class="zs-search" type="search" placeholder="예: 구토, 귀, 절뚝" value="'+e(z.q)+'" autocomplete="off" data-zs-input="q">';
- if(q){html+='<div class="zs-chips">'+(shown.length?shown.map(s=>zsSymptomChip(s)).join(''):'<p class="zs-empty">맞는 증상이 없어요. 아래 \'어디가 아픈지 잘 모르겠어요\'를 골라 주세요.</p>')+'</div>'}
- else html+=ZS_GROUPS.map(g=>'<div class="zs-group"><h3>'+e(g)+'</h3><div class="zs-chips">'+ZS_SYMPTOMS.filter(s=>s.group===g).map(s=>zsSymptomChip(s)).join('')+'</div></div>').join('');
+ if(q){html+='<div class="zs-chips zs-symptom-grid">'+(shown.length?shown.map(s=>zsSymptomChip(s)).join(''):'<p class="zs-empty">맞는 증상이 없어요. 아래 \'어디가 아픈지 잘 모르겠어요\'를 골라 주세요.</p>')+'</div>'}
+ else html+=ZS_GROUPS.map(g=>'<div class="zs-group"><h3>'+e(g)+'</h3><div class="zs-chips zs-symptom-grid">'+ZS_SYMPTOMS.filter(s=>s.group===g).map(s=>zsSymptomChip(s)).join('')+'</div></div>').join('');
  html+='</section>';
  if(!sel.length)return html+'</div>';
  const flags=zsFlagList();
@@ -8525,7 +8535,7 @@ zenoSymptomPage=function(){
 };
 function zsSymptomChip(s){
  const z=zs(),on=z.symptoms.includes(s.id);
- return '<button type="button" class="zs-chip" data-zs="symptom" data-value="'+e(s.id)+'" aria-pressed="'+on+'"'+(!on&&z.symptoms.length>=3?' disabled':'')+'>'+e(s.label)+'</button>';
+ return '<button type="button" class="zs-chip" data-zs="symptom" data-value="'+e(s.id)+'" aria-pressed="'+on+'"'+(!on&&z.symptoms.length>=3?' disabled':'')+' title="'+e(s.label)+'">'+e(ZS_SHORT_LABELS[s.id]||s.label)+'</button>';
 }
 document.addEventListener('click',async ev=>{
  const el=ev.target.closest('[data-zs]');if(!el||APP_MODE!=='owner')return;
