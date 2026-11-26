@@ -8031,7 +8031,7 @@ function zpNuGeneral(pet,prof,years){
  if(years===null&&n.age==='auto')out+='<p class="zp-help">나이를 입력하지 않아 전체 연령을 보여 드려요.</p>';
  out+=zpNuCompare(list,pet);
  out+='<section class="zp-section"><div class="zp-section-head"><h2>일반 사료</h2><span>'+list.length+'개 · 브랜드 가나다순</span></div><div class="zp-box">'+(list.length?list.map(p=>zpNuProduct(p,pet,prof,stage||auto)).join(''):'<p class="zp-empty">조건에 맞는 제품이 없어요. 필터를 줄여 보세요.</p>')+'</div></section>';
- const brands=n.brands.map(b=>{const c=n.catalog.filter(p=>p.kind==='일반식'&&p.brand===b.brand).length;return '<div class="zp-kv"><span>'+e(b.brand)+'</span><b'+(c?'':' class="zp-muted"')+'>'+(c?c+'개 등록':'공식 자료 확인 전')+'</b></div>'}).join('');
+ const brands=n.brands.map(b=>{const c=n.catalog.filter(p=>p.kind==='일반식'&&p.brand===b.brand).length,r=n.catalog.filter(p=>p.kind==='처방식'&&p.brand===b.brand).length;return '<div class="zp-kv"><span>'+e(b.brand)+'</span><b'+(c||r?'':' class="zp-muted"')+'>'+(c?c+'개 등록':r?'처방식 '+r+'개 등록':'공식 자료 확인 전')+'</b></div>'}).join('');
  out+='<section class="zp-section"><div class="zp-section-head"><h2>브랜드별 등록 현황</h2></div><div class="zp-box" style="padding:4px 16px">'+brands+'</div></section>';
  return out+'<p class="zp-disclaimer">영양성분·급여량은 제조사 공식 자료(로얄캐닌은 제조사가 밝힌 대로 국내 표시사항과 일부 다를 수 있음) 기준이에요. 확인하지 못한 값은 미확인으로 표시해요. 실제 급여량은 체중 변화를 보며 조절해 주세요. 사료비는 직접 입력한 가격으로만 계산하고, 광고나 제휴와 관계없이 가나다순으로 보여 드려요.</p>';
 }
