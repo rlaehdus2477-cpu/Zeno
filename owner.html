@@ -8341,6 +8341,7 @@ ZP_VIEWS.receipts={
 .zs-flag input{margin-top:2px;width:18px;height:18px;flex:0 0 18px}
 .zs-flag.now span{color:#142e4c}
 .zs-alert{margin-top:16px;padding:14px 16px;border-radius:12px;border:1px solid #f3c7cd;background:#fff6f7}
+.zs-urgent-first{margin-top:10px;border-radius:8px;padding:12px}.zs-urgent-first summary{cursor:pointer;font-size:14px;font-weight:600;color:#a52b39;padding:10px 0}.zs-urgent-first .zs-link{margin-top:6px}.zs-urgent-first .zs-flags{border-radius:8px}
 .zs-alert.today{border-color:#f1dfb7;background:#fffaf0}
 .zs-alert strong{display:block;font-size:16px;color:#b23545;margin-bottom:4px}
 .zs-alert.today strong{color:#8a5a00}
@@ -8433,7 +8434,7 @@ function zsWhoOptions(){
 function zsSpecies(){const z=zs();const s=z.species;if(s==='강아지'||s==='고양이')return s;if(s)return '특수동물';return ''}
 function zsSelected(){return zs().symptoms.map(id=>ZS_SYMPTOMS.find(s=>s.id===id)).filter(Boolean)}
 function zsFlagList(){
- const sp=zsSpecies(),ids=[...new Set([...ZS_COMMON_FLAGS,...zsSelected().flatMap(s=>s.flags)])];
+ const sp=zsSpecies(),ids=[...new Set([...Object.keys(ZS_FLAGS).filter(id=>ZS_FLAGS[id].level==='now'),...zsSelected().flatMap(s=>s.flags)])];
  return ids.filter(id=>ZS_FLAGS[id]&&(!ZS_FLAGS[id].species||!sp||ZS_FLAGS[id].species===sp)).sort((a,b)=>(ZS_FLAGS[a].level==='now'?0:1)-(ZS_FLAGS[b].level==='now'?0:1));
 }
 function zsLevel(){const f=zs().flags.filter(id=>zsFlagList().includes(id));if(f.some(id=>ZS_FLAGS[id].level==='now'))return 'now';if(f.length)return 'today';return ''}
@@ -8506,6 +8507,9 @@ zenoSymptomPage=function(){
  const z=zs(),who=zsWhoOptions(),sp=zsSpecies(),sel=zsSelected(),level=zsLevel();
  let html='<div class="zeno-symptoms-page zs-page">'+topbar('증상으로 병원 찾기','')
   +'<p class="zs-lead">증상에 맞는 진료 분야와 지금 갈 수 있는 병원을 찾아 드려요. 질환을 진단하지 않으며, 진료 가능 여부는 병원에 확인해 주세요.</p>';
+ const urgent=zsFlagList().filter(id=>ZS_FLAGS[id].level==='now');
+ html+='<section class="zs-alert now zs-urgent-first"><strong>응급 증상이 있나요?</strong><p>호흡곤란 · 경련 · 심한 출혈 · 배뇨 불가 등</p><p>해당하면 일반 증상 선택보다 병원 전화가 우선이에요.</p><button type="button" class="zs-link" data-zs="emergency">응급 진료 병원 찾기</button><details'+(z.urgentOpen||level==='now'?' open':'')+' data-zs-urgent><summary>응급 증상 확인</summary><div class="zs-flags">'+urgent.map(id=>'<label class="zs-flag now"><input type="checkbox" data-zs-flag="'+id+'"'+(z.flags.includes(id)?' checked':'')+'><span>'+e(ZS_FLAGS[id].label)+'</span></label>').join('')+'</div></details></section>';
+ if(level==='now')return html+zsEmergencyBlock(level)+'</div>';
  html+='<section class="zs-step"><h2><span>1</span>누가 아픈가요?</h2><div class="zs-chips">'+who.map(o=>'<button type="button" class="zs-chip" data-zs="who" data-value="'+e(o.id)+'" aria-pressed="'+(z.who===o.id)+'">'+e(o.label)+(o.id.startsWith('pet:')&&o.species?' <em>'+e(o.species)+'</em>':'')+'</button>').join('')+'</div>';
  if(sp==='특수동물')html+='<div class="zs-chips zs-sub">'+EXOTIC.map(x=>'<button type="button" class="zs-chip small" data-zs="exotic" data-value="'+e(x[0])+'" aria-pressed="'+(z.exotic===x[0])+'">'+e(x[0])+'</button>').join('')+'</div>';
  html+='</section>';
@@ -8519,8 +8523,8 @@ zenoSymptomPage=function(){
  else html+=ZS_GROUPS.map(g=>'<div class="zs-group"><h3>'+e(g)+'</h3><div class="zs-chips zs-symptom-grid">'+ZS_SYMPTOMS.filter(s=>s.group===g).map(s=>zsSymptomChip(s)).join('')+'</div></div>').join('');
  html+='</section>';
  if(!sel.length)return html+'</div>';
- const flags=zsFlagList();
- html+='<section class="zs-step"><h2><span>3</span>이런 모습도 있나요?</h2><p class="zs-help">해당하는 것이 있으면 골라 주세요. 하나라도 있으면 바로 전화 안내를 먼저 보여 드려요.</p><div class="zs-flags">'
+ const flags=zsFlagList().filter(id=>ZS_FLAGS[id].level==='today');
+ if(flags.length)html+='<section class="zs-step"><h2><span>3</span>이런 모습도 있나요?</h2><p class="zs-help">해당하는 것이 있으면 골라 주세요. 하나라도 있으면 바로 전화 안내를 먼저 보여 드려요.</p><div class="zs-flags">'
   +flags.map(id=>'<label class="zs-flag'+(ZS_FLAGS[id].level==='now'?' now':'')+'"><input type="checkbox" data-zs-flag="'+id+'"'+(z.flags.includes(id)?' checked':'')+'><span>'+e(ZS_FLAGS[id].label)+'</span></label>').join('')+'</div></section>';
  if(level)html+=zsEmergencyBlock(level);
  const fields=zsFields(),ranked=zsRank(),limit=z.more?30:8;
@@ -8571,7 +8575,7 @@ document.addEventListener('click',async ev=>{
 document.addEventListener('change',ev=>{
  const el=ev.target;if(!el?.dataset||APP_MODE!=='owner')return;
  const id=el.dataset.zsFlag;if(!id)return;
- const z=zs(),i=z.flags.indexOf(id);if(el.checked&&i<0)z.flags.push(id);if(!el.checked&&i>=0)z.flags.splice(i,1);
+ const z=zs(),i=z.flags.indexOf(id);if(ZS_FLAGS[id]?.level==='now')z.urgentOpen=true;if(el.checked&&i<0)z.flags.push(id);if(!el.checked&&i>=0)z.flags.splice(i,1);
  render();
 });
 /* 한글 입력 중(조합 중)에는 다시 그리지 않고, 조합이 끝난 뒤에 검색합니다. */
