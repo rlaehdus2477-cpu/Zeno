@@ -8335,13 +8335,20 @@ ZP_VIEWS.receipts={
 .zs-page .zs-chip:focus-visible{outline:2px solid #477ca8;outline-offset:2px}
 @media(max-width:320px){.zs-page .zs-symptom-grid{grid-template-columns:1fr}}
 .zs-help{font-size:13px;line-height:1.5;color:#6b7f94;margin:-4px 0 10px}
-.zs-flags{display:flex;flex-direction:column;background:#fff;border:1px solid #e5ebf1;border-radius:12px;overflow:hidden}
-.zs-flag{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border-bottom:1px solid #edf1f5;font-size:14px;line-height:1.45;color:#2f4f6e;cursor:pointer}
-.zs-flag:last-child{border-bottom:0}
-.zs-flag input{margin-top:2px;width:18px;height:18px;flex:0 0 18px}
-.zs-flag.now span{color:#142e4c}
+.zs-flags{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.zs-flag{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:6px;width:100%;min-width:0;min-height:96px;padding:12px 10px;background:#fff;border:1px solid #e3e8ee;border-radius:8px;color:#142e4c;text-align:left;font:inherit;cursor:pointer;box-shadow:none}
+.zs-flag svg{width:22px;height:22px;flex:0 0 22px;stroke:#52677b;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.zs-flag b{display:block;font-size:14px;font-weight:600;line-height:1.35;color:#142e4c;overflow-wrap:anywhere}
+.zs-flag small{display:block;font-size:12px;font-weight:400;line-height:1.4;color:#6b7f94;overflow-wrap:anywhere}
+.zs-flag:focus-visible{outline:2px solid #477ca8;outline-offset:2px}
+.zs-flag[aria-pressed="true"]{border:2px solid #142e4c;padding:11px 9px;background:#f3f6fa}
+.zs-flag[aria-pressed="true"] svg{stroke:#142e4c}
+.zs-flag .zs-flag-check{position:absolute;top:8px;right:8px;width:18px;height:18px;border-radius:50%;background:#142e4c;display:none;align-items:center;justify-content:center}
+.zs-flag .zs-flag-check svg{width:12px;height:12px;flex:0 0 12px;stroke:#fff;stroke-width:2.4}
+.zs-flag[aria-pressed="true"] .zs-flag-check{display:flex}
+.zs-flag-note{font-size:12px;line-height:1.5;color:#6b7f94;margin:8px 0 0}
 .zs-alert{margin-top:16px;padding:14px 16px;border-radius:12px;border:1px solid #f3c7cd;background:#fff6f7}
-.zs-urgent-first{margin-top:10px;border-radius:8px;padding:12px}.zs-urgent-first summary{cursor:pointer;font-size:14px;font-weight:600;color:#a52b39;padding:10px 0}.zs-urgent-first .zs-link{margin-top:6px}.zs-urgent-first .zs-flags{border-radius:8px}
+.zs-urgent-first{margin-top:10px;border-radius:8px;padding:12px}.zs-urgent-first summary{cursor:pointer;font-size:14px;font-weight:600;color:#a52b39;padding:10px 0}.zs-urgent-first .zs-link{margin-top:6px}.zs-urgent-first .zs-flags{margin-top:2px}
 .zs-alert.today{border-color:#f1dfb7;background:#fffaf0}
 .zs-alert strong{display:block;font-size:16px;color:#b23545;margin-bottom:4px}
 .zs-alert.today strong{color:#8a5a00}
@@ -8358,6 +8365,7 @@ ZP_VIEWS.receipts={
 .zs-call span{display:flex;flex-direction:column;gap:2px}
 .zs-call b{font-size:14px;font-weight:600;color:#142e4c}
 .zs-call small{font-size:12px;color:#6b7f94}
+.zs-call .zs-btn.off{background:#fff;color:#8a96a3;border-color:#e5ebf1;min-height:44px}
 .zs-toggles{margin-bottom:10px}
 .zs-list{background:#fff;border:1px solid #e5ebf1;border-radius:12px}
 .zs-card{padding:14px 16px;border-bottom:1px solid #edf1f5}
@@ -8384,29 +8392,50 @@ ZP_VIEWS.receipts={
    - 병원 정렬은 제노가 확인한 정보(진료 분야 근거·진료시간·거리·고양이 대기실·특수동물)만 쓰며, 광고·제휴 여부는 순서에 반영하지 않습니다.
    - 24시간 운영 표기는 응급 수용을 뜻하지 않으므로 항상 전화 확인을 함께 안내합니다. */
 const ZS_FIELDS=['일반 진료','내과','외과','치과·구강','안과','피부·귀','비뇨기','정형외과','심장·호흡기','중성화수술','건강검진·접종','특수동물'];
-/* 바로 병원에 전화가 필요한 신호(level 'now')와 오늘 진료를 권하는 신호(level 'today'). 종을 지정한 항목은 해당 종에만 보입니다. */
+/* 바로 병원에 전화가 필요한 신호(level 'now')와 오늘 진료를 권하는 신호(level 'today'). 종을 지정한 항목은 해당 종에만 보입니다.
+   title·desc는 카드에, label은 경고 문구에 씁니다. 기준은 설계 초안이며 수의사 검토가 필요합니다(docs 참고). */
 const ZS_FLAGS={
- breath:{label:'숨쉬기 힘들어하거나 입을 벌리고 숨을 쉬어요',level:'now'},
- gum:{label:'잇몸이나 혀가 하얗거나 파래요',level:'now'},
- seizure:{label:'경련하거나 쓰러졌어요, 깨워도 반응이 약해요',level:'now'},
- bleed:{label:'피가 멈추지 않아요',level:'now'},
- trauma:{label:'교통사고·추락 등으로 크게 다쳤어요',level:'now'},
- toxin:{label:'초콜릿·포도·자일리톨·사람 약·살충제 등을 먹었어요',level:'now'},
- lily:{label:'백합 꽃·잎·꽃가루를 먹거나 묻혔어요',level:'now',species:'고양이'},
- bloat:{label:'배가 부풀고 토하려 하는데 나오지 않아요',level:'now',species:'강아지'},
- urineBlock:{label:'소변을 보려고 힘주는데 거의 나오지 않아요',level:'now'},
- heat:{label:'더운 곳에 있다가 축 처지고 숨을 몰아쉬어요',level:'now'},
- bloodVomit:{label:'토하거나 변에 피가 섞여 있어요',level:'today'},
- repeatVomit:{label:'계속 토하거나 설사하고 기운이 없어요',level:'today'},
- noEat:{label:'하루 넘게 전혀 먹지 않아요',level:'today'},
- eyeInjury:{label:'눈을 다쳤거나 갑자기 잘 못 보는 것 같아요',level:'today'},
- noWalk:{label:'다리를 전혀 딛지 못하거나 심하게 아파해요',level:'today'}
+ breath:{title:'호흡곤란',desc:'숨쉬기 힘들어요',label:'호흡곤란',icon:'breath',level:'now'},
+ seizure:{title:'경련·의식 저하',desc:'쓰러지거나 반응이 약해요',label:'경련·의식 저하',icon:'seizure',level:'now'},
+ bleed:{title:'심한 출혈',desc:'피가 멈추지 않아요',label:'심한 출혈',icon:'drop',level:'now'},
+ gum:{title:'잇몸 색 변화',desc:'잇몸이 하얗거나 파래요',label:'잇몸 색 변화',icon:'gum',level:'now'},
+ trauma:{title:'사고·외상',desc:'크게 다쳤어요',label:'사고·외상',icon:'trauma',level:'now'},
+ toxin:{title:'중독 의심',desc:'위험한 물질을 먹었어요',label:'중독 의심',icon:'toxin',level:'now'},
+ urineBlock:{title:'배뇨 불가',desc:'소변을 보려고 하지만 나오지 않아요',label:'배뇨 불가',icon:'urine',level:'now'},
+ heat:{title:'열사병 의심',desc:'더위에 노출돼 축 처져요',label:'열사병 의심',icon:'heat',level:'now'},
+ bloat:{title:'복부 팽창',desc:'배가 부풀고 헛구역질해요',label:'복부 팽창',icon:'bloat',level:'now',species:'강아지'},
+ lily:{title:'백합 노출',desc:'고양이가 백합에 노출됐어요',label:'백합 노출',icon:'lily',level:'now',species:'고양이'},
+ giHeavy:{title:'많은 양의 피',desc:'피를 많이 토하거나 변에 피가 많아요',label:'많은 양의 출혈(토혈·혈변)',icon:'drop',level:'now'},
+ repeatVomit:{title:'반복되는 구토·설사',desc:'계속 토하거나 설사하고 기운이 없어요',label:'반복되는 구토·설사',icon:'alert',level:'today'},
+ noEat:{title:'하루 넘게 굶음',desc:'하루 넘게 전혀 먹지 않아요',label:'하루 넘게 먹지 않음',icon:'alert',level:'today'},
+ eyeInjury:{title:'눈 외상·시력 변화',desc:'눈을 다쳤거나 잘 못 보는 것 같아요',label:'눈 외상·시력 변화',icon:'alert',level:'today'},
+ noWalk:{title:'다리를 못 디딤',desc:'다리를 전혀 딛지 못하거나 심하게 아파해요',label:'다리를 못 디딤',icon:'alert',level:'today'}
 };
-const ZS_COMMON_FLAGS=['breath','gum','seizure','bleed','trauma','toxin','lily','heat'];
+/* 화면 맨 위 응급 증상 카드 10개(순서 고정). 종 분기는 ZS_FLAGS의 species를 따릅니다. */
+const ZS_COMMON_FLAGS=['breath','seizure','bleed','gum','trauma','toxin','urineBlock','heat','bloat','lily'];
+/* 선형 아이콘(24×24, stroke만 사용) */
+const ZS_ICONS={
+ breath:'<path d="M12 4v7"/><path d="M12 11c-1.5 0-2.5-1-3.5-2.5C7 6 5 6.5 4.5 9 4 12 4 16 5.5 18.5 7 20 9.5 19 10.5 16.5 11.3 14.5 12 13 12 11z"/><path d="M12 11c1.5 0 2.5-1 3.5-2.5C17 6 19 6.5 19.5 9c.5 3 .5 7-1 9.5-1.5 1.5-4 .5-5-2C12.7 14.5 12 13 12 11z"/>',
+ seizure:'<path d="M13 3 6 13h5l-1 8 7-10h-5z"/>',
+ drop:'<path d="M12 3.5s-6 6.6-6 11a6 6 0 0 0 12 0c0-4.4-6-11-6-11z"/>',
+ gum:'<path d="M4 9c2.5 2 5 3 8 3s5.5-1 8-3"/><path d="M6.5 10.5v2.5a1.5 1.5 0 0 0 3 0v-1.8"/><path d="M10.5 11.8v2.2a1.5 1.5 0 0 0 3 0v-2.2"/><path d="M14.5 11.2v1.8a1.5 1.5 0 0 0 3 0v-2.5"/>',
+ trauma:'<rect x="3" y="8.5" width="18" height="7" rx="3.5" transform="rotate(-35 12 12)"/><path d="M11 11h.01M13 13h.01M11 13h.01M13 11h.01"/>',
+ toxin:'<path d="M9 3h6"/><path d="M10 3v5.5L5.5 17a2.5 2.5 0 0 0 2.2 3.7h8.6a2.5 2.5 0 0 0 2.2-3.7L14 8.5V3"/><path d="M12 13v2.5"/><path d="M12 18h.01"/>',
+ urine:'<path d="M12 4s-4.5 5-4.5 8.5a4.5 4.5 0 0 0 9 0C16.5 9 12 4 12 4z"/><path d="M5 20 19 6"/>',
+ heat:'<path d="M10 14.5V5a2 2 0 0 1 4 0v9.5a4 4 0 1 1-4 0z"/><path d="M12 9v7"/><path d="M18 5h2M18 8h2"/>',
+ bloat:'<ellipse cx="12" cy="13" rx="7.5" ry="6.5"/><path d="M12 6.5V4"/><path d="M9 13h6"/>',
+ lily:'<path d="M12 20v-7"/><path d="M12 13c-3 0-6-2-6.5-6 2.5 0 5 1 6.5 3.5C13.5 8 16 7 18.5 7 18 11 15 13 12 13z"/><path d="M12 10.5C11 8 11 5.5 12 3.5c1 2 1 4.5 0 7z"/><path d="M9 20h6"/>',
+ alert:'<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5v5.5"/><path d="M12 16.5h.01"/>',
+ check:'<path d="m5 12.5 4.5 4.5L19 7.5"/>'
+};
+function zsIcon(k){return '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">'+(ZS_ICONS[k]||ZS_ICONS.alert)+'</svg>'}
 const ZS_SYMPTOMS=[
  {id:'appetite',label:'밥을 잘 안 먹어요',group:'먹기·소화',fields:['내과'],keys:['식욕','안먹','밥'],flags:['noEat']},
- {id:'vomit',label:'토해요',group:'먹기·소화',fields:['내과'],keys:['구토','토','헛구역'],flags:['bloodVomit','repeatVomit','bloat','toxin']},
- {id:'diarrhea',label:'설사하거나 변이 묽어요',group:'먹기·소화',fields:['내과'],keys:['설사','묽은변','혈변'],flags:['bloodVomit','repeatVomit']},
+ {id:'vomit',label:'토해요',group:'먹기·소화',fields:['내과'],keys:['구토','토','헛구역'],flags:['repeatVomit','bloat','toxin']},
+ {id:'diarrhea',label:'설사하거나 변이 묽어요',group:'먹기·소화',fields:['내과'],keys:['설사','묽은변'],flags:['repeatVomit']},
+ {id:'bloodStool',label:'대변에 피가 섞여요',group:'먹기·소화',fields:['내과'],keys:['혈변','피똥','변에피','붉은변'],flags:['giHeavy','gum','seizure','repeatVomit'],care:'today'},
+ {id:'hematemesis',label:'토할 때 피가 나와요',group:'먹기·소화',fields:['내과'],keys:['토혈','피토','토할때피','구토피'],flags:['giHeavy','gum','seizure','repeatVomit'],care:'today'},
+ {id:'melena',label:'검고 끈적한 변을 봐요',group:'먹기·소화',fields:['내과'],keys:['흑색변','검은변','까만변','타르변','흑변'],flags:['giHeavy','gum','seizure'],care:'today'},
  {id:'constipation',label:'변을 잘 못 봐요',group:'먹기·소화',fields:['내과'],keys:['변비','배변'],flags:[]},
  {id:'swallow',label:'이물질을 삼킨 것 같아요',group:'먹기·소화',fields:['내과','외과'],keys:['이물','삼킴','장난감','실'],flags:['toxin','bloat','repeatVomit']},
  {id:'itch',label:'피부를 자꾸 긁거나 핥아요',group:'피부·귀',fields:['피부·귀'],keys:['가려움','긁','핥','발적'],flags:[]},
@@ -8422,8 +8451,8 @@ const ZS_SYMPTOMS=[
  {id:'cough',label:'기침을 해요',group:'숨·심장',fields:['심장·호흡기'],keys:['기침','켁켁','거위'],flags:['breath','gum']},
  {id:'sneeze',label:'재채기·콧물이 있어요',group:'숨·심장',fields:['심장·호흡기','내과'],keys:['재채기','콧물','코'],flags:['breath']},
  {id:'tired',label:'쉽게 지치고 숨이 차 보여요',group:'숨·심장',fields:['심장·호흡기'],keys:['숨','헐떡','지침','운동'],flags:['breath','gum','heat']},
- {id:'urineOften',label:'소변을 자주 보거나 화장실을 자주 가요',group:'소변',fields:['비뇨기'],keys:['소변','오줌','화장실','빈뇨'],flags:['urineBlock']},
- {id:'urineBlood',label:'소변 색이 붉거나 소변볼 때 아파해요',group:'소변',fields:['비뇨기'],keys:['혈뇨','소변','오줌'],flags:['urineBlock']},
+ {id:'urineOften',label:'소변을 자주 보거나 볼 때 아파해요',group:'소변',fields:['비뇨기'],keys:['소변','오줌','화장실','빈뇨','배뇨통','통증'],flags:['urineBlock']},
+ {id:'urineBlood',label:'소변에 피가 섞여요',group:'소변',fields:['비뇨기'],keys:['혈뇨','피오줌','붉은소변','소변피'],flags:['urineBlock'],care:'today'},
  {id:'drink',label:'물을 평소보다 많이 마셔요',group:'소변',fields:['내과','비뇨기'],keys:['물','음수','다음'],flags:[]},
  {id:'lethargy',label:'기운이 없고 잘 안 움직여요',group:'전신·행동',fields:['내과'],keys:['기운','무기력','처짐'],flags:['gum','noEat']},
  {id:'weight',label:'살이 빠지거나 갑자기 쪘어요',group:'전신·행동',fields:['내과'],keys:['체중','살','마름'],flags:[]},
@@ -8431,7 +8460,7 @@ const ZS_SYMPTOMS=[
  {id:'neuter',label:'중성화 수술을 상담하고 싶어요',group:'검진·예방',fields:['중성화수술'],keys:['중성화','수술'],flags:[]},
  {id:'unsure',label:'어디가 아픈지 잘 모르겠어요',group:'잘 모르겠어요',fields:['일반 진료','내과'],keys:['모르','이상'],flags:['gum','noEat']}
 ];
-const ZS_SHORT_LABELS={"appetite":"식욕 저하","vomit":"구토","diarrhea":"설사·묽은 변","constipation":"변비·배변 곤란","swallow":"이물질 삼킴 의심","itch":"피부 긁기·핥기","hairloss":"탈모·피부 발적","ear":"귀 털기·냄새","lump":"혹·덩어리","eye":"눈곱·충혈·눈 비빔","eyeClose":"눈을 못 뜸·눈 혼탁","mouth":"입 냄새·잇몸 발적","drool":"침 흘림·한쪽으로 씹기","limp":"다리 절뚝거림","stairs":"점프·계단 회피","cough":"기침","sneeze":"재채기·콧물","tired":"쉽게 지침·숨참","urineOften":"잦은 배뇨·화장실 방문","urineBlood":"혈뇨·배뇨 통증","drink":"물 많이 마심","lethargy":"기운 없음·활동 감소","weight":"체중 감소·급증","checkup":"건강검진·예방접종","neuter":"중성화 상담","unsure":"어디가 아픈지 모르겠어요"};
+const ZS_SHORT_LABELS={"appetite":"식욕 저하","vomit":"구토","diarrhea":"설사·묽은 변","constipation":"변비·배변 곤란","swallow":"이물질 삼킴 의심","itch":"피부 긁기·핥기","hairloss":"탈모·피부 발적","ear":"귀 털기·냄새","lump":"혹·덩어리","eye":"눈곱·충혈·눈 비빔","eyeClose":"눈을 못 뜸·눈 혼탁","mouth":"입 냄새·잇몸 발적","drool":"침 흘림·한쪽으로 씹기","limp":"다리 절뚝거림","stairs":"점프·계단 회피","cough":"기침","sneeze":"재채기·콧물","tired":"쉽게 지침·숨참","urineOften":"잦은 배뇨·배뇨 통증","urineBlood":"혈뇨","bloodStool":"혈변","hematemesis":"토혈","melena":"흑색변","drink":"물 많이 마심","lethargy":"기운 없음·활동 감소","weight":"체중 감소·급증","checkup":"건강검진·예방접종","neuter":"중성화 상담","unsure":"어디가 아픈지 모르겠어요"};
 const ZS_GROUPS=['먹기·소화','피부·귀','눈','입·이빨','뼈·관절','숨·심장','소변','전신·행동','검진·예방','잘 모르겠어요'];
 function zs(){if(!state.zs)state.zs={who:'',species:'',exotic:'',symptoms:[],flags:[],q:'',openOnly:false,catRoom:true,more:false};return state.zs}
 function zsWhoOptions(){
@@ -8440,11 +8469,18 @@ function zsWhoOptions(){
 }
 function zsSpecies(){const z=zs();const s=z.species;if(s==='강아지'||s==='고양이')return s;if(s)return '특수동물';return ''}
 function zsSelected(){return zs().symptoms.map(id=>ZS_SYMPTOMS.find(s=>s.id===id)).filter(Boolean)}
+function zsFlagOk(id){const sp=zsSpecies();return Boolean(ZS_FLAGS[id]&&(!ZS_FLAGS[id].species||!sp||ZS_FLAGS[id].species===sp))}
+/* 맨 위 응급 카드: 고정 10개 중 종에 맞는 것 */
+function zsUrgentList(){return ZS_COMMON_FLAGS.filter(zsFlagOk)}
+/* 3단계 추가 확인: 고른 증상에 연결된 신호(바로 전화 신호 먼저) */
+function zsStepFlags(){return [...new Set(zsSelected().flatMap(s=>s.flags))].filter(zsFlagOk).sort((a,b)=>(ZS_FLAGS[a].level==='now'?0:1)-(ZS_FLAGS[b].level==='now'?0:1))}
 function zsFlagList(){
- const sp=zsSpecies(),ids=[...new Set([...Object.keys(ZS_FLAGS).filter(id=>ZS_FLAGS[id].level==='now'),...zsSelected().flatMap(s=>s.flags)])];
+ const sp=zsSpecies(),ids=[...new Set([...zsUrgentList(),...zsSelected().flatMap(s=>s.flags)])];
  return ids.filter(id=>ZS_FLAGS[id]&&(!ZS_FLAGS[id].species||!sp||ZS_FLAGS[id].species===sp)).sort((a,b)=>(ZS_FLAGS[a].level==='now'?0:1)-(ZS_FLAGS[b].level==='now'?0:1));
 }
-function zsLevel(){const f=zs().flags.filter(id=>zsFlagList().includes(id));if(f.some(id=>ZS_FLAGS[id].level==='now'))return 'now';if(f.length)return 'today';return ''}
+/* 당일 진료 안내가 기본인 증상(혈뇨·혈변·토혈·흑색변) */
+function zsCareSymptoms(){return zsSelected().filter(s=>s.care==='today')}
+function zsLevel(){const f=zs().flags.filter(id=>zsFlagList().includes(id));if(f.some(id=>ZS_FLAGS[id].level==='now'))return 'now';if(f.length||zsCareSymptoms().length)return 'today';return ''}
 function zsFields(){
  const sp=zsSpecies();
  if(sp==='특수동물')return ['특수동물'];
@@ -8458,7 +8494,8 @@ function zsOrigin(h,field){
 }
 const ZS_ORIGIN_SCORE={official:3,demo:2,public:2,inquiry:1};
 const ZS_ORIGIN_LABEL={official:'공식 안내 진료과',demo:'병원 입력 진료',public:'공개정보 등록 과목',inquiry:'진료 여부 전화 확인'};
-function zsIsOpen(h){const st=zenoSearchClinicStatus(h);return {open:/is-open/.test(st.kind)||zeno24HourEmergency(h),text:st.text}}
+/* 일반 진료 정렬에서는 24시간 '운영' 병원만 진료 가능으로 봅니다. 24시간 '응급 안내'만 있는 병원은 일반 진료 가능으로 치지 않습니다. */
+function zsIsOpen(h){const st=zenoSearchClinicStatus(h);return {open:/is-open/.test(st.kind)||Boolean(h.is24),text:st.text}}
 function zsRank(){
  const z=zs(),fields=zsFields(),sp=zsSpecies(),out=[];
  for(const h of HOSPITALS){
@@ -8480,7 +8517,7 @@ function zsRank(){
   if(sp==='고양이'&&z.catRoom&&tier<2)continue;
   const reasons=[best.field+' · '+ZS_ORIGIN_LABEL[best.origin]];
   let score=ZS_ORIGIN_SCORE[best.origin]*10;
-  if(status.open){score+=6;reasons.push(zeno24HourEmergency(h)?'24시간 운영 안내':'지금 진료시간 내')}
+  if(status.open){score+=6;reasons.push(h.is24?'24시간 운영 표기':'지금 진료시간 내')}
   if(Number.isFinite(km)){score+=km<3?5:km<5?3:km<10?1:0;reasons.push(km<1?Math.round(km*1000)+'m':km.toFixed(1)+'km')}
   if(sp==='고양이'&&tier>=2){score+=2;reasons.push('고양이 대기실')}
   out.push({h,score,reasons,status,km,field:best.field});
@@ -8500,22 +8537,38 @@ function zsCard(r){
   +'<button type="button" class="zs-btn" data-zs="details" data-id="'+e(h.id)+'" data-field="'+e(r.field)+'">상세</button>'
   +(book?'<button type="button" class="zs-btn primary" data-zs="book" data-id="'+e(h.id)+'" data-field="'+e(r.field)+'">예약</button>':'')+'</div></div>';
 }
+/* 응급 진료 문의 병원: 24시간 응급 안내 > 24시간 운영 표기 > 지금 야간 진료시간 내 순. 운영시간과 응급 접수는 다르므로 모두 전화 확인으로 표시합니다. */
+function zsEmergencyHospitals(){
+ const kind=h=>h.emergency24?0:h.is24?1:zenoNightSchedule(h).within?2:9;
+ return HOSPITALS.filter(h=>kind(h)<9).sort((a,b)=>kind(a)-kind(b)||((zenoNearbyDistanceKm(a)??99)-(zenoNearbyDistanceKm(b)??99))||a.name.localeCompare(b.name,'ko')).slice(0,6);
+}
+function zsEmergencyKind(h){
+ if(h.emergency24&&!h.is24)return '24시간 응급 안내 · 일반 진료 별도';
+ if(h.emergency24)return '24시간 응급 안내';
+ if(h.is24)return '24시간 운영 표기 · 응급 수용은 별도';
+ return '지금 야간 진료시간 내';
+}
 function zsEmergencyBlock(level){
- const flags=zs().flags.filter(id=>zsFlagList().includes(id)).map(id=>ZS_FLAGS[id].label);
+ const z=zs(),flags=z.flags.filter(id=>zsFlagList().includes(id)),now=flags.filter(id=>ZS_FLAGS[id].level==='now');
  if(level==='now'){
-  const list=HOSPITALS.filter(h=>zeno24HourEmergency(h)||zenoNightSchedule(h).within).slice(0,6);
-  return '<section class="zs-alert now zs-emergency-warning" role="alert"><strong>즉시 진료가 필요한 증상이에요</strong><p>선택 증상: '+e(flags.join(' · '))+'</p><p>예약을 기다리지 말고 가까운 병원에 바로 전화해 주세요.</p></section><section class="zs-emergency-results"><h3>응급 진료 문의 병원</h3><p>운영시간과 별개로 응급 접수 가능 여부는 전화로 확인해 주세요.</p>'
-   +(list.length?'<div class="zs-call-list">'+list.map(h=>{const p=String(h.phone||'').replace(/[^0-9]/g,'');return '<div class="zs-call"><span><b>'+e(h.name)+'</b><small>'+e(zeno24HourEmergency(h)?'24시간 운영 안내':'야간 진료시간 내')+' · 응급 접수 전화 확인</small></span>'+(p?'<a class="zs-btn primary" href="tel:'+e(p)+'">전화</a>':'')+'</div>'}).join('')+'</div>':'<p>지금 운영 중으로 확인된 야간·24시간 병원이 없어요.</p>')
+  const list=zsEmergencyHospitals();
+  return '<section class="zs-alert now zs-emergency-warning" role="alert"><strong>즉시 진료가 필요한 증상이에요</strong><p>선택한 응급 증상: '+e(now.map(id=>ZS_FLAGS[id].label).join(' · '))+'</p><p>예약을 기다리지 말고 가까운 병원에 바로 전화해 주세요.</p></section><section class="zs-emergency-results"><h3>응급 진료 문의 병원</h3><p>운영시간과 응급 접수는 달라요. 응급 접수 가능 여부는 전화로 확인해 주세요.</p>'
+   +(list.length?'<div class="zs-call-list">'+list.map(h=>{const raw=String(h.phone||'').trim(),p=raw.replace(/[^0-9]/g,''),ok=/^0[0-9 -]{8,15}$/.test(raw);return '<div class="zs-call"><span><b>'+e(h.name)+'</b><small>'+e(zsEmergencyKind(h))+'</small><small>응급 접수 여부 전화 확인</small></span>'+(ok?'<a class="zs-btn primary" href="tel:'+e(p)+'" aria-label="'+e(h.name)+' 전화">전화</a>':'<span class="zs-btn off">전화번호 미확인</span>')+'</div>'}).join('')+'</div>':'<p>지금 운영 중으로 확인된 야간·24시간 병원이 없어요. 가까운 병원에 전화로 문의해 주세요.</p>')
    +'<button type="button" class="zs-link" data-zs="emergency">야간·24시간 병원 전체 보기</button></section>';
  }
- return '<section class="zs-alert today"><strong>오늘 진료를 받아 보세요</strong><p>'+e(flags.join(' · '))+'</p><p>지금 진료시간 안인 병원을 먼저 보여 드려요. 상태가 나빠지면 바로 전화로 문의하세요.</p></section>';
+ const care=zsCareSymptoms().map(s=>ZS_SHORT_LABELS[s.id]||s.label),items=[...care,...flags.map(id=>ZS_FLAGS[id].label)];
+ return '<section class="zs-alert today"><strong>오늘 진료를 받아 보세요</strong><p>'+e(items.join(' · '))+'</p><p>지금 진료시간 안인 병원을 먼저 보여 드려요. 피가 많이 나오거나, 잇몸이 하얗거나, 기운이 크게 떨어지면 바로 병원에 전화해 주세요.</p></section>';
+}
+function zsFlagCard(id){
+ const f=ZS_FLAGS[id],on=zs().flags.includes(id);
+ return '<button type="button" class="zs-flag'+(f.level==='now'?' now':'')+'" data-zs="flag" data-value="'+e(id)+'" aria-pressed="'+on+'">'+zsIcon(f.icon)+'<span class="zs-flag-check" aria-hidden="true">'+zsIcon('check')+'</span><b>'+e(f.title)+'</b><small>'+e(f.desc)+'</small></button>';
 }
 zenoSymptomPage=function(){
  const z=zs(),who=zsWhoOptions(),sp=zsSpecies(),sel=zsSelected(),level=zsLevel();
  let html='<div class="zeno-symptoms-page zs-page">'+topbar('증상으로 병원 찾기','')
   +'<p class="zs-lead">증상에 맞는 진료 분야와 지금 갈 수 있는 병원을 찾아 드려요. 질환을 진단하지 않으며, 진료 가능 여부는 병원에 확인해 주세요.</p>';
- const urgent=zsFlagList().filter(id=>ZS_FLAGS[id].level==='now');
- html+='<section class="zs-alert now zs-urgent-first"><strong>응급 증상이 있나요?</strong><p>호흡곤란 · 경련 · 심한 출혈 · 배뇨 불가 등</p><p>해당하면 일반 증상 선택보다 병원 전화가 우선이에요.</p><button type="button" class="zs-link" data-zs="emergency">응급 진료 병원 찾기</button><details'+(z.urgentOpen||level==='now'?' open':'')+' data-zs-urgent><summary>응급 증상 확인</summary><div class="zs-flags">'+urgent.map(id=>'<label class="zs-flag now"><input type="checkbox" data-zs-flag="'+id+'"'+(z.flags.includes(id)?' checked':'')+'><span>'+e(ZS_FLAGS[id].label)+'</span></label>').join('')+'</div></details></section>';
+ const urgent=zsUrgentList();
+ html+='<section class="zs-alert now zs-urgent-first"><strong>응급 증상이 있나요?</strong><p>호흡곤란 · 경련 · 심한 출혈 · 배뇨 불가 등</p><p>해당하면 일반 증상 선택보다 병원 전화가 우선이에요.</p><button type="button" class="zs-link" data-zs="emergency">응급 진료 병원 찾기</button><details'+(z.urgentOpen||level==='now'?' open':'')+' data-zs-urgent><summary data-zs="urgent-toggle">응급 증상 확인</summary><div class="zs-flags">'+urgent.map(zsFlagCard).join('')+'</div><p class="zs-flag-note">해당하는 증상을 누르면 바로 전화 안내가 나와요. 여러 개를 골라도 돼요.</p></details></section>';
  if(level==='now')return html+zsEmergencyBlock(level)+'</div>';
  html+='<section class="zs-step"><h2><span>1</span>누가 아픈가요?</h2><div class="zs-chips">'+who.map(o=>'<button type="button" class="zs-chip" data-zs="who" data-value="'+e(o.id)+'" aria-pressed="'+(z.who===o.id)+'">'+e(o.label)+(o.id.startsWith('pet:')&&o.species?' <em>'+e(o.species)+'</em>':'')+'</button>').join('')+'</div>';
  if(sp==='특수동물')html+='<div class="zs-chips zs-sub">'+EXOTIC.map(x=>'<button type="button" class="zs-chip small" data-zs="exotic" data-value="'+e(x[0])+'" aria-pressed="'+(z.exotic===x[0])+'">'+e(x[0])+'</button>').join('')+'</div>';
@@ -8530,9 +8583,9 @@ zenoSymptomPage=function(){
  else html+=ZS_GROUPS.map(g=>'<div class="zs-group"><h3>'+e(g)+'</h3><div class="zs-chips zs-symptom-grid">'+ZS_SYMPTOMS.filter(s=>s.group===g).map(s=>zsSymptomChip(s)).join('')+'</div></div>').join('');
  html+='</section>';
  if(!sel.length)return html+'</div>';
- const flags=zsFlagList().filter(id=>ZS_FLAGS[id].level==='today');
- if(flags.length)html+='<section class="zs-step"><h2><span>3</span>이런 모습도 있나요?</h2><p class="zs-help">해당하는 것이 있으면 골라 주세요. 하나라도 있으면 바로 전화 안내를 먼저 보여 드려요.</p><div class="zs-flags">'
-  +flags.map(id=>'<label class="zs-flag'+(ZS_FLAGS[id].level==='now'?' now':'')+'"><input type="checkbox" data-zs-flag="'+id+'"'+(z.flags.includes(id)?' checked':'')+'><span>'+e(ZS_FLAGS[id].label)+'</span></label>').join('')+'</div></section>';
+ const flags=zsStepFlags();
+ if(flags.length)html+='<section class="zs-step"><h2><span>3</span>이런 모습도 있나요?</h2><p class="zs-help">해당하는 것을 눌러 주세요. 바로 전화가 필요한 모습이면 전화 안내를 먼저 보여 드려요.</p><div class="zs-flags">'
+  +flags.map(zsFlagCard).join('')+'</div></section>';
  if(level)html+=zsEmergencyBlock(level);
  const fields=zsFields(),ranked=zsRank(),limit=z.more?30:8;
  html+='<section class="zs-step"><h2><span>4</span>맞춤 병원</h2><p class="zs-help">'+e(sp==='특수동물'?(z.exotic||'특수동물')+' 진료 기록이 있는 병원':fields.join(' · ')+' 진료 분야')+' · 진료 근거·진료시간·거리 순으로 정리했어요.</p>'
@@ -8559,6 +8612,16 @@ document.addEventListener('click',async ev=>{
   z.flags=[];z.more=false;render();return;
  }
  if(a==='exotic'){z.exotic=z.exotic===v?'':v;render();return}
+ if(a==='urgent-toggle'){const d=el.closest('details');z.urgentOpen=!(d&&d.open);return}
+ if(a==='flag'){
+  if(!ZS_FLAGS[v])return;
+  const before=zsLevel(),i=z.flags.indexOf(v);
+  if(i>=0)z.flags.splice(i,1);else z.flags.push(v);
+  if(ZS_FLAGS[v].level==='now')z.urgentOpen=true;
+  render();
+  if(before!=='now'&&zsLevel()==='now')setTimeout(()=>{const w=document.querySelector('.zs-emergency-warning');if(w)w.scrollIntoView({block:'start',behavior:'smooth'})},0);
+  return;
+ }
  if(a==='symptom'){const i=z.symptoms.indexOf(v);if(i>=0)z.symptoms.splice(i,1);else if(z.symptoms.length<3)z.symptoms.push(v);z.more=false;render();return}
  if(a==='open-only'){z.openOnly=!z.openOnly;render();return}
  if(a==='cat-room'){z.catRoom=!z.catRoom;render();return}
@@ -8578,12 +8641,6 @@ document.addEventListener('click',async ev=>{
  }
  if(a==='search'){state.symptomGuideOpen=false;state.symptomLabel=note;state.specialty=v;state.exoticSpecies='';state.query='';state.filter='전체';state.activeFilters=zs().species==='고양이'&&z.catRoom?['고양이 대기실']:[];zenoNewSearch=true;navTo('search');return}
  if(a==='emergency'){state.symptomLabel=z.flags.filter(id=>ZS_FLAGS[id]?.level==='now').map(id=>ZS_FLAGS[id].label).join(' · ');navTo('emergency');return}
-});
-document.addEventListener('change',ev=>{
- const el=ev.target;if(!el?.dataset||APP_MODE!=='owner')return;
- const id=el.dataset.zsFlag;if(!id)return;
- const z=zs(),i=z.flags.indexOf(id);if(ZS_FLAGS[id]?.level==='now')z.urgentOpen=true;if(el.checked&&i<0)z.flags.push(id);if(!el.checked&&i>=0)z.flags.splice(i,1);
- render();
 });
 /* 한글 입력 중(조합 중)에는 다시 그리지 않고, 조합이 끝난 뒤에 검색합니다. */
 function zsSearchInput(el){
