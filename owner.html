@@ -7486,9 +7486,9 @@ setInterval(()=>{if(document.hidden||state.ownerToken||!state.serverReady)return
 .zp-rc-pet{display:flex;align-items:center;gap:8px;min-height:44px;border-bottom:1px solid #edf1f5}
 .zp-rc-pet .zp-check{flex:1;margin:0;align-items:center;min-height:44px;font-size:15px;color:#142e4c;cursor:pointer}
 .zp-rc-pet .zp-check input{margin-top:0;width:20px;height:20px;flex-basis:20px}
-.zp-rc-pet .zp-rc-amt{width:132px;flex:0 0 132px;min-height:40px;padding:8px 10px;text-align:right}
+.zp-rc-pet .zp-rc-amt{width:132px;flex:0 0 132px;min-height:44px;padding:8px 10px;text-align:right}
 .zp-rc-sumrow{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:6px}
-.zp-rc-split{border:0;background:none;padding:8px 0;color:#1f63b4;font-size:13px;font-weight:600;cursor:pointer;flex:0 0 auto}
+.zp-rc-split{border:0;background:none;min-height:44px;padding:8px 0;color:#1f63b4;font-size:13px;font-weight:600;cursor:pointer;flex:0 0 auto}
 .zp-rc-split-list{display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:2px;font-size:12px;color:#4f6880}
 .zp-btn{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 16px;border-radius:10px;border:1px solid #1689fa;background:#1689fa;color:#fff;font-size:15px;font-weight:600;cursor:pointer;width:100%}
 .zp-btn.secondary{background:#fff;color:#1d5f9c;border-color:#d3e1ef}
@@ -8230,7 +8230,7 @@ ZP_VIEWS.receipts={
   body+='<div class="zp-chips" role="group" aria-label="아이 선택">'+[['all','전체']].concat(pets.map(id=>[id,zpRcPetName(id)])).map(([id,n])=>'<button type="button" class="zp-chip" data-zp="rc-pet" data-value="'+e(id)+'" aria-pressed="'+(id==='all'?r.pet==='all':r.pet!=='all'&&selected.includes(id))+'">'+e(n)+'</button>').join('')+'</div>';
   body+=zpRcStats(list,ids);
   if(!list.length)return body+'<div class="zp-box"><p class="zp-empty">선택한 아이의 영수증이 없어요.</p></div>';
-  body+='<section class="zp-section"><div class="zp-section-head"><h2>영수증</h2><span>'+list.length+'건</span></div><div class="zp-box">'+list.map(x=>'<div class="zp-item"><div class="zp-item-top"><strong>'+e(x.hospitalName)+'</strong><b>'+zpWon(x.total)+'</b></div><small>'+e(x.visitDate+' · '+zpRcPetsOf(x).map(p=>zpRcPetName(p.petId)).join(', ')+(x.source==='photo'?' · 사진':''))+'</small>'
+  body+='<section class="zp-section"><div class="zp-section-head"><h2>영수증</h2><span>'+list.length+'건</span></div><div class="zp-box">'+list.map(x=>'<div class="zp-item"><div class="zp-item-top"><strong>'+e(x.hospitalName)+'</strong><b>'+zpWon(zpRcShare(x,ids))+'</b></div>'+(ids&&zpRcShare(x,ids)!==x.total?'<small>영수증 전체 '+zpWon(x.total)+'</small>':'')+'<small>'+e(x.visitDate+' · '+zpRcPetsOf(x).map(p=>zpRcPetName(p.petId)).join(', ')+(x.source==='photo'?' · 사진':''))+'</small>'
    +(zpRcPetsOf(x).length>1?'<div class="zp-rc-split-list">'+zpRcPetsOf(x).map(p=>'<span>'+e(zpRcPetName(p.petId))+' '+zpWon(p.amount)+'</span>').join('')+'</div>':'')
    +(x.items.length?'<details class="zp-fee-note"><summary>세부 항목 '+x.items.length+'개</summary>'+x.items.map(i=>'<div class="zp-kv"><span>'+e(i.name)+'</span><b>'+zpWon(i.amount)+'</b></div>').join('')+'</details>':'')
    +(x.memo?'<p>'+e(x.memo)+'</p>':'')
@@ -8291,7 +8291,7 @@ ZP_VIEWS.receipts={
   const totalNum=Number(d.get('total'));
   const pets=sel.length===1?[{petId:sel[0].petId,amount:totalNum}]:sel.map(x=>({petId:x.petId,amount:Number(x.amount)}));
   if(sel.length>1){
-   if(pets.some(x=>!Number.isInteger(x.amount)||x.amount<0)){toast('아이별 금액을 원 단위로 입력해 주세요.');return}
+   if(sel.some(x=>String(x.amount??'').trim()==='')||pets.some(x=>!Number.isInteger(x.amount)||x.amount<0)){toast('아이별 금액을 원 단위로 입력해 주세요.');return}
    if(pets.reduce((a,x)=>a+x.amount,0)!==totalNum){toast('아이별 금액의 합이 총 결제 금액과 같아야 해요.');return}
   }
   const name=String(d.get('hospitalName')||'').trim(),hit=HOSPITALS.find(h=>h.name===name);
