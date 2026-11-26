@@ -12,6 +12,7 @@ on:
       - "tests/booking-flow.mjs"
       - "tests/vetqa-flow.mjs"
       - "tests/pass-flow.mjs"
+      - "tests/pass-nutrition-unit.mjs"
       - ".github/workflows/test-booking-flow.yml"
   workflow_dispatch:
 
@@ -40,3 +41,5 @@ jobs:
         run: node tests/pass-flow.mjs
         env:
           NO_PROXY: "127.0.0.1,localhost"
+      - name: ZENO PASS nutrition calculation tests
+        run: node tests/pass-nutrition-unit.mjs

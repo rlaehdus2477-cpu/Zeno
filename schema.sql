@@ -274,3 +274,4 @@ CREATE TABLE IF NOT EXISTS receipt_photos (
   created_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS receipt_photos_owner ON receipt_photos(owner_id,receipt_id);
+-- PASS 03 보완 (2026-11-27): 일반 사료 41개(제조사 공식 자료) 추가, 아이별 하루 급여량·체형·활동량은 pass_prefs(kind='nutrition')에 저장

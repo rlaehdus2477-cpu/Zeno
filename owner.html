@@ -7559,6 +7559,30 @@ setInterval(()=>{if(document.hidden||state.ownerToken||!state.serverReady)return
 .zp-bar span{display:block;width:100%;max-width:16px;min-height:2px;background:#1689fa;border-radius:3px 3px 0 0}
 .zp-bar small{font-size:10px;color:#8a96a3}
 .zp-photo{display:block;max-width:100%;max-height:480px;object-fit:contain;background:#f8fafc;margin-top:10px;border:1px solid #e5ebf1;border-radius:8px}
+.zp-nutri{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;margin-top:10px;background:#edf1f5;border:1px solid #edf1f5;border-radius:8px;overflow:hidden}
+.zp-nutri>div{display:flex;flex-direction:column;gap:2px;padding:8px 10px;background:#fff}
+.zp-nutri span{font-size:11px;color:#6b7f94}
+.zp-nutri b{font-size:14px;font-weight:600;color:#142e4c}
+.zp-nutri b.zp-muted{font-size:12px;font-weight:500;color:#8a96a3}
+.zp-nutri em{font-style:normal;font-size:10px;color:#8a96a3}
+.zp-feats{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.zp-feats span{font-size:11px;font-weight:600;color:#3d5f80;background:#f1f5f9;border-radius:4px;padding:2px 6px}
+.zp-filter{display:flex;flex-direction:column;gap:4px;margin-top:8px}
+.zp-filter>span{font-size:12px;font-weight:600;color:#6b7f94}
+.zp-filter .zp-chips{padding-bottom:2px}
+.zp-chip:disabled{opacity:.4;cursor:default}
+.zp-radio{display:inline-flex;align-items:center;gap:4px}
+.zp-radio input{margin:0}
+.zp-stock{margin-top:8px;border-top:1px solid #edf1f5}
+.zp-stock-row{display:grid;grid-template-columns:1fr auto;gap:4px 8px;align-items:center;padding:8px 0;border-bottom:1px solid #edf1f5;font-size:14px}
+.zp-stock-row small{grid-column:1;margin:0}
+.zp-stock-row .zp-btn{grid-column:2;grid-row:1/span 2}
+.zp-stock-row .zp-tag{grid-column:2;grid-row:1}
+.zp-stock-row .zp-tag+small+.zp-btn{grid-row:2}
+.zp-feed th.on{color:#1689fa}
+.zp-feed tr.on td{background:#eef6ff;font-weight:600}
+.zp-feed td,.zp-feed th{padding:6px 8px;font-size:12px}
+.zp-detail{margin-top:4px}
 </style><script id="zeno-pass-module">
 /* ===== ZENO PASS · 보호자 화면 (2026-11-26) =====
    PASS 권한은 서버(/api/pass)에서 확인한 값만 사용합니다. 화면에서 임의로 열지 않습니다. */
@@ -7853,128 +7877,239 @@ ZP_VIEWS.fees={
   const v=Math.max(1,Math.min(52,Math.round(Number(el.value)||1)));it.count=v;f.dirty=true;render();
  }
 };
-/* PASS 03 · 반려동물별 맞춤 영양 관리 (보호자). 제조사 공식 자료와 보호자가 입력한 가격만 계산합니다. */
-function zpNu(){const z=zpState();if(!z.nu)z.nu={loaded:false,error:'',pets:[],profiles:{},prices:{},catalog:[],conditions:[],generalStatus:'preparing',petId:'',tab:'rx',editing:false,priceFor:null};return z.nu}
+/* PASS 03 · 반려동물별 맞춤 영양 관리 (보호자). 제조사 공식 자료와 보호자가 입력한 가격·급여량만 계산합니다.
+   일반 사료는 아이의 기본 정보(종·나이·체중·중성화·체형·활동량)로 탐색만 돕고, 질환 진단이나 치료용 사료 추천은 하지 않습니다. */
+const ZP_NU_FEATURES=['체중 관리','헤어볼','소화','피부·피모','실내','관절','치아','노령','면역','활동량 많음','고단백'];
+const ZP_NU_STAGE={young:'어린 시기',adult:'성견·성묘',senior:'노령',all:'전 연령',unknown:'연령 미확인'};
+function zpNu(){const z=zpState();if(!z.nu)z.nu={loaded:false,error:'',pets:[],profiles:{},prices:{},daily:{},catalog:[],conditions:[],brands:[],stock:[],petId:'',tab:'general',age:'auto',form:'all',feat:[],open:null,editing:false,priceFor:null};return z.nu}
 async function zpNuLoad(){
  const n=zpNu();
  if(!state.ownerToken){n.loaded=true;return}
  if(!zpState().passLoaded)await zpLoadPass(false);
  if(zpActive()){
-  try{const r=await api('GET','/api/pass/nutrition');Object.assign(n,{pets:r.pets||[],profiles:r.profiles||{},prices:r.prices||{},catalog:r.catalog||[],conditions:r.conditions||[],generalStatus:r.generalCatalogStatus,error:''});if(!n.pets.some(p=>p.id===n.petId))n.petId=n.pets[0]?.id||''}
-  catch(err){n.error=err.message}
+  try{
+   const [r,st]=await Promise.all([api('GET','/api/pass/nutrition'),api('GET','/api/pass/rx-stock').catch(()=>({items:[]}))]);
+   Object.assign(n,{pets:r.pets||[],profiles:r.profiles||{},prices:r.prices||{},daily:r.daily||{},catalog:r.catalog||[],conditions:r.conditions||[],brands:r.brands||[],stock:st.items||[],error:''});
+   if(!n.pets.some(p=>p.id===n.petId))n.petId=n.pets[0]?.id||'';
+  }catch(err){n.error=err.message}
  }
  n.loaded=true;
  if(state.page==='pass'&&zpState().view==='nutrition')render();
 }
 function zpParseYears(age){const s=String(age||'');let m=s.match(/(\d+(?:\.\d+)?)\s*개월/);if(m)return Number(m[1])/12;m=s.match(/(\d+(?:\.\d+)?)\s*(살|세|년)?/);return m?Number(m[1]):null}
 function zpParseKg(w){const s=String(w||'');const m=s.match(/(\d+(?:\.\d+)?)/);if(!m)return null;let v=Number(m[1]);if(/(^|[^k])g\b/i.test(s)&&!/kg/i.test(s)&&v>100)v=v/1000;return v>0?v:null}
-/* 제조사 급여표: 같은 체중 행은 그대로, 가까운 두 행(고양이 1kg·강아지 2kg 이내) 사이만 직선 보간 */
-function zpDailyGrams(p,kg){
- if(!p.feeding||!kg)return null;
- const rows=[...p.feeding].sort((a,b)=>a[0]-b[0]);
- const hit=rows.find(r=>Math.abs(r[0]-kg)<1e-9);if(hit)return {g:hit[1],how:'제조사 급여표'};
+function zpPetStage(years){if(years===null||years===undefined)return null;if(years<1)return 'young';if(years>=7)return 'senior';return 'adult'}
+function zpFmtG(v,unit){if(v===null||v===undefined)return null;const u=unit==='파우치'?'파우치':'g';return Array.isArray(v)?v[0]+'~'+v[1]+u:v+u}
+/* 아이 프로필에 맞는 급여표 열: 활동량 → 체형 → 중성화 → 노령 순으로, 표에 해당 열이 있을 때만 고릅니다. */
+function zpFeedCol(f,prof,stage){
+ const cols=f.cols||[];let i=-1;
+ if(prof.activity&&prof.activity!=='unknown')i=cols.findIndex(c=>c.act===prof.activity);
+ if(i<0&&prof.bodyCondition&&prof.bodyCondition!=='unknown')i=cols.findIndex(c=>c.bc===prof.bodyCondition);
+ if(i<0&&prof.neutered==='yes')i=cols.findIndex(c=>c.neutered);
+ if(i<0&&stage==='senior')i=cols.findIndex(c=>c.stage==='senior');
+ if(i<0)i=cols.findIndex(c=>c.act==='normal'||c.bc==='ideal');
+ if(i<0)i=cols.findIndex(c=>!c.bc&&!c.neutered&&!c.stage);
+ return i<0?0:i;
+}
+/* 제조사 급여표에서 아이 체중에 해당하는 값. 한 점 표는 같은 행 또는 가까운 두 행(고양이 1kg·강아지 2kg 이내) 사이만 계산합니다. */
+function zpFeedFor(p,kg,prof,stage){
+ const f=p.feeding;
+ if(!f)return {text:'제조사 급여표 미확인',g:null};
+ if(!kg)return {text:'체중을 입력하면 급여표에서 찾아 드려요',g:null};
+ if(f.byAdult)return {text:'예상 성견 체중에 따라 달라요 · 급여표를 확인해 주세요',g:null};
+ const ci=zpFeedCol(f,prof,stage),col=f.cols[ci]?.label||'';
+ const ranges=f.rows.filter(r=>r.w[0]<r.w[1]);
+ if(ranges.length){
+  const r=ranges.find((r,i)=>(i===0?kg>=r.w[0]:kg>r.w[0])&&kg<=r.w[1]);
+  if(!r||r.v[ci]==null)return {text:'제조사 표에서 '+kg+'kg'+(col?' · '+col:'')+' 값을 확인할 수 없어요',g:null};
+  const v=r.v[ci];
+  return {text:r.w[0]+'~'+r.w[1]+'kg · '+col+' 하루 '+zpFmtG(v,f.unit),g:Array.isArray(v)||f.unit!=='g'?null:v,col};
+ }
+ const rows=[...f.rows].sort((a,b)=>a.w[0]-b.w[0]);
+ const hit=rows.find(r=>Math.abs(r.w[0]-kg)<1e-9);
+ if(hit&&hit.v[ci]!=null){const v=hit.v[ci];return {text:(col&&f.cols.length>1?col+' · ':'')+'하루 '+zpFmtG(v,f.unit)+' (제조사 급여표)',g:Array.isArray(v)||f.unit!=='g'?null:v,col}}
  const gap=p.species==='고양이'?1:2;
- for(let i=0;i<rows.length-1;i++){const [w1,g1]=rows[i],[w2,g2]=rows[i+1];if(kg>w1&&kg<w2&&w2-w1<=gap)return {g:Math.round(g1+(g2-g1)*(kg-w1)/(w2-w1)),how:'제조사 급여표 두 행 사이 계산값'}}
- return null;
+ for(let i=0;i<rows.length-1;i++){
+  const a=rows[i],b=rows[i+1],va=a.v[ci],vb=b.v[ci];
+  if(kg>a.w[0]&&kg<b.w[0]&&b.w[0]-a.w[0]<=gap&&typeof va==='number'&&typeof vb==='number'){
+   const v=f.unit==='g'?Math.round(va+(vb-va)*(kg-a.w[0])/(b.w[0]-a.w[0])):Math.round((va+(vb-va)*(kg-a.w[0])/(b.w[0]-a.w[0]))*100)/100;
+   return {text:(col&&f.cols.length>1?col+' · ':'')+'하루 '+zpFmtG(v,f.unit)+' (급여표 두 행 사이 계산값)',g:f.unit==='g'?v:null,col};
+  }
+ }
+ return {text:'제조사 표에서 '+kg+'kg 값을 확인할 수 없어요',g:null};
+}
+function zpNuDaily(petId,productId){return zpNu().daily?.[petId]?.[productId]??null}
+function zpNuCost(p,petId,feed){
+ const pr=zpNu().prices[p.id],own=zpNuDaily(petId,p.id),daily=own??feed?.g??null;
+ if(!pr||!daily)return {ok:false,daily,own,pr};
+ const day=pr.price/pr.packageG*daily;
+ return {ok:true,daily,own,pr,day,month:day*30,days:pr.packageG/daily};
+}
+function zpNuCostLine(p,petId,feed,budget){
+ const c=zpNuCost(p,petId,feed);
+ if(!c.pr)return '<div class="zp-kv"><span>사료비</span><b class="zp-muted">구매 가격을 입력하면 계산해요</b></div>';
+ if(!c.daily)return '<div class="zp-kv"><span>사료비</span><b class="zp-muted">하루 급여량을 입력하면 계산해요</b></div>';
+ const over=budget!=null&&c.month>budget;
+ return '<div class="zp-kv"><span>하루 · 30일</span><b>'+zpWon(c.day)+' · '+zpWon(c.month)+'</b></div>'
+  +'<div class="zp-kv"><span>예상 소진 기간</span><b>약 '+Math.floor(c.days)+'일</b></div>'
+  +'<small>'+e(zpWon(c.pr.price)+' / '+c.pr.packageG.toLocaleString('ko-KR')+'g · 하루 '+c.daily+'g'+(c.own!=null?' (직접 입력)':' (급여표 기준)'))+(budget!=null?(over?' · <span class="zp-error">월 예산 '+zpWon(budget)+' 초과</span>':' · 월 예산 이내'):'')+'</small>';
+}
+function zpNuGrid(p){
+ const a=p.analysis||{},v=x=>x==null?'<b class="zp-muted">미확인</b>':'<b>'+x+'%</b>';
+ return '<div class="zp-nutri"><div><span>단백</span>'+v(a.protein)+'</div><div><span>지방</span>'+v(a.fat)+'</div><div><span>섬유</span>'+v(a.fiber)+'</div><div><span>회분</span>'+v(a.ash)+'</div><div><span>수분</span>'+v(a.moisture)+'</div><div><span>열량</span>'+(p.energy?'<b>'+p.energy.toLocaleString('ko-KR')+'</b><em>kcal/kg</em>':'<b class="zp-muted">미확인</b>')+'</div></div>'
+  +(a.basis==='dryMatter'?'<small>힐스 공식 페이지의 건물(수분 제외) 기준 평균값이에요. 포장지 등록성분과 기준이 달라요.</small>':'');
+}
+function zpNuFeedTable(p,kg,ci){
+ const f=p.feeding;if(!f)return '';
+ return '<div class="zp-scroll"><table class="zp-table zp-feed"><thead><tr><th>체중</th>'+f.cols.map((c,i)=>'<th class="num'+(i===ci?' on':'')+'">'+e(c.label)+'</th>').join('')+'</tr></thead><tbody>'
+  +f.rows.map(r=>{const on=kg&&(r.w[0]<r.w[1]?kg>r.w[0]&&kg<=r.w[1]:Math.abs(r.w[0]-kg)<1e-9);return '<tr'+(on?' class="on"':'')+'><td>'+(r.w[0]===r.w[1]?r.w[0]:r.w[0]+'~'+r.w[1])+'kg</td>'+r.v.map(v=>'<td class="num">'+(v==null?'–':e(zpFmtG(v,f.unit)))+'</td>').join('')+'</tr>'}).join('')+'</tbody></table></div>';
+}
+function zpNuPriceForm(p,petId){
+ const n=zpNu(),pr=n.prices[p.id],own=zpNuDaily(petId,p.id);
+ return '<form class="zp-form" data-zp-form="nu-price" style="margin-top:10px"><input type="hidden" name="productId" value="'+e(p.id)+'">'
+  +'<div class="zp-field-row"><div class="zp-field"><label>구매 가격(원)</label><input name="price" type="number" inputmode="numeric" min="100" max="2000000" required value="'+e(pr?.price??'')+'"></div>'
+  +'<div class="zp-field"><label>제품 용량(g)</label><input name="packageG" type="number" inputmode="numeric" min="10" max="100000" required list="zp-pk-'+e(p.id)+'" value="'+e(pr?.packageG??(p.packages[0]||''))+'"><datalist id="zp-pk-'+e(p.id)+'">'+p.packages.map(g=>'<option value="'+g+'"></option>').join('')+'</datalist></div></div>'
+  +'<div class="zp-field"><label>하루 급여량(g, 이 아이 기준 · 비우면 급여표 값)</label><input name="dailyG" type="number" inputmode="decimal" min="1" max="5000" step="0.1" value="'+e(own??'')+'"></div>'
+  +'<div class="zp-btn-row"><button type="button" class="zp-btn secondary" data-zp="nu-price-close">닫기</button>'+(pr||own!=null?'<button type="button" class="zp-btn secondary" data-zp="nu-price-del" data-id="'+e(p.id)+'">삭제</button>':'')+'<button type="submit" class="zp-btn">저장</button></div></form>';
+}
+function zpNuStock(p){
+ const items=zpNu().stock.filter(s=>s.productId===p.id);
+ if(!items.length)return '<small>제휴병원 재고: 등록된 정보가 없어요.</small>';
+ return '<div class="zp-stock">'+items.map(s=>{const [l,t]=ZP_RX_LABEL[s.status]||['확인 필요','mute'];return '<div class="zp-stock-row"><span>'+e(hospitalById(s.hospitalId)?.name||s.hospitalId)+'</span><span class="zp-tag '+t+'">'+l+'</span><small>확인 '+e(zpDate(s.checkedAt).slice(5))+'</small>'+(s.status!=='out'?'<button type="button" class="zp-btn small secondary" data-zp="nu-rx-request" data-h="'+e(s.hospitalId)+'" data-p="'+e(p.id)+'">수령 요청</button>':'<button type="button" class="zp-btn small secondary" data-zp="view" data-value="rx">입고 알림</button>')+'</div>'}).join('')+'</div>';
+}
+function zpNuProduct(p,pet,prof,stage){
+ const n=zpNu(),kg=zpParseKg(pet.weight),feed=zpFeedFor(p,kg,prof,stage),open=n.open===p.id;
+ const ci=p.feeding?zpFeedCol(p.feeding,prof,stage):0;
+ return '<div class="zp-item"><div class="zp-item-top"><strong>'+e(p.brand+' '+p.name)+'</strong><span class="zp-tag '+(p.kind==='처방식'?'warn':'mute')+'">'+e(p.kind==='처방식'?'처방식':p.form)+'</span></div>'
+  +'<small>'+e([p.kind==='처방식'?p.form:null,p.ageText||ZP_NU_STAGE[p.lifeStage],p.kind==='처방식'?'관리 목적(제조사 표기): '+p.conditions.join(', '):null].filter(Boolean).join(' · '))+'</small>'
+  +(p.features?.length?'<div class="zp-feats">'+p.features.map(f=>'<span>'+e(f)+'</span>').join('')+'</div>':'')
+  +(p.analysis?zpNuGrid(p):'')
+  +'<div style="margin-top:6px"><div class="zp-kv"><span>급여량</span><b>'+e(feed.text)+'</b></div>'+zpNuCostLine(p,pet.id,feed,prof.budgetMonthly)+'</div>'
+  +(p.kind==='처방식'?zpAllergyLine(p,prof.allergies||[])+zpNuStock(p):zpAllergyLine(p,prof.allergies||[]))
+  +(open?'<div class="zp-detail">'+(p.claims?.length?'<p class="zp-help" style="margin-top:8px">제조사 표기 특징</p>'+p.claims.map(c=>'<p>'+e(c)+'</p>').join(''):'')+(p.feeding?'<p class="zp-help" style="margin-top:8px">제조사 급여표 ('+(p.feeding.unit==='g'?'하루 g':'하루 '+p.feeding.unit)+')</p>'+zpNuFeedTable(p,kg,ci):'')+'<small>출처: '+e(p.source)+' · 확인일 '+e(p.checked)+'</small></div>':'')
+  +'<div class="zp-btn-row inline"><button type="button" class="zp-btn small secondary" data-zp="nu-price" data-id="'+e(p.id)+'">'+(n.prices[p.id]?'가격·급여량 수정':'가격 입력')+'</button><button type="button" class="zp-btn small secondary" data-zp="nu-open" data-id="'+e(p.id)+'">'+(open?'접기':'급여표·특징')+'</button><a class="zp-btn small secondary" href="'+e(p.url)+'" target="_blank" rel="noopener noreferrer">공식 자료</a></div>'
+  +(n.priceFor===p.id?zpNuPriceForm(p,pet.id):'')+'</div>';
 }
 function zpAllergyLine(p,allergies){
  if(!allergies.length)return '';
- if(!p.ingredients)return '<small>알레르기 확인: 공식 페이지에서 원료 목록을 확인하지 못했어요. 포장지 원료를 확인해 주세요.</small>';
+ if(!p.ingredients)return '<small>알레르기 확인: 공식 자료에서 원료 목록을 확인하지 못했어요. 포장지 원료를 확인해 주세요.</small>';
  const hits=allergies.filter(a=>p.ingredients.includes(a));
- return hits.length?'<small class="zp-error">알레르기 확인: 표기 원료에 '+e(hits.join(', '))+' 포함</small>':'<small>알레르기 확인: 표기 원료에서 '+e(allergies.join(', '))+'을(를) 찾지 못했어요. 포장지 원료와 수의사 확인이 필요해요.</small>';
+ return hits.length?'<small class="zp-error">알레르기 확인: 표기 원료에 '+e(hits.join(', '))+' 포함</small>':'<small>알레르기 확인: 표기 원료에서 '+e(allergies.join(', '))+'을(를) 찾지 못했어요. 포장지 원료도 확인해 주세요.</small>';
 }
-function zpCostLine(p,daily,budget){
- const pr=zpNu().prices[p.id];
- if(!pr)return {html:'<small>급여 비용: 구매 가격을 입력하면 계산해요.</small>',month:null};
- if(!daily)return {html:'<small>급여 비용: 하루 급여량을 알 수 없어 계산하지 않았어요. (입력 가격 '+zpWon(pr.price)+' / '+pr.packageG+'g)</small>',month:null};
- const perG=pr.price/pr.packageG,day=perG*daily.g,month=day*30.4,year=day*365;
- const over=budget!==null&&budget!==undefined&&month>budget;
- return {html:'<div class="zp-kv"><span>하루 · 월 · 연</span><b>'+zpWon(day)+' · '+zpWon(month)+' · '+zpWon(year)+'</b></div><small>입력 가격 '+zpWon(pr.price)+' / '+pr.packageG+'g 기준'+(budget!=null?(over?' · <span class="zp-error">월 예산 '+zpWon(budget)+' 초과</span>':' · 월 예산 이내'):'')+'</small>',month};
-}
-function zpNuProduct(p,pet,prof){
- const n=zpNu(),kg=zpParseKg(pet.weight),daily=zpDailyGrams(p,kg),cost=zpCostLine(p,daily,prof.budgetMonthly);
- const perPack=daily&&p.form==='습식'?' (약 '+(daily.g/p.packages[0]).toFixed(1)+'개)':'';
- const feeding=!p.feeding?'제조사 급여표 미확인 · 포장지·수의사 안내를 따라 주세요':!kg?'체중을 입력하면 계산해요':daily?'하루 '+daily.g+'g'+perPack+' · '+daily.how:'제조사 표에서 이 체중('+kg+'kg)을 확인할 수 없어요';
- const priceForm=n.priceFor===p.id?'<form class="zp-form" data-zp-form="nu-price" style="margin-top:10px"><input type="hidden" name="productId" value="'+e(p.id)+'"><div class="zp-field-row"><div class="zp-field"><label>구매 가격(원)</label><input name="price" type="number" inputmode="numeric" min="100" max="2000000" required value="'+e(n.prices[p.id]?.price||'')+'"></div><div class="zp-field"><label>포장 단위</label><select name="packageG">'+p.packages.map(g=>'<option value="'+g+'">'+(g>=1000?g/1000+'kg':g+'g')+'</option>').join('')+'</select></div></div><div class="zp-btn-row"><button type="button" class="zp-btn secondary" data-zp="nu-price-close">닫기</button>'+(n.prices[p.id]?'<button type="button" class="zp-btn secondary" data-zp="nu-price-del" data-id="'+e(p.id)+'">가격 지우기</button>':'')+'<button type="submit" class="zp-btn">저장</button></div></form>':'';
- return '<div class="zp-item"><div class="zp-item-top"><strong>'+e(p.brand+' '+p.name)+'</strong><span class="zp-tag '+(p.kind==='처방식'?'warn':'mute')+'">'+e(p.kind)+'</span></div>'
-  +'<small>'+e(p.form+' · '+p.packages.map(g=>g>=1000?g/1000+'kg':g+'g').join('/')+' · 관리 목적(제조사 표기): '+p.conditions.join(', '))+'</small>'
-  +p.claims.map(c=>'<p>'+e(c)+'</p>').join('')
-  +'<div style="margin-top:8px"><div class="zp-kv"><span>급여량</span><b>'+e(feeding)+'</b></div>'+cost.html+'</div>'
-  +zpAllergyLine(p,prof.allergies||[])
-  +'<small>영양성분 수치: 미확인 · 포장지의 등록성분을 확인해 주세요.</small>'
-  +'<div class="zp-btn-row inline"><button type="button" class="zp-btn small secondary" data-zp="nu-price" data-id="'+e(p.id)+'">'+(n.prices[p.id]?'가격 수정':'가격 입력')+'</button>'+(p.kind==='처방식'?'<button type="button" class="zp-btn small secondary" data-zp="view" data-value="rx">제휴병원 재고</button>':'')+'<a class="zp-btn small secondary" href="'+e(p.url)+'" target="_blank" rel="noopener noreferrer">공식 자료</a></div>'
-  +priceForm+'</div>';
+function zpNuCompare(list,pet){
+ const rows=list.map(p=>({p,c:zpNuCost(p,pet.id,zpFeedFor(p,zpParseKg(pet.weight),zpNu().profiles[pet.id]||{},null))})).filter(r=>r.c.ok);
+ if(!rows.length)return '';
+ return '<section class="zp-section"><div class="zp-section-head"><h2>사료비 비교</h2><span>'+e(pet.name)+' · 30일 기준</span></div><div class="zp-box zp-scroll"><table class="zp-table"><thead><tr><th>제품</th><th class="num">하루</th><th class="num">30일</th><th class="num">소진</th></tr></thead><tbody>'
+  +rows.map(r=>'<tr><td>'+e(r.p.brand+' '+r.p.name)+'</td><td class="num">'+zpWon(r.c.day)+'</td><td class="num">'+zpWon(r.c.month)+'</td><td class="num">'+Math.floor(r.c.days)+'일</td></tr>').join('')+'</tbody></table></div></section>';
 }
 function zpNuProfileForm(pet,prof){
- const n=zpNu();
+ const n=zpNu(),radio=(name,opts,cur)=>'<div class="zp-chips zp-wrap">'+opts.map(([v,l])=>'<label class="zp-chip zp-radio"><input type="radio" name="'+name+'" value="'+v+'"'+(cur===v?' checked':'')+'>'+l+'</label>').join('')+'</div>';
  return '<form class="zp-form zp-box" data-zp-form="nu-profile" style="padding:16px">'
-  +'<div class="zp-field"><span>중성화</span><div class="zp-chips">'+[['yes','했어요'],['no','안 했어요'],['unknown','모름']].map(([v,l])=>'<label class="zp-chip" style="display:inline-flex;align-items:center;gap:4px"><input type="radio" name="neutered" value="'+v+'"'+(prof.neutered===v?' checked':'')+'>'+l+'</label>').join('')+'</div></div>'
-  +'<div class="zp-field"><span>수의사에게 진단받은 질환</span>'+n.conditions.map(c=>'<label class="zp-check" style="margin:4px 0"><input type="checkbox" name="conditions" value="'+e(c)+'"'+((prof.conditions||[]).includes(c)?' checked':'')+'><span>'+e(c)+'</span></label>').join('')+'</div>'
+  +'<div class="zp-field"><span>중성화</span>'+radio('neutered',[['yes','했어요'],['no','안 했어요'],['unknown','모름']],prof.neutered||'unknown')+'</div>'
+  +'<div class="zp-field"><span>체형</span>'+radio('bodyCondition',[['thin','마른 편'],['ideal','적정'],['over','과체중'],['unknown','모름']],prof.bodyCondition||'unknown')+'</div>'
+  +'<div class="zp-field"><span>활동량</span>'+radio('activity',[['low','적음'],['normal','보통'],['high','많음'],['unknown','모름']],prof.activity||'unknown')+'</div>'
+  +'<div class="zp-field"><span>수의사에게 진단받은 질환 (처방식 확인용)</span>'+n.conditions.map(c=>'<label class="zp-check" style="margin:4px 0"><input type="checkbox" name="conditions" value="'+e(c)+'"'+((prof.conditions||[]).includes(c)?' checked':'')+'><span>'+e(c)+'</span></label>').join('')+'</div>'
   +'<label class="zp-check"><input type="checkbox" name="vetRecommended" value="1"'+(prof.vetRecommended?' checked':'')+'><span>수의사가 처방식 급여를 권했어요.</span></label>'
   +'<div class="zp-field"><label>알레르기 성분 (쉼표로 구분)</label><input name="allergies" maxlength="100" placeholder="예: 닭, 밀" value="'+e((prof.allergies||[]).join(', '))+'"></div>'
   +'<div class="zp-field"><label>월 사료 예산 (원, 선택)</label><input name="budgetMonthly" type="number" inputmode="numeric" min="0" max="1000000" value="'+e(prof.budgetMonthly??'')+'"></div>'
   +'<div class="zp-btn-row"><button type="button" class="zp-btn secondary" data-zp="nu-edit-close">닫기</button><button type="submit" class="zp-btn">저장</button></div></form>';
 }
+function zpNuGeneral(pet,prof,years){
+ const n=zpNu(),auto=zpPetStage(years),stage=n.age==='auto'?auto:(n.age==='all'?null:n.age);
+ const brandOrder=(a,b)=>a.brand.localeCompare(b.brand,'ko')||a.name.localeCompare(b.name,'ko');
+ const bySpecies=n.catalog.filter(p=>p.kind==='일반식'&&p.species===pet.species);
+ if(!bySpecies.length)return '<div class="zp-box"><p class="zp-empty">'+e(pet.species||'이 동물')+'용 일반 사료 자료는 아직 없어요. 지금은 강아지·고양이 사료만 등록돼 있어요.</p></div>';
+ const byStage=bySpecies.filter(p=>!stage||p.lifeStage==='all'||p.lifeStage===stage);
+ const byForm=byStage.filter(p=>n.form==='all'||p.form===n.form);
+ const list=byForm.filter(p=>n.feat.every(f=>p.features?.includes(f))).sort(brandOrder);
+ const ageChips=[['auto','나이 기준'+(auto?' · '+ZP_NU_STAGE[auto]:'')],['young','어린 시기'],['adult','성견·성묘'],['senior','노령'],['all','전체']];
+ let out='<div class="zp-filter"><span>연령</span><div class="zp-chips">'+ageChips.map(([v,l])=>'<button type="button" class="zp-chip" data-zp="nu-age" data-value="'+v+'" aria-pressed="'+(n.age===v)+'">'+e(l)+'</button>').join('')+'</div></div>'
+  +'<div class="zp-filter"><span>형태</span><div class="zp-chips">'+[['all','전체'],['건식','건식'],['습식','습식']].map(([v,l])=>'<button type="button" class="zp-chip" data-zp="nu-form" data-value="'+v+'" aria-pressed="'+(n.form===v)+'">'+l+'</button>').join('')+'</div></div>'
+  +'<div class="zp-filter"><span>특성</span><div class="zp-chips zp-wrap">'+ZP_NU_FEATURES.map(f=>{const c=byForm.filter(p=>p.features?.includes(f)).length,on=n.feat.includes(f);return '<button type="button" class="zp-chip" data-zp="nu-feat" data-value="'+e(f)+'" aria-pressed="'+on+'"'+(!c&&!on?' disabled':'')+'>'+e(f)+' '+c+'</button>'}).join('')+'</div></div>';
+ if(years===null&&n.age==='auto')out+='<p class="zp-help">나이를 입력하지 않아 전체 연령을 보여 드려요.</p>';
+ out+=zpNuCompare(list,pet);
+ out+='<section class="zp-section"><div class="zp-section-head"><h2>일반 사료</h2><span>'+list.length+'개 · 브랜드 가나다순</span></div><div class="zp-box">'+(list.length?list.map(p=>zpNuProduct(p,pet,prof,stage||auto)).join(''):'<p class="zp-empty">조건에 맞는 제품이 없어요. 필터를 줄여 보세요.</p>')+'</div></section>';
+ const brands=n.brands.map(b=>{const c=n.catalog.filter(p=>p.kind==='일반식'&&p.brand===b.brand).length;return '<div class="zp-kv"><span>'+e(b.brand)+'</span><b'+(c?'':' class="zp-muted"')+'>'+(c?c+'개 등록':'공식 자료 확인 전')+'</b></div>'}).join('');
+ out+='<section class="zp-section"><div class="zp-section-head"><h2>브랜드별 등록 현황</h2></div><div class="zp-box" style="padding:4px 16px">'+brands+'</div></section>';
+ return out+'<p class="zp-disclaimer">영양성분·급여량은 제조사 공식 자료(로얄캐닌은 제조사가 밝힌 대로 국내 표시사항과 일부 다를 수 있음) 기준이에요. 확인하지 못한 값은 미확인으로 표시해요. 실제 급여량은 체중 변화를 보며 조절해 주세요. 사료비는 직접 입력한 가격으로만 계산하고, 광고나 제휴와 관계없이 가나다순으로 보여 드려요.</p>';
+}
+function zpNuRx(pet,prof,years){
+ const n=zpNu();
+ if(!(prof.vetRecommended&&(prof.conditions||[]).length))return '<div class="zp-box"><p class="zp-empty">처방식은 수의사 진단과 권고가 있을 때만 보여 드려요. 위 정보에서 진단받은 질환과 처방식 권고 여부를 입력해 주세요.</p></div>'+zpNuNotes(years);
+ const list=n.catalog.filter(p=>p.kind==='처방식'&&p.species===pet.species&&p.conditions.some(c=>prof.conditions.includes(c)));
+ if(!list.length)return '<div class="zp-box"><p class="zp-empty">'+e(pet.species)+' · '+e((prof.conditions||[]).join(', '))+'에 맞는 제품 자료가 아직 없어요. 수의사가 안내한 제품을 그대로 급여해 주세요.</p></div>'+zpNuNotes(years);
+ return zpNuCompare(list,pet)+'<section class="zp-section"><div class="zp-section-head"><h2>진단 질환에 해당하는 처방식</h2><span>'+list.length+'개</span></div><div class="zp-box">'+list.map(p=>zpNuProduct(p,pet,prof,zpPetStage(years))).join('')+'</div></section>'+zpNuNotes(years);
+}
 ZP_VIEWS.nutrition={
  load:zpNuLoad,
  render(){
   const n=zpNu();
-  let body=zpBack()+'<h1 class="zp-title">반려동물별 맞춤 영양 관리</h1><p class="zp-lead">제조사 공식 자료에 있는 정보만 보여 드려요. 가격은 직접 입력한 구매 가격으로만 계산해요.</p>';
+  let body=zpBack()+'<h1 class="zp-title">반려동물별 맞춤 영양 관리</h1><p class="zp-lead">제조사 공식 자료에 있는 정보만 보여 드려요. 사료비는 직접 입력한 구매 가격으로만 계산해요.</p>';
   const gate=zpGate('맞춤 영양 관리');if(gate)return body+gate;
   if(!n.loaded)return body+'<p class="zp-muted" role="status">불러오고 있어요.</p>';
   if(n.error)return body+'<p class="zp-error">'+e(n.error)+'</p>';
   if(!n.pets.length)return body+'<section class="zp-gate"><strong>등록한 아이가 없어요</strong><p>내 아이에서 아이를 먼저 등록해 주세요.</p><button type="button" class="zp-btn" data-nav="pets">내 아이 등록하기</button></section>';
-  const pet=n.pets.find(p=>p.id===n.petId)||n.pets[0],prof=n.profiles[pet.id]||{neutered:'unknown',conditions:[],vetRecommended:false,allergies:[],budgetMonthly:null};
-  const years=zpParseYears(pet.age),kg=zpParseKg(pet.weight);
+  const pet=n.pets.find(p=>p.id===n.petId)||n.pets[0],prof=n.profiles[pet.id]||{neutered:'unknown',bodyCondition:'unknown',activity:'unknown',conditions:[],vetRecommended:false,allergies:[],budgetMonthly:null};
+  const years=zpParseYears(pet.age);
   body+='<div class="zp-chips" role="group" aria-label="아이 선택">'+n.pets.map(p=>'<button type="button" class="zp-chip" data-zp="nu-pet" data-value="'+e(p.id)+'" aria-pressed="'+(p.id===pet.id)+'">'+e(p.name)+'</button>').join('')+'</div>';
   body+='<section class="zp-section"><div class="zp-section-head"><h2>'+e(pet.name)+'의 정보</h2>'+(n.editing?'':'<button type="button" class="zp-btn small secondary" data-zp="nu-edit">수정</button>')+'</div>';
   body+=n.editing?zpNuProfileForm(pet,prof):'<div class="zp-box" style="padding:4px 16px">'
    +'<div class="zp-kv"><span>종 · 나이 · 체중</span><b>'+e([pet.species,pet.age||'나이 미입력',pet.weight||'체중 미입력'].join(' · '))+'</b></div>'
    +'<div class="zp-kv"><span>중성화</span><b>'+({yes:'했어요',no:'안 했어요',unknown:'모름'}[prof.neutered]||'모름')+'</b></div>'
+   +'<div class="zp-kv"><span>체형 · 활동량</span><b>'+({thin:'마른 편',ideal:'적정',over:'과체중',unknown:'체형 모름'}[prof.bodyCondition||'unknown'])+' · '+({low:'활동 적음',normal:'활동 보통',high:'활동 많음',unknown:'활동량 모름'}[prof.activity||'unknown'])+'</b></div>'
    +'<div class="zp-kv"><span>수의사 진단 질환</span><b>'+e((prof.conditions||[]).join(', ')||'없음')+'</b></div>'
    +'<div class="zp-kv"><span>처방식 권고</span><b>'+(prof.vetRecommended?'받았어요':'없음')+'</b></div>'
    +'<div class="zp-kv"><span>알레르기</span><b>'+e((prof.allergies||[]).join(', ')||'없음')+'</b></div>'
    +'<div class="zp-kv"><span>월 예산</span><b>'+(prof.budgetMonthly!=null?zpWon(prof.budgetMonthly):'미입력')+'</b></div></div><p class="zp-help" style="margin-top:6px">종·나이·체중은 내 아이 화면에서 바꿀 수 있어요.</p>';
   body+='</section>';
-  body+='<div class="zp-chips zp-section" role="group" aria-label="사료 종류">'+[['rx','처방식'],['general','일반 사료']].map(([v,l])=>'<button type="button" class="zp-chip" data-zp="nu-tab" data-value="'+v+'" aria-pressed="'+(n.tab===v)+'">'+l+'</button>').join('')+'</div>';
-  const kind=n.tab==='rx'?'처방식':'일반식';
-  if(n.tab==='general'&&!n.catalog.some(p=>p.kind==='일반식'))return body+'<div class="zp-box"><p class="zp-empty">일반 사료는 제조사 공식 자료를 정리하고 있어요 (준비 중). 확인되지 않은 영양 정보는 보여 드리지 않아요.</p></div>'+zpNuNotes(years);
-  if(n.tab==='rx'&&!(prof.vetRecommended&&(prof.conditions||[]).length))return body+'<div class="zp-box"><p class="zp-empty">처방식은 수의사 진단과 권고가 있을 때만 보여 드려요. 위 정보에서 진단받은 질환과 처방식 권고 여부를 입력해 주세요.</p></div>'+zpNuNotes(years);
-  const list=n.catalog.filter(p=>p.kind===kind&&p.species===pet.species&&(kind!=='처방식'||p.conditions.some(c=>prof.conditions.includes(c))));
-  if(!list.length)return body+'<div class="zp-box"><p class="zp-empty">'+e(pet.species)+' · '+e((prof.conditions||[]).join(', '))+'에 맞는 제품 자료가 아직 없어요. 수의사가 안내한 제품을 그대로 급여해 주세요.</p></div>'+zpNuNotes(years);
-  const rows=list.map(p=>{const d=zpDailyGrams(p,kg),c=zpCostLine(p,d,prof.budgetMonthly);return {p,d,c}});
-  const compare=rows.length>1?'<section class="zp-section"><div class="zp-section-head"><h2>급여량·비용 비교</h2><span>'+(kg?kg+'kg 기준':'체중 미입력')+'</span></div><div class="zp-box zp-scroll"><table class="zp-table"><thead><tr><th>제품</th><th class="num">하루</th><th class="num">월 비용</th></tr></thead><tbody>'+rows.map(r=>'<tr><td>'+e(r.p.name)+'</td><td class="num">'+(r.d?r.d.g+'g':'미확인')+'</td><td class="num">'+(r.c.month!=null?zpWon(r.c.month):'미입력')+'</td></tr>').join('')+'</tbody></table></div></section>':'';
-  return body+compare+'<section class="zp-section"><div class="zp-section-head"><h2>'+e(kind==='처방식'?'진단 질환에 해당하는 처방식':'일반 사료')+'</h2><span>'+list.length+'개</span></div><div class="zp-box">'+list.map(p=>zpNuProduct(p,pet,prof)).join('')+'</div></section>'+zpNuNotes(years);
+  body+='<div class="zp-chips zp-section" role="group" aria-label="사료 종류">'+[['general','일반 사료'],['rx','처방식']].map(([v,l])=>'<button type="button" class="zp-chip" data-zp="nu-tab" data-value="'+v+'" aria-pressed="'+(n.tab===v)+'">'+l+'</button>').join('')+'</div>';
+  return body+(n.tab==='rx'?zpNuRx(pet,prof,years):zpNuGeneral(pet,prof,years));
  },
  async click(a,el){
   const n=zpNu();
-  if(a==='nu-pet'){n.petId=el.dataset.value;n.editing=false;n.priceFor=null;render();return}
-  if(a==='nu-tab'){n.tab=el.dataset.value;render();return}
+  if(a==='nu-pet'){n.petId=el.dataset.value;n.editing=false;n.priceFor=null;n.open=null;render();return}
+  if(a==='nu-tab'){n.tab=el.dataset.value;n.priceFor=null;n.open=null;render();return}
+  if(a==='nu-age'){n.age=el.dataset.value;render();return}
+  if(a==='nu-form'){n.form=el.dataset.value;render();return}
+  if(a==='nu-feat'){const f=el.dataset.value,i=n.feat.indexOf(f);if(i>=0)n.feat.splice(i,1);else n.feat.push(f);render();return}
+  if(a==='nu-open'){n.open=n.open===el.dataset.id?null:el.dataset.id;render();return}
   if(a==='nu-edit'){n.editing=true;render();return}
   if(a==='nu-edit-close'){n.editing=false;render();return}
   if(a==='nu-price'){n.priceFor=el.dataset.id;render();return}
   if(a==='nu-price-close'){n.priceFor=null;render();return}
-  if(a==='nu-price-del'){try{const r=await api('PUT','/api/pass/nutrition/prices',{productId:el.dataset.id,price:null});n.prices=r.prices;n.priceFor=null;toast('가격을 지웠어요.')}catch(err){toast(err.message)}render()}
+  if(a==='nu-rx-request'){const r=zpRx();r.form={hospitalId:el.dataset.h,productId:el.dataset.p};r.hospital='all';zpOpen('rx');return}
+  if(a==='nu-price-del'){
+   if(!confirm('입력한 가격과 하루 급여량을 삭제할까요?'))return;
+   try{
+    const r=await api('PUT','/api/pass/nutrition/prices',{productId:el.dataset.id,price:null});n.prices=r.prices;
+    const d=await api('PUT','/api/pass/nutrition/daily',{petId:n.petId,productId:el.dataset.id,dailyG:null});n.daily=d.daily;
+    n.priceFor=null;toast('삭제했어요.');
+   }catch(err){toast(err.message)}
+   render();
+  }
  },
  async submit(kind,f){
-  const n=zpNu(),fd=new FormData(f);
+  const n=zpNu(),fd=new FormData(f),petId=n.petId||n.pets[0]?.id;
   try{
    if(kind==='nu-profile'){
-    const body={neutered:fd.get('neutered')||'unknown',conditions:fd.getAll('conditions'),vetRecommended:fd.get('vetRecommended')==='1',allergies:String(fd.get('allergies')||'').split(/[,，]/).map(x=>x.trim()).filter(Boolean),budgetMonthly:fd.get('budgetMonthly')===''?null:Number(fd.get('budgetMonthly'))};
-    const r=await api('PUT','/api/pass/nutrition/profile/'+encodeURIComponent(n.petId||n.pets[0].id),body);
-    n.profiles[n.petId||n.pets[0].id]=r.profile;n.editing=false;toast('저장했어요.');
+    const body={neutered:fd.get('neutered')||'unknown',bodyCondition:fd.get('bodyCondition')||'unknown',activity:fd.get('activity')||'unknown',conditions:fd.getAll('conditions'),vetRecommended:fd.get('vetRecommended')==='1',allergies:String(fd.get('allergies')||'').split(/[,，]/).map(x=>x.trim()).filter(Boolean),budgetMonthly:fd.get('budgetMonthly')===''?null:Number(fd.get('budgetMonthly'))};
+    const r=await api('PUT','/api/pass/nutrition/profile/'+encodeURIComponent(petId),body);
+    n.profiles[petId]=r.profile;n.editing=false;toast('저장했어요.');
    }
    if(kind==='nu-price'){
-    const r=await api('PUT','/api/pass/nutrition/prices',{productId:fd.get('productId'),price:Number(fd.get('price')),packageG:Number(fd.get('packageG'))});
-    n.prices=r.prices;n.priceFor=null;toast('가격을 저장했어요.');
+    const productId=fd.get('productId'),daily=String(fd.get('dailyG')||'').trim();
+    const r=await api('PUT','/api/pass/nutrition/prices',{productId,price:Number(fd.get('price')),packageG:Number(fd.get('packageG'))});
+    n.prices=r.prices;
+    const d=await api('PUT','/api/pass/nutrition/daily',{petId,productId,dailyG:daily===''?null:Number(daily)});
+    n.daily=d.daily;n.priceFor=null;toast('저장했어요.');
    }
   }catch(err){toast(err.message);return}
   render();
  }
 };
 function zpNuNotes(years){
- return (years!==null&&years<1?'<p class="zp-error" style="margin-top:12px">1살 미만 성장기 아이예요. 사료를 바꾸기 전에 수의사와 상의해 주세요.</p>':'')
-  +'<p class="zp-disclaimer">처방식은 수의사의 진단과 권고에 따라 급여해 주세요. 급여량은 제조사 급여표 기준이며 활동량·체형에 따라 달라질 수 있어요. 제노는 사료 판매·광고 수수료를 받지 않으며, 제조사 자료 확인일은 2026-11-26이에요.</p>';
+ return (years!==null&&years<1?'<p class="zp-error" style="margin-top:12px">1살 미만 성장기 아이예요. 처방식을 급여하기 전에 수의사와 상의해 주세요.</p>':'')
+  +'<p class="zp-disclaimer">처방식은 수의사의 진단과 권고에 따라 급여해 주세요. 재고는 제휴병원이 직접 입력한 상태만 보여 드리고, 결제는 병원에서 현장 결제해요. 제조사 자료 확인일은 2026-11-26이에요.</p>';
 }
 /* PASS 04 · 다묘·다견 영수증 통합 관리 (보호자). 사진은 본인만 볼 수 있고, 자동 인식 결과는 확인·수정 후 저장합니다. */
 function zpRc(){const z=zpState();if(!z.rc)z.rc={loaded:false,error:'',list:[],pet:'all',year:'',form:null,busy:false,photoUrls:{}};return z.rc}
