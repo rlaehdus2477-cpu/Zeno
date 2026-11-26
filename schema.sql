@@ -203,3 +203,45 @@ CREATE TABLE IF NOT EXISTS pass_prefs (
   updated_at TEXT NOT NULL,
   PRIMARY KEY(owner_id,kind)
 );
+
+-- PASS 01 처방식 재고 (병원 입력 상태만, 수량·EMR 연동 없음, 현장 결제)
+CREATE TABLE IF NOT EXISTS rx_stock (
+  hospital_id TEXT NOT NULL,
+  product_id TEXT NOT NULL,
+  product_name TEXT NOT NULL,
+  brand TEXT NOT NULL DEFAULT '',
+  form TEXT NOT NULL DEFAULT '',
+  status TEXT NOT NULL CHECK(status IN ('in','low','ask','out')),
+  checked_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  PRIMARY KEY(hospital_id,product_id)
+);
+CREATE TABLE IF NOT EXISTS rx_requests (
+  id TEXT PRIMARY KEY,
+  owner_id TEXT NOT NULL,
+  hospital_id TEXT NOT NULL,
+  product_id TEXT NOT NULL,
+  product_name TEXT NOT NULL,
+  pet_name TEXT NOT NULL,
+  quantity INTEGER NOT NULL CHECK(quantity BETWEEN 1 AND 20),
+  owner_note TEXT NOT NULL DEFAULT '',
+  status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending','accepted','rejected','cancelled','picked_up')),
+  available_qty INTEGER,
+  visit_by TEXT NOT NULL DEFAULT '',
+  hospital_note TEXT NOT NULL DEFAULT '',
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS rx_requests_owner ON rx_requests(owner_id,created_at DESC);
+CREATE INDEX IF NOT EXISTS rx_requests_hospital ON rx_requests(hospital_id,created_at DESC);
+CREATE TABLE IF NOT EXISTS rx_alerts (
+  owner_id TEXT NOT NULL,
+  hospital_id TEXT NOT NULL,
+  product_id TEXT NOT NULL,
+  product_name TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'waiting' CHECK(status IN ('waiting','notified')),
+  created_at TEXT NOT NULL,
+  notified_at TEXT,
+  PRIMARY KEY(owner_id,hospital_id,product_id)
+);
+CREATE INDEX IF NOT EXISTS rx_alerts_product ON rx_alerts(hospital_id,product_id,status);

@@ -100,7 +100,82 @@ async function sectionCore() {
   });
 }
 
-const SECTIONS = [sectionCore];
+async function sectionRx() {
+  const A = ctx.A.token, B = ctx.B.token;
+  const SOO = await hospitalLogin('soo'), NAEUM = await hospitalLogin('naeum');
+  let custom, req1;
+  await check('R1', '처방식 재고: PASS 없으면 403, PASS 회원은 조회', async () => {
+    expect((await api('GET', '/api/pass/rx-stock', {token: B})).status === 403, 'PASS 없는 보호자가 재고를 봄');
+    const r = await api('GET', '/api/pass/rx-stock', {token: A});
+    expect(r.status === 200 && Array.isArray(r.data.items), 'PASS 회원 조회 실패');
+  });
+  await check('R2', '병원 재고 등록: 목록 제품·직접 입력, 잘못된 값 거절, 보호자 토큰 거절', async () => {
+    const a = await api('PUT', '/api/hospital/rx/stock', {token: SOO, body: {productId: 'rc-cat-renal-select-dry', status: 'in'}});
+    expect(a.status === 200 && a.data.productName.includes('레날 셀렉트') && a.data.checkedAt, '목록 제품 등록 실패 ' + JSON.stringify(a.data));
+    const c = await api('PUT', '/api/hospital/rx/stock', {token: SOO, body: {productName: '테스트 처방식 캔', status: 'out'}});
+    expect(c.status === 200 && c.data.productId.startsWith('custom-'), '직접 입력 등록 실패');
+    custom = c.data.productId;
+    expect((await api('PUT', '/api/hospital/rx/stock', {token: SOO, body: {productId: 'rc-cat-renal-pouch', status: 'many'}})).status === 400, '잘못된 상태가 저장됨');
+    expect((await api('PUT', '/api/hospital/rx/stock', {token: A, body: {productId: 'rc-cat-renal-pouch', status: 'in'}})).status === 401, '보호자가 병원 재고를 바꿈');
+    const n = await api('GET', '/api/hospital/rx', {token: NAEUM});
+    expect(n.status === 200 && n.data.stock.length === 0, '다른 병원 재고가 보임');
+    expect(n.data.catalog.every(p => p.id && p.name) && n.data.catalog.length >= 1, '처방식 목록 없음');
+  });
+  await check('R3', '확보 요청: 처방 확인·품절·비제휴·PASS 검증', async () => {
+    const base = {hospitalId: 'soo', productId: 'rc-cat-renal-select-dry', petName: '테스트냥', quantity: 2, note: '토요일 방문'};
+    expect((await api('POST', '/api/pass/rx-requests', {token: A, body: base})).status === 400, '처방 확인 없이 요청됨');
+    expect((await api('POST', '/api/pass/rx-requests', {token: A, body: {...base, prescribed: true, productId: custom}})).status === 409, '품절 제품 요청됨');
+    expect((await api('POST', '/api/pass/rx-requests', {token: A, body: {...base, prescribed: true, hospitalId: 'tnd'}})).status === 400, '비제휴 병원 요청됨');
+    expect((await api('POST', '/api/pass/rx-requests', {token: B, body: {...base, prescribed: true}})).status === 403, 'PASS 없는 보호자 요청됨');
+    expect((await api('POST', '/api/pass/rx-requests', {token: A, body: {...base, prescribed: true, quantity: 50}})).status === 400, '수량 제한 없음');
+    const ok = await api('POST', '/api/pass/rx-requests', {token: A, body: {...base, prescribed: true}});
+    expect(ok.status === 201 && ok.data.status === 'pending' && ok.data.payment === '현장 결제', '요청 실패 ' + JSON.stringify(ok.data));
+    req1 = ok.data.id;
+  });
+  await check('R4', '병원 처리: 다른 병원 403, 수량·기한 검증, 수락 → 보호자 반영', async () => {
+    const list = await api('GET', '/api/hospital/rx', {token: SOO});
+    const seen = list.data.requests.find(q => q.id === req1);
+    expect(seen && seen.ownerName && seen.petName === '테스트냥' && seen.quantity === 2, '병원 화면에 요청이 안 보임');
+    expect((await api('PATCH', `/api/hospital/rx/requests/${req1}`, {token: NAEUM, body: {action: 'accept', availableQty: 1, visitBy: kstDate(2)}})).status === 403, '다른 병원이 수락함');
+    expect((await api('PATCH', `/api/hospital/rx/requests/${req1}`, {token: SOO, body: {action: 'accept', availableQty: 3, visitBy: kstDate(2)}})).status === 400, '요청보다 많은 수량 수락');
+    expect((await api('PATCH', `/api/hospital/rx/requests/${req1}`, {token: SOO, body: {action: 'accept', availableQty: 2, visitBy: '2020-01-01'}})).status === 400, '지난 날짜 기한 허용');
+    const ok = await api('PATCH', `/api/hospital/rx/requests/${req1}`, {token: SOO, body: {action: 'accept', availableQty: 2, visitBy: kstDate(3), note: '접수처에서 이름 말씀해 주세요'}});
+    expect(ok.status === 200 && ok.data.status === 'accepted', '수락 실패');
+    const mine = (await api('GET', '/api/pass/rx', {token: A})).data.requests.find(q => q.id === req1);
+    expect(mine?.status === 'accepted' && mine.availableQty === 2 && mine.visitBy === kstDate(3) && mine.hospitalNote, '보호자 화면에 수락 내용 미반영');
+    expect(!(await api('GET', '/api/pass/rx', {token: B})).data.requests.length, '다른 보호자에게 요청이 보임');
+    expect((await api('POST', `/api/pass/rx-requests/${req1}/cancel`, {token: B, body: {}})).status === 403, '다른 보호자가 취소함');
+    const picked = await api('PATCH', `/api/hospital/rx/requests/${req1}`, {token: SOO, body: {action: 'picked_up'}});
+    expect(picked.status === 200 && picked.data.status === 'picked_up', '수령 완료 실패');
+  });
+  await check('R5', '거절은 사유 필수, 보호자 취소 반영', async () => {
+    const mk = async () => (await api('POST', '/api/pass/rx-requests', {token: A, body: {hospitalId: 'soo', productId: 'rc-cat-renal-select-dry', petName: '테스트냥', quantity: 1, prescribed: true}})).data.id;
+    const r2 = await mk(), r3 = await mk();
+    expect((await api('PATCH', `/api/hospital/rx/requests/${r2}`, {token: SOO, body: {action: 'reject'}})).status === 400, '사유 없이 거절됨');
+    expect((await api('PATCH', `/api/hospital/rx/requests/${r2}`, {token: SOO, body: {action: 'reject', note: '다음 주 입고 예정'}})).data.status === 'rejected', '거절 실패');
+    expect((await api('POST', `/api/pass/rx-requests/${r3}/cancel`, {token: A, body: {}})).data.status === 'cancelled', '취소 실패');
+    const hosp = (await api('GET', '/api/hospital/rx', {token: SOO})).data.requests;
+    expect(hosp.find(q => q.id === r3)?.status === 'cancelled', '병원 화면에 취소 미반영');
+  });
+  await check('R6', '입고 알림: 품절 제품만 신청, 품절 → 재고 있음 변경 시 알림 표시', async () => {
+    expect((await api('POST', '/api/pass/rx-alerts', {token: A, body: {hospitalId: 'soo', productId: 'rc-cat-renal-select-dry'}})).status === 409, '재고 있는 제품에 알림 신청됨');
+    expect((await api('POST', '/api/pass/rx-alerts', {token: A, body: {hospitalId: 'soo', productId: custom}})).status === 201, '알림 신청 실패');
+    expect((await api('GET', '/api/hospital/rx', {token: SOO})).data.waitingAlerts[custom] === 1, '병원에 대기 인원 미표시');
+    await api('PUT', '/api/hospital/rx/stock', {token: SOO, body: {productName: '테스트 처방식 캔', status: 'low'}});
+    const al = (await api('GET', '/api/pass/rx', {token: A})).data.alerts.find(a => a.productId === custom);
+    expect(al?.status === 'notified' && al.notifiedAt, '입고 알림이 표시되지 않음');
+  });
+  await check('R7', 'PASS 해지 후: 기록 열람 가능, 재고 조회·새 요청 불가', async () => {
+    await api('POST', '/api/pass/cancel', {token: A, body: {}});
+    const hist = await api('GET', '/api/pass/rx', {token: A});
+    expect(hist.status === 200 && hist.data.requests.length >= 3, '해지 후 기록이 안 보임');
+    expect((await api('GET', '/api/pass/rx-stock', {token: A})).status === 403, '해지 후 재고 조회됨');
+    expect((await api('POST', '/api/pass/rx-requests', {token: A, body: {hospitalId: 'soo', productId: 'rc-cat-renal-select-dry', petName: 'x', quantity: 1, prescribed: true}})).status === 403, '해지 후 요청됨');
+    await api('POST', '/api/pass/start', {token: A, body: {agree: true}});
+  });
+}
+
+const SECTIONS = [sectionCore, sectionRx];
 let fatal = null;
 try {
   await startServer();

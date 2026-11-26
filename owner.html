@@ -7486,6 +7486,8 @@ setInterval(()=>{if(document.hidden||state.ownerToken||!state.serverReady)return
 .zp-btn:disabled{opacity:.55;cursor:default}
 .zp-btn-row{display:flex;gap:8px;margin-top:12px}
 .zp-btn-row .zp-btn{flex:1}
+.zp-btn-row.inline{justify-content:flex-start}
+.zp-btn-row.inline .zp-btn{flex:0 0 auto}
 .zp-list{display:flex;flex-direction:column;background:#fff;border:1px solid #e5ebf1;border-radius:12px;overflow:hidden}
 .zp-row{display:flex;align-items:center;gap:12px;width:100%;min-height:64px;padding:12px 16px;border:0;border-bottom:1px solid #edf1f5;background:#fff;text-align:left;color:#142e4c;cursor:pointer}
 .zp-row:last-child{border-bottom:0}
@@ -7651,6 +7653,123 @@ document.addEventListener('submit',async ev=>{
 }
 /* Lucide v0.456.0 ticket (ISC): PASS 메뉴 아이콘 */
 ZENO_TAB_ICONS.pass='<path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z" /><path d="M13 5v2" /><path d="M13 17v2" /><path d="M13 11v2" />';
+/* PASS 01 · 제휴병원 처방식 재고 확인 (보호자) */
+const ZP_RX_LABEL={in:['재고 있음','ok'],low:['재고 적음','warn'],ask:['문의 필요','mute'],out:['품절','bad']};
+const ZP_RX_REQ_LABEL={pending:['병원 확인 대기','mute'],accepted:['확보됨','ok'],rejected:['확보 어려움','bad'],cancelled:['취소함','mute'],picked_up:['수령 완료','ok']};
+const ZP_PARTNERS=['soo','naeum','pub045'];
+function zpRx(){const z=zpState();if(!z.rx)z.rx={loaded:false,error:'',stock:[],requests:[],alerts:[],hospital:'all',form:null,busy:false};return z.rx}
+async function zpRxLoad(){
+ const r=zpRx();
+ if(!state.ownerToken){r.loaded=true;return}
+ if(!zpState().passLoaded)await zpLoadPass(false);
+ try{
+  const mine=await api('GET','/api/pass/rx');
+  r.requests=mine.requests||[];r.alerts=mine.alerts||[];
+  if(zpActive()){const s=await api('GET','/api/pass/rx-stock');r.stock=s.items||[]}
+  r.error='';
+ }catch(err){r.error=err.message}
+ r.loaded=true;
+ if(state.page==='pass'&&zpState().view==='rx')render();
+}
+function zpRxAge(iso){
+ const ms=Date.now()-new Date(iso).getTime();
+ if(!Number.isFinite(ms))return '';
+ const d=Math.floor(ms/86400e3);
+ return d>=7?'마지막 확인 '+d+'일 전 · 전화로 다시 확인해 주세요':'';
+}
+function zpRxForm(item){
+ const pets=state.pets||[];
+ const petField=pets.length
+  ?'<div class="zp-field"><label for="zp-rx-pet">먹는 아이</label><select id="zp-rx-pet" name="petName" required>'+pets.map(p=>'<option value="'+e(p.name)+'">'+e(p.name)+' · '+e(p.species||'')+'</option>').join('')+'</select></div>'
+  :'<div class="zp-field"><label for="zp-rx-pet">먹는 아이 이름</label><input id="zp-rx-pet" name="petName" maxlength="35" required></div>';
+ return '<form class="zp-form" data-zp-form="rx-request" style="margin-top:12px">'
+  +'<input type="hidden" name="hospitalId" value="'+e(item.hospitalId)+'"><input type="hidden" name="productId" value="'+e(item.productId)+'">'
+  +petField
+  +'<div class="zp-field"><label for="zp-rx-qty">희망 수량</label><input id="zp-rx-qty" name="quantity" type="number" inputmode="numeric" min="1" max="20" value="1" required></div>'
+  +'<div class="zp-field"><label for="zp-rx-note">병원에 남길 말 (선택)</label><input id="zp-rx-note" name="note" maxlength="200" placeholder="예: 토요일 오전 방문 예정"></div>'
+  +'<label class="zp-check"><input type="checkbox" name="prescribed" value="1" required><span>수의사에게 처방받은 제품이에요.</span></label>'
+  +'<p class="zp-help">병원이 수락하면 확보 수량과 방문 기한을 알려 드려요. 결제는 방문할 때 병원에서 합니다.</p>'
+  +'<div class="zp-btn-row"><button type="button" class="zp-btn secondary" data-zp="rx-form-close">닫기</button><button type="submit" class="zp-btn"'+(zpRx().busy?' disabled':'')+'>확보 요청 보내기</button></div></form>';
+}
+function zpRxItem(item){
+ const r=zpRx(),[label,tone]=ZP_RX_LABEL[item.status]||['확인 필요','mute'];
+ const alert=r.alerts.find(a=>a.hospitalId===item.hospitalId&&a.productId===item.productId&&a.status==='waiting');
+ const open=r.form&&r.form.hospitalId===item.hospitalId&&r.form.productId===item.productId;
+ const age=zpRxAge(item.checkedAt);
+ let action='';
+ if(item.status==='out')action=alert?'<button type="button" class="zp-btn small secondary" data-zp="rx-alert-off" data-h="'+e(item.hospitalId)+'" data-p="'+e(item.productId)+'">입고 알림 해제</button>':'<button type="button" class="zp-btn small secondary" data-zp="rx-alert" data-h="'+e(item.hospitalId)+'" data-p="'+e(item.productId)+'">입고 알림 신청</button>';
+ else if(!open)action='<button type="button" class="zp-btn small secondary" data-zp="rx-form" data-h="'+e(item.hospitalId)+'" data-p="'+e(item.productId)+'">확보 요청</button>';
+ return '<div class="zp-item"><div class="zp-item-top"><strong>'+e(item.productName)+'</strong><span class="zp-tag '+tone+'">'+label+'</span></div>'
+  +'<small>'+e([item.form,'병원 확인 '+zpDate(item.checkedAt)].filter(Boolean).join(' · '))+'</small>'
+  +(age?'<small class="zp-error">'+e(age)+'</small>':'')
+  +(alert?'<small>입고되면 이 화면에서 알려 드려요.</small>':'')
+  +(action?'<div class="zp-btn-row inline">'+action+'</div>':'')
+  +(open?zpRxForm(item):'')+'</div>';
+}
+function zpRxRequestsMarkup(){
+ const r=zpRx();
+ if(!r.requests.length)return '<div class="zp-box"><p class="zp-empty">보낸 확보 요청이 없어요.</p></div>';
+ return '<div class="zp-box">'+r.requests.map(q=>{
+  const [label,tone]=ZP_RX_REQ_LABEL[q.status]||['확인 필요','mute'];
+  const h=hospitalById(q.hospitalId);
+  let detail='';
+  if(q.status==='accepted')detail='<p>'+e(q.availableQty+'개 확보 · '+q.visitBy+'까지 방문 · 결제는 병원에서 현장 결제')+'</p>';
+  if(q.hospitalNote)detail+='<p>병원 안내: '+e(q.hospitalNote)+'</p>';
+  const cancel=['pending','accepted'].includes(q.status)?'<div class="zp-btn-row inline"><button type="button" class="zp-btn small secondary" data-zp="rx-cancel" data-id="'+e(q.id)+'">요청 취소</button>'+(h?.phone?'<a class="zp-btn small secondary" href="tel:'+e(String(h.phone).replace(/[^0-9]/g,''))+'">전화</a>':'')+'</div>':'';
+  return '<div class="zp-item"><div class="zp-item-top"><strong>'+e(q.productName)+'</strong><span class="zp-tag '+tone+'">'+label+'</span></div><small>'+e((h?.name||'병원')+' · '+q.petName+' · '+q.quantity+'개 요청 · '+zpDate(q.createdAt))+'</small>'+detail+cancel+'</div>';
+ }).join('')+'</div>';
+}
+ZP_VIEWS.rx={
+ load:zpRxLoad,
+ render(){
+  const r=zpRx();
+  let body=zpBack()+'<h1 class="zp-title">제휴병원 처방식 재고 확인</h1><p class="zp-lead">제휴 병원이 직접 입력한 재고 상태예요. 정확한 수량은 관리하지 않으니 방문 전 전화로 확인해 주세요.</p>';
+  const notified=r.alerts.filter(a=>a.status==='notified');
+  if(notified.length)body+='<section class="zp-gate"><strong>입고 알림</strong>'+notified.map(a=>'<p>'+e((hospitalById(a.hospitalId)?.name||'병원')+' · '+a.productName+' 재고가 들어왔어요 ('+zpDate(a.notifiedAt)+')')+'</p>').join('')+'</section>';
+  const gate=zpGate('처방식 재고 확인');
+  if(gate)body+=gate;
+  else if(!r.loaded)body+='<p class="zp-muted" role="status">재고 정보를 불러오고 있어요.</p>';
+  else if(r.error)body+='<p class="zp-error">'+e(r.error)+'</p>';
+  else{
+   const chips='<div class="zp-chips" role="group" aria-label="병원 선택">'+[['all','전체']].concat(ZP_PARTNERS.map(id=>[id,hospitalById(id)?.name||id])).map(([id,n])=>'<button type="button" class="zp-chip" data-zp="rx-hospital" data-value="'+e(id)+'" aria-pressed="'+(r.hospital===id)+'">'+e(n)+'</button>').join('')+'</div>';
+   const groups=ZP_PARTNERS.filter(id=>r.hospital==='all'||r.hospital===id).map(id=>{
+    const items=r.stock.filter(x=>x.hospitalId===id),h=hospitalById(id);
+    return '<section class="zp-section"><div class="zp-section-head"><h2>'+e(h?.name||id)+'</h2>'+(h?.phone?'<a class="zp-help" href="tel:'+e(String(h.phone).replace(/[^0-9]/g,''))+'">전화 '+e(h.phone)+'</a>':'')+'</div>'
+     +'<div class="zp-box">'+(items.length?items.map(zpRxItem).join(''):'<p class="zp-empty">아직 이 병원이 등록한 처방식 재고가 없어요.</p>')+'</div></section>';
+   }).join('');
+   body+=chips+groups;
+  }
+  if(state.ownerToken)body+='<section class="zp-section"><div class="zp-section-head"><h2>내 확보 요청</h2><span>'+zpRx().requests.length+'건</span></div>'+zpRxRequestsMarkup()+'</section>';
+  return body+'<p class="zp-disclaimer">처방식은 수의사의 진료와 처방에 따라 급여해 주세요. 제노는 판매나 결제를 하지 않으며 병원에 수수료를 받지 않습니다.</p>';
+ },
+ async click(a,el){
+  const r=zpRx();
+  if(a==='rx-hospital'){r.hospital=el.dataset.value;r.form=null;render();return}
+  if(a==='rx-form'){r.form={hospitalId:el.dataset.h,productId:el.dataset.p};render();return}
+  if(a==='rx-form-close'){r.form=null;render();return}
+  if(a==='rx-alert'||a==='rx-alert-off'){
+   try{await api('POST',a==='rx-alert'?'/api/pass/rx-alerts':'/api/pass/rx-alerts/remove',{hospitalId:el.dataset.h,productId:el.dataset.p});toast(a==='rx-alert'?'입고되면 알려 드릴게요.':'입고 알림을 해제했어요.')}
+   catch(err){toast(err.message)}
+   await zpRxLoad();return;
+  }
+  if(a==='rx-cancel'){
+   if(!confirm('확보 요청을 취소할까요?'))return;
+   try{await api('POST','/api/pass/rx-requests/'+encodeURIComponent(el.dataset.id)+'/cancel',{});toast('요청을 취소했어요.')}
+   catch(err){toast(err.message)}
+   await zpRxLoad();
+  }
+ },
+ async submit(kind,f){
+  if(kind!=='rx-request')return;
+  const r=zpRx(),d=Object.fromEntries(new FormData(f).entries());
+  r.busy=true;
+  try{
+   await api('POST','/api/pass/rx-requests',{hospitalId:d.hospitalId,productId:d.productId,petName:d.petName,quantity:Number(d.quantity),note:d.note||'',prescribed:d.prescribed==='1'});
+   r.form=null;toast('확보 요청을 보냈어요. 병원이 확인하면 이 화면에 표시돼요.');
+  }catch(err){toast(err.message)}
+  r.busy=false;await zpRxLoad();
+ }
+};
 </script><!-- ZENO-PASS-END --><style>#memopen{position:fixed;bottom:16px;right:16px;z-index:100;border:0;border-radius:25px;background:#1979e6;color:white;padding:14px;font-weight:bold}#membg{display:none;position:fixed;inset:0;background:#091b32b8;z-index:110;overflow:auto;padding:20px}#membg.show{display:block}#memcard{background:white;color:#173452;max-width:560px;margin:4vh auto;border-radius:20px;padding:24px}#memcard input:not([type=checkbox]),#memcard textarea,#memcard select{display:block;width:100%;box-sizing:border-box;margin:9px 0;padding:12px;border:1px solid #ccc;border-radius:8px}#memcard button{padding:10px 14px;background:#1979e6;color:white;border:0;border-radius:9px;margin:5px}@media(max-width:750px){#memopen{bottom:calc(88px + env(safe-area-inset-bottom));right:13px;padding:9px 15px;font-size:13px;box-shadow:0 7px 20px #1861bb38}}</style>
 <button id="memopen" type="button">추모관</button><div id="membg" role="dialog" aria-modal="true"><div id="memcard"><button id="memclose" type="button">닫기</button><h2>우리 아이 추모관</h2><p>보호자가 원할 때만 추모 기록을 만듭니다. 기존 진료 기록과 병원 정보는 변경하지 않습니다.</p><select id="mempet"><option value="">반려동물 선택</option></select><input id="memtitle" maxlength="100" placeholder="추억의 제목"><textarea id="memtext" maxlength="3000" rows="5" placeholder="우리 아이에게 남기는 편지"></textarea><label><input id="memagree" type="checkbox"> 추모 기록 만들기에 동의합니다</label><div><button id="memsave" type="button">추억 저장</button></div><p style="font-size:12px">현재 브라우저에만 저장됩니다. 브라우저 데이터를 삭제하면 사라질 수 있습니다.</p><h3>저장한 추억</h3><div id="memlist"></div></div></div>
 <script>(()=>{const $=x=>document.getElementById(x),key='zeno-memorial-v1',read=k=>{try{let a=JSON.parse(localStorage.getItem(k)||'[]');return Array.isArray(a)?a:[]}catch{return []}},esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));function renderMem(){let pets=read('zeno-pets-v2');$('mempet').innerHTML='<option value="">반려동물 선택</option>'+pets.map((p,i)=>'<option value="'+i+'">'+esc(p.name||p.petName||'이름 미등록')+'</option>').join('');$('memlist').innerHTML=read(key).map(m=>'<div style="border-top:1px solid #ddd;padding:12px 0"><b>'+esc(m.pet)+' · '+esc(m.title)+'</b><p style="white-space:pre-wrap">'+esc(m.text)+'</p><button data-del="'+esc(m.id)+'">삭제</button></div>').join('')||'저장된 추억이 없습니다.'}$('memopen').onclick=()=>{$('membg').classList.add('show');renderMem()};$('memclose').onclick=()=>$('membg').classList.remove('show');$('memsave').onclick=()=>{let i=$('mempet').value,p=read('zeno-pets-v2')[Number(i)],title=$('memtitle').value.trim(),text=$('memtext').value.trim();if(i===''||!p)return alert('반려동물을 먼저 등록하고 선택해 주세요.');if(!$('memagree').checked)return alert('보호자 동의가 필요합니다.');if(!title||!text)return alert('제목과 추억을 입력해 주세요.');let a=read(key);a.push({id:String(Date.now()),pet:p.name||p.petName||'이름 미등록',title,text});try{localStorage.setItem(key,JSON.stringify(a));$('memtitle').value='';$('memtext').value='';$('memagree').checked=false;renderMem();alert('추모 기록이 저장되었습니다.')}catch{alert('브라우저 저장에 실패했습니다.')}};$('memlist').onclick=e=>{let b=e.target.closest('[data-del]');if(b&&confirm('이 추모 기록을 삭제할까요?')){localStorage.setItem(key,JSON.stringify(read(key).filter(x=>x.id!==b.dataset.del)));renderMem()}}})();</script></body></html>

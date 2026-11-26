@@ -497,6 +497,208 @@ zpRoute('POST','/api/pass/cancel',async({request,env,db})=>{
  assert((r.meta?.changes||0)>0,'이용 중인 PASS가 없습니다.',409);
  return json({pass:zpMembershipView(await zpMembership(db,s.ownerId))});
 });
+/* 제조사 공식 자료 기반 사료 목록 (확인일 2026-11-26, 로얄캐닌 코리아 공식 제품 페이지).
+   - 값은 공식 페이지에서 확인한 것만 넣고, 확인하지 못한 값은 null로 둡니다(화면에 '미확인' 표시).
+   - feeding: 제조사 급여표의 '정상 체중(Normal)' 열 [체중kg, 하루 g]. 표에 없는 체중은 가까운 행 사이만 보간합니다.
+   - 처방식은 수의사 진단·권고가 있을 때만 정보로 보여 줍니다. 판매가는 제조사 자료가 아니므로 넣지 않습니다. */
+const ZP_FEED_SOURCE_CHECKED='2026-11-26';
+const ZP_FEED_CATALOG=[
+ {id:'rc-cat-renal-select-dry',brand:'로얄캐닌',name:'캣 레날 셀렉트',species:'고양이',kind:'처방식',form:'건식',packages:[2000],
+  conditions:['신장 질환'],claims:['신장 질환 관리에 도움(제조사 표기)','낮은 인 함량·양질의 단백질(제조사 표기)'],
+  ingredients:'동물성 지방(돼지), 쌀, 밀가루, 육분(돼지), 밀, 밀 글루텐, 분말셀룰로오스, 옥수수 글루텐, 동물성 유도단백질(닭), 어분, 치커리 펄프, 혼합광물질류 합제, 어유, 옥수수 분말, 대두유, 글리세린 지방산 에스테르, 차전자피식이섬유, 프락토올리고당, 금잔화분말, 아미노산제 합제, 비타민 A, 비타민 D3, 철, 요오드, 구리, 망간, 아연, 셀레늄, 제올라이트, 항산화제',
+  feeding:[[2,31],[3,41],[3.5,46],[4,51],[4.5,55],[5,59],[5.5,64]],
+  url:'https://www.royalcanin.com/kr/cats/products/vet-products/renal-select-4160'},
+ {id:'rc-cat-renal-pouch',brand:'로얄캐닌',name:'캣 레날 파우치',species:'고양이',kind:'처방식',form:'습식',packages:[85],
+  conditions:['신장 질환'],claims:['신장 질환 관리에 도움(제조사 표기)','낮은 인 함량·양질의 단백질(제조사 표기)'],
+  ingredients:'육류(닭, 돼지), 옥수수가루, 어류(연어), 분말 셀룰로오스, 토마토분말, 해바라기유, 어유, 차전자피식이섬유, 프락토올리고당, 금잔화분말, 로커스트콩검, 구아검, 카라기난, 혼합광물질류 합제, 아미노산제 합제, 비타민 D3, 철, 요오드, 구리, 망간, 아연, 제올라이트',
+  feeding:[[2,115],[2.5,135],[3,155],[3.5,175]],
+  url:'https://www.royalcanin.com/kr/cats/products/vet-products/renal-1246'},
+ {id:'rc-cat-diabetic-dry',brand:'로얄캐닌',name:'캣 다이아베틱',species:'고양이',kind:'처방식',form:'건식',packages:[1500],
+  conditions:['당뇨병'],claims:['당뇨병을 앓는 반려묘의 식후 혈당 관리에 도움(제조사 표기)','고단백·저탄수화물 포뮬러(제조사 표기)'],
+  ingredients:'육분(닭, 칠면조, 오리), 밀글루텐, 타피오카, 대두박(가수분해 대두단백질), 보리, 옥수수글루텐, 분말셀룰로스, 동물성 지방(닭, 칠면조, 오리), 동물성 유도단백질(닭, 칠면조), 치커리펄프, 동물성 유도단백질(어류), 어유, 차전자피, 혼합광물질류 합제, 대두유, 프락토올리고당, L-카르니틴, 금잔화추출물',
+  feeding:null,
+  url:'https://www.royalcanin.com/kr/cats/products/vet-products/diabetic-3906'},
+ {id:'rc-cat-gi-hydrolysed-dry',brand:'로얄캐닌',name:'캣 가스트로인테스티널 하이드롤라이즈 프로틴',species:'고양이',kind:'처방식',form:'건식',packages:[2000],
+  conditions:['위장관 질환','식이 알레르기'],claims:['위장관 질환과 식이 알러지 관리에 도움(제조사 표기)','가수분해 대두단백 사용(제조사 표기)'],
+  ingredients:null,
+  feeding:[[1.5,26],[9,92]],
+  url:'https://www.royalcanin.com/kr/cats/products/vet-products/gastrointestinal-hydrolysed-protein-2735'},
+ {id:'rc-dog-diabetic-can',brand:'로얄캐닌',name:'독 다이아베틱 캔',species:'강아지',kind:'처방식',form:'습식',packages:[410],
+  conditions:['당뇨병'],claims:['반려견의 당뇨병 관리에 도움(제조사 표기)','저탄수화물·고단백 식이(제조사 표기)'],
+  ingredients:'육류(돼지, 닭), 분말셀룰로스, 옥수수, 동물성 유도단백질(닭), 해바라기유, 사탕무박, 금잔화추출물, 카라기난, 혼합광물질류 합제, 아미노산제 합제, 비타민 D3, 철, 요오드, 구리, 망간, 아연',
+  feeding:[[2,226],[4,380],[6,515],[8,639],[10,755]],
+  url:'https://www.royalcanin.com/kr/dogs/products/vet-products/diabetic-special-low-carbohydrate-4015'},
+ {id:'rc-dog-hepatic-can',brand:'로얄캐닌',name:'독 헤파틱 로프 인 캔',species:'강아지',kind:'처방식',form:'습식',packages:[420],
+  conditions:['간 질환'],claims:['반려견의 간질환 관리에 도움(제조사 표기)','낮은 구리 함량(제조사 표기)'],
+  ingredients:'육류(닭), 쌀, 옥수수, 분말 셀룰로오스, 어유, 해바라기유, 사탕무박, 효모, 프락토올리고당, 금잔화 분말, 카라기난, 로커스트콩검, 혼합광물질류 합제, 아미노산제합제, 비타민 D3, 철, 요오드, 구리, 망간, 아연, 셀레늄',
+  feeding:[[2,126],[4,212],[6,288],[8,357],[10,422]],
+  url:'https://www.royalcanin.com/kr/dogs/products/vet-products/hepatic-4022'}
+];
+const ZP_FEED_BY_ID=new Map(ZP_FEED_CATALOG.map(p=>[p.id,p]));
+function zpFeedPublic(p){return {...p,checked:ZP_FEED_SOURCE_CHECKED,source:'제조사 공식 제품 페이지'}}
+/* ===== PASS 01 · 제휴병원 처방식 재고 확인 =====
+   병원이 직접 입력한 재고 상태(있음/적음/문의 필요/품절)와 마지막 확인 시각만 보여 줍니다.
+   정확한 수량 관리와 전자차트(EMR) 연동은 하지 않습니다. 결제는 방문 시 병원에서 현장 결제합니다. */
+const ZP_RX_STATUS=new Set(['in','low','ask','out']);
+const ZP_RX_SQL=[
+ "CREATE TABLE IF NOT EXISTS rx_stock (hospital_id TEXT NOT NULL, product_id TEXT NOT NULL, product_name TEXT NOT NULL, brand TEXT NOT NULL DEFAULT '', form TEXT NOT NULL DEFAULT '', status TEXT NOT NULL CHECK(status IN ('in','low','ask','out')), checked_at TEXT NOT NULL, updated_at TEXT NOT NULL, PRIMARY KEY(hospital_id,product_id))",
+ "CREATE TABLE IF NOT EXISTS rx_requests (id TEXT PRIMARY KEY, owner_id TEXT NOT NULL, hospital_id TEXT NOT NULL, product_id TEXT NOT NULL, product_name TEXT NOT NULL, pet_name TEXT NOT NULL, quantity INTEGER NOT NULL CHECK(quantity BETWEEN 1 AND 20), owner_note TEXT NOT NULL DEFAULT '', status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending','accepted','rejected','cancelled','picked_up')), available_qty INTEGER, visit_by TEXT NOT NULL DEFAULT '', hospital_note TEXT NOT NULL DEFAULT '', created_at TEXT NOT NULL, updated_at TEXT NOT NULL)",
+ "CREATE INDEX IF NOT EXISTS rx_requests_owner ON rx_requests(owner_id,created_at DESC)",
+ "CREATE INDEX IF NOT EXISTS rx_requests_hospital ON rx_requests(hospital_id,created_at DESC)",
+ "CREATE TABLE IF NOT EXISTS rx_alerts (owner_id TEXT NOT NULL, hospital_id TEXT NOT NULL, product_id TEXT NOT NULL, product_name TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'waiting' CHECK(status IN ('waiting','notified')), created_at TEXT NOT NULL, notified_at TEXT, PRIMARY KEY(owner_id,hospital_id,product_id))",
+ "CREATE INDEX IF NOT EXISTS rx_alerts_product ON rx_alerts(hospital_id,product_id,status)"
+];
+ZP_SQL.push(...ZP_RX_SQL);
+function zpRxStock(r){return {hospitalId:r.hospital_id,productId:r.product_id,productName:r.product_name,brand:r.brand,form:r.form,status:r.status,checkedAt:r.checked_at,updatedAt:r.updated_at}}
+function zpRxRequest(r,side){
+ const out={id:r.id,hospitalId:r.hospital_id,productId:r.product_id,productName:r.product_name,petName:r.pet_name,quantity:r.quantity,ownerNote:r.owner_note,status:r.status,availableQty:r.available_qty,visitBy:r.visit_by,hospitalNote:r.hospital_note,createdAt:r.created_at,updatedAt:r.updated_at,payment:'현장 결제'};
+ if(side==='hospital'){out.ownerName=r.owner_name||'';}
+ return out;
+}
+function zpRxAlert(r){return {hospitalId:r.hospital_id,productId:r.product_id,productName:r.product_name,status:r.status,createdAt:r.created_at,notifiedAt:r.notified_at||null}}
+async function zpHospitalSession(request,env){
+ const s=await verify(request.headers.get('Authorization'),env.SESSION_SECRET);
+ assert(s?.role==='hospital'&&IDS.has(s.hospitalId),'병원 로그인 후 이용할 수 있습니다.',401);
+ return s;
+}
+function zpRxProductInput(data){
+ const productId=clean(data.productId,60);
+ const fromCatalog=ZP_FEED_BY_ID.get(productId);
+ if(fromCatalog){
+  assert(fromCatalog.kind==='처방식','처방식 제품만 재고를 등록할 수 있습니다.');
+  return {productId,productName:fromCatalog.brand+' '+fromCatalog.name,brand:fromCatalog.brand,form:fromCatalog.form};
+ }
+ /* 목록에 없는 제품은 병원이 직접 입력합니다. 병원이 보유한 제품명이므로 제노가 추정하지 않습니다. */
+ const name=clean(data.productName,60);
+ assert(name.length>=2,'제품명을 입력해 주세요.');
+ const id='custom-'+Array.from(new TextEncoder().encode(name)).reduce((h,c)=>(h*31+c)>>>0,7).toString(36);
+ return {productId:id,productName:name,brand:clean(data.brand,30),form:clean(data.form,10)};
+}
+
+/* 보호자: 제휴병원 재고 (PASS 전용) */
+zpRoute('GET','/api/pass/rx-stock',async({request,env,db})=>{
+ await zpRequirePass(request,env);
+ const rows=await db.prepare('SELECT * FROM rx_stock ORDER BY hospital_id,product_name').all();
+ return json({hospitals:[...IDS],items:(rows.results||[]).map(zpRxStock)});
+});
+/* 보호자: 내 확보 요청·입고 알림 (해지 후에도 열람 가능) */
+zpRoute('GET','/api/pass/rx',async({request,env,db})=>{
+ const s=await checkOwner(request,env);
+ const [req,al]=await Promise.all([
+  db.prepare('SELECT * FROM rx_requests WHERE owner_id=? ORDER BY created_at DESC LIMIT 100').bind(s.ownerId).all(),
+  db.prepare('SELECT * FROM rx_alerts WHERE owner_id=? ORDER BY created_at DESC LIMIT 100').bind(s.ownerId).all()
+ ]);
+ return json({requests:(req.results||[]).map(r=>zpRxRequest(r,'owner')),alerts:(al.results||[]).map(zpRxAlert)});
+});
+zpRoute('POST','/api/pass/rx-requests',async({request,env,db,data})=>{
+ const s=await zpRequirePass(request,env);
+ const hospitalId=clean(data.hospitalId,20),productId=clean(data.productId,60);
+ assert(IDS.has(hospitalId),'처방식 확보 요청은 제휴 병원에만 보낼 수 있습니다.');
+ const stock=await db.prepare('SELECT * FROM rx_stock WHERE hospital_id=? AND product_id=?').bind(hospitalId,productId).first();
+ assert(stock,'병원이 등록한 처방식만 요청할 수 있습니다.',404);
+ assert(stock.status!=='out','품절된 제품입니다. 입고 알림을 신청해 주세요.',409);
+ const quantity=Number(data.quantity);
+ assert(Number.isInteger(quantity)&&quantity>=1&&quantity<=20,'희망 수량은 1~20 사이로 입력해 주세요.');
+ const petName=clean(data.petName,35);
+ assert(petName.length>=1,'처방식을 먹는 아이를 선택해 주세요.');
+ assert(data.prescribed===true,'수의사에게 처방받은 제품인지 확인해 주세요.');
+ const open=await db.prepare("SELECT COUNT(*) n FROM rx_requests WHERE owner_id=? AND status IN ('pending','accepted')").bind(s.ownerId).first();
+ assert((open?.n||0)<5,'진행 중인 확보 요청은 5건까지 보낼 수 있습니다.',429);
+ const at=now(),id=crypto.randomUUID();
+ await db.prepare("INSERT INTO rx_requests(id,owner_id,hospital_id,product_id,product_name,pet_name,quantity,owner_note,status,available_qty,visit_by,hospital_note,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,'pending',NULL,'','',?,?)").bind(id,s.ownerId,hospitalId,productId,stock.product_name,petName,quantity,clean(data.note,200),at,at).run();
+ const row=await db.prepare('SELECT * FROM rx_requests WHERE id=?').bind(id).first();
+ return json(zpRxRequest(row,'owner'),201);
+});
+zpRoute('POST',/^\/api\/pass\/rx-requests\/([a-zA-Z0-9-]{8,60})\/cancel$/,async({request,env,db,params})=>{
+ const s=await checkOwner(request,env);
+ const row=await db.prepare('SELECT * FROM rx_requests WHERE id=?').bind(params[0]).first();
+ assert(row&&row.owner_id===s.ownerId,'본인의 요청만 취소할 수 있습니다.',403);
+ assert(['pending','accepted'].includes(row.status),'이미 처리가 끝난 요청입니다.',409);
+ await db.prepare("UPDATE rx_requests SET status='cancelled',updated_at=? WHERE id=?").bind(now(),row.id).run();
+ return json(zpRxRequest(await db.prepare('SELECT * FROM rx_requests WHERE id=?').bind(row.id).first(),'owner'));
+});
+zpRoute('POST','/api/pass/rx-alerts',async({request,env,db,data})=>{
+ const s=await zpRequirePass(request,env);
+ const hospitalId=clean(data.hospitalId,20),productId=clean(data.productId,60);
+ assert(IDS.has(hospitalId),'제휴 병원을 확인해 주세요.');
+ const stock=await db.prepare('SELECT * FROM rx_stock WHERE hospital_id=? AND product_id=?').bind(hospitalId,productId).first();
+ assert(stock,'병원이 등록한 처방식만 알림을 받을 수 있습니다.',404);
+ assert(stock.status==='out','품절된 제품에만 입고 알림을 신청할 수 있습니다.',409);
+ await db.prepare("INSERT INTO rx_alerts(owner_id,hospital_id,product_id,product_name,status,created_at,notified_at) VALUES(?,?,?,?,'waiting',?,NULL) ON CONFLICT(owner_id,hospital_id,product_id) DO UPDATE SET status='waiting',created_at=excluded.created_at,notified_at=NULL,product_name=excluded.product_name").bind(s.ownerId,hospitalId,productId,stock.product_name,now()).run();
+ return json({ok:true},201);
+});
+zpRoute('POST','/api/pass/rx-alerts/remove',async({request,env,db,data})=>{
+ const s=await checkOwner(request,env);
+ await db.prepare('DELETE FROM rx_alerts WHERE owner_id=? AND hospital_id=? AND product_id=?').bind(s.ownerId,clean(data.hospitalId,20),clean(data.productId,60)).run();
+ return json({ok:true});
+});
+
+/* 병원: 자기 병원 재고와 요청만 */
+zpRoute('GET','/api/hospital/rx',async({request,env,db})=>{
+ const h=await zpHospitalSession(request,env);
+ const [stock,req,alerts]=await Promise.all([
+  db.prepare('SELECT * FROM rx_stock WHERE hospital_id=? ORDER BY product_name').bind(h.hospitalId).all(),
+  db.prepare('SELECT r.*,o.display_name AS owner_name FROM rx_requests r LEFT JOIN owners o ON o.id=r.owner_id WHERE r.hospital_id=? ORDER BY r.created_at DESC LIMIT 200').bind(h.hospitalId).all(),
+  db.prepare("SELECT product_id,COUNT(*) n FROM rx_alerts WHERE hospital_id=? AND status='waiting' GROUP BY product_id").bind(h.hospitalId).all()
+ ]);
+ return json({
+  catalog:ZP_FEED_CATALOG.filter(p=>p.kind==='처방식').map(p=>({id:p.id,brand:p.brand,name:p.name,species:p.species,form:p.form})),
+  stock:(stock.results||[]).map(zpRxStock),
+  requests:(req.results||[]).map(r=>zpRxRequest(r,'hospital')),
+  waitingAlerts:Object.fromEntries((alerts.results||[]).map(r=>[r.product_id,r.n]))
+ });
+});
+zpRoute('PUT','/api/hospital/rx/stock',async({request,env,db,data})=>{
+ const h=await zpHospitalSession(request,env);
+ const p=zpRxProductInput(data),status=clean(data.status,8);
+ assert(ZP_RX_STATUS.has(status),'재고 상태를 선택해 주세요.');
+ const count=await db.prepare('SELECT COUNT(*) n FROM rx_stock WHERE hospital_id=?').bind(h.hospitalId).first();
+ const exists=await db.prepare('SELECT status FROM rx_stock WHERE hospital_id=? AND product_id=?').bind(h.hospitalId,p.productId).first();
+ assert(exists||(count?.n||0)<80,'처방식은 80개까지 등록할 수 있습니다.',429);
+ const at=now();
+ const stmts=[db.prepare('INSERT INTO rx_stock(hospital_id,product_id,product_name,brand,form,status,checked_at,updated_at) VALUES(?,?,?,?,?,?,?,?) ON CONFLICT(hospital_id,product_id) DO UPDATE SET status=excluded.status,checked_at=excluded.checked_at,updated_at=excluded.updated_at,product_name=excluded.product_name').bind(h.hospitalId,p.productId,p.productName,p.brand,p.form,status,at,at)];
+ /* 품절 → 있음/적음으로 바뀌면 기다리던 보호자에게 앱 안 알림을 남깁니다. */
+ if(exists?.status==='out'&&(status==='in'||status==='low')){
+  stmts.push(db.prepare("UPDATE rx_alerts SET status='notified',notified_at=? WHERE hospital_id=? AND product_id=? AND status='waiting'").bind(at,h.hospitalId,p.productId));
+ }
+ await db.batch(stmts);
+ return json(zpRxStock(await db.prepare('SELECT * FROM rx_stock WHERE hospital_id=? AND product_id=?').bind(h.hospitalId,p.productId).first()));
+});
+zpRoute('POST','/api/hospital/rx/stock/confirm',async({request,env,db,data})=>{
+ const h=await zpHospitalSession(request,env);
+ const at=now(),productId=clean(data.productId,60);
+ const r=productId
+  ?await db.prepare('UPDATE rx_stock SET checked_at=? WHERE hospital_id=? AND product_id=?').bind(at,h.hospitalId,productId).run()
+  :await db.prepare('UPDATE rx_stock SET checked_at=? WHERE hospital_id=?').bind(at,h.hospitalId).run();
+ assert((r.meta?.changes||0)>0,'확인할 처방식이 없습니다.',404);
+ return json({checkedAt:at,updated:r.meta.changes});
+});
+zpRoute('POST','/api/hospital/rx/stock/remove',async({request,env,db,data})=>{
+ const h=await zpHospitalSession(request,env);
+ await db.prepare('DELETE FROM rx_stock WHERE hospital_id=? AND product_id=?').bind(h.hospitalId,clean(data.productId,60)).run();
+ return json({ok:true});
+});
+zpRoute('PATCH',/^\/api\/hospital\/rx\/requests\/([a-zA-Z0-9-]{8,60})$/,async({request,env,db,data,params})=>{
+ const h=await zpHospitalSession(request,env);
+ const row=await db.prepare('SELECT * FROM rx_requests WHERE id=?').bind(params[0]).first();
+ assert(row&&row.hospital_id===h.hospitalId,'우리 병원 요청만 처리할 수 있습니다.',403);
+ const action=clean(data.action,12),note=clean(data.note,200),at=now();
+ if(action==='accept'){
+  assert(row.status==='pending','확인 대기 중인 요청만 수락할 수 있습니다.',409);
+  const qty=Number(data.availableQty),visitBy=clean(data.visitBy,10);
+  assert(Number.isInteger(qty)&&qty>=1&&qty<=row.quantity,'확보 가능 수량은 1개 이상, 요청 수량 이하로 입력해 주세요.');
+  assert(/^\d{4}-\d{2}-\d{2}$/.test(visitBy)&&visitBy>=zpKstToday(),'방문 기한은 오늘 이후 날짜로 입력해 주세요.');
+  await db.prepare("UPDATE rx_requests SET status='accepted',available_qty=?,visit_by=?,hospital_note=?,updated_at=? WHERE id=?").bind(qty,visitBy,note,at,row.id).run();
+ }else if(action==='reject'){
+  assert(row.status==='pending','확인 대기 중인 요청만 거절할 수 있습니다.',409);
+  assert(note.length>=2,'보호자에게 안내할 거절 사유를 입력해 주세요.');
+  await db.prepare("UPDATE rx_requests SET status='rejected',hospital_note=?,updated_at=? WHERE id=?").bind(note,at,row.id).run();
+ }else if(action==='picked_up'){
+  assert(row.status==='accepted','수락한 요청만 수령 완료로 바꿀 수 있습니다.',409);
+  await db.prepare("UPDATE rx_requests SET status='picked_up',updated_at=? WHERE id=?").bind(at,row.id).run();
+ }else throw new HttpError('처리 방법을 선택해 주세요.');
+ return json(zpRxRequest(await db.prepare('SELECT * FROM rx_requests WHERE id=?').bind(row.id).first(),'hospital'));
+});
 /* <<< PASS-CORE */
 async function handler(request,env){const url=new URL(request.url),path=url.pathname,method=request.method;
 if(path==='/api/ping'&&method==='GET'){
