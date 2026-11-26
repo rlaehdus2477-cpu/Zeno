@@ -245,3 +245,4 @@ CREATE TABLE IF NOT EXISTS rx_alerts (
   PRIMARY KEY(owner_id,hospital_id,product_id)
 );
 CREATE INDEX IF NOT EXISTS rx_alerts_product ON rx_alerts(hospital_id,product_id,status);
+-- PASS 02 공개 진료비 통합 비교: 비교 설정은 pass_prefs(kind='fee-plan')에 저장 (가격 자료는 공개 가격표만 사용)

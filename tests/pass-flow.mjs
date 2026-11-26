@@ -175,7 +175,22 @@ async function sectionRx() {
   });
 }
 
-const SECTIONS = [sectionCore, sectionRx];
+async function sectionFees() {
+  const A = ctx.A.token, B = ctx.B.token;
+  await check('F1', '진료비 통합 비교 설정: PASS 전용, 값 검증, 저장 유지', async () => {
+    expect((await api('GET', '/api/pass/fee-plan', {token: B})).status === 403, 'PASS 없는 보호자 조회됨');
+    expect((await api('PUT', '/api/pass/fee-plan', {token: B, body: {items: [{name: '초진 진찰료', count: 1}]}})).status === 403, 'PASS 없는 보호자 저장됨');
+    expect((await api('PUT', '/api/pass/fee-plan', {token: A, body: {items: [{name: '초진 진찰료', count: 0}]}})).status === 400, '0회 저장됨');
+    expect((await api('PUT', '/api/pass/fee-plan', {token: A, body: {items: [{name: '초진 진찰료', count: 1}, {name: '초진 진찰료', count: 2}]}})).status === 400, '중복 항목 저장됨');
+    expect((await api('PUT', '/api/pass/fee-plan', {token: A, body: {items: Array.from({length: 13}, (_, i) => ({name: '항목' + i, count: 1}))}})).status === 400, '13개 저장됨');
+    const items = [{name: '초진 진찰료', count: 2}, {name: '고양이 종합백신', count: 1}];
+    expect((await api('PUT', '/api/pass/fee-plan', {token: A, body: {items}})).status === 200, '저장 실패');
+    const got = await api('GET', '/api/pass/fee-plan', {token: A});
+    expect(JSON.stringify(got.data.plan.items) === JSON.stringify(items), '저장한 설정이 다름 ' + JSON.stringify(got.data));
+  });
+}
+
+const SECTIONS = [sectionCore, sectionRx, sectionFees];
 let fatal = null;
 try {
   await startServer();

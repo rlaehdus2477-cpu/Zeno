@@ -699,6 +699,26 @@ zpRoute('PATCH',/^\/api\/hospital\/rx\/requests\/([a-zA-Z0-9-]{8,60})$/,async({r
  }else throw new HttpError('처리 방법을 선택해 주세요.');
  return json(zpRxRequest(await db.prepare('SELECT * FROM rx_requests WHERE id=?').bind(row.id).first(),'hospital'));
 });
+/* ===== PASS 02 · 공개 진료비 통합 비교 =====
+   가격 자료는 보호자 앱에 이미 공개된 병원 공개 진료비만 씁니다. 서버는 PASS 권한과 비교 설정(항목·연간 횟수)만 저장합니다.
+   병원 가격순 순위는 만들지 않습니다. */
+zpRoute('GET','/api/pass/fee-plan',async({request,env,db})=>{
+ const s=await zpRequirePass(request,env);
+ return json({plan:await zpGetPref(db,s.ownerId,'fee-plan',{items:[]})});
+});
+zpRoute('PUT','/api/pass/fee-plan',async({request,env,db,data})=>{
+ const s=await zpRequirePass(request,env);
+ assert(Array.isArray(data.items)&&data.items.length<=12,'비교 항목은 12개까지 고를 수 있습니다.');
+ const items=[];const seen=new Set();
+ for(const it of data.items){
+  const name=clean(it?.name,40),count=Number(it?.count);
+  assert(name.length>=2&&!seen.has(name),'비교 항목을 확인해 주세요.');
+  assert(Number.isInteger(count)&&count>=1&&count<=52,'연간 횟수는 1~52회로 입력해 주세요.');
+  seen.add(name);items.push({name,count});
+ }
+ await zpSetPref(db,s.ownerId,'fee-plan',{items});
+ return json({plan:{items}});
+});
 /* <<< PASS-CORE */
 async function handler(request,env){const url=new URL(request.url),path=url.pathname,method=request.method;
 if(path==='/api/ping'&&method==='GET'){
