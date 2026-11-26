@@ -175,7 +175,104 @@ async function sectionRx() {
   });
 }
 
-const SECTIONS = [sectionCore, sectionRx];
+async function sectionFees() {
+  const A = ctx.A.token, B = ctx.B.token;
+  await check('F1', '진료비 통합 비교 설정: PASS 전용, 값 검증, 저장 유지', async () => {
+    expect((await api('GET', '/api/pass/fee-plan', {token: B})).status === 403, 'PASS 없는 보호자 조회됨');
+    expect((await api('PUT', '/api/pass/fee-plan', {token: B, body: {items: [{name: '초진 진찰료', count: 1}]}})).status === 403, 'PASS 없는 보호자 저장됨');
+    expect((await api('PUT', '/api/pass/fee-plan', {token: A, body: {items: [{name: '초진 진찰료', count: 0}]}})).status === 400, '0회 저장됨');
+    expect((await api('PUT', '/api/pass/fee-plan', {token: A, body: {items: [{name: '초진 진찰료', count: 1}, {name: '초진 진찰료', count: 2}]}})).status === 400, '중복 항목 저장됨');
+    expect((await api('PUT', '/api/pass/fee-plan', {token: A, body: {items: Array.from({length: 13}, (_, i) => ({name: '항목' + i, count: 1}))}})).status === 400, '13개 저장됨');
+    const items = [{name: '초진 진찰료', count: 2}, {name: '고양이 종합백신', count: 1}];
+    expect((await api('PUT', '/api/pass/fee-plan', {token: A, body: {items}})).status === 200, '저장 실패');
+    const got = await api('GET', '/api/pass/fee-plan', {token: A});
+    expect(JSON.stringify(got.data.plan.items) === JSON.stringify(items), '저장한 설정이 다름 ' + JSON.stringify(got.data));
+  });
+}
+
+async function sectionNutrition() {
+  const A = ctx.A.token, B = ctx.B.token;
+  await api('PUT', '/api/profile', {token: A, body: {pets: [{id: 'cat1', name: '노아', species: '고양이', age: '5살', weight: '4kg', homeHospitalId: ''}], records: [], favorites: []}});
+  await check('N1', '영양 관리: PASS 전용, 공식 자료 목록·내 아이 연동', async () => {
+    expect((await api('GET', '/api/pass/nutrition', {token: B})).status === 403, 'PASS 없는 보호자 조회됨');
+    const r = await api('GET', '/api/pass/nutrition', {token: A});
+    expect(r.status === 200 && r.data.pets[0].id === 'cat1' && r.data.catalog.length >= 1, '조회 실패');
+    expect(r.data.catalog.every(p => p.url.startsWith('https://www.royalcanin.com/kr/') && p.checked), '출처 없는 제품 있음');
+    expect(r.data.generalCatalogStatus === 'preparing', '일반 사료 준비 상태 표시 이상');
+  });
+  await check('N2', '아이 정보 저장: 처방식 권고는 진단 질환 필요, 남의 아이·잘못된 값 거절', async () => {
+    expect((await api('PUT', '/api/pass/nutrition/profile/cat1', {token: A, body: {vetRecommended: true, conditions: []}})).status === 400, '진단 없이 권고 저장됨');
+    expect((await api('PUT', '/api/pass/nutrition/profile/nope', {token: A, body: {}})).status === 404, '없는 아이 저장됨');
+    expect((await api('PUT', '/api/pass/nutrition/profile/cat1', {token: A, body: {budgetMonthly: -1}})).status === 400, '음수 예산 저장됨');
+    const ok = await api('PUT', '/api/pass/nutrition/profile/cat1', {token: A, body: {neutered: 'yes', conditions: ['신장 질환', '없는질환'], vetRecommended: true, allergies: ['닭'], budgetMonthly: 60000}});
+    expect(ok.status === 200 && ok.data.profile.conditions.join() === '신장 질환' && ok.data.profile.vetRecommended, '저장 실패 ' + JSON.stringify(ok.data));
+    expect((await api('PUT', '/api/pass/nutrition/profile/cat1', {token: B, body: {}})).status === 403, 'PASS 없는 보호자 저장됨');
+  });
+  await check('N3', '구매 가격: 제조사 포장 단위만, 저장·삭제', async () => {
+    expect((await api('PUT', '/api/pass/nutrition/prices', {token: A, body: {productId: 'rc-cat-renal-select-dry', price: 50000, packageG: 3000}})).status === 400, '없는 포장 단위 저장됨');
+    const ok = await api('PUT', '/api/pass/nutrition/prices', {token: A, body: {productId: 'rc-cat-renal-select-dry', price: 50000, packageG: 2000}});
+    expect(ok.status === 200 && ok.data.prices['rc-cat-renal-select-dry'].price === 50000, '가격 저장 실패');
+    const r = await api('GET', '/api/pass/nutrition', {token: A});
+    expect(r.data.profiles.cat1.budgetMonthly === 60000 && r.data.prices['rc-cat-renal-select-dry'], '다시 불러온 값 다름');
+    const del = await api('PUT', '/api/pass/nutrition/prices', {token: A, body: {productId: 'rc-cat-renal-select-dry', price: null}});
+    expect(del.status === 200 && !del.data.prices['rc-cat-renal-select-dry'], '가격 삭제 실패');
+  });
+}
+
+async function sectionReceipts() {
+  const A = ctx.A.token, B = ctx.B.token;
+  const png = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
+  let r1, photoId;
+  await check('C1', '영수증 등록: PASS 전용, 사진 비공개 저장, 자동 인식 없으면 직접 입력', async () => {
+    expect((await api('POST', '/api/pass/receipts/photo', {token: B, body: {image: png}})).status === 403, 'PASS 없는 보호자 사진 업로드됨');
+    expect((await api('POST', '/api/pass/receipts/photo', {token: A, body: {image: 'data:text/html;base64,PGI+'}})).status === 400, '이미지가 아닌 파일 허용');
+    const up = await api('POST', '/api/pass/receipts/photo', {token: A, body: {image: png}});
+    expect(up.status === 201 && up.data.photoId && ['unavailable', 'failed', 'done'].includes(up.data.ocr.status), '사진 업로드 실패 ' + JSON.stringify(up.data));
+    photoId = up.data.photoId;
+    const base = {petId: 'cat1', hospitalId: 'soo', hospitalName: '수동물병원', visitDate: kstDate(-3), total: 55000, items: [{name: '진찰료', amount: 10000}, {name: '혈액검사', amount: 45000}], memo: '정기 검진'};
+    expect((await api('POST', '/api/pass/receipts', {token: A, body: {...base, petId: 'other'}})).status === 400, '남의 아이로 저장됨');
+    expect((await api('POST', '/api/pass/receipts', {token: A, body: {...base, visitDate: kstDate(5)}})).status === 400, '미래 날짜 저장됨');
+    expect((await api('POST', '/api/pass/receipts', {token: B, body: base})).status === 403, 'PASS 없는 보호자 저장됨');
+    const ok = await api('POST', '/api/pass/receipts', {token: A, body: {...base, photoId}});
+    expect(ok.status === 201 && ok.data.hasPhoto && ok.data.source === 'photo' && ok.data.items.length === 2, '저장 실패 ' + JSON.stringify(ok.data));
+    r1 = ok.data.id;
+    const nonPartner = await api('POST', '/api/pass/receipts', {token: A, body: {...base, hospitalId: '', hospitalName: '서울 어느 동물병원', total: 12000, items: []}});
+    expect(nonPartner.status === 201, '비제휴·목록 밖 병원 영수증 저장 실패');
+    expect((await api('POST', '/api/pass/receipts', {token: A, body: {...base, photoId}})).status === 404, '같은 사진을 두 영수증에 연결함');
+  });
+  await check('C2', '사진·기록 접근: 본인만, 다른 보호자 403/404', async () => {
+    const mine = await api('GET', `/api/receipts/${r1}/photo`, {token: A});
+    expect(mine.status === 200 && mine.type.startsWith('image/png'), '본인 사진 조회 실패');
+    expect((await api('GET', `/api/receipts/${r1}/photo`, {token: B})).status === 404, '다른 보호자가 사진 조회');
+    expect((await api('GET', `/api/receipts/${r1}/photo`)).status === 401, '비로그인 사진 조회');
+    expect(!(await api('GET', '/api/receipts', {token: B})).data.receipts.length, '다른 보호자에게 영수증 보임');
+    expect((await api('PATCH', `/api/receipts/${r1}`, {token: B, body: {}})).status === 403, '다른 보호자가 수정');
+    expect((await api('DELETE', `/api/receipts/${r1}`, {token: B})).status === 403, '다른 보호자가 삭제');
+  });
+  await check('C3', '수정·통계용 목록·내보내기, 해지 후에도 열람·내보내기 가능', async () => {
+    const ed = await api('PATCH', `/api/receipts/${r1}`, {token: A, body: {petId: 'cat1', hospitalId: 'soo', hospitalName: '수동물병원', visitDate: kstDate(-3), total: 60000, items: [], memo: '수정함'}});
+    expect(ed.status === 200 && ed.data.total === 60000 && ed.data.memo === '수정함', '수정 실패');
+    await api('POST', '/api/pass/cancel', {token: A, body: {}});
+    const list = await api('GET', '/api/receipts', {token: A});
+    expect(list.status === 200 && list.data.receipts.length === 2, '해지 후 목록이 안 보임');
+    const csv = await api('GET', '/api/receipts/export', {token: A});
+    expect(csv.status === 200 && csv.type.startsWith('text/csv') && csv.data.includes('수동물병원') && csv.data.includes('노아'), 'CSV 내보내기 실패');
+    const js = await api('GET', '/api/receipts/export?format=json', {token: A});
+    expect(js.status === 200 && js.data.receipts.length === 2, 'JSON 내보내기 실패');
+    expect((await api('GET', `/api/receipts/${r1}/photo`, {token: A})).status === 200, '해지 후 사진 열람 불가');
+    expect((await api('POST', '/api/pass/receipts/photo', {token: A, body: {image: png}})).status === 403, '해지 후 새 등록 가능');
+    const del = await api('DELETE', `/api/receipts/${r1}`, {token: A});
+    expect(del.status === 200 && (await api('GET', `/api/receipts/${r1}/photo`, {token: A})).status === 404, '삭제 후 사진이 남음');
+    await api('POST', '/api/pass/start', {token: A, body: {agree: true}});
+  });
+  await check('C4', '큰 사진 업로드(약 800KB)도 저장', async () => {
+    const big = 'data:image/jpeg;base64,' + Buffer.alloc(600000, 7).toString('base64');
+    const up = await api('POST', '/api/pass/receipts/photo', {token: A, body: {image: big, ocr: false}});
+    expect(up.status === 201, '큰 사진 저장 실패 ' + up.status + ' ' + JSON.stringify(up.data));
+  });
+}
+
+const SECTIONS = [sectionCore, sectionRx, sectionFees, sectionNutrition, sectionReceipts];
 let fatal = null;
 try {
   await startServer();

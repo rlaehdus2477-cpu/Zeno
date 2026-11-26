@@ -699,6 +699,204 @@ zpRoute('PATCH',/^\/api\/hospital\/rx\/requests\/([a-zA-Z0-9-]{8,60})$/,async({r
  }else throw new HttpError('처리 방법을 선택해 주세요.');
  return json(zpRxRequest(await db.prepare('SELECT * FROM rx_requests WHERE id=?').bind(row.id).first(),'hospital'));
 });
+/* ===== PASS 02 · 공개 진료비 통합 비교 =====
+   가격 자료는 보호자 앱에 이미 공개된 병원 공개 진료비만 씁니다. 서버는 PASS 권한과 비교 설정(항목·연간 횟수)만 저장합니다.
+   병원 가격순 순위는 만들지 않습니다. */
+zpRoute('GET','/api/pass/fee-plan',async({request,env,db})=>{
+ const s=await zpRequirePass(request,env);
+ return json({plan:await zpGetPref(db,s.ownerId,'fee-plan',{items:[]})});
+});
+zpRoute('PUT','/api/pass/fee-plan',async({request,env,db,data})=>{
+ const s=await zpRequirePass(request,env);
+ assert(Array.isArray(data.items)&&data.items.length<=12,'비교 항목은 12개까지 고를 수 있습니다.');
+ const items=[];const seen=new Set();
+ for(const it of data.items){
+  const name=clean(it?.name,40),count=Number(it?.count);
+  assert(name.length>=2&&!seen.has(name),'비교 항목을 확인해 주세요.');
+  assert(Number.isInteger(count)&&count>=1&&count<=52,'연간 횟수는 1~52회로 입력해 주세요.');
+  seen.add(name);items.push({name,count});
+ }
+ await zpSetPref(db,s.ownerId,'fee-plan',{items});
+ return json({plan:{items}});
+});
+/* ===== PASS 03 · 반려동물별 맞춤 영양 관리 =====
+   사료 정보는 ZP_FEED_CATALOG(제조사 공식 자료)만 씁니다. 판매가는 보호자가 직접 입력한 값만 계산에 씁니다.
+   처방식은 수의사 진단·권고를 입력한 아이에게만 정보로 보여 줍니다. */
+const ZP_CONDITIONS=['신장 질환','당뇨병','위장관 질환','식이 알레르기','간 질환'];
+function zpNutritionClean(p){
+ const neutered=['yes','no','unknown'].includes(p?.neutered)?p.neutered:'unknown';
+ const conditions=Array.isArray(p?.conditions)?[...new Set(p.conditions.filter(c=>ZP_CONDITIONS.includes(c)))]:[];
+ const allergies=Array.isArray(p?.allergies)?[...new Set(p.allergies.map(a=>clean(a,12)).filter(Boolean))].slice(0,8):[];
+ let budget=p?.budgetMonthly===null||p?.budgetMonthly===''||p?.budgetMonthly===undefined?null:Number(p.budgetMonthly);
+ assert(budget===null||(Number.isInteger(budget)&&budget>=0&&budget<=1000000),'월 예산은 0~1,000,000원 사이로 입력해 주세요.');
+ const vetRecommended=p?.vetRecommended===true;
+ assert(!vetRecommended||conditions.length>0,'수의사 처방식 권고를 선택했다면 진단받은 질환을 함께 골라 주세요.');
+ return {neutered,conditions,vetRecommended,allergies,budgetMonthly:budget,updatedAt:now()};
+}
+zpRoute('GET','/api/pass/nutrition',async({request,env,db})=>{
+ const s=await zpRequirePass(request,env);
+ const [pets,store]=await Promise.all([zpOwnerPets(db,s.ownerId),zpGetPref(db,s.ownerId,'nutrition',{profiles:{},prices:{}})]);
+ return json({
+  pets:pets.map(p=>({id:p.id,name:p.name,species:p.species,age:p.age,weight:p.weight})),
+  profiles:store.profiles||{},prices:store.prices||{},
+  catalog:ZP_FEED_CATALOG.map(zpFeedPublic),conditions:ZP_CONDITIONS,
+  generalCatalogStatus:ZP_FEED_CATALOG.some(p=>p.kind==='일반식')?'ready':'preparing'
+ });
+});
+zpRoute('PUT',/^\/api\/pass\/nutrition\/profile\/([a-zA-Z0-9_-]{1,90})$/,async({request,env,db,data,params})=>{
+ const s=await zpRequirePass(request,env);
+ const pets=await zpOwnerPets(db,s.ownerId);
+ assert(pets.some(p=>p.id===params[0]),'내 아이에 등록된 반려동물만 저장할 수 있습니다.',404);
+ const store=await zpGetPref(db,s.ownerId,'nutrition',{profiles:{},prices:{}});
+ store.profiles=store.profiles||{};
+ for(const id of Object.keys(store.profiles))if(!pets.some(p=>p.id===id))delete store.profiles[id];
+ store.profiles[params[0]]=zpNutritionClean(data);
+ await zpSetPref(db,s.ownerId,'nutrition',store);
+ return json({profile:store.profiles[params[0]]});
+});
+zpRoute('PUT','/api/pass/nutrition/prices',async({request,env,db,data})=>{
+ const s=await zpRequirePass(request,env);
+ const p=ZP_FEED_BY_ID.get(clean(data.productId,60));
+ assert(p,'제품을 확인해 주세요.',404);
+ const store=await zpGetPref(db,s.ownerId,'nutrition',{profiles:{},prices:{}});
+ store.prices=store.prices||{};
+ if(data.price===null){delete store.prices[p.id]}
+ else{
+  const price=Number(data.price),packageG=Number(data.packageG);
+  assert(Number.isInteger(price)&&price>=100&&price<=2000000,'구매 가격을 원 단위로 입력해 주세요.');
+  assert(p.packages.includes(packageG),'제조사 표기 포장 단위를 선택해 주세요.');
+  store.prices[p.id]={price,packageG,updatedAt:now()};
+ }
+ await zpSetPref(db,s.ownerId,'nutrition',store);
+ return json({prices:store.prices});
+});
+/* ===== PASS 04 · 다묘·다견 영수증 통합 관리 =====
+   영수증 사진은 본인만 볼 수 있게 D1에 비공개 저장하고, 공개 주소를 만들지 않습니다.
+   문자 인식(Workers AI)은 초안만 만들고 보호자가 확인·수정해야 저장됩니다. 새 등록은 PASS 회원만,
+   이미 저장한 기록의 열람·수정·삭제·내보내기는 해지 후에도 가능합니다. */
+const ZP_RECEIPT_SQL=[
+ "CREATE TABLE IF NOT EXISTS receipts (id TEXT PRIMARY KEY, owner_id TEXT NOT NULL, pet_id TEXT NOT NULL, hospital_id TEXT NOT NULL DEFAULT '', hospital_name TEXT NOT NULL, visit_date TEXT NOT NULL, total INTEGER NOT NULL CHECK(total BETWEEN 0 AND 100000000), items_json TEXT NOT NULL DEFAULT '[]', memo TEXT NOT NULL DEFAULT '', source TEXT NOT NULL DEFAULT 'manual' CHECK(source IN ('manual','photo')), ocr_status TEXT NOT NULL DEFAULT '', created_at TEXT NOT NULL, updated_at TEXT NOT NULL)",
+ "CREATE INDEX IF NOT EXISTS receipts_owner ON receipts(owner_id,visit_date DESC)",
+ "CREATE TABLE IF NOT EXISTS receipt_photos (id TEXT PRIMARY KEY, owner_id TEXT NOT NULL, receipt_id TEXT, mime TEXT NOT NULL, image_data TEXT NOT NULL, created_at TEXT NOT NULL)",
+ "CREATE INDEX IF NOT EXISTS receipt_photos_owner ON receipt_photos(owner_id,receipt_id)"
+];
+ZP_SQL.push(...ZP_RECEIPT_SQL);
+function zpReceipt(r){
+ let items=[];try{items=JSON.parse(r.items_json||'[]')}catch{}
+ return {id:r.id,petId:r.pet_id,hospitalId:r.hospital_id,hospitalName:r.hospital_name,visitDate:r.visit_date,total:r.total,items,memo:r.memo,source:r.source,ocrStatus:r.ocr_status,hasPhoto:!!r.photo_id,createdAt:r.created_at,updatedAt:r.updated_at};
+}
+function zpReceiptItems(list){
+ if(!Array.isArray(list))return [];
+ assert(list.length<=30,'세부 항목은 30개까지 저장할 수 있습니다.');
+ return list.map(x=>({name:clean(x?.name,40),amount:Number(x?.amount)})).filter(x=>x.name).map(x=>{
+  assert(Number.isInteger(x.amount)&&x.amount>=-10000000&&x.amount<=100000000,'세부 항목 금액을 확인해 주세요.');
+  return x;
+ });
+}
+async function zpReceiptInput(db,ownerId,data){
+ const petId=clean(data.petId,90);
+ const pets=await zpOwnerPets(db,ownerId);
+ assert(pets.some(p=>p.id===petId),'내 아이에 등록된 반려동물을 선택해 주세요.');
+ const hospitalId=clean(data.hospitalId,30),hospitalName=clean(data.hospitalName,60);
+ assert(!hospitalId||/^(?:pub[0-9]{3}|[a-z][a-z0-9]{1,25})$/.test(hospitalId),'병원을 확인해 주세요.');
+ assert(hospitalName.length>=2,'병원 이름을 입력해 주세요.');
+ const visitDate=clean(data.visitDate,10);
+ assert(/^\d{4}-\d{2}-\d{2}$/.test(visitDate)&&visitDate<=zpKstToday()&&visitDate>='2000-01-01','진료일을 확인해 주세요.');
+ const total=Number(data.total);
+ assert(Number.isInteger(total)&&total>=0&&total<=100000000,'총 결제 금액을 원 단위로 입력해 주세요.');
+ return {petId,hospitalId,hospitalName,visitDate,total,items:zpReceiptItems(data.items),memo:clean(data.memo,300)};
+}
+/* 문자 인식: 결과는 초안일 뿐이며, 읽을 수 없는 값은 비워 둡니다. */
+function zpOcrDraft(text){
+ let obj=null;const s=String(text||''),a=s.indexOf('{'),b=s.lastIndexOf('}');
+ if(a>=0&&b>a){try{obj=JSON.parse(s.slice(a,b+1))}catch{}}
+ if(!obj||typeof obj!=='object')return null;
+ const num=v=>{const n=Number(String(v??'').replace(/[^0-9-]/g,''));return String(v??'').trim()&&Number.isInteger(n)&&n>=0&&n<=100000000?n:null};
+ const date=/^\d{4}-\d{2}-\d{2}$/.test(String(obj.visitDate||''))?obj.visitDate:'';
+ const items=Array.isArray(obj.items)?obj.items.slice(0,30).map(x=>({name:clean(x?.name,40),amount:num(x?.amount)})).filter(x=>x.name&&x.amount!==null):[];
+ return {hospitalName:clean(obj.hospitalName,60),visitDate:date,total:num(obj.total),items};
+}
+async function zpRunOcr(env,dataUrl){
+ if(!env.AI||typeof env.AI.run!=='function')return {status:'unavailable',draft:null};
+ const prompt='이 이미지는 한국 동물병원 영수증입니다. 이미지에 실제로 보이는 글자만 읽어 JSON 하나로만 답하세요. 형식: {"hospitalName":"","visitDate":"YYYY-MM-DD","total":0,"items":[{"name":"","amount":0}]}. 읽을 수 없거나 없는 값은 빈 문자열이나 null로 두고 추측하지 마세요. 금액은 숫자만 쓰세요.';
+ for(const model of ['@cf/meta/llama-4-scout-17b-16e-instruct','@cf/mistralai/mistral-small-3.1-24b-instruct']){
+  try{
+   const out=await env.AI.run(model,{messages:[{role:'user',content:[{type:'text',text:prompt},{type:'image_url',image_url:{url:dataUrl}}]}],max_tokens:900,temperature:0});
+   const text=typeof out?.response==='string'?out.response:JSON.stringify(out?.response??out);
+   const draft=zpOcrDraft(text);
+   if(draft)return {status:'done',draft,model};
+  }catch(err){console.error('ZENO receipt OCR',model,String(err?.message||err).slice(0,200))}
+ }
+ return {status:'failed',draft:null};
+}
+zpRoute('POST','/api/pass/receipts/photo',async({request,env,db,data})=>{
+ const s=await zpRequirePass(request,env);
+ const image=String(data.image||'');
+ const m=image.match(/^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/);
+ assert(m,'영수증 사진은 JPG·PNG·WEBP 이미지로 올려 주세요.');
+ assert(m[2].length<=1300000,'사진 용량이 너무 큽니다. 다시 찍어 주세요.',413);
+ await db.prepare("DELETE FROM receipt_photos WHERE owner_id=? AND receipt_id IS NULL AND created_at<?").bind(s.ownerId,new Date(Date.now()-86400e3).toISOString()).run();
+ const pending=await db.prepare('SELECT COUNT(*) n FROM receipt_photos WHERE owner_id=? AND receipt_id IS NULL').bind(s.ownerId).first();
+ assert((pending?.n||0)<10,'저장하지 않은 사진이 많습니다. 등록을 마치거나 내일 다시 시도해 주세요.',429);
+ const id=crypto.randomUUID();
+ await db.prepare('INSERT INTO receipt_photos(id,owner_id,receipt_id,mime,image_data,created_at) VALUES(?,?,NULL,?,?,?)').bind(id,s.ownerId,m[1],m[2],now()).run();
+ const ocr=data.ocr===false?{status:'skipped',draft:null}:await zpRunOcr(env,image);
+ return json({photoId:id,ocr:{status:ocr.status,draft:ocr.draft}},201);
+});
+zpRoute('POST','/api/pass/receipts',async({request,env,db,data})=>{
+ const s=await zpRequirePass(request,env);
+ const v=await zpReceiptInput(db,s.ownerId,data);
+ const count=await db.prepare('SELECT COUNT(*) n FROM receipts WHERE owner_id=?').bind(s.ownerId).first();
+ assert((count?.n||0)<2000,'영수증 저장 한도를 넘었습니다.',429);
+ const photoId=clean(data.photoId,60);
+ if(photoId){
+  const p=await db.prepare('SELECT id,owner_id,receipt_id FROM receipt_photos WHERE id=?').bind(photoId).first();
+  assert(p&&p.owner_id===s.ownerId&&!p.receipt_id,'사진을 다시 올려 주세요.',404);
+ }
+ const id=crypto.randomUUID(),at=now();
+ const stmts=[db.prepare('INSERT INTO receipts(id,owner_id,pet_id,hospital_id,hospital_name,visit_date,total,items_json,memo,source,ocr_status,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)').bind(id,s.ownerId,v.petId,v.hospitalId,v.hospitalName,v.visitDate,v.total,JSON.stringify(v.items),v.memo,photoId?'photo':'manual',clean(data.ocrStatus,12),at,at)];
+ if(photoId)stmts.push(db.prepare('UPDATE receipt_photos SET receipt_id=? WHERE id=? AND owner_id=?').bind(id,photoId,s.ownerId));
+ await db.batch(stmts);
+ const row=await db.prepare('SELECT r.*,p.id AS photo_id FROM receipts r LEFT JOIN receipt_photos p ON p.receipt_id=r.id WHERE r.id=?').bind(id).first();
+ return json(zpReceipt(row),201);
+});
+zpRoute('GET','/api/receipts',async({request,env,db})=>{
+ const s=await checkOwner(request,env);
+ const rows=await db.prepare('SELECT r.*,p.id AS photo_id FROM receipts r LEFT JOIN receipt_photos p ON p.receipt_id=r.id WHERE r.owner_id=? ORDER BY r.visit_date DESC,r.created_at DESC LIMIT 2000').bind(s.ownerId).all();
+ return json({receipts:(rows.results||[]).map(zpReceipt)});
+});
+zpRoute('GET','/api/receipts/export',async({request,env,db,url})=>{
+ const s=await checkOwner(request,env);
+ const pets=await zpOwnerPets(db,s.ownerId),petName=id=>pets.find(p=>p.id===id)?.name||'등록 해제된 아이';
+ const rows=(await db.prepare('SELECT * FROM receipts WHERE owner_id=? ORDER BY visit_date,created_at').bind(s.ownerId).all()).results||[];
+ if(url.searchParams.get('format')==='json'){
+  return new Response(JSON.stringify({exportedAt:now(),receipts:rows.map(r=>({...zpReceipt(r),petName:petName(r.pet_id)}))},null,1),{headers:{'content-type':'application/json; charset=utf-8','content-disposition':'attachment; filename="zeno-receipts.json"','cache-control':'no-store'}});
+ }
+ const q=v=>{const t=String(v??'');return /[",\n\r]/.test(t)||/^[=+\-@]/.test(t)?'"'+(/^[=+\-@]/.test(t)?"'":'')+t.replace(/"/g,'""')+'"':t};
+ const lines=[['진료일','아이','병원','총 결제 금액','세부 항목','메모'].join(',')].concat(rows.map(r=>{let items=[];try{items=JSON.parse(r.items_json||'[]')}catch{}return [r.visit_date,petName(r.pet_id),r.hospital_name,r.total,items.map(i=>i.name+' '+i.amount).join(' / '),r.memo].map(q).join(',')}));
+ return new Response('﻿'+lines.join('\r\n'),{headers:{'content-type':'text/csv; charset=utf-8','content-disposition':'attachment; filename="zeno-receipts.csv"','cache-control':'no-store'}});
+});
+zpRoute('GET',/^\/api\/receipts\/([a-zA-Z0-9-]{8,60})\/photo$/,async({request,env,db,params})=>{
+ const s=await checkOwner(request,env);
+ const p=await db.prepare('SELECT p.mime,p.image_data FROM receipt_photos p JOIN receipts r ON r.id=p.receipt_id WHERE r.id=? AND r.owner_id=? AND p.owner_id=?').bind(params[0],s.ownerId,s.ownerId).first();
+ assert(p,'사진을 찾을 수 없습니다.',404);
+ return new Response(Uint8Array.from(atob(p.image_data),c=>c.charCodeAt(0)),{headers:{'content-type':p.mime,'cache-control':'private, no-store','x-content-type-options':'nosniff'}});
+});
+zpRoute('PATCH',/^\/api\/receipts\/([a-zA-Z0-9-]{8,60})$/,async({request,env,db,data,params})=>{
+ const s=await checkOwner(request,env);
+ const row=await db.prepare('SELECT * FROM receipts WHERE id=?').bind(params[0]).first();
+ assert(row&&row.owner_id===s.ownerId,'본인의 영수증만 수정할 수 있습니다.',403);
+ const v=await zpReceiptInput(db,s.ownerId,data);
+ await db.prepare('UPDATE receipts SET pet_id=?,hospital_id=?,hospital_name=?,visit_date=?,total=?,items_json=?,memo=?,updated_at=? WHERE id=?').bind(v.petId,v.hospitalId,v.hospitalName,v.visitDate,v.total,JSON.stringify(v.items),v.memo,now(),row.id).run();
+ return json(zpReceipt(await db.prepare('SELECT r.*,p.id AS photo_id FROM receipts r LEFT JOIN receipt_photos p ON p.receipt_id=r.id WHERE r.id=?').bind(row.id).first()));
+});
+zpRoute('DELETE',/^\/api\/receipts\/([a-zA-Z0-9-]{8,60})$/,async({request,env,db,params})=>{
+ const s=await checkOwner(request,env);
+ const row=await db.prepare('SELECT owner_id FROM receipts WHERE id=?').bind(params[0]).first();
+ assert(row&&row.owner_id===s.ownerId,'본인의 영수증만 삭제할 수 있습니다.',403);
+ await db.batch([db.prepare('DELETE FROM receipt_photos WHERE receipt_id=? AND owner_id=?').bind(params[0],s.ownerId),db.prepare('DELETE FROM receipts WHERE id=? AND owner_id=?').bind(params[0],s.ownerId)]);
+ return json({ok:true});
+});
 /* <<< PASS-CORE */
 async function handler(request,env){const url=new URL(request.url),path=url.pathname,method=request.method;
 if(path==='/api/ping'&&method==='GET'){

@@ -245,3 +245,32 @@ CREATE TABLE IF NOT EXISTS rx_alerts (
   PRIMARY KEY(owner_id,hospital_id,product_id)
 );
 CREATE INDEX IF NOT EXISTS rx_alerts_product ON rx_alerts(hospital_id,product_id,status);
+-- PASS 02 공개 진료비 통합 비교: 비교 설정은 pass_prefs(kind='fee-plan')에 저장 (가격 자료는 공개 가격표만 사용)
+-- PASS 03 맞춤 영양 관리: 아이별 정보·입력 가격은 pass_prefs(kind='nutrition')에 저장, 사료 자료는 worker.js의 ZP_FEED_CATALOG(제조사 공식 페이지 확인값)
+
+-- PASS 04 영수증 통합 관리: 사진은 본인만 조회(공개 주소 없음), 해지 후에도 열람·수정·삭제·내보내기 가능
+CREATE TABLE IF NOT EXISTS receipts (
+  id TEXT PRIMARY KEY,
+  owner_id TEXT NOT NULL,
+  pet_id TEXT NOT NULL,
+  hospital_id TEXT NOT NULL DEFAULT '',
+  hospital_name TEXT NOT NULL,
+  visit_date TEXT NOT NULL,
+  total INTEGER NOT NULL CHECK(total BETWEEN 0 AND 100000000),
+  items_json TEXT NOT NULL DEFAULT '[]',
+  memo TEXT NOT NULL DEFAULT '',
+  source TEXT NOT NULL DEFAULT 'manual' CHECK(source IN ('manual','photo')),
+  ocr_status TEXT NOT NULL DEFAULT '',
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS receipts_owner ON receipts(owner_id,visit_date DESC);
+CREATE TABLE IF NOT EXISTS receipt_photos (
+  id TEXT PRIMARY KEY,
+  owner_id TEXT NOT NULL,
+  receipt_id TEXT,
+  mime TEXT NOT NULL,
+  image_data TEXT NOT NULL,
+  created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS receipt_photos_owner ON receipt_photos(owner_id,receipt_id);
