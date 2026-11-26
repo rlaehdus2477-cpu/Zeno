@@ -8346,7 +8346,14 @@ ZP_VIEWS.receipts={
 .zs-alert strong{display:block;font-size:16px;color:#b23545;margin-bottom:4px}
 .zs-alert.today strong{color:#8a5a00}
 .zs-alert p{font-size:13px;line-height:1.55;color:#4f5b68;margin:4px 0 0}
-.zs-call-list{margin-top:10px;border-top:1px solid #f3d6da}
+.zs-call-list{margin-top:8px;border-top:1px solid #e5ebf1}
+.zs-emergency-results{margin-top:12px;padding:14px;background:#fff;border:1px solid #e5ebf1;border-radius:8px}
+.zs-emergency-results h3{font-size:15px;font-weight:700;color:#142e4c;margin:0 0 6px}
+.zs-emergency-results p{font-size:13px;color:#52677b;line-height:1.5;margin:4px 0}
+.zs-emergency-results .zs-call{border-color:#e5ebf1}
+.zs-emergency-results .zs-btn.primary{background:#142e4c;border-color:#142e4c;min-height:44px;flex-shrink:0}
+.zs-emergency-results .zs-link{color:#52677b}
+.zs-emergency-warning{border-radius:8px;padding:12px}
 .zs-call{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 0;border-bottom:1px solid #f3d6da}
 .zs-call span{display:flex;flex-direction:column;gap:2px}
 .zs-call b{font-size:14px;font-weight:600;color:#142e4c}
@@ -8497,8 +8504,8 @@ function zsEmergencyBlock(level){
  const flags=zs().flags.filter(id=>zsFlagList().includes(id)).map(id=>ZS_FLAGS[id].label);
  if(level==='now'){
   const list=HOSPITALS.filter(h=>zeno24HourEmergency(h)||zenoNightSchedule(h).within).slice(0,6);
-  return '<section class="zs-alert now" role="alert"><strong>지금 바로 병원에 전화해 주세요</strong><p>'+e(flags.join(' · '))+'</p><p>예약을 기다리지 말고 가까운 병원에 전화로 지금 진료가 가능한지 먼저 확인하세요. 24시간 운영 표기가 응급 접수를 뜻하지는 않아요.</p>'
-   +(list.length?'<div class="zs-call-list">'+list.map(h=>{const p=String(h.phone||'').replace(/[^0-9]/g,'');return '<div class="zs-call"><span><b>'+e(h.name)+'</b><small>'+e(zeno24HourEmergency(h)?'24시간 운영 안내':'야간 진료시간 내')+'</small></span>'+(p?'<a class="zs-btn primary" href="tel:'+e(p)+'">전화</a>':'')+'</div>'}).join('')+'</div>':'<p>지금 운영 중으로 확인된 야간·24시간 병원이 없어요.</p>')
+  return '<section class="zs-alert now zs-emergency-warning" role="alert"><strong>즉시 진료가 필요한 증상이에요</strong><p>선택 증상: '+e(flags.join(' · '))+'</p><p>예약을 기다리지 말고 가까운 병원에 바로 전화해 주세요.</p></section><section class="zs-emergency-results"><h3>응급 진료 문의 병원</h3><p>운영시간과 별개로 응급 접수 가능 여부는 전화로 확인해 주세요.</p>'
+   +(list.length?'<div class="zs-call-list">'+list.map(h=>{const p=String(h.phone||'').replace(/[^0-9]/g,'');return '<div class="zs-call"><span><b>'+e(h.name)+'</b><small>'+e(zeno24HourEmergency(h)?'24시간 운영 안내':'야간 진료시간 내')+' · 응급 접수 전화 확인</small></span>'+(p?'<a class="zs-btn primary" href="tel:'+e(p)+'">전화</a>':'')+'</div>'}).join('')+'</div>':'<p>지금 운영 중으로 확인된 야간·24시간 병원이 없어요.</p>')
    +'<button type="button" class="zs-link" data-zs="emergency">야간·24시간 병원 전체 보기</button></section>';
  }
  return '<section class="zs-alert today"><strong>오늘 진료를 받아 보세요</strong><p>'+e(flags.join(' · '))+'</p><p>지금 진료시간 안인 병원을 먼저 보여 드려요. 상태가 나빠지면 바로 전화로 문의하세요.</p></section>';
