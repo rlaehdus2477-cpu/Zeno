@@ -6658,11 +6658,10 @@ function zenoFeeCareNoPriceMarkup(name){
 }
 function zenoAllFeeHospitals(){
  const ids=[...new Set([...ZENO_PUBLIC_FEES.map(v=>v.id),...ZENO_HEALTH_SCREENINGS.map(v=>v.id)])];
- return '<div class="zeno-fee-subhead"><h2>병원별 공개 진료비</h2><p>전체 '+ids.length+'곳 · 대표 공개가격 · 항목과 조건이 서로 다릅니다.</p></div><div class="zeno-fee-directory">'+ids.map(id=>{
+ return '<div class="zeno-fee-subhead"><h2>병원별 공개 진료비</h2><p>전체 '+ids.length+'곳 · 동일 항목 기준 · 실제 총진료비는 달라질 수 있습니다.</p></div><div class="zeno-fee-directory">'+ids.map(id=>{
   const h=hospitalById(id),v=zenoPublishedFee(id),health=ZENO_HEALTH_SCREENINGS.filter(g=>g.id===id);if(!h)return '';
   const prices=v?.prices||[];
-  const chosen=id==='pub007'?prices.filter(p=>p[0].includes('A 기본 건강검진')):prices.slice(0,2);
-  const previews=chosen.length?chosen.map(p=>[p[0],zenoFeeAmount(p[1],p[2])]):health.slice(0,2).flatMap(g=>g.programs.slice(0,1).map(p=>[g.species+' '+p[0],zenoFeeAmount(p[1],p[1])]));
+  const previews=['초진 진찰료','개 종합백신','고양이 종합백신'].map(key=>{const p=prices.find(p=>p[0]===key);return [key,p?zenoFeeAmount(p[1],p[2]):'미공개',p?String(p[3]||''):''];});
   return '<button type="button" class="zeno-fee-directory-row" data-action="details" data-fee-direct="true" data-id="'+e(id)+'" aria-label="'+e(h.name)+' 공개 진료비 전체 보기"><span class="zeno-fee-directory-head"><strong>'+e(h.name)+'</strong><span aria-hidden="true" class="zeno-fee-directory-arrow">›</span></span>'+previews.map(p=>'<span class="zeno-fee-directory-price"><span>'+e(p[0])+'</span><b>'+e(p[1])+'</b></span>').join('')+'</button>';
  }).join('')+'</div>';
 }
@@ -6681,14 +6680,14 @@ function pricesPage(){
  const extraChips=ZENO_FEE_CATEGORIES.filter(c=>!quickFees.includes(c)).map(feeChip).join('');
  const mixedUnits=['혈액화학검사','엑스레이','초음파 검사','입원료','입원비(1일)','심장사상충 예방(제품별)','상담료','CT 검사','평일 주간 진찰료','일요일 진찰료','응급·야간 진찰료'].includes(selected);
  const rows=ZENO_PUBLIC_FEES.flatMap(v=>v.prices.filter(p=>p[0]===priceKey||(isNeuter&&['수컷 중성화','암컷 중성화','강아지 암컷 중성화','고양이 암컷 중성화','강아지 수컷 중성화','고양이 수컷 중성화'].includes(p[0]))).map(p=>({id:v.id,name:hospitalById(v.id)?.name||'병원명 확인',url:p[4]||v.url,checked:v.checked,source:v.source,price:p})));
- if(!mixedUnits)rows.sort((a,b)=>a.price[1]-b.price[1]);
+ // Preserve directory order; no price-based hospital ranking.
  const priceCaution=mixedUnits
   ?'병원마다 검사 개수·부위·체중·포함 항목이 달라 가격순으로 정렬하지 않았습니다.':'같은 항목도 진료 조건에 따라 총비용이 달라질 수 있습니다.';
  const official=rows.map(r=>{
   const note=String(r.price[3]||'');
   const intro=note.split(' · ').slice(0,2).join(' · ');
   const range=r.price[1]!==r.price[2];
-  return '<article class="zeno-fee-card"><div class="zeno-fee-top"><div><strong>'+e(r.name)+(isNeuter?' · '+e(r.price[0]):'')+'</strong><small>'+e(r.url?'병원 홈페이지 게시 가격':r.source||'병원 공개 가격표')+'</small></div><span class="zeno-fee-amount">'+zenoFeeAmount(r.price[1],r.price[2])+'</span></div>'
+  return '<article class="zeno-fee-card"><div class="zeno-fee-top"><div><strong>'+e(r.name)+(isNeuter?' · '+e(r.price[0]):'')+'</strong><small>'+e((r.source||'병원 공개 가격표')+(r.checked?' · 확인 '+r.checked:''))+'</small></div><span class="zeno-fee-amount">'+zenoFeeAmount(r.price[1],r.price[2])+'</span></div>'
    +(range?'<small class="zeno-fee-variable">체중·시간·수술 방식 등에 따른 가격 범위</small>':'')
    +(intro?'<p class="zeno-fee-primary-note">'+e(intro)+'</p>':'')
    +'<details class="zeno-fee-breakdown"><summary>가격 조건·포함 항목</summary><p>'+e(note)+'</p></details>'
