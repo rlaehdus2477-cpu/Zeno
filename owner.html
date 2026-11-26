@@ -8155,16 +8155,15 @@ function zpRcForm(){
   +'<div class="zp-btn-row"><button type="button" class="zp-btn secondary" data-zp="rc-close">닫기</button><button type="submit" class="zp-btn"'+(r.busy?' disabled':'')+'>저장</button></div></form>';
 }
 function zpRcStats(list){
- const r=zpRc(),years=[...new Set(list.map(x=>x.visitDate.slice(0,4)))].sort().reverse();
- if(!years.length)return '';
- const year=years.includes(r.year)?r.year:years[0];
+ const r=zpRc(),currentYear=today().slice(0,4),years=[...new Set([currentYear,...list.map(x=>x.visitDate.slice(0,4))])].sort().reverse();
+ const year=years.includes(r.year)?r.year:currentYear;
  const inYear=list.filter(x=>x.visitDate.startsWith(year));
  const months=Array.from({length:12},(_,i)=>inYear.filter(x=>Number(x.visitDate.slice(5,7))===i+1).reduce((a,x)=>a+x.total,0));
  const max=Math.max(1,...months);
  const byPet=[...new Set(list.map(x=>x.petId))].map(id=>[id,inYear.filter(x=>x.petId===id).reduce((a,x)=>a+x.total,0)]).filter(x=>x[1]>0);
  return '<section class="zp-section"><div class="zp-section-head"><h2>'+year+'년 의료비</h2><span>'+zpWon(inYear.reduce((a,x)=>a+x.total,0))+'</span></div>'
   +(years.length>1?'<div class="zp-chips" role="group" aria-label="연도">'+years.map(y=>'<button type="button" class="zp-chip" data-zp="rc-year" data-value="'+y+'" aria-pressed="'+(y===year)+'">'+y+'</button>').join('')+'</div>':'')
-  +'<div class="zp-box" style="padding:12px 16px"><div class="zp-bars" role="img" aria-label="'+year+'년 월별 의료비">'+months.map((v,i)=>'<div class="zp-bar"><span style="height:'+Math.round(v/max*100)+'%"></span><small>'+(i+1)+'</small></div>').join('')+'</div>'
+  +'<div class="zp-box" style="padding:12px 16px"><div class="zp-bars" role="img" aria-label="'+year+'년 월별 의료비">'+months.map((v,i)=>'<div class="zp-bar"><span style="height:'+Math.round(v/max*100)+'%;'+(v===0?'min-height:0;visibility:hidden':'')+'"></span><small>'+(i+1)+'</small></div>').join('')+'</div>'
   +months.map((v,i)=>v?'<div class="zp-kv"><span>'+(i+1)+'월</span><b>'+zpWon(v)+'</b></div>':'').join('')+'</div>'
   +(r.pet==='all'&&byPet.length?'<div class="zp-box" style="padding:4px 16px;margin-top:8px">'+byPet.map(([id,v])=>'<div class="zp-kv"><span>'+e(zpRcPetName(id))+'</span><b>'+zpWon(v)+'</b></div>').join('')+'</div>':'')+'</section>';
 }
