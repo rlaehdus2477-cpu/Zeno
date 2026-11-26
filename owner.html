@@ -5188,7 +5188,7 @@ function zenoSearchReservationNote(h,shown){
 function zenoListHours(h){
  const raw=zenoSearchClinicStatus(h,true);
  if(/^오늘 휴진/.test(raw.text))return {text:'오늘 휴진',kind:'list-closed',rank:2,detail:raw.text};
- if(h.is24||raw.kind.includes('is-open'))return {text:'진료시간 중',kind:'list-open',rank:0,detail:raw.text};
+ if(h.is24||raw.kind.includes('is-open'))return {text:'진료중',kind:'list-open',rank:0,detail:raw.text};
  // An overnight emergency service, a break, or reception cutoff is not ordinary open care.
  return {text:h.emergency24&&!h.is24?'24시간 응급 · 수용 전화 확인':raw.text.split(' · ')[0],kind:'list-check',rank:1,detail:raw.text};
 }
