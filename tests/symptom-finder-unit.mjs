@@ -27,7 +27,7 @@ const ctx = {
   zenoBookEligible: () => true, zenoMemorialGet: () => null, zenoSymptomPage: null, console,
 };
 vm.createContext(ctx);
-vm.runInContext(m[1] + ';globalThis.T={ZS_FIELDS,ZS_FLAGS,ZS_COMMON_FLAGS,ZS_SYMPTOMS,ZS_GROUPS,zs,zsFlagList,zsLevel,zsFields,zsRank};', ctx);
+vm.runInContext(m[1] + ';globalThis.T={ZS_FIELDS,ZS_FLAGS,ZS_COMMON_FLAGS,ZS_SYMPTOMS,ZS_GROUPS,ZS_SHORT_LABELS,zs,zsFlagList,zsLevel,zsFields,zsRank,zsUrgentList,zsStepFlags,zsEmergencyHospitals,zsEmergencyKind,zsEmergencyBlock,zsFlagCard};', ctx);
 const T = ctx.T;
 const reset = o => { ctx.state.zs = {who: '', species: '', exotic: '', symptoms: [], flags: [], q: '', openOnly: false, catRoom: true, more: false, ...o}; };
 
@@ -95,6 +95,63 @@ check('S8', '여러 증상: 병원마다 가장 근거가 강한 분야로 표�
   reset({species: '강아지', symptoms: ['vomit', 'itch']});
   const c = T.zsRank().find(x => x.h.id === 'c');
   eq(c.field, '피부·귀', '다병원 분야');
+});
+
+check('S9', '응급 카드 10개: 순서 고정, 종 분기(강아지 복부 팽창·고양이 백합), 문구·아이콘', () => {
+  eq(T.ZS_COMMON_FLAGS, ['breath','seizure','bleed','gum','trauma','toxin','urineBlock','heat','bloat','lily'], '순서');
+  reset({}); eq(T.zsUrgentList().length, 10, '종 선택 전 10개');
+  reset({species: '강아지'}); ok(T.zsUrgentList().includes('bloat') && !T.zsUrgentList().includes('lily'), '강아지');
+  reset({species: '고양이'}); ok(T.zsUrgentList().includes('lily') && !T.zsUrgentList().includes('bloat'), '고양이');
+  for (const id of T.ZS_COMMON_FLAGS) { const f = T.ZS_FLAGS[id]; ok(f.level === 'now' && f.title && f.desc && f.icon, id + ' 카드 정보'); }
+  const html = T.zsFlagCard('breath');
+  ok(!/type="checkbox"/.test(html) && /aria-pressed="false"/.test(html) && html.includes('<svg') && html.includes('호흡곤란') && html.includes('숨쉬기 힘들어요'), '카드 마크업');
+  ok(!/[\u{1F300}-\u{1FAFF}]/u.test(Object.values(T.ZS_FLAGS).map(f => f.title + f.desc).join('')), '이모지 없음');
+});
+
+check('S10', '혈뇨와 배뇨 불가 구분: 혈뇨는 당일 안내·비뇨기, 배뇨 불가가 함께면 즉시', () => {
+  const u = T.ZS_SYMPTOMS.find(s => s.id === 'urineBlood');
+  eq(u.fields, ['비뇨기'], '혈뇨 분야'); eq(T.ZS_SHORT_LABELS.urineBlood, '혈뇨', '혈뇨 이름');
+  reset({species: '고양이', symptoms: ['urineBlood']}); eq(T.zsLevel(), 'today', '혈뇨만');
+  ok(T.zsStepFlags().includes('urineBlock'), '혈뇨 선택 시 배뇨 불가 확인 카드');
+  reset({species: '고양이', symptoms: ['urineBlood'], flags: ['urineBlock']}); eq(T.zsLevel(), 'now', '배뇨 불가 동반');
+  reset({species: '고양이', symptoms: [], flags: ['urineBlock']}); eq(T.zsLevel(), 'now', '배뇨 불가만');
+});
+
+check('S11', '혈변·토혈·흑색변: 서로 다른 증상, 소화기(내과) 연결, 당일 안내, 다량 출혈·잇몸·의식이면 즉시', () => {
+  const ids = ['bloodStool', 'hematemesis', 'melena'];
+  for (const id of ids) {
+    const s = T.ZS_SYMPTOMS.find(x => x.id === id); ok(s, id + ' 없음');
+    eq(s.fields, ['내과'], id + ' 분야'); eq(s.care, 'today', id + ' 기본 단계');
+    reset({species: '강아지', symptoms: [id]}); eq(T.zsLevel(), 'today', id + ' 단독');
+    for (const f of ['giHeavy', 'gum', 'seizure']) { reset({species: '강아지', symptoms: [id], flags: [f]}); eq(T.zsLevel(), 'now', id + '+' + f); }
+  }
+  eq(new Set(ids.map(id => T.ZS_SHORT_LABELS[id])).size, 3, '이름 구분');
+  ok(!T.ZS_SYMPTOMS.find(s => s.id === 'diarrhea').keys.includes('혈변'), '설사 검색어에 혈변이 섞이지 않음');
+  ok(!T.ZS_FLAGS.bloodVomit, '토혈·혈변 묶음 신호 제거');
+});
+
+check('S12', '응급 결과: 24시간 응급 > 24시간 운영 순, 두 표기를 같게 다루지 않음, 일반 정렬에 응급 안내만 병원은 진료 중 아님', () => {
+  const keep = ctx.HOSPITALS;
+  ctx.HOSPITALS.length = 0;
+  ctx.HOSPITALS.push(
+    {id: 'x', name: '운영병원', phone: '043-111-0000', is24: true, origin: {내과: 'public'}, open: false, km: 1, tier: 3},
+    {id: 'y', name: '응급병원', phone: '043-222-0000', emergency24: true, origin: {내과: 'public'}, open: false, km: 5, tier: 3},
+    {id: 'z', name: '주간병원', phone: '043-333-0000', origin: {내과: 'public'}, open: false, km: 2, tier: 3});
+  eq(T.zsEmergencyHospitals().map(h => h.id), ['y', 'x'], '응급 목록 순서');
+  ok(T.zsEmergencyKind({emergency24: true}) !== T.zsEmergencyKind({is24: true}), '표기 구분');
+  reset({species: '강아지', flags: ['breath']});
+  const html = T.zsEmergencyBlock('now');
+  ok(html.includes('zs-emergency-warning') && html.includes('zs-emergency-results') && html.includes('tel:0432220000') && html.includes('응급 접수 여부 전화 확인'), '경고·목록 분리와 전화');
+  reset({species: '강아지', symptoms: ['vomit']});
+  const r = T.zsRank();
+  ok(r.find(x => x.h.id === 'x').status.open && !r.find(x => x.h.id === 'y').status.open, '24시간 응급 안내만으로 진료 중 처리 안 함');
+  ctx.HOSPITALS.length = 0; ctx.HOSPITALS.push(...H);
+});
+
+check('S13', '응급 증상은 일반 증상 3개 제한을 받지 않음', () => {
+  reset({species: '강아지', flags: ['breath', 'seizure', 'bleed', 'gum', 'trauma']});
+  eq(T.zsLevel(), 'now', '5개 선택');
+  eq(T.zs().flags.length, 5, '응급 증상 5개 유지');
 });
 
 const failed = results.filter(x => !x).length;
