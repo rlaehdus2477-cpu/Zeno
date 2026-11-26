@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';
+import {matchingPlace,readGoogleReviews} from '../google-reviews.js';
+const h={name:'수동물병원',phone:'043-275-8275',address:'충북 청주시 서원구 모충로3번길 81'};
+const good={id:'good',displayName:{text:h.name},nationalPhoneNumber:h.phone,formattedAddress:'대한민국 충청북도 청주시 서원구 모충로3번길 81'};
+assert.equal(matchingPlace(h,[good]),good);
+assert.equal(matchingPlace(h,[{...good,nationalPhoneNumber:'043-111-1111'}]),null);
+assert.equal(matchingPlace(h,[good,{...good,id:'duplicate'}]),null);
+assert.equal(matchingPlace(h,[{...good,formattedAddress:'서울특별시 모충로3번길 81'}]),null);
+let calls=[];
+const fake=async(url,opts)=>{calls.push({url,opts});return {ok:true,json:async()=>url.includes('searchText')?{places:[good]}:{rating:4.5,userRatingCount:2,reviews:[{rating:5,text:{text:'fixture'},authorAttribution:{displayName:'test'},googleMapsUri:'https://www.google.com/maps/'}]}}};
+const result=await readGoogleReviews(h,'fake-key',fake);
+assert.equal(result.status,'ok');assert.equal(result.reviews[0].text,'fixture');assert.equal(calls.length,2);
+assert.equal(calls[0].opts.headers['X-Goog-Api-Key'],'fake-key');assert.ok(!calls[0].url.includes('fake-key'));
+console.log('Google review matching and mocked API passed');

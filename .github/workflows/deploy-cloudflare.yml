@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - "worker.js"
+      - "google-reviews.js"
       - "owner.html"
       - "hospital.html"
       - "manifest-hospital.webmanifest"
