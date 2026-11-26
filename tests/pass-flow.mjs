@@ -300,6 +300,10 @@ async function sectionReceipts() {
     expect((await api('POST', '/api/pass/receipts', {token: A, body: {...base, pets: [{petId: 'cat1', amount: 80000}, {petId: 'other', amount: 70000}]}})).status === 400, '남의 아이 포함 저장됨');
     expect((await api('POST', '/api/pass/receipts', {token: A, body: {...base, pets: []}})).status === 400, '아이 없이 저장됨');
     expect((await api('POST', '/api/pass/receipts', {token: A, body: {...base, pets: [{petId: 'cat1', amount: -1}, {petId: 'dog1', amount: 150001}]}})).status === 400, '음수 금액 저장됨');
+    for (const amount of [null, '', ' ', false]) {
+      expect((await api('POST', '/api/pass/receipts', {token: A, body: {...base, pets: [{petId: 'cat1', amount}, {petId: 'dog1', amount: 150000}]}})).status === 400, '빈 금액 또는 불리언 허용');
+    }
+    expect((await api('POST', '/api/pass/receipts', {token: A, body: {...base, total: null, pets: [{petId: 'cat1', amount: 0}]}})).status === 400, '빈 총액 허용');
     const ok = await api('POST', '/api/pass/receipts', {token: A, body: {...base, pets: two}});
     expect(ok.status === 201 && ok.data.pets.length === 2 && ok.data.pets[1].amount === 70000 && ok.data.petId === 'cat1', '두 아이 저장 실패 ' + JSON.stringify(ok.data));
     const id = ok.data.id;
