@@ -11,6 +11,7 @@ on:
       - "package.json"
       - "tests/booking-flow.mjs"
       - "tests/vetqa-flow.mjs"
+      - "tests/pass-flow.mjs"
       - ".github/workflows/test-booking-flow.yml"
   workflow_dispatch:
 
@@ -33,5 +34,9 @@ jobs:
           NO_PROXY: "127.0.0.1,localhost"
       - name: Vet Q&A flow tests (local D1 only)
         run: node tests/vetqa-flow.mjs
+        env:
+          NO_PROXY: "127.0.0.1,localhost"
+      - name: ZENO PASS flow tests (local D1 only)
+        run: node tests/pass-flow.mjs
         env:
           NO_PROXY: "127.0.0.1,localhost"

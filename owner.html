@@ -4107,7 +4107,7 @@ async function loadHospital(draw=true){if(!state.hospitalToken)return;try{const 
 async function loadAdmin(draw=true){if(!state.adminToken)return;try{state.adminStats=await api('GET','/api/admin/stats',null,true);if(draw)render()}catch(err){toast(err.message);state.adminToken='';sessionStorage.removeItem('zeno-admin-token');if(draw)render()}}
 
 let zenoSearchScrollY=0,zenoNewSearch=false;
-const ZENO_PUBLIC_PAGES=['home','search','reservation-directory','emergency','prices','more','symptoms','vetqa','pets'];
+const ZENO_PUBLIC_PAGES=['home','search','reservation-directory','emergency','prices','more','symptoms','vetqa','pass','pets'];
 const zenoCanViewPage=p=>APP_MODE!=='owner'||!!state.ownerToken||ZENO_PUBLIC_PAGES.includes(p);
 function navTo(p,fromHistory=false){
  if(APP_MODE==='hospital'&&p!=='hospital')return;
@@ -4187,7 +4187,7 @@ function zenoNavIcon(name){
 function nav(){
  const menu=APP_MODE==='hospital'?
  [['bookings','예약 관리'],['emergency','진료 상태'],['qa','문의 답변'],['more','병원 정보']]:
- [['home','홈'],['search','병원 찾기'],['vetqa','수의사 Q&A'],['emergency','응급 진료'],['pets','내 아이'],['bookings','내 예약'],['qa','진료 전 질문'],/* CHANGED: unreleased points navigation hidden. */['prices','진료비 비교'],['more','더 보기']];
+ [['home','홈'],['search','병원 찾기'],['vetqa','수의사 Q&A'],['emergency','응급 진료'],['pets','내 아이'],['bookings','내 예약'],['pass','ZENO PASS'],/* CHANGED: unreleased points navigation hidden. */['prices','진료비 비교'],['more','더 보기']];
  const ownerSection=state.page==='reservation-directory'?'search':state.page;
  const item=(m,mobile=false)=>APP_MODE==='hospital'?
  '<button class="'+(mobile?'':'navlink ')+(state.hTab===m[0]?'active':'')+'" data-action="h-tab" data-value="'+e(m[0])+'"><span class="ico">'+zenoNavIcon(m[0])+'</span><b>'+e(m[1])+'</b></button>':
@@ -5656,7 +5656,7 @@ function home(){
  +'<button type="button" class="zeno-home-utility-row" data-action="around-clock-shortcut"><span class="zeno-home-utility-icon">'+zenoHomeSmallIcon('urgent')+'</span><span class="zeno-home-utility-copy"><strong>24시간 운영 병원</strong><small>응급 접수는 전화로 확인</small></span><span class="zeno-home-utility-chevron" aria-hidden="true">›</span></button>'
  +'</div></section>'
  +zenoHomeBookingPreview()
- +'<section class="zeno-home-services" aria-label="내 서비스"><h2>내 서비스</h2><div class="zeno-home-service-grid">'+[['bookings','내 예약'],['qa','진료 전 질문'],['vetqa','수의사 Q&A'],['pets','내 아이 기록']].map(([nav,label])=>'<button type="button" data-nav="'+nav+'"><span class="zeno-home-service-icon">'+zenoTabIcon(nav==='pets'?'pet-record':nav)+'</span><span>'+label+'</span></button>').join('')+'</div></section>'
+ +'<section class="zeno-home-services" aria-label="내 서비스"><h2>내 서비스</h2><div class="zeno-home-service-grid">'+[['bookings','내 예약'],['pass','ZENO PASS'],['vetqa','수의사 Q&A'],['pets','내 아이 기록']].map(([nav,label])=>'<button type="button" data-nav="'+nav+'"><span class="zeno-home-service-icon">'+zenoTabIcon(nav==='pets'?'pet-record':nav)+'</span><span>'+label+'</span></button>').join('')+'</div></section>'
  +picker+'</div>';
 }
 const ZENO_RES_DIRECTORY_TABS=[['all','전체'],['zeno','ZENO 예약'],['naver','네이버 예약'],['website','홈페이지 예약'],['phone','전화 예약'],['walkin','예약 없이 방문'],['unknown','기타·확인 필요']];
@@ -5926,7 +5926,7 @@ function bookingsPage(){
 function qaPage(){
  const list=[...state.questions].sort((a,b)=>String(b.updatedAt||b.createdAt||'').localeCompare(String(a.updatedAt||a.createdAt||'')));
  return topbar('진료 전 질문','예약한 병원에 내원 전 1:1로 묻는 비공개 질문')
- +'<div class="section"><p class="zeno-qa-identity"><strong>답변 주체</strong> · 제휴 병원 계정의 담당자입니다. 수의사 자격과 답변 시간은 확인되지 않았어요.</p><div class="section-title"><h2>질문 '+list.length+'개</h2><button class="btn small" data-action="ask">질문하기</button></div>'
+ +'<div class="section"><p class="zeno-qa-identity"><strong>답변 주체</strong> · 제휴 병원 계정의 담당자입니다. 수의사 자격과 답변 시간은 확인되지 않았어요.</p><div class="section-title"><h2>질문 '+list.length+'개</h2></div><p class="zeno-qa-identity">새 진료 전 질문은 더 이상 받지 않아요. 예약할 때 진료 전 전자문진을 작성해 주세요. 이전 질문과 답변은 여기에서 계속 볼 수 있어요.</p>'
  +(list.length?'<div class="grid two">'+list.map(q=>{
  const answered=q.status==='answered'&&!!q.answer;
  const lead=String(q.text||'').trim().split('\n')[0].slice(0,65)||'내 질문';
@@ -6681,7 +6681,7 @@ function pricesPage(){
  const extraChips=ZENO_FEE_CATEGORIES.filter(c=>!quickFees.includes(c)).map(feeChip).join('');
  const mixedUnits=['혈액화학검사','엑스레이','초음파 검사','입원료','입원비(1일)','심장사상충 예방(제품별)','상담료','CT 검사','평일 주간 진찰료','일요일 진찰료','응급·야간 진찰료'].includes(selected);
  const rows=ZENO_PUBLIC_FEES.flatMap(v=>v.prices.filter(p=>p[0]===priceKey||(isNeuter&&['수컷 중성화','암컷 중성화','강아지 암컷 중성화','고양이 암컷 중성화','강아지 수컷 중성화','고양이 수컷 중성화'].includes(p[0]))).map(p=>({id:v.id,name:hospitalById(v.id)?.name||'병원명 확인',url:p[4]||v.url,checked:v.checked,source:v.source,price:p})));
- if(!mixedUnits)rows.sort((a,b)=>a.price[1]-b.price[1]);
+ /* 2026-11-26: 병원 가격순 정렬·순위 없음. 공개 가격표 순서 그대로 보여 줍니다. */
  const priceCaution=mixedUnits
   ?'병원마다 검사 개수·부위·체중·포함 항목이 달라 가격순으로 정렬하지 않았습니다.':'같은 항목도 진료 조건에 따라 총비용이 달라질 수 있습니다.';
  const official=rows.map(r=>{
@@ -6701,7 +6701,7 @@ function pricesPage(){
   :'해당 비용 항목 공식 가격 '+rows.length+'곳';
  return topbar('진료비 비교','')
   +'<div class="zeno-fee-intro"><strong>청주 동물병원 공개 진료비</strong><p>전체 병원에서 공개 가격표를 찾아보거나 진료 항목별로 비교할 수 있습니다. 실제 결제금액은 진료 조건에 따라 달라질 수 있습니다.</p><small>최근 자료 확인 2026.11.25 · '+amountNote+'</small></div>'
-  +'<section class="zeno-fee-section zeno-fee-compact"><div class="zeno-fee-choices" role="group" aria-label="비교할 가격 항목">'+priceChips+'</div><details class="zeno-fee-more"'+(!quickFees.includes(selected)?' open':'')+'><summary>전체 진료 항목'+(!quickFees.includes(selected)?' · '+e(selected):'')+'</summary><div class="zeno-fee-choices" role="group" aria-label="추가 가격 항목">'+extraChips+'</div><h2>진료 분야</h2><div class="zeno-fee-care-grid" role="group" aria-label="진료 분야 선택">'+careChips+'</div></details></section>'
+  +'<button type="button" class="zp-link-row" data-zp="view" data-value="fees"><span>여러 항목 합산·연간 예상 비용 · <b>ZENO PASS</b></span>'+zpChevron+'</button>'+'<section class="zeno-fee-section zeno-fee-compact"><div class="zeno-fee-choices" role="group" aria-label="비교할 가격 항목">'+priceChips+'</div><details class="zeno-fee-more"'+(!quickFees.includes(selected)?' open':'')+'><summary>전체 진료 항목'+(!quickFees.includes(selected)?' · '+e(selected):'')+'</summary><div class="zeno-fee-choices" role="group" aria-label="추가 가격 항목">'+extraChips+'</div><h2>진료 분야</h2><div class="zeno-fee-care-grid" role="group" aria-label="진료 분야 선택">'+careChips+'</div></details></section>'
   +(isAll?zenoAllFeeHospitals():noCarePrices?zenoFeeCareNoPriceMarkup(selected)
    :isHealth?zenoHealthCheckPriceMarkup()
    :isNeuter?'<div class="zeno-fee-subhead"><h2>중성화 수술</h2><p>병원 공개가격 '+new Set(rows.map(r=>r.id)).size+'곳 · 수컷·암컷 및 마취 방식에 따라 가격이 달라집니다. 행사 적용 조건과 검사·약제·회복관리비를 확인해 주세요.</p></div>'+official+'<div class="zeno-fee-subhead"><h2>보호자 견적 사례</h2><p>다음 사례는 공식 게시가격이 아니며 가격순 비교에 포함하지 않습니다.</p></div>'+estimates
@@ -6718,8 +6718,8 @@ const ZENO_MORE_COPY=Object.freeze({
 });
 function morePage(){
  const items=[
+  ['pass','ZENO PASS'],
   ['bookings','내 예약'],
-  ['qa','진료 전 질문'],
   /* CHANGED: points nav hidden until billing is actually enabled. */
   ['pets','추모관']
  ];
@@ -6853,7 +6853,7 @@ function authScreen(){
  +'<a class="hosp-switch" href="/hospital">병원 담당자용 화면</a></div></div>';
 }
 
-function render(){const zenoBeforePaintY=window.scrollY;if(APP_MODE==='owner'&&!zenoCanViewPage(state.page)){document.getElementById('app').innerHTML=authScreen();return;}if(state.page==='login'){document.getElementById('app').innerHTML=authScreen();return;}if(APP_MODE==='hospital')state.page='hospital';else if(state.page==='hospital'||state.page==='admin')state.page='home';const body=state.page==='home'?home():state.page==='symptoms'?zenoSymptomPage():state.page==='search'?searchPage():state.page==='reservation-directory'?zenoReservationDirectory():state.page==='emergency'?emergency():state.page==='pets'?petsPage():state.page==='bookings'?bookingsPage():state.page==='qa'?qaPage():state.page==='vetqa'?vetqaPage():state.page==='membership'?membership():state.page==='prices'?pricesPage():state.page==='hospital'?hospitalPage():state.page==='more'?morePage():adminPage();document.getElementById('app').innerHTML=`${nav()}<main class="content">${state.appError?`<div class="banner warning">정보를 불러오지 못했어요. <button class="btn secondary small" data-action="refresh">다시 시도</button></div>`:''}${body}${footer()}</main>${renderModal()}`;requestAnimationFrame(zenoUpdateDetailHint);requestAnimationFrame(zenoSyncBookingViewport);if(zenoBeforePaintY>0)window.scrollTo({left:0,top:zenoBeforePaintY,behavior:'instant'});}
+function render(){const zenoBeforePaintY=window.scrollY;if(APP_MODE==='owner'&&!zenoCanViewPage(state.page)){document.getElementById('app').innerHTML=authScreen();return;}if(state.page==='login'){document.getElementById('app').innerHTML=authScreen();return;}if(APP_MODE==='hospital')state.page='hospital';else if(state.page==='hospital'||state.page==='admin')state.page='home';const body=state.page==='home'?home():state.page==='symptoms'?zenoSymptomPage():state.page==='search'?searchPage():state.page==='reservation-directory'?zenoReservationDirectory():state.page==='emergency'?emergency():state.page==='pets'?petsPage():state.page==='bookings'?bookingsPage():state.page==='qa'?qaPage():state.page==='vetqa'?vetqaPage():state.page==='pass'?zenoPassPage():state.page==='membership'?membership():state.page==='prices'?pricesPage():state.page==='hospital'?hospitalPage():state.page==='more'?morePage():adminPage();document.getElementById('app').innerHTML=`${nav()}<main class="content">${state.appError?`<div class="banner warning">정보를 불러오지 못했어요. <button class="btn secondary small" data-action="refresh">다시 시도</button></div>`:''}${body}${footer()}</main>${renderModal()}`;requestAnimationFrame(zenoUpdateDetailHint);requestAnimationFrame(zenoSyncBookingViewport);if(zenoBeforePaintY>0)window.scrollTo({left:0,top:zenoBeforePaintY,behavior:'instant'});}
 
 /* Adjust the booking sheet to the Android keyboard's visual viewport, without altering other dialogs. */
 function zenoKeepBookingFieldVisible(dialog,input){
@@ -7462,6 +7462,659 @@ setInterval(()=>zenoCheckOwnerUIRevision(),180000);
 setInterval(()=>{if(document.hidden)return;if(state.page==='home'){const rail=document.querySelector('.zeno-v10-open-section');if(rail){const offsets=Object.fromEntries(Array.from(rail.querySelectorAll('.zeno-v10-open-rail')).map(el=>[el.dataset.rail,el.scrollLeft]));rail.outerHTML=zenoHomeOperatingRail();document.querySelectorAll('.zeno-v10-open-section .zeno-v10-open-rail').forEach(el=>{el.scrollLeft=offsets[el.dataset.rail]||0});}}else if(state.page==='emergency'||(state.page==='search'&&zenoHasFilter('야간')))render();},60000);
 /* CHANGED: refresh guest-visible clinic intake every minute; no simulated live counters. */
 setInterval(()=>{if(document.hidden||state.ownerToken||!state.serverReady)return;refresh().catch(()=>{});},60000);
-</script><style>#memopen{position:fixed;bottom:16px;right:16px;z-index:100;border:0;border-radius:25px;background:#1979e6;color:white;padding:14px;font-weight:bold}#membg{display:none;position:fixed;inset:0;background:#091b32b8;z-index:110;overflow:auto;padding:20px}#membg.show{display:block}#memcard{background:white;color:#173452;max-width:560px;margin:4vh auto;border-radius:20px;padding:24px}#memcard input:not([type=checkbox]),#memcard textarea,#memcard select{display:block;width:100%;box-sizing:border-box;margin:9px 0;padding:12px;border:1px solid #ccc;border-radius:8px}#memcard button{padding:10px 14px;background:#1979e6;color:white;border:0;border-radius:9px;margin:5px}@media(max-width:750px){#memopen{bottom:calc(88px + env(safe-area-inset-bottom));right:13px;padding:9px 15px;font-size:13px;box-shadow:0 7px 20px #1861bb38}}</style>
+</script><!-- ZENO-PASS-BEGIN --><style id="zeno-pass-style">
+/* ZENO PASS · 보호자 (2026-11-26): 흰 배경, 얇은 구분선, 4px 간격 체계. 그라데이션·이모지·과한 카드 없음 */
+.zp-page{max-width:720px;color:#142e4c}
+.zp-page h2{font-size:17px;line-height:1.45;font-weight:700;margin:0 0 8px;color:#142e4c;letter-spacing:-.2px}
+.zp-page p{margin:0}
+.zp-muted{color:#6b7f94;font-size:14px;line-height:1.5}
+.zp-error{color:#c2404f;font-size:14px;line-height:1.5}
+.zp-plan{background:#fff;border:1px solid #e5ebf1;border-radius:12px;padding:16px;margin:12px 0 16px}
+.zp-plan p{font-size:14px;line-height:1.55;color:#4f6880;margin-top:4px}
+.zp-plan-head{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.zp-plan-head strong{font-size:18px;font-weight:700}
+.zp-tag{display:inline-flex;align-items:center;height:24px;padding:0 8px;border-radius:6px;background:#eef4fb;color:#3d5f80;font-size:12px;font-weight:600}
+.zp-tag.ok{background:#e9f7ef;color:#1d7a46}
+.zp-tag.warn{background:#fff4e5;color:#9a5b00}
+.zp-tag.bad{background:#fdecee;color:#b23545}
+.zp-tag.mute{background:#f1f3f5;color:#5d6b78}
+.zp-check{display:flex;gap:8px;align-items:flex-start;margin:12px 0;font-size:13px;line-height:1.5;color:#4f6880}
+.zp-check input{margin-top:3px;width:16px;height:16px;flex:0 0 16px}
+.zp-btn{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 16px;border-radius:10px;border:1px solid #1689fa;background:#1689fa;color:#fff;font-size:15px;font-weight:600;cursor:pointer;width:100%}
+.zp-btn.secondary{background:#fff;color:#1d5f9c;border-color:#d3e1ef}
+.zp-btn.small{min-height:36px;width:auto;font-size:13px;padding:0 12px}
+.zp-btn:disabled{opacity:.55;cursor:default}
+.zp-btn-row{display:flex;gap:8px;margin-top:12px}
+.zp-btn-row .zp-btn{flex:1}
+.zp-btn-row.inline{justify-content:flex-start}
+.zp-btn-row.inline .zp-btn{flex:0 0 auto}
+.zp-list{display:flex;flex-direction:column;background:#fff;border:1px solid #e5ebf1;border-radius:12px;overflow:hidden}
+.zp-row{display:flex;align-items:center;gap:12px;width:100%;min-height:64px;padding:12px 16px;border:0;border-bottom:1px solid #edf1f5;background:#fff;text-align:left;color:#142e4c;cursor:pointer}
+.zp-row:last-child{border-bottom:0}
+.zp-row:hover{background:#f8fafc}
+.zp-row-no{flex:0 0 24px;font-size:13px;font-weight:700;color:#1689fa}
+.zp-row-text{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.zp-row-text strong{font-size:16px;font-weight:600;line-height:1.4}
+.zp-row-text small{font-size:13px;color:#6b7f94;line-height:1.45}
+.zp-chevron{flex:0 0 18px;color:#9ca9b7}
+.zp-note{margin-top:24px;padding:0 4px}
+.zp-note p{font-size:14px;line-height:1.6;color:#4f6880;margin-top:4px}
+.zp-link-danger{display:block;margin:24px 4px 0;padding:8px 0;border:0;background:none;color:#8a96a3;font-size:13px;text-decoration:underline;cursor:pointer}
+.zp-back{display:inline-flex;align-items:center;gap:4px;min-height:40px;padding:0 4px;margin:0 0 4px -4px;border:0;background:none;color:#4f6880;font-size:14px;font-weight:600;cursor:pointer}
+.zp-title{font-size:22px;font-weight:700;line-height:1.35;margin:4px 0 4px;letter-spacing:-.4px;color:#142e4c}
+.zp-lead{font-size:14px;line-height:1.55;color:#4f6880;margin-bottom:16px!important}
+.zp-gate{background:#fff;border:1px solid #e5ebf1;border-radius:12px;padding:16px;margin:12px 0}
+.zp-gate strong{display:block;font-size:16px;margin-bottom:4px}
+.zp-gate p{font-size:14px;line-height:1.55;color:#4f6880;margin-bottom:12px}
+.zp-section{margin-top:24px}
+.zp-section-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:8px}
+.zp-section-head h2{margin:0}
+.zp-section-head span{font-size:13px;color:#6b7f94}
+.zp-box{background:#fff;border:1px solid #e5ebf1;border-radius:12px}
+.zp-item{padding:14px 16px;border-bottom:1px solid #edf1f5}
+.zp-item:last-child{border-bottom:0}
+.zp-item-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.zp-item-top strong{font-size:15px;font-weight:600;line-height:1.45}
+.zp-item small{display:block;font-size:13px;color:#6b7f94;line-height:1.5;margin-top:2px}
+.zp-item p{font-size:14px;line-height:1.55;color:#4f6880;margin-top:4px}
+.zp-item .zp-btn-row{margin-top:10px}
+.zp-chips{display:flex;gap:8px;overflow-x:auto;padding:2px 0 8px;scrollbar-width:none}
+.zp-chips::-webkit-scrollbar{display:none}
+.zp-chip{flex:0 0 auto;min-height:36px;padding:0 12px;border:1px solid #d6e2ee;border-radius:18px;background:#fff;color:#3d5f80;font-size:13px;font-weight:600;cursor:pointer}
+.zp-chip[aria-pressed="true"]{background:#142e4c;border-color:#142e4c;color:#fff}
+.zp-form{display:flex;flex-direction:column;gap:12px}
+.zp-field{display:flex;flex-direction:column;gap:4px}
+.zp-field label,.zp-field>span{font-size:13px;font-weight:600;color:#4f6880}
+.zp-field input,.zp-field select,.zp-field textarea{width:100%;box-sizing:border-box;min-height:44px;padding:10px 12px;border:1px solid #d6e2ee;border-radius:10px;background:#fff;color:#142e4c;font-size:16px;font-family:inherit}
+.zp-field textarea{min-height:72px;resize:vertical}
+.zp-field-row{display:flex;gap:8px}
+.zp-field-row>.zp-field{flex:1;min-width:0}
+.zp-help{font-size:12px;line-height:1.5;color:#6b7f94}
+.zp-table{width:100%;border-collapse:collapse;font-size:14px}
+.zp-table th,.zp-table td{padding:10px 12px;border-bottom:1px solid #edf1f5;text-align:left;vertical-align:top}
+.zp-table th{font-size:12px;font-weight:600;color:#6b7f94;background:#f8fafc}
+.zp-table td.num,.zp-table th.num{text-align:right;white-space:nowrap}
+.zp-table tr:last-child td{border-bottom:0}
+.zp-scroll{overflow-x:auto}
+.zp-kv{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid #edf1f5;font-size:14px}
+.zp-kv:last-child{border-bottom:0}
+.zp-kv span{color:#6b7f94}
+.zp-kv b{font-weight:600;text-align:right}
+.zp-empty{padding:20px 16px;text-align:left;font-size:14px;line-height:1.55;color:#6b7f94}
+.zp-disclaimer{margin-top:16px;font-size:12px;line-height:1.6;color:#6b7f94}
+@media(max-width:750px){.zp-page{padding-bottom:12px}.zp-title{font-size:20px}}
+.zp-chips.zp-wrap{flex-wrap:wrap;overflow:visible}
+.zp-count{display:inline-flex;align-items:center;gap:4px;font-size:14px;color:#4f6880}
+.zp-count input{width:64px;min-height:36px;padding:4px 8px;border:1px solid #d6e2ee;border-radius:8px;font-size:16px;text-align:right;color:#142e4c}
+.zp-total b{color:#142e4c}
+.zp-total span{color:#142e4c;font-weight:600}
+.zp-fee-note summary{font-size:12px;color:#6b7f94;cursor:pointer;padding:2px 0 6px}
+.zp-fee-note p{font-size:12px!important;line-height:1.5;color:#6b7f94}
+.zp-link-row{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;margin:12px 0;padding:12px 16px;border:1px solid #e5ebf1;border-radius:12px;background:#fff;color:#142e4c;font-size:14px;text-align:left;cursor:pointer}
+.zp-link-row b{font-weight:600}
+.zp-more{margin:0 0 8px}
+.zp-more summary{font-size:13px;font-weight:600;color:#3d5f80;cursor:pointer;padding:4px 0 8px}
+.zp-bars{display:grid;grid-template-columns:repeat(12,1fr);gap:4px;align-items:end;height:96px;margin-bottom:8px}
+.zp-bar{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:4px}
+.zp-bar span{display:block;width:100%;max-width:16px;min-height:2px;background:#1689fa;border-radius:3px 3px 0 0}
+.zp-bar small{font-size:10px;color:#8a96a3}
+.zp-photo{display:block;max-width:100%;max-height:480px;object-fit:contain;background:#f8fafc;margin-top:10px;border:1px solid #e5ebf1;border-radius:8px}
+</style><script id="zeno-pass-module">
+/* ===== ZENO PASS · 보호자 화면 (2026-11-26) =====
+   PASS 권한은 서버(/api/pass)에서 확인한 값만 사용합니다. 화면에서 임의로 열지 않습니다. */
+const ZP_FEATURES=[
+ {key:'rx',no:'01',title:'제휴병원 처방식 재고 확인',desc:'재고 상태와 확인 시각, 희망 수량 확보 요청, 입고 알림'},
+ {key:'fees',no:'02',title:'공개 진료비 통합 비교',desc:'같은 항목끼리 비교하고 합산·연간 예상 비용 계산'},
+ {key:'nutrition',no:'03',title:'반려동물별 맞춤 영양 관리',desc:'제조사 공식 자료 기준 사료 탐색과 급여 비용 비교'},
+ {key:'receipts',no:'04',title:'다묘·다견 영수증 통합 관리',desc:'영수증 사진 등록, 아이별 의료비 분류와 통계'}
+];
+const ZP_VIEWS={};
+function zpState(){
+ if(!state.zp)state.zp={view:'hub',pass:null,passLoaded:false,passError:'',busy:false,agree:false};
+ return state.zp;
+}
+function zpActive(){return !!zpState().pass?.active}
+async function zpLoadPass(draw=true){
+ const z=zpState();
+ if(!state.ownerToken){z.pass=null;z.passLoaded=true;if(draw&&state.page==='pass')render();return}
+ try{const r=await api('GET','/api/pass');z.pass=r.pass;z.passError=''}
+ catch(err){z.passError=err.message}
+ z.passLoaded=true;
+ if(draw&&state.page==='pass')render();
+}
+function zpOpen(view){
+ const z=zpState();
+ if(state.page!=='pass'){z.pendingView=view||'hub';navTo('pass');return}
+ z.view=view||'hub';window.scrollTo({top:0,behavior:'instant'});render();
+ const loader=ZP_VIEWS[z.view]?.load;
+ if(loader)loader();
+}
+const zpChevron='<svg class="zp-chevron" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>';
+function zpBack(label){return '<button type="button" class="zp-back" data-zp="view" data-value="hub"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 5-7 7 7 7"/></svg>'+e(label||'ZENO PASS')+'</button>'}
+function zpWon(n){return Number.isFinite(Number(n))?Math.round(Number(n)).toLocaleString('ko-KR')+'원':'미확인'}
+function zpDate(iso){if(!iso)return '';const d=new Date(iso);if(isNaN(d))return String(iso).slice(0,10);return new Date(d.getTime()+9*3600e3).toISOString().slice(0,16).replace('T',' ')}
+/* PASS 회원 전용 화면을 열기 전 안내. 서버도 같은 조건으로 거절합니다. */
+function zpGate(title){
+ if(!state.ownerToken)return '<section class="zp-gate"><strong>로그인이 필요해요</strong><p>'+e(title)+'은 ZENO PASS 기능입니다. 로그인한 뒤 PASS 시범 이용을 시작할 수 있어요.</p><button type="button" class="zp-btn" data-zp="login">로그인</button></section>';
+ const z=zpState();
+ if(!z.passLoaded)return '<p class="zp-muted" role="status">PASS 이용 상태를 확인하고 있어요.</p>';
+ if(!zpActive())return '<section class="zp-gate"><strong>PASS 회원 전용 기능이에요</strong><p>'+e(title)+'은 ZENO PASS에서 이용할 수 있어요. 지금은 결제 없는 시범 운영 중입니다.</p><button type="button" class="zp-btn" data-zp="view" data-value="hub">PASS 안내 보기</button></section>';
+ return '';
+}
+function zenoPassPage(){
+ const z=zpState();
+ if(z.view!=='hub'&&ZP_VIEWS[z.view])return '<div class="zp-page">'+ZP_VIEWS[z.view].render()+'</div>';
+ const p=z.pass;
+ let status;
+ if(!state.ownerToken){
+  status='<section class="zp-plan"><div class="zp-plan-head"><strong>월 1,800원</strong><span class="zp-tag">시범 운영 · 결제 없음</span></div><p>로그인하면 시범 이용을 시작할 수 있어요.</p><button type="button" class="zp-btn" data-zp="login">로그인하고 시작하기</button></section>';
+ }else if(!z.passLoaded){
+  status='<section class="zp-plan"><p class="zp-muted" role="status">이용 상태를 확인하고 있어요.</p></section>';
+ }else if(z.passError){
+  status='<section class="zp-plan"><p class="zp-error">'+e(z.passError)+'</p><button type="button" class="zp-btn secondary" data-zp="reload-pass">다시 확인</button></section>';
+ }else if(p?.active){
+  status='<section class="zp-plan"><div class="zp-plan-head"><strong>PASS 이용 중</strong><span class="zp-tag">시범 운영 · 결제 없음</span></div><p>시작일 '+e(zpDate(p.startedAt).slice(0,10))+' · 유료 전환 전에 따로 안내하고 동의를 받습니다.</p></section>';
+ }else{
+  status='<section class="zp-plan"><div class="zp-plan-head"><strong>월 1,800원</strong><span class="zp-tag">시범 운영 · 결제 없음</span></div>'
+   +(p?.status==='cancelled'?'<p>'+e(zpDate(p.cancelledAt).slice(0,10))+'에 해지했어요. 이전에 저장한 영수증과 요청 기록은 계속 볼 수 있어요.</p>':'<p>지금은 결제 없이 모든 PASS 기능을 이용할 수 있어요.</p>')
+   +'<label class="zp-check"><input type="checkbox" data-zp-input="agree"'+(z.agree?' checked':'')+'><span>시범 운영 기간에는 결제가 없고, 유료 전환 시 별도 동의를 받는다는 안내를 확인했어요.</span></label>'
+   +'<button type="button" class="zp-btn" data-zp="start"'+(z.busy?' disabled':'')+'>시범 이용 시작</button></section>';
+ }
+ const list='<nav class="zp-list" aria-label="ZENO PASS 기능">'+ZP_FEATURES.map(f=>'<button type="button" class="zp-row" data-zp="view" data-value="'+f.key+'"><span class="zp-row-no">'+f.no+'</span><span class="zp-row-text"><strong>'+e(f.title)+'</strong><small>'+e(f.desc)+'</small></span>'+zpChevron+'</button>').join('')+'</nav>';
+ const free='<section class="zp-note"><h2>무료로 계속 이용하는 기능</h2><p>병원 검색, 병원별 공개 진료비 보기, 기본 예약, 진료 전 전자문진은 PASS 없이 이용할 수 있어요.</p><p>제노는 병원에 제휴비나 판매 수수료를 받지 않습니다.</p></section>';
+ const cancel=p?.active?'<button type="button" class="zp-link-danger" data-zp="cancel">PASS 해지</button>':'';
+ return '<div class="zp-page">'+topbar('ZENO PASS','')+status+list+free+cancel+'</div>';
+}
+document.addEventListener('click',async ev=>{
+ const el=ev.target.closest('[data-zp]');if(!el||APP_MODE!=='owner')return;
+ const a=el.dataset.zp,val=el.dataset.value,z=zpState();
+ if(a==='view'){zpOpen(val);return}
+ if(a==='login'){state.pendingPage='pass';navTo('login');return}
+ if(a==='reload-pass'){z.passLoaded=false;render();zpLoadPass();return}
+ if(a==='start'){
+  if(!z.agree){toast('시범 운영 안내를 확인해 주세요.');return}
+  z.busy=true;render();
+  try{const r=await api('POST','/api/pass/start',{agree:true});z.pass=r.pass;toast('PASS 시범 이용을 시작했어요.')}
+  catch(err){toast(err.message)}
+  z.busy=false;render();return;
+ }
+ if(a==='cancel'){
+  if(!confirm('PASS를 해지할까요? 저장한 영수증과 요청 기록은 해지 후에도 볼 수 있어요.'))return;
+  try{const r=await api('POST','/api/pass/cancel',{});z.pass=r.pass;toast('PASS를 해지했어요.')}
+  catch(err){toast(err.message)}
+  render();return;
+ }
+ const handler=ZP_VIEWS[z.view]?.click;
+ if(handler)await handler(a,el,ev);
+});
+document.addEventListener('change',ev=>{
+ const el=ev.target;if(!el||!el.dataset||APP_MODE!=='owner')return;
+ if(el.dataset.zpInput==='agree'){zpState().agree=el.checked;return}
+ const z=zpState(),handler=ZP_VIEWS[z.view]?.change;
+ if(handler&&el.closest('.zp-page'))handler(el,ev);
+});
+document.addEventListener('submit',async ev=>{
+ const f=ev.target;if(!f||!f.dataset||!f.dataset.zpForm||APP_MODE!=='owner')return;
+ ev.preventDefault();
+ const z=zpState(),handler=ZP_VIEWS[z.view]?.submit;
+ if(handler)await handler(f.dataset.zpForm,f,ev);
+});
+{
+ const zpBaseNavTo=navTo;
+ navTo=function(p,fromHistory){
+  if(p==='pass'&&state.page!=='pass'){const z=zpState();z.view=z.pendingView||'hub';z.pendingView=null}
+  zpBaseNavTo(p,fromHistory);
+  if(p==='pass'){zpLoadPass();const loader=ZP_VIEWS[zpState().view]?.load;if(loader)loader()}
+ };
+}
+/* Lucide v0.456.0 ticket (ISC): PASS 메뉴 아이콘 */
+ZENO_TAB_ICONS.pass='<path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z" /><path d="M13 5v2" /><path d="M13 17v2" /><path d="M13 11v2" />';
+/* PASS 01 · 제휴병원 처방식 재고 확인 (보호자) */
+const ZP_RX_LABEL={in:['재고 있음','ok'],low:['재고 적음','warn'],ask:['문의 필요','mute'],out:['품절','bad']};
+const ZP_RX_REQ_LABEL={pending:['병원 확인 대기','mute'],accepted:['확보됨','ok'],rejected:['확보 어려움','bad'],cancelled:['취소함','mute'],picked_up:['수령 완료','ok']};
+const ZP_PARTNERS=['soo','naeum','pub045'];
+function zpRx(){const z=zpState();if(!z.rx)z.rx={loaded:false,error:'',stock:[],requests:[],alerts:[],hospital:'all',form:null,busy:false};return z.rx}
+async function zpRxLoad(){
+ const r=zpRx();
+ if(!state.ownerToken){r.loaded=true;return}
+ if(!zpState().passLoaded)await zpLoadPass(false);
+ try{
+  const mine=await api('GET','/api/pass/rx');
+  r.requests=mine.requests||[];r.alerts=mine.alerts||[];
+  if(zpActive()){const s=await api('GET','/api/pass/rx-stock');r.stock=s.items||[]}
+  r.error='';
+ }catch(err){r.error=err.message}
+ r.loaded=true;
+ if(state.page==='pass'&&zpState().view==='rx')render();
+}
+function zpRxAge(iso){
+ const ms=Date.now()-new Date(iso).getTime();
+ if(!Number.isFinite(ms))return '';
+ const d=Math.floor(ms/86400e3);
+ return d>=7?'마지막 확인 '+d+'일 전 · 전화로 다시 확인해 주세요':'';
+}
+function zpRxForm(item){
+ const pets=state.pets||[];
+ const petField=pets.length
+  ?'<div class="zp-field"><label for="zp-rx-pet">먹는 아이</label><select id="zp-rx-pet" name="petName" required>'+pets.map(p=>'<option value="'+e(p.name)+'">'+e(p.name)+' · '+e(p.species||'')+'</option>').join('')+'</select></div>'
+  :'<div class="zp-field"><label for="zp-rx-pet">먹는 아이 이름</label><input id="zp-rx-pet" name="petName" maxlength="35" required></div>';
+ return '<form class="zp-form" data-zp-form="rx-request" style="margin-top:12px">'
+  +'<input type="hidden" name="hospitalId" value="'+e(item.hospitalId)+'"><input type="hidden" name="productId" value="'+e(item.productId)+'">'
+  +petField
+  +'<div class="zp-field"><label for="zp-rx-qty">희망 수량</label><input id="zp-rx-qty" name="quantity" type="number" inputmode="numeric" min="1" max="20" value="1" required></div>'
+  +'<div class="zp-field"><label for="zp-rx-note">병원에 남길 말 (선택)</label><input id="zp-rx-note" name="note" maxlength="200" placeholder="예: 토요일 오전 방문 예정"></div>'
+  +'<label class="zp-check"><input type="checkbox" name="prescribed" value="1" required><span>수의사에게 처방받은 제품이에요.</span></label>'
+  +'<p class="zp-help">병원이 수락하면 확보 수량과 방문 기한을 알려 드려요. 결제는 방문할 때 병원에서 합니다.</p>'
+  +'<div class="zp-btn-row"><button type="button" class="zp-btn secondary" data-zp="rx-form-close">닫기</button><button type="submit" class="zp-btn"'+(zpRx().busy?' disabled':'')+'>확보 요청 보내기</button></div></form>';
+}
+function zpRxItem(item){
+ const r=zpRx(),[label,tone]=ZP_RX_LABEL[item.status]||['확인 필요','mute'];
+ const alert=r.alerts.find(a=>a.hospitalId===item.hospitalId&&a.productId===item.productId&&a.status==='waiting');
+ const open=r.form&&r.form.hospitalId===item.hospitalId&&r.form.productId===item.productId;
+ const age=zpRxAge(item.checkedAt);
+ let action='';
+ if(item.status==='out')action=alert?'<button type="button" class="zp-btn small secondary" data-zp="rx-alert-off" data-h="'+e(item.hospitalId)+'" data-p="'+e(item.productId)+'">입고 알림 해제</button>':'<button type="button" class="zp-btn small secondary" data-zp="rx-alert" data-h="'+e(item.hospitalId)+'" data-p="'+e(item.productId)+'">입고 알림 신청</button>';
+ else if(!open)action='<button type="button" class="zp-btn small secondary" data-zp="rx-form" data-h="'+e(item.hospitalId)+'" data-p="'+e(item.productId)+'">확보 요청</button>';
+ return '<div class="zp-item"><div class="zp-item-top"><strong>'+e(item.productName)+'</strong><span class="zp-tag '+tone+'">'+label+'</span></div>'
+  +'<small>'+e([item.form,'병원 확인 '+zpDate(item.checkedAt)].filter(Boolean).join(' · '))+'</small>'
+  +(age?'<small class="zp-error">'+e(age)+'</small>':'')
+  +(alert?'<small>입고되면 이 화면에서 알려 드려요.</small>':'')
+  +(action?'<div class="zp-btn-row inline">'+action+'</div>':'')
+  +(open?zpRxForm(item):'')+'</div>';
+}
+function zpRxRequestsMarkup(){
+ const r=zpRx();
+ if(!r.requests.length)return '<div class="zp-box"><p class="zp-empty">보낸 확보 요청이 없어요.</p></div>';
+ return '<div class="zp-box">'+r.requests.map(q=>{
+  const [label,tone]=ZP_RX_REQ_LABEL[q.status]||['확인 필요','mute'];
+  const h=hospitalById(q.hospitalId);
+  let detail='';
+  if(q.status==='accepted')detail='<p>'+e(q.availableQty+'개 확보 · '+q.visitBy+'까지 방문 · 결제는 병원에서 현장 결제')+'</p>';
+  if(q.hospitalNote)detail+='<p>병원 안내: '+e(q.hospitalNote)+'</p>';
+  const cancel=['pending','accepted'].includes(q.status)?'<div class="zp-btn-row inline"><button type="button" class="zp-btn small secondary" data-zp="rx-cancel" data-id="'+e(q.id)+'">요청 취소</button>'+(h?.phone?'<a class="zp-btn small secondary" href="tel:'+e(String(h.phone).replace(/[^0-9]/g,''))+'">전화</a>':'')+'</div>':'';
+  return '<div class="zp-item"><div class="zp-item-top"><strong>'+e(q.productName)+'</strong><span class="zp-tag '+tone+'">'+label+'</span></div><small>'+e((h?.name||'병원')+' · '+q.petName+' · '+q.quantity+'개 요청 · '+zpDate(q.createdAt))+'</small>'+detail+cancel+'</div>';
+ }).join('')+'</div>';
+}
+ZP_VIEWS.rx={
+ load:zpRxLoad,
+ render(){
+  const r=zpRx();
+  let body=zpBack()+'<h1 class="zp-title">제휴병원 처방식 재고 확인</h1><p class="zp-lead">제휴 병원이 직접 입력한 재고 상태예요. 정확한 수량은 관리하지 않으니 방문 전 전화로 확인해 주세요.</p>';
+  const notified=r.alerts.filter(a=>a.status==='notified');
+  if(notified.length)body+='<section class="zp-gate"><strong>입고 알림</strong>'+notified.map(a=>'<p>'+e((hospitalById(a.hospitalId)?.name||'병원')+' · '+a.productName+' 재고가 들어왔어요 ('+zpDate(a.notifiedAt)+')')+'</p>').join('')+'</section>';
+  const gate=zpGate('처방식 재고 확인');
+  if(gate)body+=gate;
+  else if(!r.loaded)body+='<p class="zp-muted" role="status">재고 정보를 불러오고 있어요.</p>';
+  else if(r.error)body+='<p class="zp-error">'+e(r.error)+'</p>';
+  else{
+   const chips='<div class="zp-chips" role="group" aria-label="병원 선택">'+[['all','전체']].concat(ZP_PARTNERS.map(id=>[id,hospitalById(id)?.name||id])).map(([id,n])=>'<button type="button" class="zp-chip" data-zp="rx-hospital" data-value="'+e(id)+'" aria-pressed="'+(r.hospital===id)+'">'+e(n)+'</button>').join('')+'</div>';
+   const groups=ZP_PARTNERS.filter(id=>r.hospital==='all'||r.hospital===id).map(id=>{
+    const items=r.stock.filter(x=>x.hospitalId===id),h=hospitalById(id);
+    return '<section class="zp-section"><div class="zp-section-head"><h2>'+e(h?.name||id)+'</h2>'+(h?.phone?'<a class="zp-help" href="tel:'+e(String(h.phone).replace(/[^0-9]/g,''))+'">전화 '+e(h.phone)+'</a>':'')+'</div>'
+     +'<div class="zp-box">'+(items.length?items.map(zpRxItem).join(''):'<p class="zp-empty">아직 이 병원이 등록한 처방식 재고가 없어요.</p>')+'</div></section>';
+   }).join('');
+   body+=chips+groups;
+  }
+  if(state.ownerToken)body+='<section class="zp-section"><div class="zp-section-head"><h2>내 확보 요청</h2><span>'+zpRx().requests.length+'건</span></div>'+zpRxRequestsMarkup()+'</section>';
+  return body+'<p class="zp-disclaimer">처방식은 수의사의 진료와 처방에 따라 급여해 주세요. 제노는 판매나 결제를 하지 않으며 병원에 수수료를 받지 않습니다.</p>';
+ },
+ async click(a,el){
+  const r=zpRx();
+  if(a==='rx-hospital'){r.hospital=el.dataset.value;r.form=null;render();return}
+  if(a==='rx-form'){r.form={hospitalId:el.dataset.h,productId:el.dataset.p};render();return}
+  if(a==='rx-form-close'){r.form=null;render();return}
+  if(a==='rx-alert'||a==='rx-alert-off'){
+   try{await api('POST',a==='rx-alert'?'/api/pass/rx-alerts':'/api/pass/rx-alerts/remove',{hospitalId:el.dataset.h,productId:el.dataset.p});toast(a==='rx-alert'?'입고되면 알려 드릴게요.':'입고 알림을 해제했어요.')}
+   catch(err){toast(err.message)}
+   await zpRxLoad();return;
+  }
+  if(a==='rx-cancel'){
+   if(!confirm('확보 요청을 취소할까요?'))return;
+   try{await api('POST','/api/pass/rx-requests/'+encodeURIComponent(el.dataset.id)+'/cancel',{});toast('요청을 취소했어요.')}
+   catch(err){toast(err.message)}
+   await zpRxLoad();
+  }
+ },
+ async submit(kind,f){
+  if(kind!=='rx-request')return;
+  const r=zpRx(),d=Object.fromEntries(new FormData(f).entries());
+  r.busy=true;
+  try{
+   await api('POST','/api/pass/rx-requests',{hospitalId:d.hospitalId,productId:d.productId,petName:d.petName,quantity:Number(d.quantity),note:d.note||'',prescribed:d.prescribed==='1'});
+   r.form=null;toast('확보 요청을 보냈어요. 병원이 확인하면 이 화면에 표시돼요.');
+  }catch(err){toast(err.message)}
+  r.busy=false;await zpRxLoad();
+ }
+};
+/* PASS 02 · 공개 진료비 통합 비교 (보호자). 순위·최저가 정렬 없음, 미공개는 미공개로 표시 */
+function zpFees(){const z=zpState();if(!z.fees)z.fees={loaded:false,error:'',items:[],saving:false,dirty:false};return z.fees}
+function zpFeeItemNames(){
+ const count=new Map();
+ for(const v of ZENO_PUBLIC_FEES)for(const p of new Set(v.prices.map(p=>p[0])))count.set(p,(count.get(p)||0)+1);
+ return [...count.entries()].filter(([,n])=>n>=2).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0],'ko')).map(([n])=>n);
+}
+async function zpFeesLoad(){
+ const f=zpFees();
+ if(!state.ownerToken){f.loaded=true;return}
+ if(!zpState().passLoaded)await zpLoadPass(false);
+ if(zpActive()){
+  try{const r=await api('GET','/api/pass/fee-plan');f.items=(r.plan?.items||[]).filter(i=>zpFeeItemNames().includes(i.name));if(!f.items.length)f.items=[{name:'초진 진찰료',count:1}].filter(i=>zpFeeItemNames().includes(i.name));f.error=''}
+  catch(err){f.error=err.message}
+ }
+ f.loaded=true;f.dirty=false;
+ if(state.page==='pass'&&zpState().view==='fees')render();
+}
+function zpFeeRange(min,max){return min===max?zpWon(min):Number(min).toLocaleString('ko-KR')+'~'+zpWon(max)}
+function zpFeeHospitalBlock(v,items){
+ const h=hospitalById(v.id);if(!h)return '';
+ let sMin=0,sMax=0,yMin=0,yMax=0,missing=0;
+ const lines=items.map(it=>{
+  const p=v.prices.find(x=>x[0]===it.name);
+  if(!p){missing++;return '<div class="zp-kv"><span>'+e(it.name)+' · 연 '+it.count+'회</span><b class="zp-muted">미공개</b></div>'}
+  sMin+=p[1];sMax+=p[2];yMin+=p[1]*it.count;yMax+=p[2]*it.count;
+  return '<div class="zp-kv"><span>'+e(it.name)+' · 연 '+it.count+'회</span><b>'+zpFeeRange(p[1],p[2])+'</b></div>'+(p[3]?'<details class="zp-fee-note"><summary>조건 보기</summary><p>'+e(p[3])+'</p></details>':'');
+ }).join('');
+ const any=items.length-missing>0;
+ const total=any?'<div class="zp-kv zp-total"><span>1회씩 합계'+(missing?' (공개 항목만)':'')+'</span><b>'+zpFeeRange(sMin,sMax)+'</b></div><div class="zp-kv zp-total"><span>연간 예상'+(missing?' (공개 항목만)':'')+'</span><b>'+zpFeeRange(yMin,yMax)+'</b></div>':'<div class="zp-kv"><span>합계</span><b class="zp-muted">계산할 공개 가격 없음</b></div>';
+ return '<div class="zp-item"><div class="zp-item-top"><strong>'+e(h.name)+'</strong><span class="zp-tag '+(h.linked?'ok':'mute')+'">'+(h.linked?'제휴':'비제휴')+'</span></div>'
+  +'<small>'+e((v.source||'병원 공개 가격표')+(v.checked?' · 제노 확인 '+v.checked:''))+'</small>'
+  +'<div style="margin-top:8px">'+lines+total+'</div>'
+  +(missing?'<small>미공개 '+missing+'개 항목은 병원에 직접 확인해 주세요.</small>':'')
+  +(v.url?'<a class="zp-help" href="'+e(v.url)+'" target="_blank" rel="noopener noreferrer">병원 가격표 원문</a>':'')+'</div>';
+}
+function zpFeeChips(list,chosen){return '<div class="zp-chips zp-wrap" role="group" aria-label="비교 항목">'+list.map(n=>'<button type="button" class="zp-chip" data-zp="fee-item" data-value="'+e(n)+'" aria-pressed="'+chosen.has(n)+'">'+e(n)+'</button>').join('')+'</div>'}
+ZP_VIEWS.fees={
+ load:zpFeesLoad,
+ render(){
+  const f=zpFees();
+  let body=zpBack()+'<h1 class="zp-title">공개 진료비 통합 비교</h1><p class="zp-lead">병원이 공개한 가격만 같은 항목끼리 나란히 보여 줘요. 가격 순위는 만들지 않고, 공개되지 않은 가격은 미공개로 표시해요.</p>';
+  const gate=zpGate('공개 진료비 통합 비교');
+  if(gate)return body+gate+'<p class="zp-disclaimer">병원별 공개 진료비는 PASS 없이 병원 상세와 진료비 화면에서 볼 수 있어요.</p>';
+  if(!f.loaded)return body+'<p class="zp-muted" role="status">비교 설정을 불러오고 있어요.</p>';
+  if(f.error)body+='<p class="zp-error">'+e(f.error)+'</p>';
+  const names=zpFeeItemNames(),chosen=new Map(f.items.map(i=>[i.name,i.count]));
+  body+='<section class="zp-section"><div class="zp-section-head"><h2>비교할 항목</h2><span>'+f.items.length+'개 선택</span></div>'+zpFeeChips(names.slice(0,8),chosen)+(names.length>8?'<details class="zp-more"'+(names.slice(8).some(n=>chosen.has(n))?' open':'')+'><summary>항목 더 보기 ('+(names.length-8)+')</summary>'+zpFeeChips(names.slice(8),chosen)+'</details>':'');
+  if(f.items.length)body+='<div class="zp-box" style="padding:4px 16px">'+f.items.map(i=>'<div class="zp-kv"><span>'+e(i.name)+'</span><label class="zp-count">연 <input type="number" inputmode="numeric" min="1" max="52" value="'+i.count+'" data-zp-count="'+e(i.name)+'" aria-label="'+e(i.name)+' 연간 횟수"> 회</label></div>').join('')+'</div>'
+   +'<div class="zp-btn-row inline"><button type="button" class="zp-btn small secondary" data-zp="fee-save"'+(f.saving||!f.dirty?' disabled':'')+'>'+(f.dirty?'이 설정 저장':'저장됨')+'</button></div>';
+  body+='</section>';
+  if(!f.items.length)return body+'<div class="zp-box zp-section"><p class="zp-empty">비교할 항목을 하나 이상 골라 주세요.</p></div>';
+  const list=ZENO_PUBLIC_FEES.filter(v=>hospitalById(v.id)).slice().sort((a,b)=>hospitalById(a.id).name.localeCompare(hospitalById(b.id).name,'ko'));
+  body+='<section class="zp-section"><div class="zp-section-head"><h2>병원별 비교</h2><span>'+list.length+'곳 · 이름순</span></div><div class="zp-box">'+list.map(v=>zpFeeHospitalBlock(v,f.items)).join('')+'</div></section>';
+  return body+'<p class="zp-disclaimer">연간 예상 비용은 공개 가격 × 입력한 횟수로 계산한 값이에요. 동물 종류·체중·검사 범위·진료 시간에 따라 실제 비용은 달라지고, 진찰료·약값·처치비가 따로 붙을 수 있어요. 공개 가격표가 확인되지 않은 병원은 목록에 없어요.</p>';
+ },
+ async click(a,el){
+  const f=zpFees();
+  if(a==='fee-item'){const n=el.dataset.value,i=f.items.findIndex(x=>x.name===n);if(i>=0)f.items.splice(i,1);else if(f.items.length<12)f.items.push({name:n,count:1});else{toast('12개까지 고를 수 있어요.');return}f.dirty=true;render();return}
+  if(a==='fee-save'){f.saving=true;render();try{await api('PUT','/api/pass/fee-plan',{items:f.items});f.dirty=false;toast('비교 설정을 저장했어요.')}catch(err){toast(err.message)}f.saving=false;render()}
+ },
+ change(el){
+  const n=el.dataset.zpCount;if(!n)return;
+  const f=zpFees(),it=f.items.find(x=>x.name===n);if(!it)return;
+  const v=Math.max(1,Math.min(52,Math.round(Number(el.value)||1)));it.count=v;f.dirty=true;render();
+ }
+};
+/* PASS 03 · 반려동물별 맞춤 영양 관리 (보호자). 제조사 공식 자료와 보호자가 입력한 가격만 계산합니다. */
+function zpNu(){const z=zpState();if(!z.nu)z.nu={loaded:false,error:'',pets:[],profiles:{},prices:{},catalog:[],conditions:[],generalStatus:'preparing',petId:'',tab:'rx',editing:false,priceFor:null};return z.nu}
+async function zpNuLoad(){
+ const n=zpNu();
+ if(!state.ownerToken){n.loaded=true;return}
+ if(!zpState().passLoaded)await zpLoadPass(false);
+ if(zpActive()){
+  try{const r=await api('GET','/api/pass/nutrition');Object.assign(n,{pets:r.pets||[],profiles:r.profiles||{},prices:r.prices||{},catalog:r.catalog||[],conditions:r.conditions||[],generalStatus:r.generalCatalogStatus,error:''});if(!n.pets.some(p=>p.id===n.petId))n.petId=n.pets[0]?.id||''}
+  catch(err){n.error=err.message}
+ }
+ n.loaded=true;
+ if(state.page==='pass'&&zpState().view==='nutrition')render();
+}
+function zpParseYears(age){const s=String(age||'');let m=s.match(/(\d+(?:\.\d+)?)\s*개월/);if(m)return Number(m[1])/12;m=s.match(/(\d+(?:\.\d+)?)\s*(살|세|년)?/);return m?Number(m[1]):null}
+function zpParseKg(w){const s=String(w||'');const m=s.match(/(\d+(?:\.\d+)?)/);if(!m)return null;let v=Number(m[1]);if(/(^|[^k])g\b/i.test(s)&&!/kg/i.test(s)&&v>100)v=v/1000;return v>0?v:null}
+/* 제조사 급여표: 같은 체중 행은 그대로, 가까운 두 행(고양이 1kg·강아지 2kg 이내) 사이만 직선 보간 */
+function zpDailyGrams(p,kg){
+ if(!p.feeding||!kg)return null;
+ const rows=[...p.feeding].sort((a,b)=>a[0]-b[0]);
+ const hit=rows.find(r=>Math.abs(r[0]-kg)<1e-9);if(hit)return {g:hit[1],how:'제조사 급여표'};
+ const gap=p.species==='고양이'?1:2;
+ for(let i=0;i<rows.length-1;i++){const [w1,g1]=rows[i],[w2,g2]=rows[i+1];if(kg>w1&&kg<w2&&w2-w1<=gap)return {g:Math.round(g1+(g2-g1)*(kg-w1)/(w2-w1)),how:'제조사 급여표 두 행 사이 계산값'}}
+ return null;
+}
+function zpAllergyLine(p,allergies){
+ if(!allergies.length)return '';
+ if(!p.ingredients)return '<small>알레르기 확인: 공식 페이지에서 원료 목록을 확인하지 못했어요. 포장지 원료를 확인해 주세요.</small>';
+ const hits=allergies.filter(a=>p.ingredients.includes(a));
+ return hits.length?'<small class="zp-error">알레르기 확인: 표기 원료에 '+e(hits.join(', '))+' 포함</small>':'<small>알레르기 확인: 표기 원료에서 '+e(allergies.join(', '))+'을(를) 찾지 못했어요. 포장지 원료와 수의사 확인이 필요해요.</small>';
+}
+function zpCostLine(p,daily,budget){
+ const pr=zpNu().prices[p.id];
+ if(!pr)return {html:'<small>급여 비용: 구매 가격을 입력하면 계산해요.</small>',month:null};
+ if(!daily)return {html:'<small>급여 비용: 하루 급여량을 알 수 없어 계산하지 않았어요. (입력 가격 '+zpWon(pr.price)+' / '+pr.packageG+'g)</small>',month:null};
+ const perG=pr.price/pr.packageG,day=perG*daily.g,month=day*30.4,year=day*365;
+ const over=budget!==null&&budget!==undefined&&month>budget;
+ return {html:'<div class="zp-kv"><span>하루 · 월 · 연</span><b>'+zpWon(day)+' · '+zpWon(month)+' · '+zpWon(year)+'</b></div><small>입력 가격 '+zpWon(pr.price)+' / '+pr.packageG+'g 기준'+(budget!=null?(over?' · <span class="zp-error">월 예산 '+zpWon(budget)+' 초과</span>':' · 월 예산 이내'):'')+'</small>',month};
+}
+function zpNuProduct(p,pet,prof){
+ const n=zpNu(),kg=zpParseKg(pet.weight),daily=zpDailyGrams(p,kg),cost=zpCostLine(p,daily,prof.budgetMonthly);
+ const perPack=daily&&p.form==='습식'?' (약 '+(daily.g/p.packages[0]).toFixed(1)+'개)':'';
+ const feeding=!p.feeding?'제조사 급여표 미확인 · 포장지·수의사 안내를 따라 주세요':!kg?'체중을 입력하면 계산해요':daily?'하루 '+daily.g+'g'+perPack+' · '+daily.how:'제조사 표에서 이 체중('+kg+'kg)을 확인할 수 없어요';
+ const priceForm=n.priceFor===p.id?'<form class="zp-form" data-zp-form="nu-price" style="margin-top:10px"><input type="hidden" name="productId" value="'+e(p.id)+'"><div class="zp-field-row"><div class="zp-field"><label>구매 가격(원)</label><input name="price" type="number" inputmode="numeric" min="100" max="2000000" required value="'+e(n.prices[p.id]?.price||'')+'"></div><div class="zp-field"><label>포장 단위</label><select name="packageG">'+p.packages.map(g=>'<option value="'+g+'">'+(g>=1000?g/1000+'kg':g+'g')+'</option>').join('')+'</select></div></div><div class="zp-btn-row"><button type="button" class="zp-btn secondary" data-zp="nu-price-close">닫기</button>'+(n.prices[p.id]?'<button type="button" class="zp-btn secondary" data-zp="nu-price-del" data-id="'+e(p.id)+'">가격 지우기</button>':'')+'<button type="submit" class="zp-btn">저장</button></div></form>':'';
+ return '<div class="zp-item"><div class="zp-item-top"><strong>'+e(p.brand+' '+p.name)+'</strong><span class="zp-tag '+(p.kind==='처방식'?'warn':'mute')+'">'+e(p.kind)+'</span></div>'
+  +'<small>'+e(p.form+' · '+p.packages.map(g=>g>=1000?g/1000+'kg':g+'g').join('/')+' · 관리 목적(제조사 표기): '+p.conditions.join(', '))+'</small>'
+  +p.claims.map(c=>'<p>'+e(c)+'</p>').join('')
+  +'<div style="margin-top:8px"><div class="zp-kv"><span>급여량</span><b>'+e(feeding)+'</b></div>'+cost.html+'</div>'
+  +zpAllergyLine(p,prof.allergies||[])
+  +'<small>영양성분 수치: 미확인 · 포장지의 등록성분을 확인해 주세요.</small>'
+  +'<div class="zp-btn-row inline"><button type="button" class="zp-btn small secondary" data-zp="nu-price" data-id="'+e(p.id)+'">'+(n.prices[p.id]?'가격 수정':'가격 입력')+'</button>'+(p.kind==='처방식'?'<button type="button" class="zp-btn small secondary" data-zp="view" data-value="rx">제휴병원 재고</button>':'')+'<a class="zp-btn small secondary" href="'+e(p.url)+'" target="_blank" rel="noopener noreferrer">공식 자료</a></div>'
+  +priceForm+'</div>';
+}
+function zpNuProfileForm(pet,prof){
+ const n=zpNu();
+ return '<form class="zp-form zp-box" data-zp-form="nu-profile" style="padding:16px">'
+  +'<div class="zp-field"><span>중성화</span><div class="zp-chips">'+[['yes','했어요'],['no','안 했어요'],['unknown','모름']].map(([v,l])=>'<label class="zp-chip" style="display:inline-flex;align-items:center;gap:4px"><input type="radio" name="neutered" value="'+v+'"'+(prof.neutered===v?' checked':'')+'>'+l+'</label>').join('')+'</div></div>'
+  +'<div class="zp-field"><span>수의사에게 진단받은 질환</span>'+n.conditions.map(c=>'<label class="zp-check" style="margin:4px 0"><input type="checkbox" name="conditions" value="'+e(c)+'"'+((prof.conditions||[]).includes(c)?' checked':'')+'><span>'+e(c)+'</span></label>').join('')+'</div>'
+  +'<label class="zp-check"><input type="checkbox" name="vetRecommended" value="1"'+(prof.vetRecommended?' checked':'')+'><span>수의사가 처방식 급여를 권했어요.</span></label>'
+  +'<div class="zp-field"><label>알레르기 성분 (쉼표로 구분)</label><input name="allergies" maxlength="100" placeholder="예: 닭, 밀" value="'+e((prof.allergies||[]).join(', '))+'"></div>'
+  +'<div class="zp-field"><label>월 사료 예산 (원, 선택)</label><input name="budgetMonthly" type="number" inputmode="numeric" min="0" max="1000000" value="'+e(prof.budgetMonthly??'')+'"></div>'
+  +'<div class="zp-btn-row"><button type="button" class="zp-btn secondary" data-zp="nu-edit-close">닫기</button><button type="submit" class="zp-btn">저장</button></div></form>';
+}
+ZP_VIEWS.nutrition={
+ load:zpNuLoad,
+ render(){
+  const n=zpNu();
+  let body=zpBack()+'<h1 class="zp-title">반려동물별 맞춤 영양 관리</h1><p class="zp-lead">제조사 공식 자료에 있는 정보만 보여 드려요. 가격은 직접 입력한 구매 가격으로만 계산해요.</p>';
+  const gate=zpGate('맞춤 영양 관리');if(gate)return body+gate;
+  if(!n.loaded)return body+'<p class="zp-muted" role="status">불러오고 있어요.</p>';
+  if(n.error)return body+'<p class="zp-error">'+e(n.error)+'</p>';
+  if(!n.pets.length)return body+'<section class="zp-gate"><strong>등록한 아이가 없어요</strong><p>내 아이에서 아이를 먼저 등록해 주세요.</p><button type="button" class="zp-btn" data-nav="pets">내 아이 등록하기</button></section>';
+  const pet=n.pets.find(p=>p.id===n.petId)||n.pets[0],prof=n.profiles[pet.id]||{neutered:'unknown',conditions:[],vetRecommended:false,allergies:[],budgetMonthly:null};
+  const years=zpParseYears(pet.age),kg=zpParseKg(pet.weight);
+  body+='<div class="zp-chips" role="group" aria-label="아이 선택">'+n.pets.map(p=>'<button type="button" class="zp-chip" data-zp="nu-pet" data-value="'+e(p.id)+'" aria-pressed="'+(p.id===pet.id)+'">'+e(p.name)+'</button>').join('')+'</div>';
+  body+='<section class="zp-section"><div class="zp-section-head"><h2>'+e(pet.name)+'의 정보</h2>'+(n.editing?'':'<button type="button" class="zp-btn small secondary" data-zp="nu-edit">수정</button>')+'</div>';
+  body+=n.editing?zpNuProfileForm(pet,prof):'<div class="zp-box" style="padding:4px 16px">'
+   +'<div class="zp-kv"><span>종 · 나이 · 체중</span><b>'+e([pet.species,pet.age||'나이 미입력',pet.weight||'체중 미입력'].join(' · '))+'</b></div>'
+   +'<div class="zp-kv"><span>중성화</span><b>'+({yes:'했어요',no:'안 했어요',unknown:'모름'}[prof.neutered]||'모름')+'</b></div>'
+   +'<div class="zp-kv"><span>수의사 진단 질환</span><b>'+e((prof.conditions||[]).join(', ')||'없음')+'</b></div>'
+   +'<div class="zp-kv"><span>처방식 권고</span><b>'+(prof.vetRecommended?'받았어요':'없음')+'</b></div>'
+   +'<div class="zp-kv"><span>알레르기</span><b>'+e((prof.allergies||[]).join(', ')||'없음')+'</b></div>'
+   +'<div class="zp-kv"><span>월 예산</span><b>'+(prof.budgetMonthly!=null?zpWon(prof.budgetMonthly):'미입력')+'</b></div></div><p class="zp-help" style="margin-top:6px">종·나이·체중은 내 아이 화면에서 바꿀 수 있어요.</p>';
+  body+='</section>';
+  body+='<div class="zp-chips zp-section" role="group" aria-label="사료 종류">'+[['rx','처방식'],['general','일반 사료']].map(([v,l])=>'<button type="button" class="zp-chip" data-zp="nu-tab" data-value="'+v+'" aria-pressed="'+(n.tab===v)+'">'+l+'</button>').join('')+'</div>';
+  const kind=n.tab==='rx'?'처방식':'일반식';
+  if(n.tab==='general'&&!n.catalog.some(p=>p.kind==='일반식'))return body+'<div class="zp-box"><p class="zp-empty">일반 사료는 제조사 공식 자료를 정리하고 있어요 (준비 중). 확인되지 않은 영양 정보는 보여 드리지 않아요.</p></div>'+zpNuNotes(years);
+  if(n.tab==='rx'&&!(prof.vetRecommended&&(prof.conditions||[]).length))return body+'<div class="zp-box"><p class="zp-empty">처방식은 수의사 진단과 권고가 있을 때만 보여 드려요. 위 정보에서 진단받은 질환과 처방식 권고 여부를 입력해 주세요.</p></div>'+zpNuNotes(years);
+  const list=n.catalog.filter(p=>p.kind===kind&&p.species===pet.species&&(kind!=='처방식'||p.conditions.some(c=>prof.conditions.includes(c))));
+  if(!list.length)return body+'<div class="zp-box"><p class="zp-empty">'+e(pet.species)+' · '+e((prof.conditions||[]).join(', '))+'에 맞는 제품 자료가 아직 없어요. 수의사가 안내한 제품을 그대로 급여해 주세요.</p></div>'+zpNuNotes(years);
+  const rows=list.map(p=>{const d=zpDailyGrams(p,kg),c=zpCostLine(p,d,prof.budgetMonthly);return {p,d,c}});
+  const compare=rows.length>1?'<section class="zp-section"><div class="zp-section-head"><h2>급여량·비용 비교</h2><span>'+(kg?kg+'kg 기준':'체중 미입력')+'</span></div><div class="zp-box zp-scroll"><table class="zp-table"><thead><tr><th>제품</th><th class="num">하루</th><th class="num">월 비용</th></tr></thead><tbody>'+rows.map(r=>'<tr><td>'+e(r.p.name)+'</td><td class="num">'+(r.d?r.d.g+'g':'미확인')+'</td><td class="num">'+(r.c.month!=null?zpWon(r.c.month):'미입력')+'</td></tr>').join('')+'</tbody></table></div></section>':'';
+  return body+compare+'<section class="zp-section"><div class="zp-section-head"><h2>'+e(kind==='처방식'?'진단 질환에 해당하는 처방식':'일반 사료')+'</h2><span>'+list.length+'개</span></div><div class="zp-box">'+list.map(p=>zpNuProduct(p,pet,prof)).join('')+'</div></section>'+zpNuNotes(years);
+ },
+ async click(a,el){
+  const n=zpNu();
+  if(a==='nu-pet'){n.petId=el.dataset.value;n.editing=false;n.priceFor=null;render();return}
+  if(a==='nu-tab'){n.tab=el.dataset.value;render();return}
+  if(a==='nu-edit'){n.editing=true;render();return}
+  if(a==='nu-edit-close'){n.editing=false;render();return}
+  if(a==='nu-price'){n.priceFor=el.dataset.id;render();return}
+  if(a==='nu-price-close'){n.priceFor=null;render();return}
+  if(a==='nu-price-del'){try{const r=await api('PUT','/api/pass/nutrition/prices',{productId:el.dataset.id,price:null});n.prices=r.prices;n.priceFor=null;toast('가격을 지웠어요.')}catch(err){toast(err.message)}render()}
+ },
+ async submit(kind,f){
+  const n=zpNu(),fd=new FormData(f);
+  try{
+   if(kind==='nu-profile'){
+    const body={neutered:fd.get('neutered')||'unknown',conditions:fd.getAll('conditions'),vetRecommended:fd.get('vetRecommended')==='1',allergies:String(fd.get('allergies')||'').split(/[,，]/).map(x=>x.trim()).filter(Boolean),budgetMonthly:fd.get('budgetMonthly')===''?null:Number(fd.get('budgetMonthly'))};
+    const r=await api('PUT','/api/pass/nutrition/profile/'+encodeURIComponent(n.petId||n.pets[0].id),body);
+    n.profiles[n.petId||n.pets[0].id]=r.profile;n.editing=false;toast('저장했어요.');
+   }
+   if(kind==='nu-price'){
+    const r=await api('PUT','/api/pass/nutrition/prices',{productId:fd.get('productId'),price:Number(fd.get('price')),packageG:Number(fd.get('packageG'))});
+    n.prices=r.prices;n.priceFor=null;toast('가격을 저장했어요.');
+   }
+  }catch(err){toast(err.message);return}
+  render();
+ }
+};
+function zpNuNotes(years){
+ return (years!==null&&years<1?'<p class="zp-error" style="margin-top:12px">1살 미만 성장기 아이예요. 사료를 바꾸기 전에 수의사와 상의해 주세요.</p>':'')
+  +'<p class="zp-disclaimer">처방식은 수의사의 진단과 권고에 따라 급여해 주세요. 급여량은 제조사 급여표 기준이며 활동량·체형에 따라 달라질 수 있어요. 제노는 사료 판매·광고 수수료를 받지 않으며, 제조사 자료 확인일은 2026-11-26이에요.</p>';
+}
+/* PASS 04 · 다묘·다견 영수증 통합 관리 (보호자). 사진은 본인만 볼 수 있고, 자동 인식 결과는 확인·수정 후 저장합니다. */
+function zpRc(){const z=zpState();if(!z.rc)z.rc={loaded:false,error:'',list:[],pet:'all',year:'',form:null,busy:false,photoUrls:{}};return z.rc}
+async function zpRcLoad(){
+ const r=zpRc();
+ if(!state.ownerToken){r.loaded=true;return}
+ if(!zpState().passLoaded)await zpLoadPass(false);
+ try{const x=await api('GET','/api/receipts');r.list=x.receipts||[];r.error=''}catch(err){r.error=err.message}
+ r.loaded=true;
+ if(state.page==='pass'&&zpState().view==='receipts')render();
+}
+function zpRcPetName(id){return (state.pets||[]).find(p=>p.id===id)?.name||'등록 해제된 아이'}
+function zpRcItemsText(items){return (items||[]).map(i=>i.name+' '+i.amount).join('\n')}
+function zpRcParseItems(text){return String(text||'').split('\n').map(l=>l.trim()).filter(Boolean).map(l=>{const m=l.match(/^(.*?)[\s:]+(-?[\d,]+)\s*원?$/);return m?{name:m[1].trim(),amount:Number(m[2].replace(/,/g,''))}:{name:l,amount:NaN}})}
+async function zpRcCompress(file){
+ const url=URL.createObjectURL(file);
+ try{
+  const img=await new Promise((ok,bad)=>{const i=new Image();i.onload=()=>ok(i);i.onerror=()=>bad(Error('사진을 읽지 못했어요.'));i.src=url});
+  for(const [side,q] of [[1600,.75],[1280,.68],[1024,.6]]){
+   const k=Math.min(1,side/Math.max(img.naturalWidth,img.naturalHeight));
+   const c=document.createElement('canvas');c.width=Math.round(img.naturalWidth*k);c.height=Math.round(img.naturalHeight*k);
+   c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+   const data=c.toDataURL('image/jpeg',q);
+   if(data.length<=900000)return data;
+  }
+  throw Error('사진 용량이 너무 커요. 영수증만 가까이 찍어 주세요.');
+ }finally{URL.revokeObjectURL(url)}
+}
+function zpRcForm(){
+ const r=zpRc(),f=r.form,pets=state.pets||[];
+ const names=HOSPITALS.map(h=>'<option value="'+e(h.name)+'"></option>').join('');
+ return '<form class="zp-form zp-box" data-zp-form="rc-save" style="padding:16px">'
+  +(f.id?'':'<div class="zp-field"><label for="zp-rc-photo">영수증 사진 (선택)</label><input id="zp-rc-photo" type="file" accept="image/*" data-zp-file="rc"'+(r.busy?' disabled':'')+'><p class="zp-help">사진은 본인만 볼 수 있어요. 올리면 글자를 자동으로 읽어 아래 칸을 채워요.</p></div>')
+  +(f.status?'<p class="'+(f.statusTone==='error'?'zp-error':'zp-muted')+'" role="status">'+e(f.status)+'</p>':'')
+  +'<div class="zp-field"><label for="zp-rc-pet">아이</label><select id="zp-rc-pet" name="petId" required>'+pets.map(p=>'<option value="'+e(p.id)+'"'+(f.petId===p.id?' selected':'')+'>'+e(p.name)+'</option>').join('')+'</select></div>'
+  +'<div class="zp-field"><label for="zp-rc-hospital">병원</label><input id="zp-rc-hospital" name="hospitalName" list="zp-rc-hospitals" maxlength="60" required value="'+e(f.hospitalName||'')+'"><datalist id="zp-rc-hospitals">'+names+'</datalist><p class="zp-help">제휴·비제휴 병원 모두 등록할 수 있어요.</p></div>'
+  +'<div class="zp-field-row"><div class="zp-field"><label for="zp-rc-date">진료일</label><input id="zp-rc-date" name="visitDate" type="date" max="'+today()+'" required value="'+e(f.visitDate||'')+'"></div><div class="zp-field"><label for="zp-rc-total">총 결제 금액(원)</label><input id="zp-rc-total" name="total" type="number" inputmode="numeric" min="0" required value="'+e(f.total??'')+'"></div></div>'
+  +'<div class="zp-field"><label for="zp-rc-items">세부 항목 (한 줄에 "항목 금액", 선택)</label><textarea id="zp-rc-items" name="items" placeholder="진찰료 10000&#10;혈액검사 45000">'+e(f.itemsText||'')+'</textarea></div>'
+  +'<div class="zp-field"><label for="zp-rc-memo">메모 (선택)</label><input id="zp-rc-memo" name="memo" maxlength="300" value="'+e(f.memo||'')+'"></div>'
+  +(f.photoId?'<p class="zp-help">자동 인식 값은 틀릴 수 있어요. 영수증과 비교해 확인한 뒤 저장해 주세요.</p>':'')
+  +'<div class="zp-btn-row"><button type="button" class="zp-btn secondary" data-zp="rc-close">닫기</button><button type="submit" class="zp-btn"'+(r.busy?' disabled':'')+'>저장</button></div></form>';
+}
+function zpRcStats(list){
+ const r=zpRc(),years=[...new Set(list.map(x=>x.visitDate.slice(0,4)))].sort().reverse();
+ if(!years.length)return '';
+ const year=years.includes(r.year)?r.year:years[0];
+ const inYear=list.filter(x=>x.visitDate.startsWith(year));
+ const months=Array.from({length:12},(_,i)=>inYear.filter(x=>Number(x.visitDate.slice(5,7))===i+1).reduce((a,x)=>a+x.total,0));
+ const max=Math.max(1,...months);
+ const byPet=[...new Set(list.map(x=>x.petId))].map(id=>[id,inYear.filter(x=>x.petId===id).reduce((a,x)=>a+x.total,0)]).filter(x=>x[1]>0);
+ return '<section class="zp-section"><div class="zp-section-head"><h2>'+year+'년 의료비</h2><span>'+zpWon(inYear.reduce((a,x)=>a+x.total,0))+'</span></div>'
+  +(years.length>1?'<div class="zp-chips" role="group" aria-label="연도">'+years.map(y=>'<button type="button" class="zp-chip" data-zp="rc-year" data-value="'+y+'" aria-pressed="'+(y===year)+'">'+y+'</button>').join('')+'</div>':'')
+  +'<div class="zp-box" style="padding:12px 16px"><div class="zp-bars" role="img" aria-label="'+year+'년 월별 의료비">'+months.map((v,i)=>'<div class="zp-bar"><span style="height:'+Math.round(v/max*100)+'%"></span><small>'+(i+1)+'</small></div>').join('')+'</div>'
+  +months.map((v,i)=>v?'<div class="zp-kv"><span>'+(i+1)+'월</span><b>'+zpWon(v)+'</b></div>':'').join('')+'</div>'
+  +(r.pet==='all'&&byPet.length?'<div class="zp-box" style="padding:4px 16px;margin-top:8px">'+byPet.map(([id,v])=>'<div class="zp-kv"><span>'+e(zpRcPetName(id))+'</span><b>'+zpWon(v)+'</b></div>').join('')+'</div>':'')+'</section>';
+}
+ZP_VIEWS.receipts={
+ load:zpRcLoad,
+ render(){
+  const r=zpRc();
+  let body=zpBack()+'<h1 class="zp-title">다묘·다견 영수증 통합 관리</h1><p class="zp-lead">여러 병원 영수증을 아이별로 모아 의료비를 정리해요. 사진과 기록은 본인만 볼 수 있어요.</p>';
+  if(!state.ownerToken)return body+zpGate('영수증 통합 관리');
+  if(!r.loaded)return body+'<p class="zp-muted" role="status">불러오고 있어요.</p>';
+  if(r.error)return body+'<p class="zp-error">'+e(r.error)+'</p>';
+  const active=zpActive();
+  if(!active)body+=r.list.length?'<section class="zp-gate"><strong>PASS를 해지한 상태예요</strong><p>저장한 영수증은 계속 보고 내보낼 수 있어요. 새 영수증 등록은 PASS에서 할 수 있어요.</p></section>':zpGate('영수증 통합 관리');
+  if(active&&!(state.pets||[]).length)return body+'<section class="zp-gate"><strong>등록한 아이가 없어요</strong><p>내 아이에서 아이를 먼저 등록해 주세요.</p><button type="button" class="zp-btn" data-nav="pets">내 아이 등록하기</button></section>';
+  if(r.form)return body+zpRcForm();
+  const list=r.list.filter(x=>r.pet==='all'||x.petId===r.pet);
+  const total=r.list.reduce((a,x)=>a+x.total,0);
+  body+='<section class="zp-plan"><div class="zp-plan-head"><strong>'+zpWon(total)+'</strong><span class="zp-tag mute">전체 아이 의료비 합계</span></div><p>영수증 '+r.list.length+'건 · 아이 '+new Set(r.list.map(x=>x.petId)).size+'마리</p>'
+   +(active?'<div class="zp-btn-row"><button type="button" class="zp-btn" data-zp="rc-new">영수증 추가</button></div>':'')+'</section>';
+  if(!r.list.length)return body+'<div class="zp-box"><p class="zp-empty">아직 저장한 영수증이 없어요.</p></div>';
+  const pets=[...new Set(r.list.map(x=>x.petId))];
+  body+='<div class="zp-chips" role="group" aria-label="아이 선택">'+[['all','전체']].concat(pets.map(id=>[id,zpRcPetName(id)])).map(([id,n])=>'<button type="button" class="zp-chip" data-zp="rc-pet" data-value="'+e(id)+'" aria-pressed="'+(r.pet===id)+'">'+e(n)+'</button>').join('')+'</div>';
+  body+=zpRcStats(list);
+  body+='<section class="zp-section"><div class="zp-section-head"><h2>영수증</h2><span>'+list.length+'건</span></div><div class="zp-box">'+list.map(x=>'<div class="zp-item"><div class="zp-item-top"><strong>'+e(x.hospitalName)+'</strong><b>'+zpWon(x.total)+'</b></div><small>'+e(x.visitDate+' · '+zpRcPetName(x.petId)+(x.source==='photo'?' · 사진':''))+'</small>'
+   +(x.items.length?'<details class="zp-fee-note"><summary>세부 항목 '+x.items.length+'개</summary>'+x.items.map(i=>'<div class="zp-kv"><span>'+e(i.name)+'</span><b>'+zpWon(i.amount)+'</b></div>').join('')+'</details>':'')
+   +(x.memo?'<p>'+e(x.memo)+'</p>':'')
+   +(r.photoUrls[x.id]?'<img class="zp-photo" src="'+e(r.photoUrls[x.id])+'" alt="'+e(x.visitDate)+' 영수증 사진">':'')
+   +'<div class="zp-btn-row inline">'+(x.hasPhoto&&!r.photoUrls[x.id]?'<button type="button" class="zp-btn small secondary" data-zp="rc-photo" data-id="'+e(x.id)+'">사진 보기</button>':'')+'<button type="button" class="zp-btn small secondary" data-zp="rc-edit" data-id="'+e(x.id)+'">수정</button><button type="button" class="zp-btn small secondary" data-zp="rc-delete" data-id="'+e(x.id)+'">삭제</button></div></div>').join('')+'</div></section>';
+  body+='<section class="zp-section"><h2>내보내기</h2><p class="zp-help" style="margin-bottom:8px">PASS 해지 후에도 내보낼 수 있어요. 보험 청구 서류는 이 파일과 원본 영수증으로 직접 준비해 주세요.</p><div class="zp-btn-row"><button type="button" class="zp-btn secondary" data-zp="rc-export" data-value="csv">엑셀용 CSV</button><button type="button" class="zp-btn secondary" data-zp="rc-export" data-value="json">JSON 백업</button></div></section>';
+  return body;
+ },
+ async click(a,el){
+  const r=zpRc();
+  if(a==='rc-pet'){r.pet=el.dataset.value;render();return}
+  if(a==='rc-year'){r.year=el.dataset.value;render();return}
+  if(a==='rc-new'){r.form={petId:r.pet!=='all'?r.pet:(state.pets[0]?.id||''),visitDate:today()};render();return}
+  if(a==='rc-close'){r.form=null;render();return}
+  if(a==='rc-edit'){const x=r.list.find(y=>y.id===el.dataset.id);if(!x)return;r.form={id:x.id,petId:x.petId,hospitalName:x.hospitalName,visitDate:x.visitDate,total:x.total,itemsText:zpRcItemsText(x.items),memo:x.memo};render();return}
+  if(a==='rc-delete'){if(!confirm('이 영수증과 사진을 삭제할까요?'))return;try{await api('DELETE','/api/receipts/'+encodeURIComponent(el.dataset.id));toast('삭제했어요.')}catch(err){toast(err.message)}await zpRcLoad();return}
+  if(a==='rc-photo'||a==='rc-export'){
+   const path=a==='rc-photo'?'/api/receipts/'+encodeURIComponent(el.dataset.id)+'/photo':'/api/receipts/export?format='+el.dataset.value;
+   try{
+    const res=await fetch(path,{headers:{Authorization:'Bearer '+state.ownerToken},cache:'no-store'});
+    if(!res.ok){const b=await res.json().catch(()=>({}));throw Error(b.error||'불러오지 못했어요.')}
+    const blob=await res.blob(),url=URL.createObjectURL(blob);
+    if(a==='rc-photo'){r.photoUrls[el.dataset.id]=url;render();return}
+    const link=document.createElement('a');link.href=url;link.download='zeno-receipts.'+el.dataset.value;document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),5000);
+   }catch(err){toast(err.message)}
+  }
+ },
+ async change(el){
+  if(el.dataset.zpFile!=='rc'||!el.files?.[0])return;
+  const r=zpRc(),f=r.form;if(!f)return;
+  const form=el.closest('form');if(form){const d=new FormData(form);Object.assign(f,{petId:d.get('petId'),hospitalName:d.get('hospitalName'),visitDate:d.get('visitDate'),total:d.get('total'),itemsText:d.get('items'),memo:d.get('memo')})}
+  r.busy=true;f.status='사진을 올리고 글자를 읽고 있어요.';f.statusTone='';render();
+  try{
+   const image=await zpRcCompress(el.files[0]);
+   const x=await api('POST','/api/pass/receipts/photo',{image});
+   f.photoId=x.photoId;f.ocrStatus=x.ocr?.status||'';
+   const d=x.ocr?.draft;
+   if(d){
+    if(d.hospitalName){const hit=HOSPITALS.find(h=>d.hospitalName.replace(/\s/g,'').includes(h.name.replace(/\s/g,''))||h.name.replace(/\s/g,'').includes(d.hospitalName.replace(/\s/g,'')));f.hospitalName=hit?hit.name:d.hospitalName}
+    if(d.visitDate&&d.visitDate<=today())f.visitDate=d.visitDate;
+    if(d.total!=null)f.total=d.total;
+    if(d.items?.length)f.itemsText=zpRcItemsText(d.items);
+    f.status='자동 인식 결과를 채웠어요. 영수증과 비교해 확인해 주세요.';
+   }else f.status=x.ocr?.status==='unavailable'?'사진을 저장했어요. 자동 인식은 아직 준비 중이라 직접 입력해 주세요.':'사진을 저장했어요. 글자를 읽지 못해 직접 입력해 주세요.';
+  }catch(err){f.status=err.message;f.statusTone='error'}
+  r.busy=false;render();
+ },
+ async submit(kind,form){
+  if(kind!=='rc-save')return;
+  const r=zpRc(),f=r.form,d=new FormData(form);
+  const items=zpRcParseItems(d.get('items'));
+  if(items.some(i=>!Number.isFinite(i.amount))){toast('세부 항목은 "항목 금액" 형식으로 적어 주세요.');return}
+  const name=String(d.get('hospitalName')||'').trim(),hit=HOSPITALS.find(h=>h.name===name);
+  const body={petId:d.get('petId'),hospitalId:hit?hit.id:'',hospitalName:name,visitDate:d.get('visitDate'),total:Number(d.get('total')),items,memo:d.get('memo')||''};
+  Object.assign(f,{petId:body.petId,hospitalName:name,visitDate:body.visitDate,total:d.get('total'),itemsText:d.get('items'),memo:body.memo});
+  r.busy=true;render();
+  try{
+   if(f.id)await api('PATCH','/api/receipts/'+encodeURIComponent(f.id),body);
+   else await api('POST','/api/pass/receipts',{...body,photoId:f.photoId||'',ocrStatus:f.ocrStatus||''});
+   r.form=null;toast('저장했어요.');
+  }catch(err){toast(err.message)}
+  r.busy=false;await zpRcLoad();
+ }
+};
+</script><!-- ZENO-PASS-END --><style>#memopen{position:fixed;bottom:16px;right:16px;z-index:100;border:0;border-radius:25px;background:#1979e6;color:white;padding:14px;font-weight:bold}#membg{display:none;position:fixed;inset:0;background:#091b32b8;z-index:110;overflow:auto;padding:20px}#membg.show{display:block}#memcard{background:white;color:#173452;max-width:560px;margin:4vh auto;border-radius:20px;padding:24px}#memcard input:not([type=checkbox]),#memcard textarea,#memcard select{display:block;width:100%;box-sizing:border-box;margin:9px 0;padding:12px;border:1px solid #ccc;border-radius:8px}#memcard button{padding:10px 14px;background:#1979e6;color:white;border:0;border-radius:9px;margin:5px}@media(max-width:750px){#memopen{bottom:calc(88px + env(safe-area-inset-bottom));right:13px;padding:9px 15px;font-size:13px;box-shadow:0 7px 20px #1861bb38}}</style>
 <button id="memopen" type="button">추모관</button><div id="membg" role="dialog" aria-modal="true"><div id="memcard"><button id="memclose" type="button">닫기</button><h2>우리 아이 추모관</h2><p>보호자가 원할 때만 추모 기록을 만듭니다. 기존 진료 기록과 병원 정보는 변경하지 않습니다.</p><select id="mempet"><option value="">반려동물 선택</option></select><input id="memtitle" maxlength="100" placeholder="추억의 제목"><textarea id="memtext" maxlength="3000" rows="5" placeholder="우리 아이에게 남기는 편지"></textarea><label><input id="memagree" type="checkbox"> 추모 기록 만들기에 동의합니다</label><div><button id="memsave" type="button">추억 저장</button></div><p style="font-size:12px">현재 브라우저에만 저장됩니다. 브라우저 데이터를 삭제하면 사라질 수 있습니다.</p><h3>저장한 추억</h3><div id="memlist"></div></div></div>
 <script>(()=>{const $=x=>document.getElementById(x),key='zeno-memorial-v1',read=k=>{try{let a=JSON.parse(localStorage.getItem(k)||'[]');return Array.isArray(a)?a:[]}catch{return []}},esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));function renderMem(){let pets=read('zeno-pets-v2');$('mempet').innerHTML='<option value="">반려동물 선택</option>'+pets.map((p,i)=>'<option value="'+i+'">'+esc(p.name||p.petName||'이름 미등록')+'</option>').join('');$('memlist').innerHTML=read(key).map(m=>'<div style="border-top:1px solid #ddd;padding:12px 0"><b>'+esc(m.pet)+' · '+esc(m.title)+'</b><p style="white-space:pre-wrap">'+esc(m.text)+'</p><button data-del="'+esc(m.id)+'">삭제</button></div>').join('')||'저장된 추억이 없습니다.'}$('memopen').onclick=()=>{$('membg').classList.add('show');renderMem()};$('memclose').onclick=()=>$('membg').classList.remove('show');$('memsave').onclick=()=>{let i=$('mempet').value,p=read('zeno-pets-v2')[Number(i)],title=$('memtitle').value.trim(),text=$('memtext').value.trim();if(i===''||!p)return alert('반려동물을 먼저 등록하고 선택해 주세요.');if(!$('memagree').checked)return alert('보호자 동의가 필요합니다.');if(!title||!text)return alert('제목과 추억을 입력해 주세요.');let a=read(key);a.push({id:String(Date.now()),pet:p.name||p.petName||'이름 미등록',title,text});try{localStorage.setItem(key,JSON.stringify(a));$('memtitle').value='';$('memtext').value='';$('memagree').checked=false;renderMem();alert('추모 기록이 저장되었습니다.')}catch{alert('브라우저 저장에 실패했습니다.')}};$('memlist').onclick=e=>{let b=e.target.closest('[data-del]');if(b&&confirm('이 추모 기록을 삭제할까요?')){localStorage.setItem(key,JSON.stringify(read(key).filter(x=>x.id!==b.dataset.del)));renderMem()}}})();</script></body></html>

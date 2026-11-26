@@ -11,6 +11,7 @@ on:
       - "assets/hospital-icon-approved.webp.b64"
       - "wrangler.toml"
       - "package.json"
+      - "schema.sql"
       - ".github/workflows/deploy-cloudflare.yml"
   workflow_dispatch:
 
@@ -164,6 +165,11 @@ jobs:
         # Runs the built Worker with wrangler dev --local and fake test secrets.
         # No Cloudflare token is passed here, so this step cannot touch production.
         run: node tests/booking-flow.mjs
+        env:
+          NO_PROXY: "127.0.0.1,localhost"
+
+      - name: ZENO PASS flow tests (local D1 only, blocks deploy on failure)
+        run: node tests/pass-flow.mjs
         env:
           NO_PROXY: "127.0.0.1,localhost"
 
