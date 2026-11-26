@@ -8252,6 +8252,277 @@ ZP_VIEWS.receipts={
   r.busy=false;await zpRcLoad();
  }
 };
-</script><!-- ZENO-PASS-END --><style>#memopen{position:fixed;bottom:16px;right:16px;z-index:100;border:0;border-radius:25px;background:#1979e6;color:white;padding:14px;font-weight:bold}#membg{display:none;position:fixed;inset:0;background:#091b32b8;z-index:110;overflow:auto;padding:20px}#membg.show{display:block}#memcard{background:white;color:#173452;max-width:560px;margin:4vh auto;border-radius:20px;padding:24px}#memcard input:not([type=checkbox]),#memcard textarea,#memcard select{display:block;width:100%;box-sizing:border-box;margin:9px 0;padding:12px;border:1px solid #ccc;border-radius:8px}#memcard button{padding:10px 14px;background:#1979e6;color:white;border:0;border-radius:9px;margin:5px}@media(max-width:750px){#memopen{bottom:calc(88px + env(safe-area-inset-bottom));right:13px;padding:9px 15px;font-size:13px;box-shadow:0 7px 20px #1861bb38}}</style>
+</script><!-- ZENO-PASS-END --><!-- ZENO-SYMPTOM-BEGIN --><style id="zeno-symptom-style">
+/* 증상으로 병원 찾기 (2026-11-27): 흰 배경, 얇은 구분선, 칩과 목록 중심 */
+.zs-page{max-width:720px;color:#142e4c}
+.zs-lead{font-size:14px;line-height:1.55;color:#4f6880;margin:4px 0 8px}
+.zs-step{margin-top:20px}
+.zs-step h2{display:flex;align-items:center;gap:8px;font-size:17px;font-weight:700;margin:0 0 10px;color:#142e4c}
+.zs-step h2>span{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:11px;background:#142e4c;color:#fff;font-size:12px}
+.zs-step h2 small{font-size:12px;font-weight:500;color:#8a96a3}
+.zs-chips{display:flex;flex-wrap:wrap;gap:8px}
+.zs-sub{margin-top:8px}
+.zs-chip{min-height:38px;padding:0 14px;border:1px solid #d6e2ee;border-radius:19px;background:#fff;color:#2f4f6e;font-size:14px;font-weight:600;cursor:pointer}
+.zs-chip em{font-style:normal;font-weight:500;color:#8a96a3;font-size:12px}
+.zs-chip.small{min-height:34px;font-size:13px;padding:0 12px}
+.zs-chip[aria-pressed="true"]{background:#142e4c;border-color:#142e4c;color:#fff}
+.zs-chip[aria-pressed="true"] em{color:#c7d3df}
+.zs-chip:disabled{opacity:.4;cursor:default}
+.zs-search{width:100%;box-sizing:border-box;min-height:44px;margin-bottom:12px;padding:10px 14px;border:1px solid #d6e2ee;border-radius:10px;font-size:16px;color:#142e4c;background:#fff}
+.zs-group{margin-bottom:12px}
+.zs-group h3{font-size:12px;font-weight:600;color:#6b7f94;margin:0 0 6px}
+.zs-help{font-size:13px;line-height:1.5;color:#6b7f94;margin:-4px 0 10px}
+.zs-flags{display:flex;flex-direction:column;background:#fff;border:1px solid #e5ebf1;border-radius:12px;overflow:hidden}
+.zs-flag{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border-bottom:1px solid #edf1f5;font-size:14px;line-height:1.45;color:#2f4f6e;cursor:pointer}
+.zs-flag:last-child{border-bottom:0}
+.zs-flag input{margin-top:2px;width:18px;height:18px;flex:0 0 18px}
+.zs-flag.now span{color:#142e4c}
+.zs-alert{margin-top:16px;padding:14px 16px;border-radius:12px;border:1px solid #f3c7cd;background:#fff6f7}
+.zs-alert.today{border-color:#f1dfb7;background:#fffaf0}
+.zs-alert strong{display:block;font-size:16px;color:#b23545;margin-bottom:4px}
+.zs-alert.today strong{color:#8a5a00}
+.zs-alert p{font-size:13px;line-height:1.55;color:#4f5b68;margin:4px 0 0}
+.zs-call-list{margin-top:10px;border-top:1px solid #f3d6da}
+.zs-call{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 0;border-bottom:1px solid #f3d6da}
+.zs-call span{display:flex;flex-direction:column;gap:2px}
+.zs-call b{font-size:14px;font-weight:600;color:#142e4c}
+.zs-call small{font-size:12px;color:#6b7f94}
+.zs-toggles{margin-bottom:10px}
+.zs-list{background:#fff;border:1px solid #e5ebf1;border-radius:12px}
+.zs-card{padding:14px 16px;border-bottom:1px solid #edf1f5}
+.zs-card:last-child{border-bottom:0}
+.zs-card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.zs-card-top strong{font-size:15px;font-weight:600;line-height:1.4}
+.zs-card small{display:block;font-size:12px;color:#8a96a3;margin-top:2px}
+.zs-status{flex:0 0 auto;font-size:12px;color:#6b7f94;text-align:right;max-width:48%}
+.zs-status.on{color:#1d7a46;font-weight:600}
+.zs-reasons{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
+.zs-reasons span{font-size:12px;font-weight:600;color:#3d5f80;background:#f1f5f9;border-radius:4px;padding:3px 7px}
+.zs-actions{display:flex;gap:8px;margin-top:10px}
+.zs-btn{display:inline-flex;align-items:center;justify-content:center;min-height:36px;padding:0 14px;border:1px solid #d3e1ef;border-radius:8px;background:#fff;color:#1d5f9c;font-size:13px;font-weight:600;cursor:pointer;text-decoration:none}
+.zs-btn.primary{background:#1689fa;border-color:#1689fa;color:#fff}
+.zs-btn.off{color:#9aa6b2;cursor:default}
+.zs-more{display:block;width:100%;min-height:44px;margin-top:8px;border:1px solid #e5ebf1;border-radius:10px;background:#fff;color:#3d5f80;font-size:14px;font-weight:600;cursor:pointer}
+.zs-link{display:inline-block;margin-top:12px;padding:6px 0;border:0;background:none;color:#1d5f9c;font-size:14px;font-weight:600;text-decoration:underline;cursor:pointer}
+.zs-empty{font-size:14px;color:#6b7f94;padding:8px 0}
+.zs-note{margin-top:20px;font-size:12px;line-height:1.6;color:#6b7f94}
+</style><script id="zeno-symptom-module">
+/* ===== 증상으로 맞춤 병원 찾기 (2026-11-27) =====
+   아이(종) → 증상 → 바로 전화가 필요한 신호 확인 → 진료 분야와 조건이 맞는 병원 순서로 안내합니다.
+   - 질환을 진단하거나 추측하지 않습니다. 증상은 '어느 진료 분야에 문의할지'만 정하고, 응급 신호는 즉시 전화 안내로만 연결합니다.
+   - 병원 정렬은 제노가 확인한 정보(진료 분야 근거·진료시간·거리·고양이 대기실·특수동물)만 쓰며, 광고·제휴 여부는 순서에 반영하지 않습니다.
+   - 24시간 운영 표기는 응급 수용을 뜻하지 않으므로 항상 전화 확인을 함께 안내합니다. */
+const ZS_FIELDS=['일반 진료','내과','외과','치과·구강','안과','피부·귀','비뇨기','정형외과','심장·호흡기','중성화수술','건강검진·접종','특수동물'];
+/* 바로 병원에 전화가 필요한 신호(level 'now')와 오늘 진료를 권하는 신호(level 'today'). 종을 지정한 항목은 해당 종에만 보입니다. */
+const ZS_FLAGS={
+ breath:{label:'숨쉬기 힘들어하거나 입을 벌리고 숨을 쉬어요',level:'now'},
+ gum:{label:'잇몸이나 혀가 하얗거나 파래요',level:'now'},
+ seizure:{label:'경련하거나 쓰러졌어요, 깨워도 반응이 약해요',level:'now'},
+ bleed:{label:'피가 멈추지 않아요',level:'now'},
+ trauma:{label:'교통사고·추락 등으로 크게 다쳤어요',level:'now'},
+ toxin:{label:'초콜릿·포도·자일리톨·사람 약·살충제 등을 먹었어요',level:'now'},
+ lily:{label:'백합 꽃·잎·꽃가루를 먹거나 묻혔어요',level:'now',species:'고양이'},
+ bloat:{label:'배가 부풀고 토하려 하는데 나오지 않아요',level:'now',species:'강아지'},
+ urineBlock:{label:'소변을 보려고 힘주는데 거의 나오지 않아요',level:'now'},
+ heat:{label:'더운 곳에 있다가 축 처지고 숨을 몰아쉬어요',level:'now'},
+ bloodVomit:{label:'토하거나 변에 피가 섞여 있어요',level:'today'},
+ repeatVomit:{label:'계속 토하거나 설사하고 기운이 없어요',level:'today'},
+ noEat:{label:'하루 넘게 전혀 먹지 않아요',level:'today'},
+ eyeInjury:{label:'눈을 다쳤거나 갑자기 잘 못 보는 것 같아요',level:'today'},
+ noWalk:{label:'다리를 전혀 딛지 못하거나 심하게 아파해요',level:'today'}
+};
+const ZS_COMMON_FLAGS=['breath','gum','seizure','bleed','trauma','toxin','lily','heat'];
+const ZS_SYMPTOMS=[
+ {id:'appetite',label:'밥을 잘 안 먹어요',group:'먹기·소화',fields:['내과'],keys:['식욕','안먹','밥'],flags:['noEat']},
+ {id:'vomit',label:'토해요',group:'먹기·소화',fields:['내과'],keys:['구토','토','헛구역'],flags:['bloodVomit','repeatVomit','bloat','toxin']},
+ {id:'diarrhea',label:'설사하거나 변이 묽어요',group:'먹기·소화',fields:['내과'],keys:['설사','묽은변','혈변'],flags:['bloodVomit','repeatVomit']},
+ {id:'constipation',label:'변을 잘 못 봐요',group:'먹기·소화',fields:['내과'],keys:['변비','배변'],flags:[]},
+ {id:'swallow',label:'이물질을 삼킨 것 같아요',group:'먹기·소화',fields:['내과','외과'],keys:['이물','삼킴','장난감','실'],flags:['toxin','bloat','repeatVomit']},
+ {id:'itch',label:'피부를 자꾸 긁거나 핥아요',group:'피부·귀',fields:['피부·귀'],keys:['가려움','긁','핥','발적'],flags:[]},
+ {id:'hairloss',label:'털이 빠지거나 피부가 붉어요',group:'피부·귀',fields:['피부·귀'],keys:['탈모','각질','붉','비듬'],flags:[]},
+ {id:'ear',label:'귀를 털거나 귀에서 냄새가 나요',group:'피부·귀',fields:['피부·귀'],keys:['귀','외이','냄새'],flags:[]},
+ {id:'lump',label:'몸에 혹이나 덩어리가 만져져요',group:'피부·귀',fields:['외과','피부·귀'],keys:['혹','종괴','멍울','덩어리'],flags:[]},
+ {id:'eye',label:'눈곱·충혈이 있거나 눈을 비벼요',group:'눈',fields:['안과'],keys:['눈','눈곱','충혈','눈물'],flags:['eyeInjury']},
+ {id:'eyeClose',label:'눈을 잘 못 뜨거나 뿌예요',group:'눈',fields:['안과'],keys:['눈','뿌연','백내장','찡그림'],flags:['eyeInjury']},
+ {id:'mouth',label:'입 냄새가 심하거나 잇몸이 붉어요',group:'입·이빨',fields:['치과·구강'],keys:['입냄새','구취','잇몸','치석','이빨'],flags:[]},
+ {id:'drool',label:'침을 흘리거나 한쪽으로만 씹어요',group:'입·이빨',fields:['치과·구강'],keys:['침','씹','이빨'],flags:['toxin']},
+ {id:'limp',label:'다리를 절뚝거려요',group:'뼈·관절',fields:['정형외과'],keys:['절뚝','파행','다리','슬개골'],flags:['noWalk','trauma']},
+ {id:'stairs',label:'점프나 계단을 싫어하게 됐어요',group:'뼈·관절',fields:['정형외과'],keys:['계단','점프','관절','허리'],flags:['noWalk']},
+ {id:'cough',label:'기침을 해요',group:'숨·심장',fields:['심장·호흡기'],keys:['기침','켁켁','거위'],flags:['breath','gum']},
+ {id:'sneeze',label:'재채기·콧물이 있어요',group:'숨·심장',fields:['심장·호흡기','내과'],keys:['재채기','콧물','코'],flags:['breath']},
+ {id:'tired',label:'쉽게 지치고 숨이 차 보여요',group:'숨·심장',fields:['심장·호흡기'],keys:['숨','헐떡','지침','운동'],flags:['breath','gum','heat']},
+ {id:'urineOften',label:'소변을 자주 보거나 화장실을 자주 가요',group:'소변',fields:['비뇨기'],keys:['소변','오줌','화장실','빈뇨'],flags:['urineBlock']},
+ {id:'urineBlood',label:'소변 색이 붉거나 소변볼 때 아파해요',group:'소변',fields:['비뇨기'],keys:['혈뇨','소변','오줌'],flags:['urineBlock']},
+ {id:'drink',label:'물을 평소보다 많이 마셔요',group:'소변',fields:['내과','비뇨기'],keys:['물','음수','다음'],flags:[]},
+ {id:'lethargy',label:'기운이 없고 잘 안 움직여요',group:'전신·행동',fields:['내과'],keys:['기운','무기력','처짐'],flags:['gum','noEat']},
+ {id:'weight',label:'살이 빠지거나 갑자기 쪘어요',group:'전신·행동',fields:['내과'],keys:['체중','살','마름'],flags:[]},
+ {id:'checkup',label:'건강검진·예방접종을 받고 싶어요',group:'검진·예방',fields:['건강검진·접종'],keys:['검진','접종','백신','심장사상충'],flags:[]},
+ {id:'neuter',label:'중성화 수술을 상담하고 싶어요',group:'검진·예방',fields:['중성화수술'],keys:['중성화','수술'],flags:[]},
+ {id:'unsure',label:'어디가 아픈지 잘 모르겠어요',group:'잘 모르겠어요',fields:['일반 진료','내과'],keys:['모르','이상'],flags:['gum','noEat']}
+];
+const ZS_GROUPS=['먹기·소화','피부·귀','눈','입·이빨','뼈·관절','숨·심장','소변','전신·행동','검진·예방','잘 모르겠어요'];
+function zs(){if(!state.zs)state.zs={who:'',species:'',exotic:'',symptoms:[],flags:[],q:'',openOnly:false,catRoom:true,more:false};return state.zs}
+function zsWhoOptions(){
+ const pets=(state.pets||[]).filter(p=>!(typeof zenoMemorialGet==='function'&&zenoMemorialGet().petIds.includes(p.id)));
+ return [...pets.map(p=>({id:'pet:'+p.id,label:p.name,species:p.species||''})),{id:'dog',label:'강아지',species:'강아지'},{id:'cat',label:'고양이',species:'고양이'},{id:'exotic',label:'특수동물',species:'특수동물'}];
+}
+function zsSpecies(){const z=zs();const s=z.species;if(s==='강아지'||s==='고양이')return s;if(s)return '특수동물';return ''}
+function zsSelected(){return zs().symptoms.map(id=>ZS_SYMPTOMS.find(s=>s.id===id)).filter(Boolean)}
+function zsFlagList(){
+ const sp=zsSpecies(),ids=[...new Set([...ZS_COMMON_FLAGS,...zsSelected().flatMap(s=>s.flags)])];
+ return ids.filter(id=>ZS_FLAGS[id]&&(!ZS_FLAGS[id].species||!sp||ZS_FLAGS[id].species===sp)).sort((a,b)=>(ZS_FLAGS[a].level==='now'?0:1)-(ZS_FLAGS[b].level==='now'?0:1));
+}
+function zsLevel(){const f=zs().flags.filter(id=>zsFlagList().includes(id));if(f.some(id=>ZS_FLAGS[id].level==='now'))return 'now';if(f.length)return 'today';return ''}
+function zsFields(){
+ const sp=zsSpecies();
+ if(sp==='특수동물')return ['특수동물'];
+ const out=[];for(const s of zsSelected())for(const f of s.fields)if(!out.includes(f))out.push(f);
+ return out;
+}
+/* 진료 분야 근거: 기존 검색과 같은 함수(zenoSpecialtyOrigin)를 분야별로 불러 씁니다. */
+function zsOrigin(h,field){
+ const keep=state.specialty;state.specialty=field;
+ try{return zenoSpecialtyOrigin(h)}finally{state.specialty=keep}
+}
+const ZS_ORIGIN_SCORE={official:3,demo:2,public:2,inquiry:1};
+const ZS_ORIGIN_LABEL={official:'공식 안내 진료과',demo:'병원 입력 진료',public:'공개정보 등록 과목',inquiry:'진료 여부 전화 확인'};
+function zsIsOpen(h){const st=zenoSearchClinicStatus(h);return {open:/is-open/.test(st.kind)||zeno24HourEmergency(h),text:st.text}}
+function zsRank(){
+ const z=zs(),fields=zsFields(),sp=zsSpecies(),out=[];
+ for(const h of HOSPITALS){
+  let best=null;
+  if(sp==='특수동물'){
+   if(z.exotic&&!zenoExoticMatches(h,z.exotic))continue;
+   const o=zsOrigin(h,'특수동물');if(!o)continue;
+   best={field:z.exotic||'특수동물',origin:o};
+  }else{
+   for(const f of fields){
+    if(f==='일반 진료'){if(!best)best={field:f,origin:'public'};continue}
+    const o=zsOrigin(h,f);
+    if(o&&ZS_ORIGIN_SCORE[o]&&(!best||ZS_ORIGIN_SCORE[o]>ZS_ORIGIN_SCORE[best.origin]))best={field:f,origin:o};
+   }
+  }
+  if(!best)continue;
+  const status=zsIsOpen(h),km=zenoNearbyDistanceKm(h),tier=zenoCatWaitingTier(h);
+  if(z.openOnly&&!status.open)continue;
+  if(sp==='고양이'&&z.catRoom&&tier<2)continue;
+  const reasons=[best.field+' · '+ZS_ORIGIN_LABEL[best.origin]];
+  let score=ZS_ORIGIN_SCORE[best.origin]*10;
+  if(status.open){score+=6;reasons.push(zeno24HourEmergency(h)?'24시간 운영 안내':'지금 진료시간 내')}
+  if(Number.isFinite(km)){score+=km<3?5:km<5?3:km<10?1:0;reasons.push(km<1?Math.round(km*1000)+'m':km.toFixed(1)+'km')}
+  if(sp==='고양이'&&tier>=2){score+=2;reasons.push('고양이 대기실')}
+  out.push({h,score,reasons,status,km,field:best.field});
+ }
+ return out.sort((a,b)=>b.score-a.score||(a.km-b.km)||a.h.name.localeCompare(b.h.name,'ko'));
+}
+function zsSpecialtyFor(field){return field==='일반 진료'?'':(field==='특수동물'||EXOTIC.some(x=>x[0]===field))?'특수동물':field}
+function zsCard(r){
+ const h=r.h,phone=String(h.phone||'').trim(),ok=/^0[0-9 -]{8,15}$/.test(phone);
+ const area=String(h.address||'').split(' ').slice(1,3).join(' ');
+ const keep=state.specialty;state.specialty=zsSpecialtyFor(r.field);
+ const book=zenoBookEligible(h);state.specialty=keep;
+ return '<div class="zs-card"><div class="zs-card-top"><strong>'+e(h.name)+'</strong><span class="zs-status'+(r.status.open?' on':'')+'">'+e(r.status.text)+'</span></div>'
+  +(area?'<small>'+e(area)+'</small>':'')
+  +'<div class="zs-reasons">'+r.reasons.map(x=>'<span>'+e(x)+'</span>').join('')+'</div>'
+  +'<div class="zs-actions">'+(ok?'<a class="zs-btn" href="tel:'+e(phone.replace(/[^0-9]/g,''))+'">전화</a>':'<span class="zs-btn off">전화번호 미확인</span>')
+  +'<button type="button" class="zs-btn" data-zs="details" data-id="'+e(h.id)+'" data-field="'+e(r.field)+'">상세</button>'
+  +(book?'<button type="button" class="zs-btn primary" data-zs="book" data-id="'+e(h.id)+'" data-field="'+e(r.field)+'">예약</button>':'')+'</div></div>';
+}
+function zsEmergencyBlock(level){
+ const flags=zs().flags.filter(id=>zsFlagList().includes(id)).map(id=>ZS_FLAGS[id].label);
+ if(level==='now'){
+  const list=HOSPITALS.filter(h=>zeno24HourEmergency(h)||zenoNightSchedule(h).within).slice(0,6);
+  return '<section class="zs-alert now" role="alert"><strong>지금 바로 병원에 전화해 주세요</strong><p>'+e(flags.join(' · '))+'</p><p>예약을 기다리지 말고 가까운 병원에 전화로 지금 진료가 가능한지 먼저 확인하세요. 24시간 운영 표기가 응급 접수를 뜻하지는 않아요.</p>'
+   +(list.length?'<div class="zs-call-list">'+list.map(h=>{const p=String(h.phone||'').replace(/[^0-9]/g,'');return '<div class="zs-call"><span><b>'+e(h.name)+'</b><small>'+e(zeno24HourEmergency(h)?'24시간 운영 안내':'야간 진료시간 내')+'</small></span>'+(p?'<a class="zs-btn primary" href="tel:'+e(p)+'">전화</a>':'')+'</div>'}).join('')+'</div>':'<p>지금 운영 중으로 확인된 야간·24시간 병원이 없어요.</p>')
+   +'<button type="button" class="zs-link" data-zs="emergency">야간·24시간 병원 전체 보기</button></section>';
+ }
+ return '<section class="zs-alert today"><strong>오늘 진료를 받아 보세요</strong><p>'+e(flags.join(' · '))+'</p><p>지금 진료시간 안인 병원을 먼저 보여 드려요. 상태가 나빠지면 바로 전화로 문의하세요.</p></section>';
+}
+zenoSymptomPage=function(){
+ const z=zs(),who=zsWhoOptions(),sp=zsSpecies(),sel=zsSelected(),level=zsLevel();
+ let html='<div class="zeno-symptoms-page zs-page">'+topbar('증상으로 병원 찾기','')
+  +'<p class="zs-lead">증상에 맞는 진료 분야와 지금 갈 수 있는 병원을 찾아 드려요. 질환을 진단하지 않으며, 진료 가능 여부는 병원에 확인해 주세요.</p>';
+ html+='<section class="zs-step"><h2><span>1</span>누가 아픈가요?</h2><div class="zs-chips">'+who.map(o=>'<button type="button" class="zs-chip" data-zs="who" data-value="'+e(o.id)+'" aria-pressed="'+(z.who===o.id)+'">'+e(o.label)+(o.id.startsWith('pet:')&&o.species?' <em>'+e(o.species)+'</em>':'')+'</button>').join('')+'</div>';
+ if(sp==='특수동물')html+='<div class="zs-chips zs-sub">'+EXOTIC.map(x=>'<button type="button" class="zs-chip small" data-zs="exotic" data-value="'+e(x[0])+'" aria-pressed="'+(z.exotic===x[0])+'">'+e(x[0])+'</button>').join('')+'</div>';
+ html+='</section>';
+ if(!sp)return html+'</div>';
+ const q=z.q.replace(/\s+/g,'');
+ const matches=s=>!q||s.label.replace(/\s+/g,'').includes(q)||s.keys.some(k=>k.includes(q)||q.includes(k));
+ const shown=ZS_SYMPTOMS.filter(matches);
+ html+='<section class="zs-step"><h2><span>2</span>어떤 증상이 있나요? <small>최대 3개</small></h2>'
+  +'<label class="sr-only" for="zs-q">증상 검색</label><input id="zs-q" class="zs-search" type="search" placeholder="예: 구토, 귀, 절뚝" value="'+e(z.q)+'" autocomplete="off" data-zs-input="q">';
+ if(q){html+='<div class="zs-chips">'+(shown.length?shown.map(s=>zsSymptomChip(s)).join(''):'<p class="zs-empty">맞는 증상이 없어요. 아래 \'어디가 아픈지 잘 모르겠어요\'를 골라 주세요.</p>')+'</div>'}
+ else html+=ZS_GROUPS.map(g=>'<div class="zs-group"><h3>'+e(g)+'</h3><div class="zs-chips">'+ZS_SYMPTOMS.filter(s=>s.group===g).map(s=>zsSymptomChip(s)).join('')+'</div></div>').join('');
+ html+='</section>';
+ if(!sel.length)return html+'</div>';
+ const flags=zsFlagList();
+ html+='<section class="zs-step"><h2><span>3</span>이런 모습도 있나요?</h2><p class="zs-help">해당하는 것이 있으면 골라 주세요. 하나라도 있으면 바로 전화 안내를 먼저 보여 드려요.</p><div class="zs-flags">'
+  +flags.map(id=>'<label class="zs-flag'+(ZS_FLAGS[id].level==='now'?' now':'')+'"><input type="checkbox" data-zs-flag="'+id+'"'+(z.flags.includes(id)?' checked':'')+'><span>'+e(ZS_FLAGS[id].label)+'</span></label>').join('')+'</div></section>';
+ if(level)html+=zsEmergencyBlock(level);
+ const fields=zsFields(),ranked=zsRank(),limit=z.more?30:8;
+ html+='<section class="zs-step"><h2><span>4</span>맞춤 병원</h2><p class="zs-help">'+e(sp==='특수동물'?(z.exotic||'특수동물')+' 진료 기록이 있는 병원':fields.join(' · ')+' 진료 분야')+' · 진료 근거·진료시간·거리 순으로 정리했어요.</p>'
+  +'<div class="zs-chips zs-toggles"><button type="button" class="zs-chip small" data-zs="open-only" aria-pressed="'+z.openOnly+'">지금 진료시간 내</button>'
+  +'<button type="button" class="zs-chip small" data-zs="nearby" aria-pressed="'+Boolean(state.nearbyPosition)+'"'+(state.nearbyBusy?' disabled':'')+'>'+(state.nearbyBusy?'위치 확인 중':'내 주변 거리')+'</button>'
+  +(sp==='고양이'?'<button type="button" class="zs-chip small" data-zs="cat-room" aria-pressed="'+z.catRoom+'">고양이 대기실</button>':'')+'</div>'
+  +(ranked.length?'<div class="zs-list">'+ranked.slice(0,limit).map(zsCard).join('')+'</div>'+(ranked.length>limit?'<button type="button" class="zs-more" data-zs="more">'+(ranked.length-limit)+'곳 더 보기</button>':''):'<p class="zs-empty">조건에 맞는 병원이 없어요. 조건을 줄이거나 아래 전체 목록에서 찾아보세요.</p>')
+  +(sp!=='특수동물'&&fields[0]?'<button type="button" class="zs-link" data-zs="search" data-value="'+e(fields.find(f=>f!=='일반 진료')||fields[0])+'">'+e(fields.find(f=>f!=='일반 진료')||fields[0])+' 병원 전체 목록 보기</button>':'')
+  +'</section><p class="zs-note">정렬 기준은 병원이 공개했거나 제노가 확인한 진료 분야, 등록된 진료시간, 거리, 시설 정보뿐이에요. 광고나 제휴 여부는 순서에 반영하지 않아요. 진료 분야는 병원 진료 범위를 보증하지 않으니 방문 전 전화로 확인해 주세요.</p>';
+ return html+'</div>';
+};
+function zsSymptomChip(s){
+ const z=zs(),on=z.symptoms.includes(s.id);
+ return '<button type="button" class="zs-chip" data-zs="symptom" data-value="'+e(s.id)+'" aria-pressed="'+on+'"'+(!on&&z.symptoms.length>=3?' disabled':'')+'>'+e(s.label)+'</button>';
+}
+document.addEventListener('click',async ev=>{
+ const el=ev.target.closest('[data-zs]');if(!el||APP_MODE!=='owner')return;
+ const z=zs(),a=el.dataset.zs,v=el.dataset.value;
+ if(a==='who'){
+  const o=zsWhoOptions().find(x=>x.id===v);if(!o)return;
+  const prevSpecies=z.species,same=z.who===v;z.who=same?'':v;z.species=same?'':o.species;z.exotic='';
+  if(z.species&&!['강아지','고양이','특수동물'].includes(z.species)){z.exotic=EXOTIC.some(x=>x[0]===z.species)?z.species:'';z.species='특수동물'}
+  if(z.species!==prevSpecies)z.symptoms=[];
+  z.flags=[];z.more=false;render();return;
+ }
+ if(a==='exotic'){z.exotic=z.exotic===v?'':v;render();return}
+ if(a==='symptom'){const i=z.symptoms.indexOf(v);if(i>=0)z.symptoms.splice(i,1);else if(z.symptoms.length<3)z.symptoms.push(v);z.more=false;render();return}
+ if(a==='open-only'){z.openOnly=!z.openOnly;render();return}
+ if(a==='cat-room'){z.catRoom=!z.catRoom;render();return}
+ if(a==='more'){z.more=true;render();return}
+ if(a==='nearby'){
+  if(state.nearbyPosition){state.nearbyPosition=null;render();return}
+  await zenoToggleNearby();
+  /* 내 주변은 거리 정렬에만 쓰고, 병원 찾기 화면의 필터는 원래대로 둡니다. */
+  state.activeFilters=zenoActiveFilters().filter(x=>x!=='내 주변');render();return;
+ }
+ const note=zsSelected().map(s=>s.label).join(', ');
+ if(a==='details'||a==='book'){
+  const id=el.dataset.id,field=el.dataset.field;
+  state.specialty=zsSpecialtyFor(field);
+  if(a==='book'){state.symptomLabel=note;if(!state.ownerToken){state.pendingAction={type:'book',id};navTo('login');return}}
+  openModal(a,id);return;
+ }
+ if(a==='search'){state.symptomGuideOpen=false;state.symptomLabel=note;state.specialty=v;state.exoticSpecies='';state.query='';state.filter='전체';state.activeFilters=zs().species==='고양이'&&z.catRoom?['고양이 대기실']:[];zenoNewSearch=true;navTo('search');return}
+ if(a==='emergency'){state.symptomLabel=z.flags.filter(id=>ZS_FLAGS[id]?.level==='now').map(id=>ZS_FLAGS[id].label).join(' · ');navTo('emergency');return}
+});
+document.addEventListener('change',ev=>{
+ const el=ev.target;if(!el?.dataset||APP_MODE!=='owner')return;
+ const id=el.dataset.zsFlag;if(!id)return;
+ const z=zs(),i=z.flags.indexOf(id);if(el.checked&&i<0)z.flags.push(id);if(!el.checked&&i>=0)z.flags.splice(i,1);
+ render();
+});
+/* 한글 입력 중(조합 중)에는 다시 그리지 않고, 조합이 끝난 뒤에 검색합니다. */
+function zsSearchInput(el){
+ zs().q=el.value;const pos=el.selectionStart;render();
+ const again=document.getElementById('zs-q');if(again){again.focus();try{again.setSelectionRange(pos,pos)}catch{}}
+}
+document.addEventListener('input',ev=>{
+ const el=ev.target;if(!el?.dataset||el.dataset.zsInput!=='q'||APP_MODE!=='owner'||ev.isComposing)return;
+ zsSearchInput(el);
+});
+document.addEventListener('compositionend',ev=>{
+ const el=ev.target;if(!el?.dataset||el.dataset.zsInput!=='q'||APP_MODE!=='owner')return;
+ zsSearchInput(el);
+});
+</script><!-- ZENO-SYMPTOM-END --><style>#memopen{position:fixed;bottom:16px;right:16px;z-index:100;border:0;border-radius:25px;background:#1979e6;color:white;padding:14px;font-weight:bold}#membg{display:none;position:fixed;inset:0;background:#091b32b8;z-index:110;overflow:auto;padding:20px}#membg.show{display:block}#memcard{background:white;color:#173452;max-width:560px;margin:4vh auto;border-radius:20px;padding:24px}#memcard input:not([type=checkbox]),#memcard textarea,#memcard select{display:block;width:100%;box-sizing:border-box;margin:9px 0;padding:12px;border:1px solid #ccc;border-radius:8px}#memcard button{padding:10px 14px;background:#1979e6;color:white;border:0;border-radius:9px;margin:5px}@media(max-width:750px){#memopen{bottom:calc(88px + env(safe-area-inset-bottom));right:13px;padding:9px 15px;font-size:13px;box-shadow:0 7px 20px #1861bb38}}</style>
 <button id="memopen" type="button">추모관</button><div id="membg" role="dialog" aria-modal="true"><div id="memcard"><button id="memclose" type="button">닫기</button><h2>우리 아이 추모관</h2><p>보호자가 원할 때만 추모 기록을 만듭니다. 기존 진료 기록과 병원 정보는 변경하지 않습니다.</p><select id="mempet"><option value="">반려동물 선택</option></select><input id="memtitle" maxlength="100" placeholder="추억의 제목"><textarea id="memtext" maxlength="3000" rows="5" placeholder="우리 아이에게 남기는 편지"></textarea><label><input id="memagree" type="checkbox"> 추모 기록 만들기에 동의합니다</label><div><button id="memsave" type="button">추억 저장</button></div><p style="font-size:12px">현재 브라우저에만 저장됩니다. 브라우저 데이터를 삭제하면 사라질 수 있습니다.</p><h3>저장한 추억</h3><div id="memlist"></div></div></div>
 <script>(()=>{const $=x=>document.getElementById(x),key='zeno-memorial-v1',read=k=>{try{let a=JSON.parse(localStorage.getItem(k)||'[]');return Array.isArray(a)?a:[]}catch{return []}},esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));function renderMem(){let pets=read('zeno-pets-v2');$('mempet').innerHTML='<option value="">반려동물 선택</option>'+pets.map((p,i)=>'<option value="'+i+'">'+esc(p.name||p.petName||'이름 미등록')+'</option>').join('');$('memlist').innerHTML=read(key).map(m=>'<div style="border-top:1px solid #ddd;padding:12px 0"><b>'+esc(m.pet)+' · '+esc(m.title)+'</b><p style="white-space:pre-wrap">'+esc(m.text)+'</p><button data-del="'+esc(m.id)+'">삭제</button></div>').join('')||'저장된 추억이 없습니다.'}$('memopen').onclick=()=>{$('membg').classList.add('show');renderMem()};$('memclose').onclick=()=>$('membg').classList.remove('show');$('memsave').onclick=()=>{let i=$('mempet').value,p=read('zeno-pets-v2')[Number(i)],title=$('memtitle').value.trim(),text=$('memtext').value.trim();if(i===''||!p)return alert('반려동물을 먼저 등록하고 선택해 주세요.');if(!$('memagree').checked)return alert('보호자 동의가 필요합니다.');if(!title||!text)return alert('제목과 추억을 입력해 주세요.');let a=read(key);a.push({id:String(Date.now()),pet:p.name||p.petName||'이름 미등록',title,text});try{localStorage.setItem(key,JSON.stringify(a));$('memtitle').value='';$('memtext').value='';$('memagree').checked=false;renderMem();alert('추모 기록이 저장되었습니다.')}catch{alert('브라우저 저장에 실패했습니다.')}};$('memlist').onclick=e=>{let b=e.target.closest('[data-del]');if(b&&confirm('이 추모 기록을 삭제할까요?')){localStorage.setItem(key,JSON.stringify(read(key).filter(x=>x.id!==b.dataset.del)));renderMem()}}})();</script></body></html>
