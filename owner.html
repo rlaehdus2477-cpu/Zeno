@@ -7554,6 +7554,11 @@ setInterval(()=>{if(document.hidden||state.ownerToken||!state.serverReady)return
 .zp-link-row b{font-weight:600}
 .zp-more{margin:0 0 8px}
 .zp-more summary{font-size:13px;font-weight:600;color:#3d5f80;cursor:pointer;padding:4px 0 8px}
+.zp-bars{display:grid;grid-template-columns:repeat(12,1fr);gap:4px;align-items:end;height:96px;margin-bottom:8px}
+.zp-bar{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:4px}
+.zp-bar span{display:block;width:100%;max-width:16px;min-height:2px;background:#1689fa;border-radius:3px 3px 0 0}
+.zp-bar small{font-size:10px;color:#8a96a3}
+.zp-photo{display:block;max-width:100%;max-height:480px;object-fit:contain;background:#f8fafc;margin-top:10px;border:1px solid #e5ebf1;border-radius:8px}
 </style><script id="zeno-pass-module">
 /* ===== ZENO PASS · 보호자 화면 (2026-11-26) =====
    PASS 권한은 서버(/api/pass)에서 확인한 값만 사용합니다. 화면에서 임의로 열지 않습니다. */
@@ -7971,6 +7976,145 @@ function zpNuNotes(years){
  return (years!==null&&years<1?'<p class="zp-error" style="margin-top:12px">1살 미만 성장기 아이예요. 사료를 바꾸기 전에 수의사와 상의해 주세요.</p>':'')
   +'<p class="zp-disclaimer">처방식은 수의사의 진단과 권고에 따라 급여해 주세요. 급여량은 제조사 급여표 기준이며 활동량·체형에 따라 달라질 수 있어요. 제노는 사료 판매·광고 수수료를 받지 않으며, 제조사 자료 확인일은 2026-11-26이에요.</p>';
 }
+/* PASS 04 · 다묘·다견 영수증 통합 관리 (보호자). 사진은 본인만 볼 수 있고, 자동 인식 결과는 확인·수정 후 저장합니다. */
+function zpRc(){const z=zpState();if(!z.rc)z.rc={loaded:false,error:'',list:[],pet:'all',year:'',form:null,busy:false,photoUrls:{}};return z.rc}
+async function zpRcLoad(){
+ const r=zpRc();
+ if(!state.ownerToken){r.loaded=true;return}
+ if(!zpState().passLoaded)await zpLoadPass(false);
+ try{const x=await api('GET','/api/receipts');r.list=x.receipts||[];r.error=''}catch(err){r.error=err.message}
+ r.loaded=true;
+ if(state.page==='pass'&&zpState().view==='receipts')render();
+}
+function zpRcPetName(id){return (state.pets||[]).find(p=>p.id===id)?.name||'등록 해제된 아이'}
+function zpRcItemsText(items){return (items||[]).map(i=>i.name+' '+i.amount).join('\n')}
+function zpRcParseItems(text){return String(text||'').split('\n').map(l=>l.trim()).filter(Boolean).map(l=>{const m=l.match(/^(.*?)[\s:]+(-?[\d,]+)\s*원?$/);return m?{name:m[1].trim(),amount:Number(m[2].replace(/,/g,''))}:{name:l,amount:NaN}})}
+async function zpRcCompress(file){
+ const url=URL.createObjectURL(file);
+ try{
+  const img=await new Promise((ok,bad)=>{const i=new Image();i.onload=()=>ok(i);i.onerror=()=>bad(Error('사진을 읽지 못했어요.'));i.src=url});
+  for(const [side,q] of [[1600,.75],[1280,.68],[1024,.6]]){
+   const k=Math.min(1,side/Math.max(img.naturalWidth,img.naturalHeight));
+   const c=document.createElement('canvas');c.width=Math.round(img.naturalWidth*k);c.height=Math.round(img.naturalHeight*k);
+   c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+   const data=c.toDataURL('image/jpeg',q);
+   if(data.length<=900000)return data;
+  }
+  throw Error('사진 용량이 너무 커요. 영수증만 가까이 찍어 주세요.');
+ }finally{URL.revokeObjectURL(url)}
+}
+function zpRcForm(){
+ const r=zpRc(),f=r.form,pets=state.pets||[];
+ const names=HOSPITALS.map(h=>'<option value="'+e(h.name)+'"></option>').join('');
+ return '<form class="zp-form zp-box" data-zp-form="rc-save" style="padding:16px">'
+  +(f.id?'':'<div class="zp-field"><label for="zp-rc-photo">영수증 사진 (선택)</label><input id="zp-rc-photo" type="file" accept="image/*" data-zp-file="rc"'+(r.busy?' disabled':'')+'><p class="zp-help">사진은 본인만 볼 수 있어요. 올리면 글자를 자동으로 읽어 아래 칸을 채워요.</p></div>')
+  +(f.status?'<p class="'+(f.statusTone==='error'?'zp-error':'zp-muted')+'" role="status">'+e(f.status)+'</p>':'')
+  +'<div class="zp-field"><label for="zp-rc-pet">아이</label><select id="zp-rc-pet" name="petId" required>'+pets.map(p=>'<option value="'+e(p.id)+'"'+(f.petId===p.id?' selected':'')+'>'+e(p.name)+'</option>').join('')+'</select></div>'
+  +'<div class="zp-field"><label for="zp-rc-hospital">병원</label><input id="zp-rc-hospital" name="hospitalName" list="zp-rc-hospitals" maxlength="60" required value="'+e(f.hospitalName||'')+'"><datalist id="zp-rc-hospitals">'+names+'</datalist><p class="zp-help">제휴·비제휴 병원 모두 등록할 수 있어요.</p></div>'
+  +'<div class="zp-field-row"><div class="zp-field"><label for="zp-rc-date">진료일</label><input id="zp-rc-date" name="visitDate" type="date" max="'+today()+'" required value="'+e(f.visitDate||'')+'"></div><div class="zp-field"><label for="zp-rc-total">총 결제 금액(원)</label><input id="zp-rc-total" name="total" type="number" inputmode="numeric" min="0" required value="'+e(f.total??'')+'"></div></div>'
+  +'<div class="zp-field"><label for="zp-rc-items">세부 항목 (한 줄에 "항목 금액", 선택)</label><textarea id="zp-rc-items" name="items" placeholder="진찰료 10000&#10;혈액검사 45000">'+e(f.itemsText||'')+'</textarea></div>'
+  +'<div class="zp-field"><label for="zp-rc-memo">메모 (선택)</label><input id="zp-rc-memo" name="memo" maxlength="300" value="'+e(f.memo||'')+'"></div>'
+  +(f.photoId?'<p class="zp-help">자동 인식 값은 틀릴 수 있어요. 영수증과 비교해 확인한 뒤 저장해 주세요.</p>':'')
+  +'<div class="zp-btn-row"><button type="button" class="zp-btn secondary" data-zp="rc-close">닫기</button><button type="submit" class="zp-btn"'+(r.busy?' disabled':'')+'>저장</button></div></form>';
+}
+function zpRcStats(list){
+ const r=zpRc(),years=[...new Set(list.map(x=>x.visitDate.slice(0,4)))].sort().reverse();
+ if(!years.length)return '';
+ const year=years.includes(r.year)?r.year:years[0];
+ const inYear=list.filter(x=>x.visitDate.startsWith(year));
+ const months=Array.from({length:12},(_,i)=>inYear.filter(x=>Number(x.visitDate.slice(5,7))===i+1).reduce((a,x)=>a+x.total,0));
+ const max=Math.max(1,...months);
+ const byPet=[...new Set(list.map(x=>x.petId))].map(id=>[id,inYear.filter(x=>x.petId===id).reduce((a,x)=>a+x.total,0)]).filter(x=>x[1]>0);
+ return '<section class="zp-section"><div class="zp-section-head"><h2>'+year+'년 의료비</h2><span>'+zpWon(inYear.reduce((a,x)=>a+x.total,0))+'</span></div>'
+  +(years.length>1?'<div class="zp-chips" role="group" aria-label="연도">'+years.map(y=>'<button type="button" class="zp-chip" data-zp="rc-year" data-value="'+y+'" aria-pressed="'+(y===year)+'">'+y+'</button>').join('')+'</div>':'')
+  +'<div class="zp-box" style="padding:12px 16px"><div class="zp-bars" role="img" aria-label="'+year+'년 월별 의료비">'+months.map((v,i)=>'<div class="zp-bar"><span style="height:'+Math.round(v/max*100)+'%"></span><small>'+(i+1)+'</small></div>').join('')+'</div>'
+  +months.map((v,i)=>v?'<div class="zp-kv"><span>'+(i+1)+'월</span><b>'+zpWon(v)+'</b></div>':'').join('')+'</div>'
+  +(r.pet==='all'&&byPet.length?'<div class="zp-box" style="padding:4px 16px;margin-top:8px">'+byPet.map(([id,v])=>'<div class="zp-kv"><span>'+e(zpRcPetName(id))+'</span><b>'+zpWon(v)+'</b></div>').join('')+'</div>':'')+'</section>';
+}
+ZP_VIEWS.receipts={
+ load:zpRcLoad,
+ render(){
+  const r=zpRc();
+  let body=zpBack()+'<h1 class="zp-title">다묘·다견 영수증 통합 관리</h1><p class="zp-lead">여러 병원 영수증을 아이별로 모아 의료비를 정리해요. 사진과 기록은 본인만 볼 수 있어요.</p>';
+  if(!state.ownerToken)return body+zpGate('영수증 통합 관리');
+  if(!r.loaded)return body+'<p class="zp-muted" role="status">불러오고 있어요.</p>';
+  if(r.error)return body+'<p class="zp-error">'+e(r.error)+'</p>';
+  const active=zpActive();
+  if(!active)body+=r.list.length?'<section class="zp-gate"><strong>PASS를 해지한 상태예요</strong><p>저장한 영수증은 계속 보고 내보낼 수 있어요. 새 영수증 등록은 PASS에서 할 수 있어요.</p></section>':zpGate('영수증 통합 관리');
+  if(active&&!(state.pets||[]).length)return body+'<section class="zp-gate"><strong>등록한 아이가 없어요</strong><p>내 아이에서 아이를 먼저 등록해 주세요.</p><button type="button" class="zp-btn" data-nav="pets">내 아이 등록하기</button></section>';
+  if(r.form)return body+zpRcForm();
+  const list=r.list.filter(x=>r.pet==='all'||x.petId===r.pet);
+  const total=r.list.reduce((a,x)=>a+x.total,0);
+  body+='<section class="zp-plan"><div class="zp-plan-head"><strong>'+zpWon(total)+'</strong><span class="zp-tag mute">전체 아이 의료비 합계</span></div><p>영수증 '+r.list.length+'건 · 아이 '+new Set(r.list.map(x=>x.petId)).size+'마리</p>'
+   +(active?'<div class="zp-btn-row"><button type="button" class="zp-btn" data-zp="rc-new">영수증 추가</button></div>':'')+'</section>';
+  if(!r.list.length)return body+'<div class="zp-box"><p class="zp-empty">아직 저장한 영수증이 없어요.</p></div>';
+  const pets=[...new Set(r.list.map(x=>x.petId))];
+  body+='<div class="zp-chips" role="group" aria-label="아이 선택">'+[['all','전체']].concat(pets.map(id=>[id,zpRcPetName(id)])).map(([id,n])=>'<button type="button" class="zp-chip" data-zp="rc-pet" data-value="'+e(id)+'" aria-pressed="'+(r.pet===id)+'">'+e(n)+'</button>').join('')+'</div>';
+  body+=zpRcStats(list);
+  body+='<section class="zp-section"><div class="zp-section-head"><h2>영수증</h2><span>'+list.length+'건</span></div><div class="zp-box">'+list.map(x=>'<div class="zp-item"><div class="zp-item-top"><strong>'+e(x.hospitalName)+'</strong><b>'+zpWon(x.total)+'</b></div><small>'+e(x.visitDate+' · '+zpRcPetName(x.petId)+(x.source==='photo'?' · 사진':''))+'</small>'
+   +(x.items.length?'<details class="zp-fee-note"><summary>세부 항목 '+x.items.length+'개</summary>'+x.items.map(i=>'<div class="zp-kv"><span>'+e(i.name)+'</span><b>'+zpWon(i.amount)+'</b></div>').join('')+'</details>':'')
+   +(x.memo?'<p>'+e(x.memo)+'</p>':'')
+   +(r.photoUrls[x.id]?'<img class="zp-photo" src="'+e(r.photoUrls[x.id])+'" alt="'+e(x.visitDate)+' 영수증 사진">':'')
+   +'<div class="zp-btn-row inline">'+(x.hasPhoto&&!r.photoUrls[x.id]?'<button type="button" class="zp-btn small secondary" data-zp="rc-photo" data-id="'+e(x.id)+'">사진 보기</button>':'')+'<button type="button" class="zp-btn small secondary" data-zp="rc-edit" data-id="'+e(x.id)+'">수정</button><button type="button" class="zp-btn small secondary" data-zp="rc-delete" data-id="'+e(x.id)+'">삭제</button></div></div>').join('')+'</div></section>';
+  body+='<section class="zp-section"><h2>내보내기</h2><p class="zp-help" style="margin-bottom:8px">PASS 해지 후에도 내보낼 수 있어요. 보험 청구 서류는 이 파일과 원본 영수증으로 직접 준비해 주세요.</p><div class="zp-btn-row"><button type="button" class="zp-btn secondary" data-zp="rc-export" data-value="csv">엑셀용 CSV</button><button type="button" class="zp-btn secondary" data-zp="rc-export" data-value="json">JSON 백업</button></div></section>';
+  return body;
+ },
+ async click(a,el){
+  const r=zpRc();
+  if(a==='rc-pet'){r.pet=el.dataset.value;render();return}
+  if(a==='rc-year'){r.year=el.dataset.value;render();return}
+  if(a==='rc-new'){r.form={petId:r.pet!=='all'?r.pet:(state.pets[0]?.id||''),visitDate:today()};render();return}
+  if(a==='rc-close'){r.form=null;render();return}
+  if(a==='rc-edit'){const x=r.list.find(y=>y.id===el.dataset.id);if(!x)return;r.form={id:x.id,petId:x.petId,hospitalName:x.hospitalName,visitDate:x.visitDate,total:x.total,itemsText:zpRcItemsText(x.items),memo:x.memo};render();return}
+  if(a==='rc-delete'){if(!confirm('이 영수증과 사진을 삭제할까요?'))return;try{await api('DELETE','/api/receipts/'+encodeURIComponent(el.dataset.id));toast('삭제했어요.')}catch(err){toast(err.message)}await zpRcLoad();return}
+  if(a==='rc-photo'||a==='rc-export'){
+   const path=a==='rc-photo'?'/api/receipts/'+encodeURIComponent(el.dataset.id)+'/photo':'/api/receipts/export?format='+el.dataset.value;
+   try{
+    const res=await fetch(path,{headers:{Authorization:'Bearer '+state.ownerToken},cache:'no-store'});
+    if(!res.ok){const b=await res.json().catch(()=>({}));throw Error(b.error||'불러오지 못했어요.')}
+    const blob=await res.blob(),url=URL.createObjectURL(blob);
+    if(a==='rc-photo'){r.photoUrls[el.dataset.id]=url;render();return}
+    const link=document.createElement('a');link.href=url;link.download='zeno-receipts.'+el.dataset.value;document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),5000);
+   }catch(err){toast(err.message)}
+  }
+ },
+ async change(el){
+  if(el.dataset.zpFile!=='rc'||!el.files?.[0])return;
+  const r=zpRc(),f=r.form;if(!f)return;
+  const form=el.closest('form');if(form){const d=new FormData(form);Object.assign(f,{petId:d.get('petId'),hospitalName:d.get('hospitalName'),visitDate:d.get('visitDate'),total:d.get('total'),itemsText:d.get('items'),memo:d.get('memo')})}
+  r.busy=true;f.status='사진을 올리고 글자를 읽고 있어요.';f.statusTone='';render();
+  try{
+   const image=await zpRcCompress(el.files[0]);
+   const x=await api('POST','/api/pass/receipts/photo',{image});
+   f.photoId=x.photoId;f.ocrStatus=x.ocr?.status||'';
+   const d=x.ocr?.draft;
+   if(d){
+    if(d.hospitalName){const hit=HOSPITALS.find(h=>d.hospitalName.replace(/\s/g,'').includes(h.name.replace(/\s/g,''))||h.name.replace(/\s/g,'').includes(d.hospitalName.replace(/\s/g,'')));f.hospitalName=hit?hit.name:d.hospitalName}
+    if(d.visitDate&&d.visitDate<=today())f.visitDate=d.visitDate;
+    if(d.total!=null)f.total=d.total;
+    if(d.items?.length)f.itemsText=zpRcItemsText(d.items);
+    f.status='자동 인식 결과를 채웠어요. 영수증과 비교해 확인해 주세요.';
+   }else f.status=x.ocr?.status==='unavailable'?'사진을 저장했어요. 자동 인식은 아직 준비 중이라 직접 입력해 주세요.':'사진을 저장했어요. 글자를 읽지 못해 직접 입력해 주세요.';
+  }catch(err){f.status=err.message;f.statusTone='error'}
+  r.busy=false;render();
+ },
+ async submit(kind,form){
+  if(kind!=='rc-save')return;
+  const r=zpRc(),f=r.form,d=new FormData(form);
+  const items=zpRcParseItems(d.get('items'));
+  if(items.some(i=>!Number.isFinite(i.amount))){toast('세부 항목은 "항목 금액" 형식으로 적어 주세요.');return}
+  const name=String(d.get('hospitalName')||'').trim(),hit=HOSPITALS.find(h=>h.name===name);
+  const body={petId:d.get('petId'),hospitalId:hit?hit.id:'',hospitalName:name,visitDate:d.get('visitDate'),total:Number(d.get('total')),items,memo:d.get('memo')||''};
+  Object.assign(f,{petId:body.petId,hospitalName:name,visitDate:body.visitDate,total:d.get('total'),itemsText:d.get('items'),memo:body.memo});
+  r.busy=true;render();
+  try{
+   if(f.id)await api('PATCH','/api/receipts/'+encodeURIComponent(f.id),body);
+   else await api('POST','/api/pass/receipts',{...body,photoId:f.photoId||'',ocrStatus:f.ocrStatus||''});
+   r.form=null;toast('저장했어요.');
+  }catch(err){toast(err.message)}
+  r.busy=false;await zpRcLoad();
+ }
+};
 </script><!-- ZENO-PASS-END --><style>#memopen{position:fixed;bottom:16px;right:16px;z-index:100;border:0;border-radius:25px;background:#1979e6;color:white;padding:14px;font-weight:bold}#membg{display:none;position:fixed;inset:0;background:#091b32b8;z-index:110;overflow:auto;padding:20px}#membg.show{display:block}#memcard{background:white;color:#173452;max-width:560px;margin:4vh auto;border-radius:20px;padding:24px}#memcard input:not([type=checkbox]),#memcard textarea,#memcard select{display:block;width:100%;box-sizing:border-box;margin:9px 0;padding:12px;border:1px solid #ccc;border-radius:8px}#memcard button{padding:10px 14px;background:#1979e6;color:white;border:0;border-radius:9px;margin:5px}@media(max-width:750px){#memopen{bottom:calc(88px + env(safe-area-inset-bottom));right:13px;padding:9px 15px;font-size:13px;box-shadow:0 7px 20px #1861bb38}}</style>
 <button id="memopen" type="button">추모관</button><div id="membg" role="dialog" aria-modal="true"><div id="memcard"><button id="memclose" type="button">닫기</button><h2>우리 아이 추모관</h2><p>보호자가 원할 때만 추모 기록을 만듭니다. 기존 진료 기록과 병원 정보는 변경하지 않습니다.</p><select id="mempet"><option value="">반려동물 선택</option></select><input id="memtitle" maxlength="100" placeholder="추억의 제목"><textarea id="memtext" maxlength="3000" rows="5" placeholder="우리 아이에게 남기는 편지"></textarea><label><input id="memagree" type="checkbox"> 추모 기록 만들기에 동의합니다</label><div><button id="memsave" type="button">추억 저장</button></div><p style="font-size:12px">현재 브라우저에만 저장됩니다. 브라우저 데이터를 삭제하면 사라질 수 있습니다.</p><h3>저장한 추억</h3><div id="memlist"></div></div></div>
 <script>(()=>{const $=x=>document.getElementById(x),key='zeno-memorial-v1',read=k=>{try{let a=JSON.parse(localStorage.getItem(k)||'[]');return Array.isArray(a)?a:[]}catch{return []}},esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));function renderMem(){let pets=read('zeno-pets-v2');$('mempet').innerHTML='<option value="">반려동물 선택</option>'+pets.map((p,i)=>'<option value="'+i+'">'+esc(p.name||p.petName||'이름 미등록')+'</option>').join('');$('memlist').innerHTML=read(key).map(m=>'<div style="border-top:1px solid #ddd;padding:12px 0"><b>'+esc(m.pet)+' · '+esc(m.title)+'</b><p style="white-space:pre-wrap">'+esc(m.text)+'</p><button data-del="'+esc(m.id)+'">삭제</button></div>').join('')||'저장된 추억이 없습니다.'}$('memopen').onclick=()=>{$('membg').classList.add('show');renderMem()};$('memclose').onclick=()=>$('membg').classList.remove('show');$('memsave').onclick=()=>{let i=$('mempet').value,p=read('zeno-pets-v2')[Number(i)],title=$('memtitle').value.trim(),text=$('memtext').value.trim();if(i===''||!p)return alert('반려동물을 먼저 등록하고 선택해 주세요.');if(!$('memagree').checked)return alert('보호자 동의가 필요합니다.');if(!title||!text)return alert('제목과 추억을 입력해 주세요.');let a=read(key);a.push({id:String(Date.now()),pet:p.name||p.petName||'이름 미등록',title,text});try{localStorage.setItem(key,JSON.stringify(a));$('memtitle').value='';$('memtext').value='';$('memagree').checked=false;renderMem();alert('추모 기록이 저장되었습니다.')}catch{alert('브라우저 저장에 실패했습니다.')}};$('memlist').onclick=e=>{let b=e.target.closest('[data-del]');if(b&&confirm('이 추모 기록을 삭제할까요?')){localStorage.setItem(key,JSON.stringify(read(key).filter(x=>x.id!==b.dataset.del)));renderMem()}}})();</script></body></html>
