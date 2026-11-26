@@ -42,8 +42,11 @@ check('U1', '급여량: 같은 체중 행, 가까운 두 행 사이 계산, 범�
   eq(T.zpFeedFor(byId('hills-cat-adult-chicken'), 3.6, prof({}), 'adult').g, 65, '힐스 어덜트 3.6kg');
   eq(T.zpFeedFor(byId('hills-cat-adult-chicken'), 3, prof({}), 'adult').g, 52, '힐스 어덜트 3kg 보간');
   eq(T.zpFeedFor(byId('rc-dog-x-small-adult'), 1.2, prof({}), 'adult').g, 31, '엑스스몰 1.2kg 정상활동 보간');
-  eq(T.zpFeedFor(byId('hills-dog-adult-large'), 25, prof({}), 'adult').g, null, '행 간격이 넓으면 계산하지 않음');
-  eq(T.zpFeedFor(byId('rc-cat-indoor-27'), 4, prof({}), 'adult').text, '제조사 급여표 미확인', '급여표 없는 제품');
+  eq(T.zpFeedFor(byId('hills-dog-adult-large'), 25, prof({}), 'adult').g, 343, '대형견은 체중 20% 이내 행 사이 계산');
+  eq(T.zpFeedFor(byId('hills-dog-adult11-small-mini'), 7.9, prof({}), 'senior').g, null, '행 간격이 넓으면 계산하지 않음');
+  eq(T.zpFeedFor(byId('rc-dog-mini-adult-pouch'), 4, prof({}), 'adult').g, 340, '파우치 4개 × 85g');
+  eq(T.zpFeedFor(byId('rc-cat-indoor-27'), 4, prof({bodyCondition: 'over'}), 'adult').g, 44, '인도어 과체중 열');
+  eq(T.zpFeedFor(byId('acana-cat-indoor-entree'), 4, prof({}), 'adult').text, '제조사 페이지의 급여량 계산기에서 확인해 주세요', '고정 급여표 없는 제품');
   eq(T.zpFeedFor(byId('orijen-dog-puppy'), 5, prof({}), 'young').g, null, '자견 표는 예상 성견 체중 필요');
 });
 check('U2', '급여량: 활동량·체형·중성화에 맞는 급여표 열 선택', () => {

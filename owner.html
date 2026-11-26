@@ -7914,7 +7914,7 @@ function zpFeedCol(f,prof,stage){
 /* 제조사 급여표에서 아이 체중에 해당하는 값. 한 점 표는 같은 행 또는 가까운 두 행(고양이 1kg·강아지 2kg 이내) 사이만 계산합니다. */
 function zpFeedFor(p,kg,prof,stage){
  const f=p.feeding;
- if(!f)return {text:'제조사 급여표 미확인',g:null};
+ if(!f)return {text:p.feedingNote||'제조사 급여표 미확인',g:null};
  if(!kg)return {text:'체중을 입력하면 급여표에서 찾아 드려요',g:null};
  if(f.byAdult)return {text:'예상 성견 체중에 따라 달라요 · 급여표를 확인해 주세요',g:null};
  const ci=zpFeedCol(f,prof,stage),col=f.cols[ci]?.label||'';
@@ -7927,13 +7927,15 @@ function zpFeedFor(p,kg,prof,stage){
  }
  const rows=[...f.rows].sort((a,b)=>a.w[0]-b.w[0]);
  const hit=rows.find(r=>Math.abs(r.w[0]-kg)<1e-9);
- if(hit&&hit.v[ci]!=null){const v=hit.v[ci];return {text:(col&&f.cols.length>1?col+' · ':'')+'하루 '+zpFmtG(v,f.unit)+' (제조사 급여표)',g:Array.isArray(v)||f.unit!=='g'?null:v,col}}
- const gap=p.species==='고양이'?1:2;
+ const toG=v=>Array.isArray(v)?null:f.unit==='g'?v:(f.pouchG?Math.round(v*f.pouchG):null);
+ const pouchNote=v=>f.unit!=='g'&&f.pouchG&&!Array.isArray(v)?' (약 '+Math.round(v*f.pouchG)+'g)':'';
+ if(hit&&hit.v[ci]!=null){const v=hit.v[ci];return {text:(col&&f.cols.length>1?col+' · ':'')+'하루 '+zpFmtG(v,f.unit)+pouchNote(v)+' (제조사 급여표)',g:toG(v),col}}
+ const gap=p.species==='고양이'?1:Math.max(2,kg*0.2);
  for(let i=0;i<rows.length-1;i++){
   const a=rows[i],b=rows[i+1],va=a.v[ci],vb=b.v[ci];
   if(kg>a.w[0]&&kg<b.w[0]&&b.w[0]-a.w[0]<=gap&&typeof va==='number'&&typeof vb==='number'){
    const v=f.unit==='g'?Math.round(va+(vb-va)*(kg-a.w[0])/(b.w[0]-a.w[0])):Math.round((va+(vb-va)*(kg-a.w[0])/(b.w[0]-a.w[0]))*100)/100;
-   return {text:(col&&f.cols.length>1?col+' · ':'')+'하루 '+zpFmtG(v,f.unit)+' (급여표 두 행 사이 계산값)',g:f.unit==='g'?v:null,col};
+   return {text:(col&&f.cols.length>1?col+' · ':'')+'하루 '+zpFmtG(v,f.unit)+pouchNote(v)+' (급여표 두 행 사이 계산값)',g:toG(v),col};
   }
  }
  return {text:'제조사 표에서 '+kg+'kg 값을 확인할 수 없어요',g:null};
