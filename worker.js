@@ -902,17 +902,19 @@ async function zpReceiptSplits(db,ownerId,ids){
  return (await db.prepare(q).bind(ownerId,...(ids||[])).all()).results||[];
 }
 async function zpReceiptRow(db,ownerId,id){
- const row=await db.prepare('SELECT r.*,p.id AS photo_id FROM receipts r LEFT JOIN receipt_photos p ON p.receipt_id=r.id WHERE r.id=?').bind(id).first();
+ const row=await db.prepare('SELECT r.*,p.id AS photo_id FROM receipts r LEFT JOIN receipt_photos p ON p.receipt_id=r.id WHERE r.id=? AND r.owner_id=?').bind(id,ownerId).first();
+ assert(row,'영수증을 찾을 수 없습니다.',404);
  return zpReceipt(row,await zpReceiptSplits(db,ownerId,[id]));
 }
 async function zpReceiptInput(db,ownerId,data){
  const owned=await zpOwnerPets(db,ownerId);
  const total=Number(data.total);
- assert(Number.isInteger(total)&&total>=0&&total<=100000000,'총 결제 금액을 원 단위로 입력해 주세요.');
+ assert((typeof data.total==='number'||(typeof data.total==='string'&&data.total.trim()!==''))&&Number.isInteger(total)&&total>=0&&total<=100000000,'총 결제 금액을 원 단위로 입력해 주세요.');
  /* 예전 화면은 petId 하나만 보냅니다. 그때는 그 아이 한 마리 = 총액으로 봅니다. */
  const raw=Array.isArray(data.pets)?data.pets:[{petId:data.petId,amount:total}];
  assert(raw.length>=1,'아이를 한 마리 이상 선택해 주세요.');
  assert(raw.length<=10,'한 영수증에는 아이를 10마리까지 나눌 수 있습니다.');
+ assert(raw.length===1||raw.every(x=>typeof x?.amount==='number'||(typeof x?.amount==='string'&&x.amount.trim()!=='')),'아이별 금액을 입력해 주세요.');
  const pets=raw.map(x=>({petId:clean(x?.petId,90),amount:raw.length===1&&(x?.amount===undefined||x?.amount===null||x?.amount==='')?total:Number(x?.amount)}));
  assert(pets.every(x=>owned.some(p=>p.id===x.petId)),'내 아이에 등록된 반려동물을 선택해 주세요.');
  assert(new Set(pets.map(x=>x.petId)).size===pets.length,'같은 아이가 두 번 선택되었습니다.');
@@ -965,7 +967,7 @@ zpRoute('POST','/api/pass/receipts/photo',async({request,env,db,data})=>{
 });
 function zpReceiptPetStmts(db,ownerId,id,pets){
  return [db.prepare('DELETE FROM receipt_pets WHERE receipt_id=? AND owner_id=?').bind(id,ownerId)]
-  .concat(pets.map((x,i)=>db.prepare('INSERT INTO receipt_pets(receipt_id,owner_id,pet_id,amount,sort) VALUES(?,?,?,?,?)').bind(id,ownerId,x.petId,x.amount,i)));
+  .concat(pets.map((x,i)=>db.prepare('INSERT INTO receipt_pets(receipt_id,owner_id,pet_id,amount,sort) SELECT ?,?,?,?,? WHERE EXISTS (SELECT 1 FROM receipts WHERE id=? AND owner_id=?)').bind(id,ownerId,x.petId,x.amount,i,id,ownerId)));
 }
 zpRoute('POST','/api/pass/receipts',async({request,env,db,data})=>{
  const s=await zpRequirePass(request,env);
@@ -1015,7 +1017,7 @@ zpRoute('PATCH',/^\/api\/receipts\/([a-zA-Z0-9-]{8,60})$/,async({request,env,db,
  const row=await db.prepare('SELECT * FROM receipts WHERE id=?').bind(params[0]).first();
  assert(row&&row.owner_id===s.ownerId,'본인의 영수증만 수정할 수 있습니다.',403);
  const v=await zpReceiptInput(db,s.ownerId,data);
- await db.batch([db.prepare('UPDATE receipts SET pet_id=?,hospital_id=?,hospital_name=?,visit_date=?,total=?,items_json=?,memo=?,updated_at=? WHERE id=?').bind(v.petId,v.hospitalId,v.hospitalName,v.visitDate,v.total,JSON.stringify(v.items),v.memo,now(),row.id),...zpReceiptPetStmts(db,s.ownerId,row.id,v.pets)]);
+ await db.batch([db.prepare('UPDATE receipts SET pet_id=?,hospital_id=?,hospital_name=?,visit_date=?,total=?,items_json=?,memo=?,updated_at=? WHERE id=? AND owner_id=?').bind(v.petId,v.hospitalId,v.hospitalName,v.visitDate,v.total,JSON.stringify(v.items),v.memo,now(),row.id,s.ownerId),...zpReceiptPetStmts(db,s.ownerId,row.id,v.pets)]);
  return json(await zpReceiptRow(db,s.ownerId,row.id));
 });
 zpRoute('DELETE',/^\/api\/receipts\/([a-zA-Z0-9-]{8,60})$/,async({request,env,db,params})=>{
