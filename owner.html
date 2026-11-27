@@ -3738,7 +3738,7 @@ html.dark .zeno-care-row dd,html[data-theme="dark"] .zeno-care-row dd{color:#e5e
 [data-zp-form="nu-profile"] .zp-btn:not(.secondary){background:#142e4c;border-color:#142e4c;color:#fff}
 </style><style id="zp-fee-compact">
 .zp-fee-chosen{padding:0 12px}.zp-fee-chosen-row{min-height:44px;gap:6px}.zp-fee-chosen-row .zp-count{display:flex;align-items:center;gap:4px;white-space:nowrap}.zp-fee-chosen-row .zp-count input{width:48px;min-height:36px;padding:4px;text-align:center}.zp-fee-pick{min-height:44px;padding:6px 10px;gap:6px}.zp-fee-pick-text strong{font-size:14px}.zp-fee-pick-count{font-size:11px}.zp-fee-tabs{gap:12px}.zp-fee-lines .zp-total:last-of-type{background:#f1f5f9;padding:10px;border-radius:6px;color:#142e4c}.zp-fee-lines .zp-kv{gap:8px}.zp-fee-lines .zp-kv span{min-width:0;word-break:keep-all}.zp-fee-lines .zp-kv b{flex-shrink:0;white-space:nowrap}
-</style><style id="zp-fee-three-modes">.zp-fee-menu button{display:flex;align-items:center;justify-content:space-between;width:100%;text-align:left;padding:16px;border:0;border-bottom:1px solid #e5ebf1;background:white;color:#142e4c;font:inherit}.zp-fee-menu button:last-child{border-bottom:0}.zp-fee-menu strong,.zp-fee-menu small{display:block}.zp-fee-menu small{font-size:13px;color:#64748b;margin-top:4px}.zp-fee-mode-title{font-size:18px;margin:16px 0 10px}.zp-fee-category{margin:10px 0;padding:0 12px}.zp-fee-category summary,.zp-fee-entry summary{padding:12px 0;cursor:pointer;color:#142e4c;font-weight:600}.zp-fee-category summary small,.zp-fee-entry summary small{font-size:12px;color:#64748b;font-weight:400}.zp-fee-entry{border-top:1px solid #e5ebf1}.zp-fee-result{padding:8px 0;border-top:1px solid #edf1f5}.zp-fee-result>.zp-fee-line>.zp-kv{display:none}</style></head><body><div id="app" class="app"></div><script>
+</style><style id="zp-fee-three-modes">.zp-fee-menu button{display:flex;align-items:center;justify-content:space-between;width:100%;text-align:left;padding:16px;border:0;border-bottom:1px solid #e5ebf1;background:white;color:#142e4c;font:inherit}.zp-fee-menu button:last-child{border-bottom:0}.zp-fee-menu strong,.zp-fee-menu small{display:block}.zp-fee-menu small{font-size:13px;color:#64748b;margin-top:4px}.zp-fee-mode-title{font-size:18px;margin:16px 0 10px}.zp-fee-category{margin:10px 0;padding:0 12px}.zp-fee-category summary,.zp-fee-entry summary{padding:12px 0;cursor:pointer;color:#142e4c;font-weight:600}.zp-fee-category summary small,.zp-fee-entry summary small{font-size:12px;color:#64748b;font-weight:400}.zp-fee-entry{border-top:1px solid #e5ebf1}.zp-fee-result{padding:8px 0;border-top:1px solid #edf1f5}.zp-fee-result>.zp-fee-line>.zp-kv{display:none}</style><style id="zp-fee-category-grid">.zp-fee-category-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin:10px 0}.zp-fee-category-grid button{min-height:44px;border:1px solid #d6e2ee;border-radius:6px;background:white;color:#142e4c;font:inherit;font-size:13px;padding:6px;word-break:keep-all}.zp-fee-category-grid button[aria-pressed=true]{background:#142e4c;color:white}.zp-fee-category-grid small{font-size:11px}.zp-fee-family>strong{display:block;padding:10px 12px 4px;font-size:14px;color:#142e4c}.zp-fee-family{border-bottom:1px solid #d6e2ee}.zp-fee-family .zp-fee-pick{padding-left:20px}</style></head><body><div id="app" class="app"></div><script>
 'use strict';
 const APP_MODE='owner';
 
@@ -8336,21 +8336,21 @@ function zpFeePicker(f,chosen){
  const counts=new Map();for(const it of base)counts.set(it.cat,(counts.get(it.cat)||0)+1);
  const cats=ZP_FEE_CATS.filter(c=>counts.get(c));
  if(f.cat!=='전체'&&!cats.includes(f.cat))f.cat='전체';
- const shown=base.filter(it=>f.cat==='전체'||it.cat===f.cat);
+ const shown=base.filter(it=>f.cat===it.cat||!!q);
  const seg='<div class="zp-seg" role="group" aria-label="동물 종류">'+['전체','강아지','고양이'].map(s=>'<button type="button" data-zp="fee-sp" data-value="'+s+'" aria-pressed="'+(f.species===s)+'">'+s+'</button>').join('')+'</div>';
- const tabs='<div class="zp-fee-tabs" role="tablist" aria-label="진료비 분류">'+['전체',...cats].map(c=>'<button type="button" role="tab" data-zp="fee-cat" data-value="'+e(c)+'" aria-selected="'+(f.cat===c)+'">'+e(c)+' <small>'+(c==='전체'?base.length:counts.get(c))+'</small></button>').join('')+'</div>';
+ const tabs='<div class="zp-fee-category-grid" aria-label="진료비 분류">'+cats.map(c=>'<button type="button" data-zp="fee-cat" data-value="'+e(c)+'" aria-pressed="'+(f.cat===c)+'">'+e(c)+' <small>'+counts.get(c)+'</small></button>').join('')+'</div>';
  const groups=ZP_FEE_CATS.filter(c=>shown.some(it=>it.cat===c)).map(c=>{
-  const rows=shown.filter(it=>it.cat===c).map(it=>{
+  const entries=shown.filter(it=>it.cat===c);const labels=[...new Set(entries.map(it=>it.label))];const rows=labels.map(label=>{const variants=entries.filter(it=>it.label===label);return (variants.length>1?'<div class="zp-fee-family"><strong>'+e(label)+'</strong>':'')+variants.map(it=>{
    const sub=[it.pkg?it.hospitalNames[0]:it.basis,it.hospitals.size===1&&!it.pkg?it.hospitalNames[0]:'',it.speciesLabel!=='공통'&&!/강아지|고양이|개|소형견|중형견|대형견|캣/.test(it.label)?it.speciesLabel:''].filter(Boolean).join(' · ');
    const hide=q&&!it.search.includes(q);
-   return '<button type="button" class="zp-fee-pick" data-zp="fee-item" data-value="'+e(it.key)+'" data-fee-s="'+e(it.search)+'" aria-pressed="'+chosen.has(it.key)+'"'+(hide?' hidden':'')+'><span class="zp-fee-pick-text"><strong>'+e(it.label)+'</strong>'+(sub?'<small>'+e(sub)+'</small>':'')+'</span><span class="zp-fee-pick-count">'+zpFeeOpenLabel(it.hospitals.size)+'</span><span class="zp-fee-check" aria-hidden="true"></span></button>';
-  });
+   return '<button type="button" class="zp-fee-pick" data-zp="fee-item" data-value="'+e(it.key)+'" data-fee-s="'+e(it.search)+'" aria-pressed="'+chosen.has(it.key)+'"'+(hide?' hidden':'')+'><span class="zp-fee-pick-text"><strong>'+e(variants.length>1?(it.basis||it.hospitalNames.join(', ')||it.label):it.label)+'</strong>'+(sub?'<small>'+e(sub)+'</small>':'')+'</span><span class="zp-fee-pick-count">'+zpFeeOpenLabel(it.hospitals.size)+'</span><span class="zp-fee-check" aria-hidden="true"></span></button>';
+  }).join('')+(variants.length>1?'</div>':'')});
   const any=!q||shown.some(it=>it.cat===c&&it.search.includes(q));
   return '<div class="zp-fee-group" data-fee-group'+(any?'':' hidden')+'><h3>'+e(c)+'</h3>'+rows.join('')+'</div>';
  }).join('');
- const none=!shown.length||(q&&!shown.some(it=>it.search.includes(q)));
+ const none=!!q&&!shown.some(it=>it.search.includes(q));
  return '<div class="zp-fee-search"><input type="search" data-zp-fee-q value="'+e(f.q)+'" placeholder="진료비 항목 검색 (예: 슬개골, 엑스레이)" aria-label="진료비 항목 검색" autocomplete="off"></div>'
-  +seg+tabs+'<div class="zp-box zp-fee-list">'+groups+'<p class="zp-empty" data-fee-empty'+(none?'':' hidden')+'>조건에 맞는 항목이 없어요.</p></div>';
+  +seg+tabs+'<div class="zp-box zp-fee-list">'+groups+(f.cat==='전체'&&!q?'<p class="zp-empty">위에서 진료비 분류를 선택해 주세요.</p>':'')+'<p class="zp-empty" data-fee-empty'+(none?'':' hidden')+'>조건에 맞는 항목이 없어요.</p></div>';
 }
 function zpFeeApplySearch(root,q){
  const n=zpFeeNorm(q);let any=false;
@@ -8359,7 +8359,7 @@ function zpFeeApplySearch(root,q){
 }
 document.addEventListener('input',ev=>{
  const el=ev.target;if(!el?.matches?.('[data-zp-fee-q]')||APP_MODE!=='owner')return;
- zpFees().q=el.value;const root=el.closest('.zp-page');if(root)zpFeeApplySearch(root,el.value);
+ const f=zpFees();f.q=el.value;const root=el.closest('.zp-page');if(root){const old=root.querySelector('.zp-fee-list');const tmp=document.createElement('div');tmp.innerHTML=zpFeePicker(f,new Set(f.items.map(i=>i.name)));const next=tmp.querySelector('.zp-fee-list');if(old&&next)old.replaceWith(next);}
 });
 ZP_VIEWS.fees={
  load:zpFeesLoad,
@@ -8404,7 +8404,7 @@ ZP_VIEWS.fees={
   if(a==='fee-mode'){f.mode=el.dataset.value;render();window.scrollTo(0,0);return}
   if(a==='fee-item'){const n=el.dataset.value,i=f.items.findIndex(x=>x.name===n);if(i>=0)f.items.splice(i,1);else if(f.items.length<12)f.items.push({name:n,count:1});else{toast('12개까지 고를 수 있어요.');return}f.dirty=true;const y=window.scrollY;render();window.scrollTo({top:y,behavior:'instant'});return}
   if(a==='fee-sp'){f.species=el.dataset.value||'전체';const y=window.scrollY;render();window.scrollTo({top:y,behavior:'instant'});return}
-  if(a==='fee-cat'){f.cat=el.dataset.value||'전체';const y=window.scrollY;render();window.scrollTo({top:y,behavior:'instant'});return}
+  if(a==='fee-cat'){f.cat=el.dataset.value||'전체';f.q='';const y=window.scrollY;render();window.scrollTo({top:y,behavior:'instant'});return}
   if(a==='fee-jump'){document.getElementById('zp-fee-compare')?.scrollIntoView({behavior:'smooth',block:'start'});return}
   if(a==='fee-save'){f.saving=true;render();try{await api('PUT','/api/pass/fee-plan',{items:f.items});f.dirty=false;toast('비교 설정을 저장했어요.')}catch(err){toast(err.message)}f.saving=false;render()}
  },
