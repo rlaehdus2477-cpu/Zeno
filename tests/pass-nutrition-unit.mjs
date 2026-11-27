@@ -74,7 +74,7 @@ check('U3', '비용: 하루·30일·소진 기간, 직접 입력 급여량 우�
 });
 function renderFor(pet, profile, opts = {}) {
   const n = T.zpNu();
-  Object.assign(n, {loaded: true, error: '', pets: [pet], profiles: {[pet.id]: profile}, prices: {}, daily: {}, catalog: CATALOG, conditions: [], brands: [{brand: '로얄캐닌', status: 'ready'}, {brand: '퓨리나 프로플랜', status: 'unverified'}], stock: [], petId: pet.id, tab: 'general', age: 'auto', form: 'all', feat: [], editing: false, priceFor: null, open: null}, opts);
+  Object.assign(n, {loaded: true, error: '', pets: [pet], profiles: {[pet.id]: profile}, prices: {}, daily: {}, catalog: CATALOG, conditions: [], brands: [{brand: '로얄캐닌', status: 'ready'}, {brand: '퓨리나 프로플랜', status: 'ready'}, {brand: '뉴트로', status: 'unverified'}], stock: [], petId: pet.id, tab: 'general', age: 'auto', form: 'all', feat: [], editing: false, priceFor: null, open: null}, opts);
   T.zpState().view = 'nutrition'; T.zpState().pass = {active: true}; T.zpState().passLoaded = true;
   return T.ZP_VIEWS.nutrition.render();
 }
