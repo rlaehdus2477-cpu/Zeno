@@ -77,13 +77,13 @@ for(const width of [320,360,390,412]){
       img:(()=>{const i=c.querySelector('.zeno-v10-mini-photo img');return i?{ok:i.complete&&i.naturalWidth>0}:{fallback:Boolean(c.querySelector('.zeno-v10-mini-photo svg'))}})()})),
     railScroll:(()=>{const r=q('.zeno-v10-open-rail');return {scroll:r.scrollWidth>r.clientWidth,ox:getComputedStyle(r).overflowX}})(),
     specialties:qa('.care-shortcuts button').map(c=>({...box(c),text:c.textContent.trim()})),
-    symptom:box(q('.zh-final-link[data-nav="symptoms"]')),
+    symptom:box(q('.zh-symptom-row')),
     passRows:qa('.zh-final-pass-row').map(c=>({...box(c),text:c.querySelector('span').textContent})),
     passBox:box(q('.zh-final-pass')),
     oldFees:!!q('.zeno-home-fees'),
-    emergency:box(q('.zh-final-emergency')),
+    emergency:box(q('.zh-final-emergency')),utilTop:q('.zeno-home-utilities').getBoundingClientRect().top,
     openNote:q('.zeno-open-note')?.textContent||'',cardTexts:qa('.zeno-v10-open-card').map(c=>c.textContent),
-    utilRows:qa('.zeno-home-utility-row').map(r=>({...box(r),text:r.querySelector('strong').textContent})),
+    utilRows:qa('.zeno-home-utilities .zeno-home-utility-row').map(r=>({...box(r),text:r.querySelector('strong').textContent})),
     brokenImgs:qa('.zeno-home-v10 img').filter(i=>i.complete&&i.naturalWidth===0).map(i=>i.src),
     logo:(()=>{const l=q('.zeno-v10-header .zeno-global-brand');return l?{tag:l.tagName,ok:l.tagName!=='IMG'||l.naturalWidth>0}:null})(),
     fonts:getComputedStyle(q('.zeno-home-fee-hero strong')||home).fontFamily,
@@ -114,7 +114,7 @@ for(const width of [320,360,390,412]){
   assert.ok(m.symptom.top>=m.specialties.at(-1).bottom,tag+' 증상 위치');
   assert.ok(m.emergency.top>=m.symptom.bottom&&m.passBox.top>=m.emergency.bottom,tag+' 응급/PASS 위치');
   assert.equal(m.oldFees,false,tag+' 홈 진료비 중복');
-  assert.ok(Math.abs(Math.round(m.emergency.top-m.symptom.bottom)-Math.round(m.passBox.top-m.emergency.bottom))<=1,tag+' 증상·응급·PASS 간격 불일치 '+Math.round(m.emergency.top-m.symptom.bottom)+'/'+Math.round(m.passBox.top-m.emergency.bottom));
+  { const se=Math.round(m.emergency.top-m.symptom.bottom),ep=Math.round(m.passBox.top-m.emergency.bottom),pu=Math.round(m.utilTop-m.passBox.bottom); assert.ok(se===0&&Math.abs(ep-pu)<=1,tag+' 홈 간격 리듬 이상 증상→응급 '+se+' / 응급→PASS '+ep+' / PASS→조건별 '+pu); }
   assert.ok(m.openNote.includes('진료 중')&&m.openNote.includes('응급 접수')&&m.openNote.includes('전화'),tag+' 진료 중/응급 접수 구분 안내');
   assert.ok(m.cardTexts.every(t=>!/응급 (문의 )?가능|응급 수용 가능/.test(t)),tag+' 기록 없는 응급 수용 표시');
   assert.deepEqual(m.passRows.map(c=>c.text),['제휴병원 처방식 재고 확인','공개 진료비 통합 비교','반려동물별 맞춤 영양 관리','반려동물별 영수증·의료비 관리'],tag+' PASS 기능');
@@ -138,7 +138,7 @@ for(const width of [320,360,390,412]){
 {
  const {context,page}=await openHome({width:360,scheme:'light'});
  const nav=[];
- for(const [sel,expect] of [['.zeno-home-summary-link[data-action="night-shortcut"]','search'],['.zeno-home-summary-link[data-action="around-clock-shortcut"]','search'],['.zh-final-pass header button','pass'],['.zh-final-pass-row[data-value="receipts"]','pass'],['.zh-final-emergency','emergency'],['.zeno-home-utility-row[data-nav="reservation-directory"]','reservation-directory'],['.zh-final-link[data-nav="symptoms"]','symptoms']]){
+ for(const [sel,expect] of [['.zeno-home-summary-link[data-action="night-shortcut"]','search'],['.zeno-home-summary-link[data-action="around-clock-shortcut"]','search'],['.zh-final-pass header button','pass'],['.zh-final-pass-row[data-value="receipts"]','pass'],['.zh-final-emergency','emergency'],['.zeno-home-utility-row[data-nav="reservation-directory"]','reservation-directory'],['.zh-symptom-row','symptoms']]){
   await page.evaluate(()=>{state.page='home';render();window.scrollTo(0,0)});
   const el=page.locator(sel).first();await el.evaluate(x=>x.scrollIntoView({block:'center',behavior:'instant'}));await el.click();
   const st=await page.evaluate(()=>state.page);
