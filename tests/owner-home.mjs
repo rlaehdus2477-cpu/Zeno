@@ -82,6 +82,7 @@ for(const width of [320,360,390,412]){
     passBox:box(q('.zh-final-pass')),
     oldFees:!!q('.zeno-home-fees'),
     emergency:box(q('.zh-final-emergency')),
+    openNote:q('.zeno-open-note')?.textContent||'',cardTexts:qa('.zeno-v10-open-card').map(c=>c.textContent),
     utilRows:qa('.zeno-home-utility-row').map(r=>({...box(r),text:r.querySelector('strong').textContent})),
     brokenImgs:qa('.zeno-home-v10 img').filter(i=>i.complete&&i.naturalWidth===0).map(i=>i.src),
     logo:(()=>{const l=q('.zeno-v10-header .zeno-global-brand');return l?{tag:l.tagName,ok:l.tagName!=='IMG'||l.naturalWidth>0}:null})(),
@@ -113,6 +114,8 @@ for(const width of [320,360,390,412]){
   assert.ok(m.symptom.top>=m.specialties.at(-1).bottom,tag+' 증상 위치');
   assert.ok(m.emergency.top>=m.symptom.bottom&&m.passBox.top>=m.emergency.bottom,tag+' 응급/PASS 위치');
   assert.equal(m.oldFees,false,tag+' 홈 진료비 중복');
+  assert.ok(m.openNote.includes('진료 중')&&m.openNote.includes('응급 접수')&&m.openNote.includes('전화'),tag+' 진료 중/응급 접수 구분 안내');
+  assert.ok(m.cardTexts.every(t=>!/응급 (문의 )?가능|응급 수용 가능/.test(t)),tag+' 기록 없는 응급 수용 표시');
   assert.deepEqual(m.passRows.map(c=>c.text),['제휴병원 처방식 재고 확인','공개 진료비 통합 비교','반려동물별 맞춤 영양 관리','반려동물별 영수증·의료비 관리'],tag+' PASS 기능');
   assert.ok(m.passRows.every(c=>c.h>=44),tag+' PASS 터치 높이');
   assert.deepEqual(m.utilRows.map(r=>r.text),['예약·접수 안내','야간 진료','24시간 운영 병원'],tag+' 조건별 병원 찾기 항목(진료비 중복 금지)');
