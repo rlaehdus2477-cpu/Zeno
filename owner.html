@@ -3736,6 +3736,8 @@ html.dark .zeno-care-row dd,html[data-theme="dark"] .zeno-care-row dd{color:#e5e
 [data-zp-form="nu-profile"] .zp-check input{appearance:auto;width:18px;height:18px;min-height:0;flex:0 0 18px;margin:0;padding:0;accent-color:#142e4c}
 [data-zp-form="nu-profile"] .zp-btn-row{margin-top:0}
 [data-zp-form="nu-profile"] .zp-btn:not(.secondary){background:#142e4c;border-color:#142e4c;color:#fff}
+</style><style id="zp-fee-compact">
+.zp-fee-chosen{padding:0 12px}.zp-fee-chosen-row{min-height:44px;gap:6px}.zp-fee-chosen-row .zp-count{display:flex;align-items:center;gap:4px;white-space:nowrap}.zp-fee-chosen-row .zp-count input{width:48px;min-height:36px;padding:4px;text-align:center}.zp-fee-pick{min-height:44px;padding:6px 10px;gap:6px}.zp-fee-pick-text strong{font-size:14px}.zp-fee-pick-count{font-size:11px}.zp-fee-tabs{gap:12px}.zp-fee-lines .zp-total:last-of-type{background:#f1f5f9;padding:10px;border-radius:6px;color:#142e4c}.zp-fee-lines .zp-kv{gap:8px}.zp-fee-lines .zp-kv span{min-width:0;word-break:keep-all}.zp-fee-lines .zp-kv b{flex-shrink:0;white-space:nowrap}
 </style></head><body><div id="app" class="app"></div><script>
 'use strict';
 const APP_MODE='owner';
@@ -8297,7 +8299,7 @@ function zpFeeHospitalTotals(hid,items){
 }
 function zpFeeLine(l){
  const {it,item,x,why}=l,name=e(item?item.label:it.name)+(item&&item.basis&&!item.pkg?' <em>'+e(item.basis)+'</em>':'');
- if(!x)return '<div class="zp-fee-line"><div class="zp-kv"><span>'+name+' · 연 '+it.count+'회</span><b class="zp-muted">미공개</b></div></div>';
+ if(!x)return '<div class="zp-fee-line"><div class="zp-kv"><span>'+name+' × '+it.count+'회</span><b class="zp-muted">미공개</b></div></div>';
  const meta=[];
  if(item.hospitals.size===1)meta.push('1개 병원 공개');
  if(x.promo)meta.push('<span class="zp-fee-flag">'+e(x.promo)+'</span>'+(x.regular?' 정상가 '+zpWon(x.regular):''));
@@ -8305,7 +8307,7 @@ function zpFeeLine(l){
  if(why)meta.push('<span class="zp-fee-flag mute">'+e(ZP_FEE_OVERLAP_REASON[why])+'</span>');
  const lead=x.pkg?(x.includes||x.note):x.note.split(' · ').slice(0,2).join(' · ');
  const full=x.note+(x.raw!==item.label?' · 병원 표기: '+x.raw:'');
- return '<div class="zp-fee-line'+(why?' is-excluded':'')+'"><div class="zp-kv"><span>'+name+' · 연 '+it.count+'회</span><b>'+zpFeeRange(x.min,x.max)+'</b></div>'
+ return '<div class="zp-fee-line'+(why?' is-excluded':'')+'"><div class="zp-kv"><span>'+name+' × '+it.count+'회</span><b>'+zpFeeRange(x.min,x.max)+'</b></div>'
   +(meta.length?'<p class="zp-fee-meta">'+meta.join(' · ')+'</p>':'')
   +(lead?'<p class="zp-fee-cond">'+(x.pkg?'포함 검사 · ':'')+e(lead)+'</p>':'')
   +(full&&full!==lead?'<details class="zp-fee-note"><summary>조건 보기</summary><p>'+e(full)+'</p></details>':'')
@@ -8315,7 +8317,7 @@ function zpFeeLine(l){
 function zpFeeHospitalBlock(hid,items){
  const cat=zpFeeCatalog(),meta=cat.hospitals.get(hid),h=hospitalById(hid);if(!h||!meta)return '';
  const t=zpFeeHospitalTotals(hid,items),only=t.missing?' (공개 항목만)':'';
- const total=t.counted?'<div class="zp-kv zp-total"><span>1회 합산'+only+'</span><b>'+zpFeeRange(t.sMin,t.sMax)+'</b></div><div class="zp-kv zp-total"><span>연간 예상'+only+'</span><b>'+zpFeeRange(t.yMin,t.yMax)+'</b></div>'
+ const total=t.counted?'<div class="zp-kv zp-total"><span>항목별 1회 합산'+only+'</span><b>'+zpFeeRange(t.sMin,t.sMax)+'</b></div><div class="zp-kv zp-total"><span>예상 진료비'+only+'</span><b>'+zpFeeRange(t.yMin,t.yMax)+'</b></div>'
   +(t.promo?'<p class="zp-fee-meta">행사가가 포함된 합산이에요. 행사 종료 시 달라질 수 있어요.</p>':''):'<div class="zp-kv"><span>합계</span><b class="zp-muted">계산할 공개 가격 없음</b></div>';
  return '<div class="zp-item"><div class="zp-item-top"><strong>'+e(h.name)+'</strong><span class="zp-tag '+(h.linked?'ok':'mute')+'">'+(h.linked?'제휴':'비제휴')+'</span></div>'
   +'<small>'+e((meta.source||'병원 공개 가격표')+(meta.checked?' · 제노 확인 '+meta.checked:''))+'</small>'
@@ -8369,12 +8371,12 @@ ZP_VIEWS.fees={
   if(!f.loaded)return body+'<p class="zp-muted" role="status">비교 설정을 불러오고 있어요.</p>';
   if(f.error)body+='<p class="zp-error">'+e(f.error)+'</p>';
   const cat=zpFeeCatalog(),chosen=new Set(f.items.map(i=>i.name));
-  body+='<section class="zp-section"><div class="zp-section-head"><h2>선택한 항목</h2><span>'+f.items.length+' / 12</span></div>';
-  if(f.items.length)body+='<div class="zp-box zp-fee-chosen">'+f.items.map(i=>{const it=cat.byKey.get(i.name);return '<div class="zp-fee-chosen-row"><span class="zp-fee-chosen-name"><b>'+e(it?.label||i.name)+'</b><small>'+e([it?.pkg?it.hospitalNames[0]:it?.basis,it?zpFeeOpenLabel(it.hospitals.size):''].filter(Boolean).join(' · '))+'</small></span><label class="zp-count">연 <input type="number" inputmode="numeric" min="1" max="52" value="'+i.count+'" data-zp-count="'+e(i.name)+'" aria-label="'+e(it?.label||i.name)+' 연간 횟수"> 회</label><button type="button" class="zp-fee-remove" data-zp="fee-item" data-value="'+e(i.name)+'" aria-label="'+e(it?.label||i.name)+' 빼기">빼기</button></div>'}).join('')+'</div>'
+  body+='<section class="zp-section"><div class="zp-section-head"><h2>선택한 항목</h2><span>'+f.items.length+'개 선택</span></div>';
+  if(f.items.length)body+='<div class="zp-box zp-fee-chosen">'+f.items.map(i=>{const it=cat.byKey.get(i.name);return '<div class="zp-fee-chosen-row"><span class="zp-fee-chosen-name"><b>'+e(it?.label||i.name)+'</b><small>'+e([it?.pkg?it.hospitalNames[0]:it?.basis,it?zpFeeOpenLabel(it.hospitals.size):''].filter(Boolean).join(' · '))+'</small></span><label class="zp-count"><input type="number" inputmode="numeric" min="1" max="52" value="'+i.count+'" data-zp-count="'+e(i.name)+'" aria-label="'+e(it?.label||i.name)+' 횟수"> 회</label><button type="button" class="zp-fee-remove" data-zp="fee-item" data-value="'+e(i.name)+'" aria-label="'+e(it?.label||i.name)+' 빼기">빼기</button></div>'}).join('')+'</div>'
    +'<div class="zp-btn-row inline"><button type="button" class="zp-btn small secondary" data-zp="fee-save"'+(f.saving||!f.dirty?' disabled':'')+'>'+(f.dirty?'이 설정 저장':'저장됨')+'</button><button type="button" class="zp-btn small secondary" data-zp="fee-jump">병원별 비교 보기</button></div>';
   else body+='<div class="zp-box"><p class="zp-empty">아래 목록에서 비교할 항목을 골라 주세요.</p></div>';
   body+='</section>';
-  body+='<section class="zp-section"><div class="zp-section-head"><h2>항목 고르기</h2><span>'+cat.items.length+'개 항목 · '+cat.hospitals.size+'곳 공개</span></div>'+zpFeePicker(f,chosen)+'</section>';
+  
   if(f.items.length){
    const ids=[...cat.hospitals.keys()].filter(id=>hospitalById(id)).sort((a,b)=>hospitalById(a).name.localeCompare(hospitalById(b).name,'ko'));
    const withPrice=ids.filter(id=>f.items.some(i=>cat.byKey.get(i.name)?.hospitals.has(id)));
@@ -8382,7 +8384,8 @@ ZP_VIEWS.fees={
    body+='<section class="zp-section" id="zp-fee-compare"><div class="zp-section-head"><h2>병원별 비교</h2><span>'+withPrice.length+'곳 · 이름순</span></div><div class="zp-box">'+withPrice.map(id=>zpFeeHospitalBlock(id,f.items)).join('')+'</div>'
     +(without.length?'<details class="zp-fee-nopub"><summary>선택한 항목의 공개 가격이 없는 병원 '+without.length+'곳</summary><p>'+without.map(id=>e(hospitalById(id).name)).join(' · ')+'</p></details>':'')+'</section>';
   }
-  return body+'<p class="zp-disclaimer">연간 예상 비용은 공개 가격 × 입력한 횟수예요. 동물 종류·체중·마취 방식·수술 범위·검사 구성에 따라 실제 비용은 달라지고, 진찰료·약값·처치비가 따로 붙을 수 있어요. 기준이 다른 가격(항목당과 패널, 1장과 여러 장 등)은 서로 다른 항목으로 나눴어요.</p>';
+  body+='<section class="zp-section"><div class="zp-section-head"><h2>항목 고르기</h2><span>'+cat.items.length+'개 항목 · '+cat.hospitals.size+'곳 공개</span></div>'+zpFeePicker(f,chosen)+'</section>';
+  return body+'<p class="zp-disclaimer">예상 진료비는 공개 가격 × 입력한 횟수예요. 동물 종류·체중·마취 방식·수술 범위·검사 구성에 따라 실제 비용은 달라지고, 진찰료·약값·처치비가 따로 붙을 수 있어요. 기준이 다른 가격(항목당과 패널, 1장과 여러 장 등)은 서로 다른 항목으로 나눴어요.</p>';
  },
  async click(a,el){
   const f=zpFees();
