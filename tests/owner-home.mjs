@@ -78,7 +78,7 @@ for(const width of [320,360,390,412]){
     railScroll:(()=>{const r=q('.zeno-v10-open-rail');return {scroll:r.scrollWidth>r.clientWidth,ox:getComputedStyle(r).overflowX}})(),
     specialties:qa('.care-shortcuts button').map(c=>({...box(c),text:c.textContent.trim()})),
     symptom:box(q('.zh-symptom-row')),
-    passRows:qa('.zh-final-pass-row').map(c=>({...box(c),text:c.querySelector('span').textContent})),
+    passRows:qa('.zh-final-pass-row').map(c=>({...box(c),text:c.querySelector(':scope > span').textContent})),
     passBox:box(q('.zh-final-pass')),
     oldFees:!!q('.zeno-home-fees'),
     emergency:box(q('.zh-final-emergency')),utilTop:q('.zeno-home-utilities').getBoundingClientRect().top,
@@ -98,7 +98,7 @@ for(const width of [320,360,390,412]){
   assert.ok(m.logo&&m.logo.ok,tag+' 로고 표시 실패');
   assert.ok(m.fonts.includes('Pretendard'),tag+' 글꼴');
   assert.equal(Math.round(m.search.h),48,tag+' 검색창 높이');
-  assert.ok(m.summary.bottom<=m.search.top,tag+' 병원 영역 검색창 위 배치');
+  assert.ok(m.search.bottom<=m.summary.top,tag+' 검색창이 병원 요약 위');
   assert.deepEqual(m.summary.links,['night-shortcut','around-clock-shortcut'],tag+' 요약 연결');
   assert.ok(m.cards.length>=3,tag+' 진료 중 카드 수');
   const ch=m.cards.map(c=>Math.round(c.h));
@@ -109,15 +109,15 @@ for(const width of [320,360,390,412]){
    assert.ok(c.img.ok||c.img.fallback,tag+' 카드 사진/대체 아이콘 없음');
   }
   assert.ok(m.railScroll.scroll&&/auto|scroll/.test(m.railScroll.ox),tag+' 진료 중 카드 가로 스크롤');
-  assert.equal(m.specialties.length,10,tag+' 진료과목 10개');
+  assert.deepEqual(m.specialties.map(c=>c.text),['내과','외과','치과','피부과','특수동물'],tag+' 진료과목 5개');
   assert.ok(m.specialties.every(c=>c.h>=40),tag+' 진료과목 터치 높이');
   assert.ok(m.symptom.top>=m.specialties.at(-1).bottom,tag+' 증상 위치');
-  assert.ok(m.emergency.top>=m.symptom.bottom&&m.passBox.top>=m.emergency.bottom,tag+' 응급/PASS 위치');
+  assert.ok(Math.abs(m.emergency.top-m.symptom.top)<=1&&m.emergency.left>m.symptom.right&&m.passBox.top>=m.emergency.bottom,tag+' 증상·응급 한 줄, PASS 위치');
   assert.equal(m.oldFees,false,tag+' 홈 진료비 중복');
-  { const se=Math.round(m.emergency.top-m.symptom.bottom),ep=Math.round(m.passBox.top-m.emergency.bottom),pu=Math.round(m.utilTop-m.passBox.bottom); assert.ok(se===0&&Math.abs(ep-pu)<=1,tag+' 홈 간격 리듬 이상 증상→응급 '+se+' / 응급→PASS '+ep+' / PASS→조건별 '+pu); }
+  { const ep=Math.round(m.passBox.top-m.emergency.bottom); assert.ok(ep>=16&&ep<=32,tag+' 증상·응급→PASS 간격 '+ep); }
   assert.ok(m.openNote.includes('진료 중')&&m.openNote.includes('응급 접수')&&m.openNote.includes('전화'),tag+' 진료 중/응급 접수 구분 안내');
   assert.ok(m.cardTexts.every(t=>!/응급 (문의 )?가능|응급 수용 가능/.test(t)),tag+' 기록 없는 응급 수용 표시');
-  assert.deepEqual(m.passRows.map(c=>c.text),['제휴병원 처방식 재고 확인','공개 진료비 통합 비교','반려동물별 맞춤 영양 관리','반려동물별 영수증·의료비 관리'],tag+' PASS 기능');
+  assert.deepEqual(m.passRows.map(c=>c.text),['공개 진료비 통합 비교','반려동물별 맞춤 영양 관리','제휴병원 처방식 재고 확인','반려동물별 영수증·의료비 관리'],tag+' PASS 기능');
   assert.ok(m.passRows.every(c=>c.h>=44),tag+' PASS 터치 높이');
   assert.deepEqual(m.utilRows.map(r=>r.text),['예약·접수 안내','야간 진료','24시간 운영 병원'],tag+' 조건별 병원 찾기 항목(진료비 중복 금지)');
   for(const r of m.utilRows)assert.ok(r.h<=56,tag+' 조건별 행 높이 '+r.h);
@@ -138,7 +138,7 @@ for(const width of [320,360,390,412]){
 {
  const {context,page}=await openHome({width:360,scheme:'light'});
  const nav=[];
- for(const [sel,expect] of [['.zeno-home-summary-link[data-action="night-shortcut"]','search'],['.zeno-home-summary-link[data-action="around-clock-shortcut"]','search'],['.zh-final-pass header button','pass'],['.zh-final-pass-row[data-value="receipts"]','pass'],['.zh-final-emergency','emergency'],['.zeno-home-utility-row[data-nav="reservation-directory"]','reservation-directory'],['.zh-symptom-row','symptoms']]){
+ for(const [sel,expect] of [['.zeno-home-summary-link[data-action="night-shortcut"]','search'],['.zeno-home-summary-link[data-action="around-clock-shortcut"]','search'],['.zh-pass-start','pass'],['.zh-final-pass-row[data-value="receipts"]','pass'],['.zh-final-emergency','emergency'],['.zeno-home-utility-row[data-nav="reservation-directory"]','reservation-directory'],['.zh-symptom-row','symptoms']]){
   await page.evaluate(()=>{state.page='home';render();window.scrollTo(0,0)});
   const el=page.locator(sel).first();await el.evaluate(x=>x.scrollIntoView({block:'center',behavior:'instant'}));await el.click();
   const st=await page.evaluate(()=>state.page);
