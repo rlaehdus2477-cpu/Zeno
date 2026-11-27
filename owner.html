@@ -5673,7 +5673,7 @@ function zenoHomePass(){
  const active=!!(state.zp&&state.zp.pass&&state.zp.pass.active);
  const desc={rx:'방문 전에 재고 확인하고 확보 요청',fees:'공개 가격 '+clinics+'곳 · 1회·연간 비용 합산',nutrition:'제조사 공식 자료로 사료·급여 비용 비교',receipts:'아이별 영수증과 의료비를 한곳에'};
  return '<section class="zh-final-pass zh-pass-card" aria-label="ZENO PASS"><header><h2>ZENO PASS</h2><span class="zh-pass-tag">'+(active?'이용 중':'시범 운영 · 결제 없음')+'</span></header>'
-  +'<p class="zh-pass-hook">병원 '+clinics+'곳 진료비를 한 번에 비교해요</p>'
+  +'<p class="zh-pass-hook">공개 진료비를 한 번에 비교해요</p>'
   +'<p class="zh-pass-price">월 1,800원 · 시범 운영 기간에는 무료</p>'
   +'<div class="zh-pass-rows">'+ZP_FEATURES.map(f=>'<button type="button" class="zh-final-pass-row" data-zp="view" data-value="'+e(f.key)+'"><span>'+e(f.title)+'</span><small>'+e(desc[f.key]||'')+'</small><i aria-hidden="true">›</i></button>').join('')+'</div>'
   +(active?'':'<button type="button" class="zh-pass-cta" data-nav="pass">무료로 시작하기</button>')+'</section>';
