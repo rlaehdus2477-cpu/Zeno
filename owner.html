@@ -3645,7 +3645,7 @@ html body #app .zeno-home-v10 .zeno-v10-open-card strong{min-height:0!important;
 html body #app .zeno-home-v10 .care-shortcuts{gap:6px!important;grid-template-columns:repeat(5,minmax(0,1fr))}
 html body #app .zeno-home-v10 .care-shortcuts button{display:flex;align-items:center;justify-content:center;min-height:40px!important;padding:4px 2px!important;border:1px solid var(--zh-line);border-radius:6px;font-size:12px;word-break:keep-all}
 .zh-final-link{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;padding:12px 14px;margin:10px 0;border:1px solid var(--zh-line);border-radius:8px;background:var(--zh-surface);color:var(--zh-text);text-align:left}
-.zh-final-link strong,.zh-final-link small{display:block}.zh-final-link small{font-size:12px;margin-top:4px;font-weight:400;opacity:.8}
+.zh-final-link strong,.zh-final-link small{display:block}.zh-final-link small{font-size:12px;margin-top:4px;font-weight:400;opacity:1}
 .zh-final-emergency{background:#fff1f1;color:#a52b2b;border-color:#f0dada}
 .zh-final-pass{border:1px solid var(--zh-line);border-radius:8px;background:var(--zh-surface);color:var(--zh-text);padding:12px 14px;margin:12px 0}
 .zh-final-pass header{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}.zh-final-pass h2{font-size:18px;margin:0}.zh-final-pass header button{font-size:12px;border:0;background:none;color:inherit}
@@ -5626,6 +5626,12 @@ function zenoSymptomPage(){
   +'<div class="zeno-symptoms-main"><button type="button" class="zeno-symptoms-back" data-nav="home">← 홈으로</button>'
   +zenoSymptomPanel()+'</div></div>';
 }
+const ZP_FEATURES=[
+ {key:'rx',no:'01',title:'제휴병원 처방식 재고 확인',desc:'재고 상태와 확인 시각, 희망 수량 확보 요청, 입고 알림'},
+ {key:'fees',no:'02',title:'공개 진료비 통합 비교',desc:'같은 항목끼리 비교하고 합산·연간 예상 비용 계산'},
+ {key:'nutrition',no:'03',title:'반려동물별 맞춤 영양 관리',desc:'제조사 공식 자료 기준 사료 탐색과 급여 비용 비교'},
+ {key:'receipts',no:'04',title:'반려동물별 영수증·의료비 관리',desc:'영수증 사진 등록, 아이별 의료비 분류와 통계'}
+];
 function home(){
  const areas=['청주 전체','청주 상당구','청주 서원구','청주 흥덕구','청주 청원구'];
  const medicalFields=['일반 진료','내과','외과','치과·구강','안과','피부·귀','비뇨기','정형외과','심장·호흡기'];
@@ -7607,12 +7613,7 @@ setInterval(()=>{if(document.hidden||state.ownerToken||!state.serverReady)return
 </style><script id="zeno-pass-module">
 /* ===== ZENO PASS · 보호자 화면 (2026-11-26) =====
    PASS 권한은 서버(/api/pass)에서 확인한 값만 사용합니다. 화면에서 임의로 열지 않습니다. */
-const ZP_FEATURES=[
- {key:'rx',no:'01',title:'제휴병원 처방식 재고 확인',desc:'재고 상태와 확인 시각, 희망 수량 확보 요청, 입고 알림'},
- {key:'fees',no:'02',title:'공개 진료비 통합 비교',desc:'같은 항목끼리 비교하고 합산·연간 예상 비용 계산'},
- {key:'nutrition',no:'03',title:'반려동물별 맞춤 영양 관리',desc:'제조사 공식 자료 기준 사료 탐색과 급여 비용 비교'},
- {key:'receipts',no:'04',title:'반려동물별 영수증·의료비 관리',desc:'영수증 사진 등록, 아이별 의료비 분류와 통계'}
-];
+
 const ZP_VIEWS={};
 function zpState(){
  if(!state.zp)state.zp={view:'hub',pass:null,passLoaded:false,passError:'',busy:false,agree:false};
