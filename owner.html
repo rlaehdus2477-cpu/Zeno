@@ -5470,7 +5470,8 @@ function zenoSearchHospitalCard(h){
  const eligible=zenoBookEligible(h);
  const book=eligible?'<button class="zeno-card-action zeno-card-book zeno-channel-zeno" type="button" data-action="book" data-id="'+e(h.id)+'">예약</button>':'';
  // 네이버·홈페이지 예약은 '예약' 줄의 라벨로 이어지므로 같은 이름의 버튼을 따로 두지 않는다.
- const naverBook='';
+ const kakaoAction=zenoExternalBookingAction(h);
+ const naverBook=kakaoAction?.kind==='kakao'?zenoBookingActionLink({...kakaoAction,label:'카카오톡'},h,'zeno-card-action zeno-card-book'):'';
  const route=h.address?'<a class="zeno-card-action zeno-card-call zeno-card-route" href="'+e(zenoNaverPhotoUrl(h))+'" target="_blank" rel="noopener noreferrer" aria-label="'+e(h.name)+' 길찾기 (네이버 지도)">'+zenoHomeSmallIcon('pin')+'길찾기</a>':'';
  const region=String(h.region||'').replace(/\s*·\s*/g,' ');
  // Details, published fees, hours and directions remain available by tapping the hospital row.
