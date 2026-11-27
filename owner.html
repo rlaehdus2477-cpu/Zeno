@@ -3738,7 +3738,7 @@ html.dark .zeno-care-row dd,html[data-theme="dark"] .zeno-care-row dd{color:#e5e
 [data-zp-form="nu-profile"] .zp-btn:not(.secondary){background:#142e4c;border-color:#142e4c;color:#fff}
 </style><style id="zp-fee-compact">
 .zp-fee-chosen{padding:0 12px}.zp-fee-chosen-row{min-height:44px;gap:6px}.zp-fee-chosen-row .zp-count{display:flex;align-items:center;gap:4px;white-space:nowrap}.zp-fee-chosen-row .zp-count input{width:48px;min-height:36px;padding:4px;text-align:center}.zp-fee-pick{min-height:44px;padding:6px 10px;gap:6px}.zp-fee-pick-text strong{font-size:14px}.zp-fee-pick-count{font-size:11px}.zp-fee-tabs{gap:12px}.zp-fee-lines .zp-total:last-of-type{background:#f1f5f9;padding:10px;border-radius:6px;color:#142e4c}.zp-fee-lines .zp-kv{gap:8px}.zp-fee-lines .zp-kv span{min-width:0;word-break:keep-all}.zp-fee-lines .zp-kv b{flex-shrink:0;white-space:nowrap}
-</style></head><body><div id="app" class="app"></div><script>
+</style><style id="zp-fee-three-modes">.zp-fee-menu button{display:flex;align-items:center;justify-content:space-between;width:100%;text-align:left;padding:16px;border:0;border-bottom:1px solid #e5ebf1;background:white;color:#142e4c;font:inherit}.zp-fee-menu button:last-child{border-bottom:0}.zp-fee-menu strong,.zp-fee-menu small{display:block}.zp-fee-menu small{font-size:13px;color:#64748b;margin-top:4px}.zp-fee-mode-title{font-size:18px;margin:16px 0 10px}.zp-fee-category{margin:10px 0;padding:0 12px}.zp-fee-category summary,.zp-fee-entry summary{padding:12px 0;cursor:pointer;color:#142e4c;font-weight:600}.zp-fee-category summary small,.zp-fee-entry summary small{font-size:12px;color:#64748b;font-weight:400}.zp-fee-entry{border-top:1px solid #e5ebf1}.zp-fee-result{padding:8px 0;border-top:1px solid #edf1f5}.zp-fee-result>.zp-fee-line>.zp-kv{display:none}</style></head><body><div id="app" class="app"></div><script>
 'use strict';
 const APP_MODE='owner';
 
@@ -8365,12 +8365,24 @@ ZP_VIEWS.fees={
  load:zpFeesLoad,
  render(){
   const f=zpFees();
-  let body=zpBack()+'<h1 class="zp-title">공개 진료비 통합 비교</h1><p class="zp-lead">병원이 공개한 가격만 같은 기준끼리 나란히 보여 줘요. 가격 순위는 만들지 않고, 공개되지 않은 가격은 미공개로 표시해요.</p>';
+  let body=zpBack()+'<h1 class="zp-title">공개 진료비 통합 비교</h1><p class="zp-lead">병원이 공개한 진료비를 비교해 보세요.</p>';
   const gate=zpGate('공개 진료비 통합 비교');
   if(gate)return body+gate+'<p class="zp-disclaimer">병원별 공개 진료비는 PASS 없이 병원 상세와 진료비 화면에서 볼 수 있어요.</p>';
   if(!f.loaded)return body+'<p class="zp-muted" role="status">비교 설정을 불러오고 있어요.</p>';
   if(f.error)body+='<p class="zp-error">'+e(f.error)+'</p>';
   const cat=zpFeeCatalog(),chosen=new Set(f.items.map(i=>i.name));
+  const mode=f.mode||'home';
+  const menus=[['compare','진료비 비교','같은 진료 항목의 병원별 가격 확인'],['checkup','건강검진 비교','병원별 검진 패키지와 포함 검사 확인'],['calc','예상 진료비 계산기','여러 항목과 횟수로 비용 계산']];
+  if(mode==='home')return body+'<div class="zp-box zp-fee-menu">'+menus.map(([v,t,d])=>'<button type="button" data-zp="fee-mode" data-value="'+v+'"><span><strong>'+t+'</strong><small>'+d+'</small></span><span aria-hidden="true">›</span></button>').join('')+'</div>';
+  body+='<button type="button" class="zp-btn small secondary" data-zp="fee-mode" data-value="home">‹ 비교 메뉴</button><h2 class="zp-fee-mode-title">'+menus.find(m=>m[0]===mode)[1]+'</h2>';
+  if(mode!=='calc'){
+   const base=cat.items.filter(it=>(mode==='checkup'?it.cat==='건강검진':it.cat!=='건강검진')&&(f.species==='전체'||it.speciesLabel===f.species||it.speciesLabel==='공통'));
+   body+='<div class="zp-seg">'+['전체','강아지','고양이'].map(v=>'<button type="button" data-zp="fee-sp" data-value="'+v+'" aria-pressed="'+(f.species===v)+'">'+v+'</button>').join('')+'</div>';
+   for(const c of ZP_FEE_CATS){const rows=base.filter(it=>it.cat===c);if(!rows.length)continue;
+    body+='<details class="zp-box zp-fee-category"'+(mode==='checkup'?' open':'')+'><summary>'+e(c)+' <small>'+rows.length+'개</small></summary>'+rows.map(it=>'<details class="zp-fee-entry"><summary>'+e(it.label)+' <small>'+zpFeeOpenLabel(it.hospitals.size)+'</small></summary>'+it.entries.slice().sort((a,b)=>(hospitalById(a.hid)?.name||'').localeCompare(hospitalById(b.hid)?.name||'','ko')).map(x=>'<div class="zp-fee-result"><div class="zp-kv"><span>'+e(hospitalById(x.hid)?.name||x.hid)+'</span><b>'+zpFeeRange(x.min,x.max)+'</b></div>'+zpFeeLine({it:{name:it.key,count:1},item:it,x,why:''})+(cat.hospitals.get(x.hid)?.url?'<a class="zp-help" href="'+e(cat.hospitals.get(x.hid).url)+'" target="_blank" rel="noopener noreferrer">가격표 원문</a>':'')+'</div>').join('')+'</details>').join('')+'</details>';
+   }
+   return body+'<p class="zp-disclaimer">공개 가격만 표시하며 실제 진료비는 달라질 수 있어요.</p>';
+  }
   body+='<section class="zp-section"><div class="zp-section-head"><h2>선택한 항목</h2><span>'+f.items.length+'개 선택</span></div>';
   if(f.items.length)body+='<div class="zp-box zp-fee-chosen">'+f.items.map(i=>{const it=cat.byKey.get(i.name);return '<div class="zp-fee-chosen-row"><span class="zp-fee-chosen-name"><b>'+e(it?.label||i.name)+'</b><small>'+e([it?.pkg?it.hospitalNames[0]:it?.basis,it?zpFeeOpenLabel(it.hospitals.size):''].filter(Boolean).join(' · '))+'</small></span><label class="zp-count"><input type="number" inputmode="numeric" min="1" max="52" value="'+i.count+'" data-zp-count="'+e(i.name)+'" aria-label="'+e(it?.label||i.name)+' 횟수"> 회</label><button type="button" class="zp-fee-remove" data-zp="fee-item" data-value="'+e(i.name)+'" aria-label="'+e(it?.label||i.name)+' 빼기">빼기</button></div>'}).join('')+'</div>'
    +'<div class="zp-btn-row inline"><button type="button" class="zp-btn small secondary" data-zp="fee-save"'+(f.saving||!f.dirty?' disabled':'')+'>'+(f.dirty?'이 설정 저장':'저장됨')+'</button><button type="button" class="zp-btn small secondary" data-zp="fee-jump">병원별 비교 보기</button></div>';
@@ -8389,6 +8401,7 @@ ZP_VIEWS.fees={
  },
  async click(a,el){
   const f=zpFees();
+  if(a==='fee-mode'){f.mode=el.dataset.value;render();window.scrollTo(0,0);return}
   if(a==='fee-item'){const n=el.dataset.value,i=f.items.findIndex(x=>x.name===n);if(i>=0)f.items.splice(i,1);else if(f.items.length<12)f.items.push({name:n,count:1});else{toast('12개까지 고를 수 있어요.');return}f.dirty=true;const y=window.scrollY;render();window.scrollTo({top:y,behavior:'instant'});return}
   if(a==='fee-sp'){f.species=el.dataset.value||'전체';const y=window.scrollY;render();window.scrollTo({top:y,behavior:'instant'});return}
   if(a==='fee-cat'){f.cat=el.dataset.value||'전체';const y=window.scrollY;render();window.scrollTo({top:y,behavior:'instant'});return}
