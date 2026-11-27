@@ -205,7 +205,10 @@ async function sectionNutrition() {
     expect(gen.every(p => p.analysis && ['asFed', 'dryMatter'].includes(p.analysis.basis) && ['건식', '습식'].includes(p.form) && ['강아지', '고양이'].includes(p.species)), '일반 사료 필드 누락');
     expect(gen.every(p => !p.price && !p.priceKrw), '판매가가 들어 있음');
     const brands = Object.fromEntries(r.data.brands.map(b => [b.brand, b.status]));
-    expect(brands['퓨리나 프로플랜'] === 'ready' && gen.filter(p => p.brand === '퓨리나 프로플랜').length === 6, '미확인 브랜드 제품이 등록됨');
+    expect(brands['퓨리나 프로플랜'] === 'ready' && gen.filter(p => p.brand === '퓨리나 프로플랜').length >= 6, '퓨리나 제품 수 이상');
+    expect(gen.filter(p => p.brand === '퓨리나 프로플랜').every(p => ['protein', 'fat', 'fiber', 'ash', 'moisture'].every(k => p.analysis[k] === null) && p.energy === null && !p.feeding), '확인 안 된 퓨리나 성분이 들어감');
+    expect(brands['뉴트로'] === 'unverified' && brands['퓨어비타'] === 'unverified' && !gen.some(p => ['뉴트로', '퓨어비타'].includes(p.brand)), '미확인 브랜드 제품이 등록됨');
+    expect(new Set(r.data.catalog.map(p => p.id)).size === r.data.catalog.length, '중복 제품 id');
     expect(rx.filter(p => p.brand === '닥터 힐메딕스').length === 11 && rx.filter(p => p.brand === '닥터 힐메딕스').every(p => p.conditions.length && p.analysis && p.feeding), '닥터 힐메딕스 처방식 이상');
     expect(gen.filter(p => p.species === '고양이').length >= 10 && gen.filter(p => p.species === '강아지').length >= 20, '종별 제품 수 이상');
   });

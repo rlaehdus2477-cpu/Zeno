@@ -8441,6 +8441,26 @@ ZP_VIEWS.fees={
    일반 사료는 아이의 기본 정보(종·나이·체중·중성화·체형·활동량)로 탐색만 돕고, 질환 진단이나 치료용 사료 추천은 하지 않습니다. */
 const ZP_NU_FEATURES=['체중 관리','헤어볼','소화','피부·피모','실내','관절','치아','노령','면역','활동량 많음','고단백'];
 const ZP_NU_STAGE={young:'어린 시기',adult:'성견·성묘',senior:'노령',all:'전 연령',unknown:'연령 미확인'};
+/* 연령 필터: 전 연령 제품은 모든 연령에, 연령 미확인 제품은 '전체'에서만 보여 줍니다. */
+function zpNuStageOf(p){return p.lifeStage==='kitten'||p.lifeStage==='puppy'?'young':(p.lifeStage||'unknown')}
+function zpNuInStage(p,stage){const s=zpNuStageOf(p);return !stage||s==='all'||s===stage}
+/* 지금 연령에서는 0개지만 다른 연령에 있는 특성과, 연령 미확인 제품 수를 알려 줍니다. */
+function zpNuStageHint(all,cur,stage,feat){
+ if(!stage)return '';
+ const hasAll=(p,fs)=>fs.every(f=>p.features?.includes(f));
+ const rows=[];
+ for(const f of ZP_NU_FEATURES){
+  if(cur.some(p=>hasAll(p,[...feat,f])))continue;
+  const by=['young','adult','senior'].filter(s=>s!==stage).map(s=>[s,all.filter(p=>zpNuStageOf(p)===s&&hasAll(p,[...feat,f])).length]).filter(([,c])=>c);
+  if(by.length)rows.push([f,by]);
+ }
+ const unknown=all.filter(p=>zpNuStageOf(p)==='unknown'&&hasAll(p,feat)).length;
+ if(!rows.length&&!unknown)return '';
+ let h='<div class="zp-box zp-nu-hint" style="padding:10px 14px;margin-top:8px"><p class="zp-help" style="margin:0 0 6px">'+e(ZP_NU_STAGE[stage])+' 연령 기준으로 보고 있어요.'+(rows.length?' 아래 특성은 이 연령에 맞는 제품이 없고, 다른 연령에 있어요.':'')+'</p>';
+ if(rows.length)h+=rows.map(([f,by])=>'<div class="zp-kv"><span>'+e(f)+'</span><b>'+by.map(([s,c])=>'<button type="button" class="zp-btn small secondary" data-zp="nu-age" data-value="'+s+'">'+e(ZP_NU_STAGE[s])+' '+c+'개</button>').join(' ')+'</b></div>').join('');
+ if(unknown)h+='<p class="zp-help" style="margin:6px 0 0">공식 자료에 권장 연령이 없는 제품 '+unknown+'개는 연령 \'전체\'에서 볼 수 있어요.</p>';
+ return h+'</div>';
+}
 function zpNu(){const z=zpState();if(!z.nu)z.nu={loaded:false,error:'',pets:[],profiles:{},prices:{},daily:{},catalog:[],conditions:[],brands:[],stock:[],petId:'',tab:'general',age:'auto',form:'all',feat:[],open:null,editing:false,priceFor:null};return z.nu}
 async function zpNuLoad(){
  const n=zpNu();
@@ -8519,6 +8539,7 @@ function zpNuCostLine(p,petId,feed,budget){
 function zpNuGrid(p){
  const a=p.analysis||{},v=x=>x==null?'<b class="zp-muted">미확인</b>':'<b>'+x+'%</b>';
  return '<div class="zp-nutri"><div><span>단백</span>'+v(a.protein)+'</div><div><span>지방</span>'+v(a.fat)+'</div><div><span>섬유</span>'+v(a.fiber)+'</div><div><span>회분</span>'+v(a.ash)+'</div><div><span>수분</span>'+v(a.moisture)+'</div><div><span>열량</span>'+(p.energy?'<b>'+p.energy.toLocaleString('ko-KR')+'</b><em>kcal/kg</em>':'<b class="zp-muted">미확인</b>')+'</div></div>'
+  +(!p.energy&&p.energyNote?'<small>열량: '+e(p.energyNote)+'</small>':'')
   +(a.basis==='dryMatter'?'<small>힐스 공식 페이지의 건물(수분 제외) 기준 평균값이에요. 포장지 등록성분과 기준이 달라요.</small>':'');
 }
 function zpNuFeedTable(p,kg,ci){
@@ -8556,6 +8577,7 @@ function zpAllergyLine(p,allergies){
  if(!allergies.length)return '';
  if(!p.ingredients)return '<small>알레르기 확인: 공식 자료에서 원료 목록을 확인하지 못했어요. 포장지 원료를 확인해 주세요.</small>';
  const hits=allergies.filter(a=>p.ingredients.includes(a));
+ if(!hits.length&&p.ingredientsPartial)return '<small>알레르기 확인: 공식 자료에서 확인한 앞부분 원료에는 '+e(allergies.join(', '))+'이(가) 없어요. 전체 원료는 포장지에서 확인해 주세요.</small>';
  return hits.length?'<small class="zp-error">알레르기 확인: 표기 원료에 '+e(hits.join(', '))+' 포함</small>':'<small>알레르기 확인: 표기 원료에서 '+e(allergies.join(', '))+'을(를) 찾지 못했어요. 포장지 원료도 확인해 주세요.</small>';
 }
 function zpNuCompare(list,pet){
@@ -8581,19 +8603,22 @@ function zpNuGeneral(pet,prof,years){
  const brandOrder=(a,b)=>a.brand.localeCompare(b.brand,'ko')||a.name.localeCompare(b.name,'ko');
  const bySpecies=n.catalog.filter(p=>p.kind==='일반식'&&p.species===pet.species);
  if(!bySpecies.length)return '<div class="zp-box"><p class="zp-empty">'+e(pet.species||'이 동물')+'용 일반 사료 자료는 아직 없어요. 지금은 강아지·고양이 사료만 등록돼 있어요.</p></div>';
- const byStage=bySpecies.filter(p=>!stage||p.lifeStage==='all'||p.lifeStage===stage);
- const byForm=byStage.filter(p=>n.form==='all'||p.form===n.form);
- const list=byForm.filter(p=>n.feat.every(f=>p.features?.includes(f))).sort(brandOrder);
+ const byStage=bySpecies.filter(p=>zpNuInStage(p,stage));
+ const formOk=p=>n.form==='all'||p.form===n.form;
+ const byForm=byStage.filter(formOk);
+ const hasAll=(p,fs)=>fs.every(f=>p.features?.includes(f));
+ const list=byForm.filter(p=>hasAll(p,n.feat)).sort(brandOrder);
  const ageChips=[['auto','나이 기준'+(auto?' · '+ZP_NU_STAGE[auto]:'')],['young','어린 시기'],['adult','성견·성묘'],['senior','노령'],['all','전체']];
  let out='<div class="zp-filter"><span>연령</span><div class="zp-chips">'+ageChips.map(([v,l])=>'<button type="button" class="zp-chip" data-zp="nu-age" data-value="'+v+'" aria-pressed="'+(n.age===v)+'">'+e(l)+'</button>').join('')+'</div></div>'
   +'<div class="zp-filter"><span>형태</span><div class="zp-chips">'+[['all','전체'],['건식','건식'],['습식','습식']].map(([v,l])=>'<button type="button" class="zp-chip" data-zp="nu-form" data-value="'+v+'" aria-pressed="'+(n.form===v)+'">'+l+'</button>').join('')+'</div></div>'
-  +'<div class="zp-filter"><span>특성</span><div class="zp-chips zp-wrap">'+ZP_NU_FEATURES.map(f=>{const c=byForm.filter(p=>p.features?.includes(f)).length,on=n.feat.includes(f);return '<button type="button" class="zp-chip" data-zp="nu-feat" data-value="'+e(f)+'" aria-pressed="'+on+'"'+(!c&&!on?' disabled':'')+'>'+e(f)+' '+c+'</button>'}).join('')+'</div></div>';
+  +'<div class="zp-filter"><span>특성</span><div class="zp-chips zp-wrap">'+ZP_NU_FEATURES.map(f=>{const on=n.feat.includes(f),c=on?list.length:byForm.filter(p=>hasAll(p,[...n.feat,f])).length;return '<button type="button" class="zp-chip" data-zp="nu-feat" data-value="'+e(f)+'" aria-pressed="'+on+'"'+(!c&&!on?' disabled':'')+'>'+e(f)+' '+c+'</button>'}).join('')+'</div></div>';
  if(years===null&&n.age==='auto')out+='<p class="zp-help">나이를 입력하지 않아 전체 연령을 보여 드려요.</p>';
+ out+=zpNuStageHint(bySpecies.filter(formOk),byForm,stage,n.feat);
  out+=zpNuCompare(list,pet);
- out+='<section class="zp-section"><div class="zp-section-head"><h2>일반 사료</h2><span>'+list.length+'개 · 브랜드 가나다순</span></div><div class="zp-box">'+(list.length?list.map(p=>zpNuProduct(p,pet,prof,stage||auto)).join(''):'<p class="zp-empty">조건에 맞는 제품이 없어요. 필터를 줄여 보세요.</p>')+'</div></section>';
+ out+='<section class="zp-section"><div class="zp-section-head"><h2>일반 사료</h2><span>'+list.length+'개 · 브랜드 가나다순</span></div><div class="zp-box">'+(list.length?list.map(p=>zpNuProduct(p,pet,prof,stage||auto)).join(''):'<p class="zp-empty">조건에 맞는 제품이 없어요. '+(stage?e(ZP_NU_STAGE[stage])+' 연령 기준이에요. ':'')+'필터를 줄여 보세요.</p>'+(stage?'<div class="zp-btn-row inline" style="padding:0 16px 14px"><button type="button" class="zp-btn small secondary" data-zp="nu-age" data-value="all">연령 전체로 보기</button></div>':''))+'</div></section>';
  const brands=n.brands.map(b=>{const c=n.catalog.filter(p=>p.kind==='일반식'&&p.brand===b.brand).length;return '<div class="zp-kv"><span>'+e(b.brand)+'</span><b'+(c?'':' class="zp-muted"')+'>'+(c?c+'개 등록':'공식 자료 확인 전')+'</b></div>'}).join('');
  out+='<section class="zp-section"><div class="zp-section-head"><h2>브랜드별 등록 현황</h2></div><div class="zp-box" style="padding:4px 16px">'+brands+'</div></section>';
- return out+'<p class="zp-disclaimer">영양성분·급여량은 제조사 공식 자료(로얄캐닌은 제조사가 밝힌 대로 국내 표시사항과 일부 다를 수 있음) 기준이에요. 확인하지 못한 값은 미확인으로 표시해요. 실제 급여량은 체중 변화를 보며 조절해 주세요. 사료비는 직접 입력한 가격으로만 계산하고, 광고나 제휴와 관계없이 가나다순으로 보여 드려요.</p>';
+ return out+'<p class="zp-disclaimer">영양성분·급여량은 제조사 공식 자료(로얄캐닌은 제조사가 밝힌 대로 국내 표시사항과 일부 다를 수 있음) 기준이에요. 확인하지 못한 값은 미확인으로 표시해요. 실제 급여량은 체중 변화를 보며 조절해 주세요. 사료비는 직접 입력한 가격으로만 계산하고, 광고나 제휴와 관계없이 가나다순으로 보여 드려요. 특성은 제조사 표기 근거로 분류했고, 고단백은 건식 등록성분 조단백이 강아지 30%·고양이 36% 이상인 제품이에요.</p>';
 }
 function zpNuRx(pet,prof,years){
  const n=zpNu();
