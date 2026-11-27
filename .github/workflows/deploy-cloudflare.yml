@@ -173,6 +173,11 @@ jobs:
         env:
           NO_PROXY: "127.0.0.1,localhost"
 
+      - name: Inpatient and night care tests (local D1 only, blocks deploy on failure)
+        run: node tests/inpatient-care-flow.mjs
+        env:
+          NO_PROXY: "127.0.0.1,localhost"
+
       - name: ZENO PASS nutrition calculation tests (blocks deploy on failure)
         run: node tests/pass-nutrition-unit.mjs
 
@@ -303,6 +308,13 @@ jobs:
                 const r=await fetch(base+p,{headers:{'Cache-Control':'no-cache'},signal:AbortSignal.timeout(20000)});
                 if(r.status!==401)throw Error('ZENO PASS route '+p+' must require login but returned HTTP '+r.status);
               }
+              // 입원·야간 관리 (2026-11-27): 보호자 필터·상세, 병원 입력 화면, 공개 API, 병원 저장 권한 확인
+              if(!owner.includes('function zenoCareDetail(')||!owner.includes('ZENO_CARE_FILTERS.map(chip)'))throw Error('Inpatient/night care owner UI missing in production');
+              if(!hospital.includes('function hiCareSettings('))throw Error('Inpatient/night care hospital form missing in production');
+              const care=await (await get('/api/public/hospital-care?ui='+nonce)).json();
+              if(!care||typeof care.hospitals!=='object')throw Error('Public hospital care response invalid');
+              const careWrite=await fetch(base+'/api/hospital-care',{method:'PUT',headers:{'content-type':'application/json','Cache-Control':'no-cache'},body:'{}',signal:AbortSignal.timeout(20000)});
+              if(careWrite.status!==401)throw Error('Hospital care save must require hospital login but returned HTTP '+careWrite.status);
               const revision=await (await get('/api/ui-version?ui='+nonce)).json();
               if(revision?.owner!==expectedOwnerRevision)throw Error('Owner UI version not deployed: '+JSON.stringify(revision)+' expected '+expectedOwnerRevision);
               if(!owner.includes("const ZENO_OWNER_UI_REVISION='"+expectedOwnerRevision+"'"))throw Error('Owner page revision not synchronized with Worker: '+expectedOwnerRevision);

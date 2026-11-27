@@ -286,3 +286,23 @@ CREATE TABLE IF NOT EXISTS receipt_pets (
 );
 CREATE INDEX IF NOT EXISTS receipt_pets_owner ON receipt_pets(owner_id,receipt_id);
 -- PASS 03 보완 (2026-11-27): 일반 사료 41개(제조사 공식 자료) 추가, 아이별 하루 급여량·체형·활동량은 pass_prefs(kind='nutrition')에 저장
+-- 입원·야간 관리 (2026-11-27): 24시간 진료·야간 수의사 상주·입원환자 관리는 서로 다른 항목으로 따로 저장
+-- 병원용 앱에서 제휴 병원이 자기 병원만 저장(source='hospital', 보호자 화면에 '병원 직접 등록'으로 표시)
+-- 행이 없는 병원·항목은 모두 'unknown'(미확인). 다른 항목(예: 24시간 진료)으로 자동 설정하지 않음
+CREATE TABLE IF NOT EXISTS hospital_care_profiles (
+  hospital_id TEXT PRIMARY KEY,
+  inpatient TEXT NOT NULL DEFAULT 'unknown',
+  night_vet TEXT NOT NULL DEFAULT 'unknown',
+  night_staff TEXT NOT NULL DEFAULT 'unknown',
+  care24 TEXT NOT NULL DEFAULT 'unknown',
+  monitoring TEXT NOT NULL DEFAULT 'unknown',
+  monitoring_note TEXT NOT NULL DEFAULT '',
+  cat_ward TEXT NOT NULL DEFAULT 'unknown',
+  icu TEXT NOT NULL DEFAULT 'unknown',
+  night_surgery TEXT NOT NULL DEFAULT 'unknown',
+  night_vet_hours TEXT NOT NULL DEFAULT '',
+  check_interval TEXT NOT NULL DEFAULT '',
+  source TEXT NOT NULL DEFAULT 'hospital' CHECK(source IN ('hospital')),
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
