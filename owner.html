@@ -8301,21 +8301,33 @@ function zpFeeHospitalTotals(hid,items){
  return {sMin,sMax,yMin,yMax,missing,promo,lines,counted:lines.filter(l=>l.x&&!l.why).length};
 }
 function zpFeeLine(l){
- const {it,item,x,why}=l,name=e(item?item.label:it.name)+(item&&item.basis&&!item.pkg?' <em>'+e(item.basis)+'</em>':'');
- if(!x)return '<div class="zp-fee-line"><div class="zp-kv"><span>'+name+' × '+it.count+'회</span><b class="zp-muted">미공개</b></div></div>';
+ const {it,item,x,why}=l,name=e(item?item.label:it.name)+(item&&item.basis&&!item.pkg?' <em>'+e(item.basis)+'</em>':'')+(l.plain?'':' × '+it.count+'회');
+ if(!x)return '<div class="zp-fee-line"><div class="zp-kv"><span>'+name+'</span><b class="zp-muted">미공개</b></div></div>';
  const meta=[];
- if(item.hospitals.size===1)meta.push('1개 병원 공개');
+ if(item.hospitals.size===1&&!l.plain)meta.push('1개 병원 공개');
  if(x.promo)meta.push('<span class="zp-fee-flag">'+e(x.promo)+'</span>'+(x.regular?' 정상가 '+zpWon(x.regular):''));
  if(x.variants)meta.push(x.variants.map(v=>e(v[0])+' '+zpWon(v[1])).join(' / '));
  if(why)meta.push('<span class="zp-fee-flag mute">'+e(ZP_FEE_OVERLAP_REASON[why])+'</span>');
  const lead=x.pkg?(x.includes||x.note):x.note.split(' · ').slice(0,2).join(' · ');
  const full=x.note+(x.raw!==item.label?' · 병원 표기: '+x.raw:'');
- return '<div class="zp-fee-line'+(why?' is-excluded':'')+'"><div class="zp-kv"><span>'+name+' × '+it.count+'회</span><b>'+zpFeeRange(x.min,x.max)+'</b></div>'
+ return '<div class="zp-fee-line'+(why?' is-excluded':'')+'"><div class="zp-kv"><span>'+name+'</span><b>'+zpFeeRange(x.min,x.max)+'</b></div>'
   +(meta.length?'<p class="zp-fee-meta">'+meta.join(' · ')+'</p>':'')
   +(lead?'<p class="zp-fee-cond">'+(x.pkg?'포함 검사 · ':'')+e(lead)+'</p>':'')
   +(full&&full!==lead?'<details class="zp-fee-note"><summary>조건 보기</summary><p>'+e(full)+'</p></details>':'')
   +(x.url&&x.url!==zpFeeCatalog().hospitals.get(x.hid)?.url?'<a class="zp-help" href="'+e(x.url)+'" target="_blank" rel="noopener noreferrer">이 검진 원문'+(x.checked?' · 확인 '+e(x.checked):'')+'</a>':'')
   +'</div>';
+}
+/* 건강검진 비교: 검진 상품명은 병원마다 달라서 병원별로 묶어 보여 줍니다. 병원은 이름순(가격순 아님), 병원 안의 검진은 원래 순서를 유지합니다. */
+function zpCheckupByHospital(rows,cat){
+ const byH=new Map();
+ for(const it of rows)for(const x of it.entries){if(!byH.has(x.hid))byH.set(x.hid,[]);byH.get(x.hid).push({it,x})}
+ const ids=[...byH.keys()].sort((a,b)=>(hospitalById(a)?.name||a).localeCompare(hospitalById(b)?.name||b,'ko'));
+ return '<details class="zp-box zp-fee-category" open><summary>건강검진 <small>병원 '+ids.length+'곳 · 검진 '+rows.length+'개</small></summary>'
+  +ids.map(hid=>{const h=hospitalById(hid),list=byH.get(hid),src=cat.hospitals.get(hid);
+   return '<details class="zp-fee-entry"><summary>'+e(h?.name||hid)+' <small>검진 '+list.length+'개</small></summary>'
+    +list.map(({it,x})=>'<div class="zp-fee-result">'+zpFeeLine({it:{name:it.key,count:1},item:it,x,why:'',plain:true})+'</div>').join('')
+    +(src?.url?'<a class="zp-help" href="'+e(src.url)+'" target="_blank" rel="noopener noreferrer">가격표 원문</a>':'')+'</details>'}).join('')
+  +'</details>';
 }
 function zpFeeHospitalBlock(hid,items){
  const cat=zpFeeCatalog(),meta=cat.hospitals.get(hid),h=hospitalById(hid);if(!h||!meta)return '';
@@ -8382,6 +8394,7 @@ ZP_VIEWS.fees={
    const base=cat.items.filter(it=>(mode==='checkup'?it.cat==='건강검진':it.cat!=='건강검진')&&(f.species==='전체'||it.speciesLabel===f.species||it.speciesLabel==='공통'));
    body+='<div class="zp-seg">'+['전체','강아지','고양이'].map(v=>'<button type="button" data-zp="fee-sp" data-value="'+v+'" aria-pressed="'+(f.species===v)+'">'+v+'</button>').join('')+'</div>';
    for(const c of ZP_FEE_CATS){const rows=base.filter(it=>it.cat===c);if(!rows.length)continue;
+    if(mode==='checkup'&&c==='건강검진'){body+=zpCheckupByHospital(rows,cat);continue}
     body+='<details class="zp-box zp-fee-category"'+(mode==='checkup'?' open':'')+'><summary>'+e(c)+' <small>'+rows.length+'개</small></summary>'+rows.map(it=>'<details class="zp-fee-entry"><summary>'+e(it.label)+' <small>'+zpFeeOpenLabel(it.hospitals.size)+'</small></summary>'+it.entries.slice().sort((a,b)=>(hospitalById(a.hid)?.name||'').localeCompare(hospitalById(b.hid)?.name||'','ko')).map(x=>'<div class="zp-fee-result"><div class="zp-kv"><span>'+e(hospitalById(x.hid)?.name||x.hid)+'</span><b>'+zpFeeRange(x.min,x.max)+'</b></div>'+zpFeeLine({it:{name:it.key,count:1},item:it,x,why:''})+(cat.hospitals.get(x.hid)?.url?'<a class="zp-help" href="'+e(cat.hospitals.get(x.hid).url)+'" target="_blank" rel="noopener noreferrer">가격표 원문</a>':'')+'</div>').join('')+'</details>').join('')+'</details>';
    }
    return body+'<p class="zp-disclaimer">공개 가격만 표시하며 실제 진료비는 달라질 수 있어요.</p>';
