@@ -167,6 +167,36 @@ async function main() {
     expect(pub.naeum.nightVet === 'resident', '다른 병원 값이 사라짐');
   });
 
+  await check(7, '예약·외래·야간 정책 및 특수동물 진료를 독립적으로 저장', async () => {
+    const extension={firstVisit:'available',followUp:'unavailable',walkIn:'available',outpatient24:'unavailable',
+      nightEmergency:'available',bookingNote:'전화로 문의해 주세요.',electronicIntake:'available',
+      species:{토끼:{general:'available',surgery:'unavailable'},도마뱀:{emergency:'available'}}};
+    const write=await api('PUT','/api/hospital-care',{token:SOO,body:{inpatient:'available',nightVet:'resident',extension}});
+    expect(write.status===200,JSON.stringify(write));
+    const legacy=await api('PUT','/api/hospital-care',{token:SOO,body:{inpatient:'available',nightVet:'resident'}});
+    expect(legacy.data?.careProfile?.extension?.bookingNote===extension.bookingNote,'기존 클라이언트가 새 정책을 덮어씀');
+    const {hospitals}= (await api('GET','/api/public/hospital-care')).data;
+    const profile=hospitals.soo;
+    expect(profile.nightVet==='resident'&&profile.extension.outpatient24==='unavailable'&&profile.extension.nightEmergency==='available','운영 항목이 섞임');
+    expect(profile.extension.followUp==='unavailable'&&profile.extension.sameDay==='unknown','예약 정책 상태가 섞임');
+    expect(profile.extension.species.토끼.general==='available'&&profile.extension.species.토끼.emergency==='unknown'&&profile.extension.species.도마뱀.general==='unknown'&&!profile.extension.species.뱀,'특수동물 정책이 섞임');
+    expect(!hospitals.naeum?.extension,'다른 병원 정보 변경');
+  });
+
+  await check(8, '무예약 문진 전송은 로그인·명시적 동의·병원 수신 허용 필요', async () => {
+    const body={hospitalId:'soo',species:'도마뱀',visit:'followup',petName:'테스트',answers:{change:'식욕 변화',uvb:'사용',purpose:'이전 양식'},consent:true};
+    expect((await api('POST','/api/visit-intakes',{body})).status===401,'비로그인 전송 허용');
+    expect((await api('POST','/api/visit-intakes',{token:OWNER,body:{...body,consent:false}})).status===400,'미동의 전송 허용');
+    expect((await api('POST','/api/visit-intakes',{token:OWNER,body:{...body,hospitalId:'naeum'}})).status===409,'미설정 병원에 전송 허용');
+    const saved=await api('POST','/api/visit-intakes',{token:OWNER,body});
+    expect(saved.status===201,JSON.stringify(saved));
+    const own=await api('GET','/api/hospital/visit-intakes',{token:SOO});
+    const other=await api('GET','/api/hospital/visit-intakes',{token:NAEUM});
+    expect(own.data?.intakes?.[0]?.id===saved.data.id&&own.data.intakes[0].answers.uvb==='사용'&&!own.data.intakes[0].answers.purpose,'종·방문 유형과 무관한 필드가 저장됨');
+    expect(other.data?.intakes?.length===0,'다른 병원에 문진 노출');
+    expect((await api('GET','/api/hospital/visit-intakes',{token:OWNER})).status===401,'보호자에게 병원 문진 목록 노출');
+  });
+
   await check(6, '회귀: 기존 예약 흐름과 공개 API 정상', async () => {
     const date = new Date(Date.now() + 9 * 3600e3 + 2 * 86400e3).toISOString().slice(0, 10);
     const b = await api('POST', '/api/bookings', {token: OWNER, body: {hospitalId: 'soo', petName: '입원냥', species: '고양이', service: '일반 진료', date, time: '10:00', note: '', ownerPhone: '01012345678', visitType: '첫 방문'}});

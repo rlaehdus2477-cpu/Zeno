@@ -24,10 +24,11 @@ const ctx = {
   zenoSearchClinicStatus: h => ({kind: h.open ? 'is-open' : 'is-closed', text: h.open ? '진료 중' : '진료 종료'}),
   zeno24HourEmergency: h => !!h.h24, zenoNightSchedule: () => ({within: false}),
   zenoNearbyDistanceKm: h => h.km, zenoCatWaitingTier: h => h.tier, zenoExoticMatches: () => true,
+  clinicProfile: () => ({}),
   zenoBookEligible: () => true, zenoMemorialGet: () => null, zenoSymptomPage: null, console,
 };
 vm.createContext(ctx);
-vm.runInContext(m[1] + ';globalThis.T={ZS_FIELDS,ZS_FLAGS,ZS_COMMON_FLAGS,ZS_SYMPTOMS,ZS_GROUPS,ZS_SHORT_LABELS,zs,zsFlagList,zsLevel,zsFields,zsRank,zsUrgentList,zsStepFlags,zsEmergencyHospitals,zsEmergencyKind,zsEmergencyBlock,zsFlagCard};', ctx);
+vm.runInContext(m[1] + ';globalThis.T={ZS_FIELDS,ZS_FLAGS,ZS_COMMON_FLAGS,ZS_SYMPTOMS,ZS_GROUPS,ZS_SHORT_LABELS,zs,zsFlagList,zsLevel,zsFields,zsRank,zsUrgentList,zsStepFlags,zsEmergencyHospitals,zsEmergencyKind,zsEmergencyBlock,zsFlagCard,zsExoticSymptoms};', ctx);
 const T = ctx.T;
 const reset = o => { ctx.state.zs = {who: '', species: '', exotic: '', symptoms: [], flags: [], q: '', openOnly: false, catRoom: true, more: false, ...o}; };
 
@@ -89,6 +90,13 @@ check('S7', '특수동물: 특수동물 진료 근거가 있는 병원만', () =
   reset({species: '토끼', exotic: '토끼'});
   eq(T.zsFields(), ['특수동물'], '분야');
   eq(T.zsRank().map(x => x.h.id), ['d'], '병원');
+  reset({species: '특수동물'});
+  eq(T.zsRank().length, 0, '종 선택 전 병원');
+  reset({species: '특수동물', exotic: '토끼', symptoms: ['exotic:식욕부진','exotic:무기력'], flags: ['breath']});
+  eq(T.zsLevel(), '', '특수동물 자동 중증도 분류 비활성');
+  ok(T.zsExoticSymptoms('토끼').some(x=>x.label==='식욕부진'),'토끼 식욕부진 없음');
+  ok(!T.zsExoticSymptoms('토끼').some(x=>['산란 이상','탈피 이상'].includes(x.label)),'토끼에 부적절한 증상');
+  ok(/수의사 검토 대기/.test(ctx.zenoSymptomPage()),'검토 상태 누락');
 });
 
 check('S8', '여러 증상: 병원마다 가장 근거가 강한 분야로 표시', () => {
@@ -131,7 +139,7 @@ check('S11', '혈변·토혈·흑색변: 서로 다른 증상, 소화기(내과)
 });
 
 check('S12', '응급 결과: 24시간 응급 > 24시간 운영 순, 두 표기를 같게 다루지 않음, 일반 정렬에 응급 안내만 병원은 진료 중 아님', () => {
-  const keep = ctx.HOSPITALS;
+  const keep = [...ctx.HOSPITALS];
   ctx.HOSPITALS.length = 0;
   ctx.HOSPITALS.push(
     {id: 'x', name: '운영병원', phone: '043-111-0000', is24: true, origin: {내과: 'public'}, open: false, km: 1, tier: 3},
@@ -144,8 +152,8 @@ check('S12', '응급 결과: 24시간 응급 > 24시간 운영 순, 두 표기�
   ok(html.includes('zs-emergency-warning') && html.includes('zs-emergency-results') && html.includes('tel:0432220000') && html.includes('응급 접수 여부 전화 확인'), '경고·목록 분리와 전화');
   reset({species: '강아지', symptoms: ['vomit']});
   const r = T.zsRank();
-  ok(r.find(x => x.h.id === 'x').status.open && !r.find(x => x.h.id === 'y').status.open, '24시간 응급 안내만으로 진료 중 처리 안 함');
-  ctx.HOSPITALS.length = 0; ctx.HOSPITALS.push(...H);
+  ok(!r.find(x => x.h.id === 'x').status.open && !r.find(x => x.h.id === 'y').status.open, '운영 또는 응급 안내만으로 외래 진료 중 처리 안 함');
+  ctx.HOSPITALS.length = 0; ctx.HOSPITALS.push(...keep);
 });
 
 check('S13', '응급 증상은 일반 증상 3개 제한을 받지 않음', () => {
