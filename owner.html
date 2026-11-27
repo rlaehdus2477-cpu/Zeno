@@ -5430,6 +5430,7 @@ function zenoListReservation(h,eligible){
  const chips=[];
  if(methods.includes('naver')){const url=zenoNaverBookingUrl(h);chips.push(chip('naver','네이버 예약',url,Boolean(confirmedNaver)&&confirmedNaver===url,true));}
  if(methods.includes('official'))chips.push(chip('website','홈페이지 예약',zenoWebsiteBookingUrl(h),info.officialLinkVerified===true,true));
+ if(methods.includes('kakao')){const action=zenoExternalBookingAction(h);chips.push(chip('naver','카카오 예약',action?.kind==='kakao'?action.url:'',true,true));}
  if(methods.includes('phone'))chips.push(chip('phone','전화 예약',tel,true));
  if(methods.includes('app'))chips.push(chip('phone','병원 자체 앱','',false));
  if(zenoWalkInAllowed(h)||methods.includes('walkin'))chips.push(chip('walkin','예약 없이 방문','',false));
