@@ -114,7 +114,7 @@ for(const width of [320,360,390,412]){
   assert.ok(m.symptom.top>=m.specialties.at(-1).bottom,tag+' 증상 위치');
   assert.ok(Math.abs(m.emergency.top-m.symptom.top)<=1&&m.emergency.left>m.symptom.right&&m.passBox.top>=m.emergency.bottom,tag+' 증상·응급 한 줄, PASS 위치');
   assert.equal(m.oldFees,false,tag+' 홈 진료비 중복');
-  { const ep=Math.round(m.passBox.top-m.emergency.bottom); assert.ok(ep>=16&&ep<=32,tag+' 증상·응급→PASS 간격 '+ep); }
+  { const ep=Math.round(m.passBox.top-m.emergency.bottom); assert.ok(ep>=14&&ep<=18,tag+' 증상·응급→PASS 간격 '+ep); }
   assert.ok(m.openNote.includes('진료 중')&&m.openNote.includes('응급 접수')&&m.openNote.includes('전화'),tag+' 진료 중/응급 접수 구분 안내');
   assert.ok(m.cardTexts.every(t=>!/응급 (문의 )?가능|응급 수용 가능/.test(t)),tag+' 기록 없는 응급 수용 표시');
   assert.deepEqual(m.passRows.map(c=>c.text),['공개 진료비 통합 비교','반려동물별 맞춤 영양 관리','제휴병원 처방식 재고 확인','반려동물별 영수증·의료비 관리'],tag+' PASS 기능');
