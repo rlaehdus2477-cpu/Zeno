@@ -3659,6 +3659,20 @@ html body #app .zeno-home-v10 .zh-care-list{margin-top:14px;border-top:1px solid
 html body #app .zeno-home-v10 .care-shortcuts{gap:8px 6px!important;grid-template-columns:repeat(5,minmax(0,1fr))!important}
 html body #app .zeno-home-v10 .care-shortcuts button{display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:center!important;min-height:40px!important;padding:4px 2px!important;border:0!important;border-radius:8px!important;background:var(--zh-surface-alt)!important;color:var(--zh-text)!important;font-size:13px!important;font-weight:500!important;line-height:1.3!important;gap:0!important}
 html body #app .zeno-home-v10 .zeno-home-utility-row{gap:8px!important}
+/* 홈 PASS 카드: 한 장의 카드, 핵심 문장·가격·기능 4줄·시작 버튼. 아이콘·그라데이션 없음 */
+html body #app .zeno-home-v10 .zh-pass-card{margin:20px 0 0!important;padding:16px 16px 14px!important;border:1px solid var(--zh-line)!important;border-radius:12px!important;background:var(--zh-surface)!important}
+html body #app .zeno-home-v10 .zh-pass-card header{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 10px!important}
+html body #app .zeno-home-v10 .zh-pass-card h2{font-size:15px!important;font-weight:800!important;letter-spacing:-.2px;color:#1666cc!important;margin:0}
+html body #app .zeno-home-v10 .zh-pass-tag{font-size:12px;font-weight:600;color:var(--zh-muted);background:var(--zh-surface-alt);border-radius:6px;padding:3px 8px}
+html body #app .zeno-home-v10 .zh-pass-hook{margin:0;font-size:19px;font-weight:700;line-height:1.4;letter-spacing:-.4px;color:var(--zh-text);word-break:keep-all}
+html body #app .zeno-home-v10 .zh-pass-price{margin:4px 0 10px;font-size:13px;color:var(--zh-muted)}
+html body #app .zeno-home-v10 .zh-pass-rows{border-top:1px solid var(--zh-line)}
+html body #app .zeno-home-v10 .zh-pass-card .zh-final-pass-row{display:grid!important;grid-template-columns:1fr auto;grid-template-rows:min-content min-content;align-content:center;column-gap:8px;row-gap:2px;align-items:center;min-height:56px!important;padding:8px 0!important;border:0!important;border-bottom:1px solid var(--zh-line)!important;background:none!important;text-align:left}
+html body #app .zeno-home-v10 .zh-pass-card .zh-final-pass-row>span{grid-column:1;font-size:14px;font-weight:600;color:var(--zh-text)}
+html body #app .zeno-home-v10 .zh-pass-card .zh-final-pass-row>small{grid-column:1;font-size:12px;font-weight:400;color:var(--zh-muted);margin-top:2px}
+html body #app .zeno-home-v10 .zh-pass-card .zh-final-pass-row>i{grid-column:2;grid-row:1/3;font-style:normal;font-size:20px;color:var(--zh-muted)}
+html body #app .zeno-home-v10 .zh-pass-cta{display:flex;align-items:center;justify-content:center;width:100%;min-height:46px;margin-top:14px;border:0;border-radius:10px;background:#1666cc;color:#fff;font-size:15px;font-weight:700;cursor:pointer}
+:is(html.dark,html[data-theme="dark"]) body #app .zeno-home-v10 .zh-pass-card h2{color:#6cb4ff!important}
 html body #app .zeno-home-v10 .zeno-home-service-grid{display:block!important;border-top:1px solid var(--zh-line)}
 html body #app .zeno-home-v10 .zeno-home-service-grid>button{display:flex!important;justify-content:space-between!important;width:100%;min-height:48px!important;padding:8px 2px!important;border:0!important;border-bottom:1px solid var(--zh-line)!important;border-radius:0!important;background:none!important;font-size:14px!important;font-weight:600!important}
 html body #app .zeno-home-v10 .zeno-home-service-grid>button::after{content:'›';font-size:20px;font-weight:400;color:var(--zh-muted)}
@@ -5653,6 +5667,17 @@ const ZP_FEATURES=[
  {key:'nutrition',no:'03',title:'반려동물별 맞춤 영양 관리',desc:'제조사 공식 자료 기준 사료 탐색과 급여 비용 비교'},
  {key:'receipts',no:'04',title:'반려동물별 영수증·의료비 관리',desc:'영수증 사진 등록, 아이별 의료비 분류와 통계'}
 ];
+function zenoHomePass(){
+ // 2026-11-27: 홈 PASS를 목록 4줄 대신 가치가 보이는 카드로. 숫자는 실제 공개 가격 데이터에서 계산
+ const clinics=new Set([...ZENO_PUBLIC_FEES.map(v=>v.id),...ZENO_HEALTH_SCREENINGS.map(v=>v.id)]).size;
+ const active=!!(state.zp&&state.zp.pass&&state.zp.pass.active);
+ const desc={rx:'방문 전에 재고 확인하고 확보 요청',fees:'공개 가격 '+clinics+'곳 · 1회·연간 비용 합산',nutrition:'제조사 공식 자료로 사료·급여 비용 비교',receipts:'아이별 영수증과 의료비를 한곳에'};
+ return '<section class="zh-final-pass zh-pass-card" aria-label="ZENO PASS"><header><h2>ZENO PASS</h2><span class="zh-pass-tag">'+(active?'이용 중':'시범 운영 · 결제 없음')+'</span></header>'
+  +'<p class="zh-pass-hook">병원 '+clinics+'곳 진료비를 한 번에 비교해요</p>'
+  +'<p class="zh-pass-price">월 1,800원 · 시범 운영 기간에는 무료</p>'
+  +'<div class="zh-pass-rows">'+ZP_FEATURES.map(f=>'<button type="button" class="zh-final-pass-row" data-zp="view" data-value="'+e(f.key)+'"><span>'+e(f.title)+'</span><small>'+e(desc[f.key]||'')+'</small><i aria-hidden="true">›</i></button>').join('')+'</div>'
+  +(active?'':'<button type="button" class="zh-pass-cta" data-nav="pass">무료로 시작하기</button>')+'</section>';
+}
 function home(){
  const areas=['청주 전체','청주 상당구','청주 서원구','청주 흥덕구','청주 청원구'];
  const medicalFields=['일반 진료','내과','외과','치과·구강','안과','피부·귀','비뇨기','정형외과','심장·호흡기'];
@@ -5686,7 +5711,7 @@ function home(){
  +'<section class="care-launcher" aria-label="진료 분야로 찾기"><header><h2>진료과목</h2><button data-action="home-care-open" aria-haspopup="dialog" aria-expanded="'+state.homeCarePickerOpen+'">전체 과목 ›</button></header>'
  +'<div class="care-shortcuts">'+[['내과','내과'],['외과','외과'],['정형외과','정형외과'],['치과·구강','치과'],['안과','안과'],['피부·귀','피부과'],['비뇨기','비뇨기과'],['건강검진·접종','건강검진'],['중성화수술','중성화'],['특수동물','특수동물']].map(([value,label])=>'<button type="button" data-action="specialty" data-value="'+e(value)+'">'+e(label)+'</button>').join('')+'</div>'
  +'<div class="zeno-home-utility-list zh-care-list">'+'<button type="button" class="zeno-home-utility-row zh-symptom-row" data-nav="symptoms"><span class="zeno-home-utility-copy"><strong>증상으로 병원 찾기</strong><small>증상별 진료 필요도 및 병원 안내</small></span><span class="zeno-home-utility-chevron" aria-hidden="true">›</span></button>'+'<button type="button" class="zeno-home-utility-row zh-final-emergency" data-nav="emergency"><span class="zeno-home-utility-copy"><strong>응급 진료</strong><small>응급 접수 가능 여부는 전화 확인</small></span><span class="zeno-home-utility-chevron" aria-hidden="true">›</span></button>'+'</div></section>'
- +'<section class="zh-final-pass"><header><h2>ZENO PASS</h2><button type="button" data-nav="pass">시범 운영 중 ›</button></header>'+ZP_FEATURES.map(f=>'<button type="button" class="zh-final-pass-row" data-zp="view" data-value="'+e(f.key)+'"><span>'+e(f.title)+'</span><span aria-hidden="true">›</span></button>').join('')+'</section>'
+ +zenoHomePass()
  +'<div id="zeno-home-ads">'+zenoHomeAdCards()+'</div>'
  +'<section class="zeno-home-utilities" aria-label="조건별 병원 찾기"><h2>조건별 병원 찾기</h2><div class="zeno-home-utility-list"><button type="button" class="zeno-home-utility-row" data-nav="reservation-directory"><span class="zeno-home-utility-copy"><strong>예약·접수 안내</strong><small>전화·네이버·홈페이지·방문 접수</small></span><span class="zeno-home-utility-chevron" aria-hidden="true">›</span></button>'
  +'<button type="button" class="zeno-home-utility-row" data-action="night-shortcut"><span class="zeno-home-utility-copy"><strong>야간 진료</strong><small>밤 시간 진료가 안내된 병원</small></span><span class="zeno-home-utility-chevron" aria-hidden="true">›</span></button>'
