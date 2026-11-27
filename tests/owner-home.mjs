@@ -77,7 +77,7 @@ for(const width of [320,360,390,412]){
       img:(()=>{const i=c.querySelector('.zeno-v10-mini-photo img');return i?{ok:i.complete&&i.naturalWidth>0}:{fallback:Boolean(c.querySelector('.zeno-v10-mini-photo svg'))}})()})),
     railScroll:(()=>{const r=q('.zeno-v10-open-rail');return {scroll:r.scrollWidth>r.clientWidth,ox:getComputedStyle(r).overflowX}})(),
     specialties:qa('.care-shortcuts button').map(c=>({...box(c),text:c.textContent.trim()})),
-    symptom:box(q('.zh-final-link[data-nav="symptoms"]')),
+    symptom:box(q('.care-launcher .care-symptoms')),
     passRows:qa('.zh-final-pass-row').map(c=>({...box(c),text:c.querySelector('span').textContent})),
     passBox:box(q('.zh-final-pass')),
     oldFees:!!q('.zeno-home-fees'),
@@ -138,7 +138,7 @@ for(const width of [320,360,390,412]){
 {
  const {context,page}=await openHome({width:360,scheme:'light'});
  const nav=[];
- for(const [sel,expect] of [['.zeno-home-summary-link[data-action="night-shortcut"]','search'],['.zeno-home-summary-link[data-action="around-clock-shortcut"]','search'],['.zh-final-pass header button','pass'],['.zh-final-pass-row[data-value="receipts"]','pass'],['.zh-final-emergency','emergency'],['.zeno-home-utility-row[data-nav="reservation-directory"]','reservation-directory'],['.zh-final-link[data-nav="symptoms"]','symptoms']]){
+ for(const [sel,expect] of [['.zeno-home-summary-link[data-action="night-shortcut"]','search'],['.zeno-home-summary-link[data-action="around-clock-shortcut"]','search'],['.zh-final-pass header button','pass'],['.zh-final-pass-row[data-value="receipts"]','pass'],['.zh-final-emergency','emergency'],['.zeno-home-utility-row[data-nav="reservation-directory"]','reservation-directory'],['.care-launcher .care-symptoms','symptoms']]){
   await page.evaluate(()=>{state.page='home';render();window.scrollTo(0,0)});
   const el=page.locator(sel).first();await el.evaluate(x=>x.scrollIntoView({block:'center',behavior:'instant'}));await el.click();
   const st=await page.evaluate(()=>state.page);
