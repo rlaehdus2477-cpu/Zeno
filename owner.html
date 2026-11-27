@@ -8336,9 +8336,9 @@ function zpFeePicker(f,chosen){
  const counts=new Map();for(const it of base)counts.set(it.cat,(counts.get(it.cat)||0)+1);
  const cats=ZP_FEE_CATS.filter(c=>counts.get(c));
  if(f.cat!=='전체'&&!cats.includes(f.cat))f.cat='전체';
- const shown=base.filter(it=>f.cat===it.cat||!!q);
+ const shown=base.filter(it=>f.cat==='전체'||f.cat===it.cat||!!q);
  const seg='<div class="zp-seg" role="group" aria-label="동물 종류">'+['전체','강아지','고양이'].map(s=>'<button type="button" data-zp="fee-sp" data-value="'+s+'" aria-pressed="'+(f.species===s)+'">'+s+'</button>').join('')+'</div>';
- const tabs='<div class="zp-fee-category-grid" aria-label="진료비 분류">'+cats.map(c=>'<button type="button" data-zp="fee-cat" data-value="'+e(c)+'" aria-pressed="'+(f.cat===c)+'">'+e(c)+' <small>'+counts.get(c)+'</small></button>').join('')+'</div>';
+ const tabs='<div class="zp-fee-category-grid" aria-label="진료비 분류">'+['전체',...cats].map(c=>'<button type="button" data-zp="fee-cat" data-value="'+e(c)+'" aria-pressed="'+(f.cat===c)+'">'+e(c)+' <small>'+(c==='전체'?base.length:counts.get(c))+'</small></button>').join('')+'</div>';
  const groups=ZP_FEE_CATS.filter(c=>shown.some(it=>it.cat===c)).map(c=>{
   const entries=shown.filter(it=>it.cat===c);const labels=[...new Set(entries.map(it=>it.label))];const rows=labels.map(label=>{const variants=entries.filter(it=>it.label===label);return (variants.length>1?'<div class="zp-fee-family"><strong>'+e(label)+'</strong>':'')+variants.map(it=>{
    const sub=[it.pkg?it.hospitalNames[0]:it.basis,it.hospitals.size===1&&!it.pkg?it.hospitalNames[0]:'',it.speciesLabel!=='공통'&&!/강아지|고양이|개|소형견|중형견|대형견|캣/.test(it.label)?it.speciesLabel:''].filter(Boolean).join(' · ');
@@ -8350,7 +8350,7 @@ function zpFeePicker(f,chosen){
  }).join('');
  const none=!!q&&!shown.some(it=>it.search.includes(q));
  return '<div class="zp-fee-search"><input type="search" data-zp-fee-q value="'+e(f.q)+'" placeholder="진료비 항목 검색 (예: 슬개골, 엑스레이)" aria-label="진료비 항목 검색" autocomplete="off"></div>'
-  +seg+tabs+'<div class="zp-box zp-fee-list">'+groups+(f.cat==='전체'&&!q?'<p class="zp-empty">위에서 진료비 분류를 선택해 주세요.</p>':'')+'<p class="zp-empty" data-fee-empty'+(none?'':' hidden')+'>조건에 맞는 항목이 없어요.</p></div>';
+  +seg+tabs+'<div class="zp-box zp-fee-list">'+groups+'<p class="zp-empty" data-fee-empty'+(none?'':' hidden')+'>조건에 맞는 항목이 없어요.</p></div>';
 }
 function zpFeeApplySearch(root,q){
  const n=zpFeeNorm(q);let any=false;
