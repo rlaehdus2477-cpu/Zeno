@@ -200,6 +200,72 @@ async function keepHospitalSpecialtyKeywords(db,hospitalId){
  return getHospitalSpecialtyKeywords(db,hospitalId);
 }
 
+// 입원·야간 관리 (2026-11-27, 수의사 인터뷰 반영): 24시간 진료·야간 수의사 상주·입원환자 관리는 서로 다른 정보로 따로 저장한다.
+// 병원이 직접 저장한 값은 '병원 등록'으로만 공개되며, 어떤 항목도 다른 항목(예: 24시간 진료)으로부터 자동으로 채우지 않는다.
+const HOSPITAL_CARE_FIELDS={
+ inpatient:['available','unavailable','unknown'],
+ nightVet:['resident','oncall','none','unknown'],
+ nightStaff:['resident','none','unknown'],
+ care24:['available','unavailable','unknown'],
+ monitoring:['continuous','periodic','other','unknown'],
+ catWard:['operated','not_operated','unknown'],
+ icu:['operated','not_operated','unknown'],
+ nightSurgery:['available','unavailable','unknown']
+};
+const HOSPITAL_CARE_COLUMNS={inpatient:'inpatient',nightVet:'night_vet',nightStaff:'night_staff',care24:'care24',monitoring:'monitoring',catWard:'cat_ward',icu:'icu',nightSurgery:'night_surgery'};
+const HOSPITAL_CARE_CREATE_SQL="CREATE TABLE IF NOT EXISTS hospital_care_profiles (hospital_id TEXT PRIMARY KEY, inpatient TEXT NOT NULL DEFAULT 'unknown', night_vet TEXT NOT NULL DEFAULT 'unknown', night_staff TEXT NOT NULL DEFAULT 'unknown', care24 TEXT NOT NULL DEFAULT 'unknown', monitoring TEXT NOT NULL DEFAULT 'unknown', monitoring_note TEXT NOT NULL DEFAULT '', cat_ward TEXT NOT NULL DEFAULT 'unknown', icu TEXT NOT NULL DEFAULT 'unknown', night_surgery TEXT NOT NULL DEFAULT 'unknown', night_vet_hours TEXT NOT NULL DEFAULT '', check_interval TEXT NOT NULL DEFAULT '', source TEXT NOT NULL DEFAULT 'hospital' CHECK(source IN ('hospital')), created_at TEXT NOT NULL, updated_at TEXT NOT NULL)";
+let zenoHospitalCareInit=null;
+function ensureHospitalCare(db){
+ if(!zenoHospitalCareInit)zenoHospitalCareInit=db.prepare(HOSPITAL_CARE_CREATE_SQL).run().catch(err=>{zenoHospitalCareInit=null;throw err});
+ return zenoHospitalCareInit;
+}
+function hospitalCareRow(row){
+ if(!row)return null;
+ const out={source:'hospital'};
+ for(const [key,col] of Object.entries(HOSPITAL_CARE_COLUMNS)){const v=row[col];out[key]=HOSPITAL_CARE_FIELDS[key].includes(v)?v:'unknown'}
+ out.monitoringNote=out.monitoring==='other'?String(row.monitoring_note||''):'';
+ out.nightVetHours=['resident','oncall'].includes(out.nightVet)?String(row.night_vet_hours||''):'';
+ out.checkInterval=out.inpatient==='available'?String(row.check_interval||''):'';
+ out.updatedAt=row.updated_at||'';
+ return out;
+}
+async function getHospitalCare(db,hospitalId){
+ await ensureHospitalCare(db);
+ return hospitalCareRow(await db.prepare('SELECT * FROM hospital_care_profiles WHERE hospital_id=?').bind(hospitalId).first());
+}
+async function listHospitalCare(db){
+ await ensureHospitalCare(db);
+ const rows=await db.prepare('SELECT * FROM hospital_care_profiles').all();
+ const out={};
+ for(const row of(rows.results||[]))if(IDS.has(row.hospital_id))out[row.hospital_id]=hospitalCareRow(row);
+ return out;
+}
+function validateHospitalCare(data){
+ const v={};
+ for(const [key,allowed] of Object.entries(HOSPITAL_CARE_FIELDS)){
+  const raw=data[key]===undefined||data[key]===null||data[key]===''?'unknown':String(data[key]);
+  assert(allowed.includes(raw),'입원·야간 관리 항목 값이 올바르지 않습니다: '+key);
+  v[key]=raw;
+ }
+ const text=(x,n)=>clean(x,n).replace(/[\u0000-\u001f<>]/g,'');
+ v.monitoringNote=v.monitoring==='other'?text(data.monitoringNote,60):'';
+ v.nightVetHours=['resident','oncall'].includes(v.nightVet)?text(data.nightVetHours,40):'';
+ v.checkInterval=v.inpatient==='available'?text(data.checkInterval,40):'';
+ assert(v.monitoring!=='other'||v.monitoringNote,'모니터링 방식이 기타이면 내용을 입력해 주세요.');
+ if(v.inpatient==='unavailable'){
+  assert(v.care24!=='available'&&v.catWard!=='operated'&&v.icu!=='operated'&&['unknown'].includes(v.monitoring),'입원 불가로 선택하면 24시간 입원 관리·모니터링·고양이 분리 입원실·중환자실을 함께 운영으로 저장할 수 없습니다.');
+ }
+ return v;
+}
+async function saveHospitalCare(db,hospitalId,data){
+ const v=validateHospitalCare(data);
+ await ensureHospitalCare(db);
+ const at=now();
+ await db.prepare("INSERT INTO hospital_care_profiles (hospital_id,inpatient,night_vet,night_staff,care24,monitoring,monitoring_note,cat_ward,icu,night_surgery,night_vet_hours,check_interval,source,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,'hospital',?,?) ON CONFLICT(hospital_id) DO UPDATE SET inpatient=excluded.inpatient,night_vet=excluded.night_vet,night_staff=excluded.night_staff,care24=excluded.care24,monitoring=excluded.monitoring,monitoring_note=excluded.monitoring_note,cat_ward=excluded.cat_ward,icu=excluded.icu,night_surgery=excluded.night_surgery,night_vet_hours=excluded.night_vet_hours,check_interval=excluded.check_interval,updated_at=excluded.updated_at")
+  .bind(hospitalId,v.inpatient,v.nightVet,v.nightStaff,v.care24,v.monitoring,v.monitoringNote,v.catWard,v.icu,v.nightSurgery,v.nightVetHours,v.checkInterval,at,at).run();
+ return getHospitalCare(db,hospitalId);
+}
+
 async function getSettings(DB,id){await ensureHospitalOps(DB);const x=await DB.prepare('SELECT s.*,o.emergency_status,o.updated_at AS emergency_updated_at FROM hospital_settings s LEFT JOIN hospital_operational_status o ON o.hospital_id=s.hospital_id WHERE s.hospital_id=?').bind(id).first();return savedSettings(x)}
 async function checkHospital(request,env,id){const session=await verify(request.headers.get('Authorization'),env.SESSION_SECRET);assert(session?.role==='hospital'&&session.hospitalId===id,'인증되지 않은 병원 요청입니다.',401);return session}
 
@@ -1150,6 +1216,10 @@ if(path==='/api/public/hospital-specialties'&&method==='GET'){
  const pairs=await Promise.all([...IDS].map(async id=>[id,await getHospitalSpecialtyKeywords(db,id,'public')]));
  return json({hospitals:Object.fromEntries(pairs)});
 }
+/* 입원·야간 관리: 제휴 병원이 직접 등록한 값만 공개 (병원 등록). 등록 전 항목은 미확인. */
+if(path==='/api/public/hospital-care'&&method==='GET'){
+ return json({hospitals:await listHospitalCare(db),asOf:now()});
+}
 if(path==='/api/public/hospital-status'&&method==='GET'){
  const rows=await db.prepare('SELECT hospital_id,status,services,updated_at FROM hospital_settings').all();
  const settings={};
@@ -1359,11 +1429,11 @@ if(path==='/api/admin/stats'&&method==='GET'){await checkAdmin(request,env);let 
 if(path==='/api/dashboard'&&method==='GET'){
  let id=url.searchParams.get('hospitalId');validateHospital(id);await checkHospital(request,env,id);
  await ensureBookingDetails(db);await ensureHospitalRequests(db);
- const [s,b,q,changeRequests,specialtyKeywords]=await Promise.all([getSettings(db,id),
+ const [s,b,q,changeRequests,specialtyKeywords,careProfile]=await Promise.all([getSettings(db,id),
  db.prepare("SELECT b.*, o.display_name AS owner_name,o.profile_json AS owner_profile_json,d.owner_phone,d.breed,d.age,d.weight,d.visit_type FROM bookings b LEFT JOIN owners o ON o.id=b.owner_id LEFT JOIN booking_details d ON d.booking_id=b.id WHERE b.hospital_id=? ORDER BY b.created_at DESC LIMIT 200").bind(id).all(),
  db.prepare('SELECT * FROM questions WHERE hospital_id=? ORDER BY created_at DESC LIMIT 200').bind(id).all(),
- db.prepare('SELECT * FROM hospital_change_requests WHERE hospital_id=? ORDER BY created_at DESC LIMIT 30').bind(id).all(),getHospitalSpecialtyKeywords(db,id)]);
- return json({settings:s,bookings:(b.results||[]).map(booking),questions:(q.results||[]).map(question),changeRequests:(changeRequests.results||[]).map(hospitalChangeRequest),specialtyKeywords})
+ db.prepare('SELECT * FROM hospital_change_requests WHERE hospital_id=? ORDER BY created_at DESC LIMIT 30').bind(id).all(),getHospitalSpecialtyKeywords(db,id),getHospitalCare(db,id)]);
+ return json({settings:s,bookings:(b.results||[]).map(booking),questions:(q.results||[]).map(question),changeRequests:(changeRequests.results||[]).map(hospitalChangeRequest),specialtyKeywords,careProfile})
 }
 
 
@@ -1386,6 +1456,15 @@ if(path==='/api/hospital-specialties'&&method==='PUT'){
  assert(session?.role==='hospital'&&IDS.has(session.hospitalId),'병원 담당자 로그인이 필요합니다.',401);
  const specialtyKeywords=await saveHospitalSpecialtyKeywords(db,session.hospitalId,data.keywords,data.sourceUrl);
  return json({specialtyKeywords});
+}
+// 입원·야간 관리: 로그인한 병원은 자기 병원 정보만 조회·저장할 수 있다.
+if(path==='/api/hospital-care'&&(method==='GET'||method==='PUT')){
+ const session=await verify(request.headers.get('Authorization'),env.SESSION_SECRET);
+ assert(session?.role==='hospital'&&IDS.has(session.hospitalId),'병원 담당자 로그인이 필요합니다.',401);
+ const target=method==='GET'?(url.searchParams.get('hospitalId')||session.hospitalId):(data.hospitalId===undefined?session.hospitalId:clean(data.hospitalId,20));
+ assert(target===session.hospitalId,'다른 병원의 입원·야간 관리 정보는 수정할 수 없습니다.',403);
+ if(method==='GET')return json({careProfile:await getHospitalCare(db,session.hospitalId)});
+ return json({careProfile:await saveHospitalCare(db,session.hospitalId,data)});
 }
 if(path==='/api/hospital-specialties/keep'&&method==='PATCH'){
  const session=await verify(request.headers.get('Authorization'),env.SESSION_SECRET);

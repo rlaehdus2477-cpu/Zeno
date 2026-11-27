@@ -3707,7 +3707,22 @@ html body .zeno-emergency-page>.zeno-emergency-info,html body .zeno-emergency-pa
 html body .zeno-emergency-page>.zeno-emergency-info{margin-top:12px!important}
 html body .zeno-emergency-page .zeno-emergency-group{margin-top:24px}
 </style>
-</head><body><div id="app" class="app"></div><script>
+<style id="zeno-care-ui">
+/* 입원·야간 관리 (2026-11-27): 상세 화면 목록과 필터 묶음. 카드·그림자·아이콘 없이 구분선만 사용 */
+html body .zeno-search-page .zeno-filter-more .zeno-filter-group{flex:0 0 100%;margin:6px 0 0;padding-top:10px;border-top:1px solid #eef1f4;font-size:12px;font-weight:600;color:#6b7684}
+html body .zeno-search-page .zeno-filter-more .zeno-filter-care{flex:0 0 100%;display:flex;flex-wrap:wrap;gap:6px}
+.zeno-care-section h3{margin:0 0 8px}
+.zeno-care-list{margin:0;padding:0;border-top:1px solid #eef1f4}
+.zeno-care-row{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid #eef1f4;font-size:14px;line-height:1.45}
+.zeno-care-row dt{margin:0;color:#4e5968;font-weight:400}
+.zeno-care-row dd{margin:0;color:#191f28;font-weight:500;text-align:right}
+.zeno-care-row dd.is-unknown{color:#8b95a1;font-weight:400}
+.zeno-care-source,.zeno-care-note{margin:8px 0 0;font-size:12px;line-height:1.55;color:#6b7684}
+.zeno-care-call{display:inline-block;margin-top:8px;font-size:13px;font-weight:600;color:#1b64da;text-decoration:none}
+html.dark .zeno-care-row,html[data-theme="dark"] .zeno-care-row,html.dark .zeno-care-list,html[data-theme="dark"] .zeno-care-list{border-color:#2f3b4a}
+html.dark .zeno-care-row dt,html[data-theme="dark"] .zeno-care-row dt{color:#b0b8c1}
+html.dark .zeno-care-row dd,html[data-theme="dark"] .zeno-care-row dd{color:#e5e8eb}
+</style></head><body><div id="app" class="app"></div><script>
 'use strict';
 const APP_MODE='owner';
 
@@ -4075,7 +4090,7 @@ async function api(method,path,data,admin=false){
 
 let zenoRefreshTask=null,zenoRefreshFailures=0,zenoDeferredPaint=false;
 function zenoRefreshStamp(){
- return JSON.stringify([state.ownerToken,state.hospitalToken,state.local,state.serverReady,state.settings,state.bookings,state.questions,state.reviews,state.owner,state.pets,state.petPhotos,state.records,state.favorites,state.hospitalBookings,state.hospitalQuestions,state.appError,state.profileLoaded]);
+ return JSON.stringify([state.ownerToken,state.hospitalToken,state.local,state.serverReady,state.settings,state.bookings,state.questions,state.reviews,state.owner,state.pets,state.petPhotos,state.records,state.favorites,state.hospitalBookings,state.hospitalQuestions,state.appError,state.profileLoaded,state.hospitalCare]);
 }
 function zenoRefreshPaint(before,page){
  if(!zenoDeferredPaint&&zenoRefreshStamp()===before)return;
@@ -4101,6 +4116,94 @@ async function zenoLoadPublicHospitalSettings(){
   const body=await response.json();
   if(body&&body.settings&&typeof body.settings==='object')state.settings={...state.settings,...body.settings};
  }catch(error){/* Public browsing remains available during network errors. */}
+}
+
+/* 입원·야간 관리 (2026-11-27, 수의사 인터뷰 반영)
+   24시간 진료·야간 수의사 상주·입원환자 관리는 서로 다른 정보입니다. 어떤 항목도 다른 항목으로부터 추정하지 않습니다.
+   - ZENO 확인: 네이버 병원 직접 안내에서 확인된 항목만 아래에 기록 (출처·확인일 포함)
+   - 병원 직접 등록: 제휴 병원이 병원용 앱에서 저장한 값 (/api/public/hospital-care)
+   기록이 없는 항목은 '미확인'이며, 미확인 병원은 해당 조건 필터에서 제외됩니다. 모든 보호자에게 무료이며 ZENO PASS와 무관합니다. */
+const ZENO_CARE_ZENO_CHECKED={
+ pub006:{fields:{inpatient:'available'},checkedAt:'2026-11-14',evidence:'네이버 플레이스 진료 및 서비스 · 부가서비스 입원'},
+ tnd:{fields:{inpatient:'available'},checkedAt:'2026-11-15',evidence:'네이버 플레이스 병원 소개 · 처치실·입원실 분리 안내'},
+ pub034:{fields:{inpatient:'available'},checkedAt:'2026-11-14',evidence:'네이버 업체 소개 · 입원 환자 집중 관리 안내'},
+ pub056:{fields:{inpatient:'available'},checkedAt:'2026-11-14',evidence:'네이버 플레이스 병원 소개 · 입원실 안내'}
+};
+const ZENO_CARE_ROWS=[
+ ['inpatient','입원',{available:'가능',unavailable:'불가'}],
+ ['nightVet','야간 수의사',{resident:'상주',oncall:'당직 호출',none:'비상주'}],
+ ['nightStaff','야간 입원 관리 인력',{resident:'상주',none:'비상주'}],
+ ['care24','24시간 입원 관리',{available:'가능',unavailable:'불가'}],
+ ['monitoring','입원환자 모니터링',{continuous:'상시 관찰',periodic:'주기적 확인',other:'기타'}],
+ ['catWard','고양이 분리 입원실',{operated:'운영',not_operated:'미운영'}],
+ ['icu','중환자실(ICU)',{operated:'운영',not_operated:'미운영'}],
+ ['nightSurgery','야간 응급수술',{available:'가능',unavailable:'불가'}]
+];
+const ZENO_CARE_FILTERS=['입원 가능','야간 수의사 상주','24시간 입원 관리','고양이 분리 입원실','중환자실(ICU)'];
+const ZENO_CARE_FILTER_TEST={
+ '입원 가능':p=>p.inpatient.value==='available',
+ '야간 수의사 상주':p=>p.nightVet.value==='resident',
+ '24시간 입원 관리':p=>p.care24.value==='available',
+ '고양이 분리 입원실':p=>p.catWard.value==='operated',
+ '중환자실(ICU)':p=>p.icu.value==='operated'
+};
+function zenoCareProfile(h){
+ const registered=(state.hospitalCare||{})[h&&h.id]||null,checked=ZENO_CARE_ZENO_CHECKED[h&&h.id]||null;
+ const out={};
+ for(const [key,,labels] of ZENO_CARE_ROWS){
+  const reg=registered&&labels[registered[key]]?registered[key]:'';
+  const chk=!reg&&checked&&labels[checked.fields[key]]?checked.fields[key]:'';
+  out[key]={value:reg||chk||'unknown',source:reg?'hospital':chk?'zeno':''};
+ }
+ out.registered=registered;out.checked=checked;
+ return out;
+}
+function zenoCareMatches(h,filters){
+ const wanted=filters.filter(x=>ZENO_CARE_FILTER_TEST[x]);
+ if(!wanted.length)return true;
+ const p=zenoCareProfile(h);
+ return wanted.every(x=>ZENO_CARE_FILTER_TEST[x](p));
+}
+function zenoCareDate(x){const m=String(x||'').match(/^(\d{4})-(\d{2})-(\d{2})/);return m?m[1]+'.'+m[2]+'.'+m[3]:''}
+function zenoCareKstDate(iso){const t=Date.parse(iso||'');return Number.isFinite(t)?zenoCareDate(new Date(t+9*3600e3).toISOString()):''}
+function zenoCareDetail(h){
+ const p=zenoCareProfile(h),reg=p.registered||{};
+ const rows=ZENO_CARE_ROWS.map(([key,label,labels])=>{
+  const cell=p[key],known=cell.value!=='unknown';
+  let text=known?labels[cell.value]:'미확인';
+  if(cell.source==='hospital'){
+   if(key==='nightVet'&&reg.nightVetHours)text+=' · '+reg.nightVetHours;
+   if(key==='monitoring'&&cell.value==='other'&&reg.monitoringNote)text+=' · '+reg.monitoringNote;
+  }
+  return '<div class="zeno-care-row"><dt>'+e(label)+'</dt><dd class="'+(known?'':'is-unknown')+'">'+e(text)+'</dd></div>';
+ });
+ if(p.registered&&p.inpatient.source==='hospital'&&p.inpatient.value==='available'&&reg.checkInterval)
+  rows.splice(5,0,'<div class="zeno-care-row"><dt>입원환자 확인 주기</dt><dd>'+e(reg.checkInterval)+'</dd></div>');
+ const used=new Set(ZENO_CARE_ROWS.map(([key])=>p[key].source).filter(Boolean));
+ const sources=[];
+ if(used.has('hospital'))sources.push('병원 직접 등록'+(zenoCareKstDate(reg.updatedAt)?' · '+zenoCareKstDate(reg.updatedAt)+' 확인':''));
+ if(used.has('zeno'))sources.push('ZENO 확인 · '+p.checked.evidence+' · '+zenoCareDate(p.checked.checkedAt)+' 확인');
+ const source=sources.length?'<p class="zeno-care-source">출처: '+sources.map(e).join('<br>')+'</p>':'<p class="zeno-care-source">아직 확인된 입원·야간 관리 정보가 없어요.</p>';
+ const call=h.phone?'<a class="zeno-care-call" href="tel:'+e(h.phone)+'">전화로 확인하기</a>':'';
+ return '<section class="section zeno-care-section" aria-labelledby="zeno-care-title-'+e(h.id)+'"><h3 id="zeno-care-title-'+e(h.id)+'">입원·야간 관리</h3>'
+  +'<dl class="zeno-care-list">'+rows.join('')+'</dl>'+source
+  +'<p class="zeno-care-note">24시간 진료와 야간 수의사 상주는 다른 정보예요. 입원 상황은 바뀔 수 있으니 방문 전 전화로 확인해 주세요.</p>'+call+'</section>';
+}
+async function zenoLoadPublicHospitalCare(){
+ try{
+  const response=await fetch('/api/public/hospital-care',{cache:'no-store',credentials:'same-origin'});
+  if(!response.ok)return;
+  const body=await response.json();
+  if(!body||!body.hospitals||typeof body.hospitals!=='object')return;
+  const result={};
+  for(const [id,row] of Object.entries(body.hospitals)){
+   if(!row||typeof row!=='object'||row.source!=='hospital')continue;
+   const clean={source:'hospital',updatedAt:String(row.updatedAt||''),nightVetHours:String(row.nightVetHours||'').slice(0,40),monitoringNote:String(row.monitoringNote||'').slice(0,60),checkInterval:String(row.checkInterval||'').slice(0,40)};
+   for(const [key,,labels] of ZENO_CARE_ROWS)clean[key]=labels[row[key]]?row[key]:'unknown';
+   result[id]=clean;
+  }
+  state.hospitalCare=result;
+ }catch(error){/* 연결 오류 중에도 병원 찾기는 계속 이용할 수 있습니다. */}
 }
 
 async function zenoLoadPublicHospitalSpecialties(){
@@ -4133,7 +4236,7 @@ async function refresh(force=false){
     await loadHospital(false);
    }else{
     if(state.page==='home')zenoLoadHomeAds();
-    await zenoLoadPublicHospitalSpecialties();
+    await Promise.all([zenoLoadPublicHospitalSpecialties(),zenoLoadPublicHospitalCare()]);
      if(!state.ownerToken){await zenoLoadPublicHospitalSettings();zenoRefreshPaint(before,page);return}
     const v=await api('GET','/api/bootstrap');
     if(state.ownerToken!==token)return;
@@ -5459,6 +5562,7 @@ function filteredHospitals(){
  if(fs.includes('네이버 예약'))list=list.filter(zenoNaverReservable);
  if(fs.includes('홈페이지 예약'))list=list.filter(h=>Boolean(zenoWebsiteBookingUrl(h)));
  if(fs.includes('즐겨찾기'))list=list.filter(h=>state.favorites.includes(h.id));
+ if(fs.some(x=>ZENO_CARE_FILTERS.includes(x)))list=list.filter(h=>zenoCareMatches(h,fs));
  if(state.specialty)list=list.filter(h=>state.specialty==='특수동물'?(state.exoticSpecies?zenoExoticMatches(h,state.exoticSpecies):Boolean(zenoExoticSearchAnimals(h).length)):Boolean(zenoSpecialtyOrigin(h)));
  if(state.specialty){const rank={official:0,public:1,report:2,demo:3,name:4,inquiry:5};list.sort((a,b)=>(rank[zenoSpecialtyOrigin(a)]??4)-(rank[zenoSpecialtyOrigin(b)]??4));}
  if(catFriendly||dogStress)list.sort((a,b)=>{
@@ -5828,9 +5932,9 @@ function searchPage(){
  const quick=['전체','야간','24시','고양이 대기실'],more=['연결 병원','네이버 예약','홈페이지 예약','예약 없이 방문 가능','내 주변','고양이 친화','강아지 피어프리·스트레스 케어','즐겨찾기'];
  const lbl=x=>x==='24시'?'24시간':x==='야간'?'야간 진료':x==='연결 병원'?'예약 요청 가능':x==='즐겨찾기'?'저장한 병원':x;
  const chip=x=>'<button type="button" class="filter '+(fs.includes(x)?'active':'')+'" aria-pressed="'+String(fs.includes(x))+'" '+(x==='내 주변'?'data-action="nearby-toggle"'+(state.nearbyBusy?' disabled aria-busy="true"':''):'data-action="filter" data-value="'+e(x)+'"')+'>'+(x==='내 주변'&&state.nearbyBusy?'위치 확인 중…':e(lbl(x)))+'</button>';
- const selected=more.filter(x=>fs.includes(x));
+ const selected=[...more,...ZENO_CARE_FILTERS].filter(x=>fs.includes(x));
  const nearbyNote=state.nearbyBusy?'<p class="zeno-nearby-note" role="status" id="zeno-nearby-loading">'+e(state.nearbyStage||'위치 확인 중')+(state.nearbyProcessed?' · 병원 '+state.nearbyProcessed+'/'+(state.nearbyTotal||HOSPITALS.length):'')+'</p>':fs.includes('내 주변')?'<p class="zeno-nearby-note">현재 위치 기준 직선 약 5km 이내 · 가까운 순'+(state.nearbyAccuracy>2000?' · 대략적인 위치 기준':'')+(state.nearbyStage?' · '+e(state.nearbyStage)+' '+state.nearbyProcessed+'/'+state.nearbyTotal:'')+(state.nearbyMissing?' · 좌표 미확인 '+state.nearbyMissing+'곳 제외':'')+'</p>':state.nearbyError?'<p class="zeno-nearby-note" role="status">내 주변 검색 실패 · '+e(state.nearbyError)+' · 다시 눌러 재시도할 수 있어요.</p>':'';
- const chips='<div class="zeno-filter-main"><div class="filters zeno-filter-primary">'+quick.map(chip).join('')+'</div><details class="zeno-filter-more"><summary>필터 '+(selected.length?selected.length:'')+'</summary><div class="zeno-filter-extras">'+more.map(chip).join('')+'</div></details></div>'
+ const chips='<div class="zeno-filter-main"><div class="filters zeno-filter-primary">'+quick.map(chip).join('')+'</div><details class="zeno-filter-more"><summary>필터 '+(selected.length?selected.length:'')+'</summary><div class="zeno-filter-extras">'+more.map(chip).join('')+'<p class="zeno-filter-group" id="zeno-care-filter-title">입원·야간 관리</p><div class="zeno-filter-care" role="group" aria-labelledby="zeno-care-filter-title">'+ZENO_CARE_FILTERS.map(chip).join('')+'</div></div></details></div>'
   +(selected.length?'<div class="zeno-filter-selected">'+selected.map(x=>'<button type="button" class="zeno-filter-selected-chip" data-action="'+(x==='내 주변'?'nearby-toggle':'filter')+'" data-value="'+e(x)+'">'+e(lbl(x))+' ×</button>').join('')+'</div>':'');
  return '<header class="zeno-search-topbar">'+zenoBrandLogo()+'<h1>병원 찾기</h1></header><section class="zeno-search-page">'
  +'<div class="zeno-search-module"><div class="searchrow"><input type="search" class="search" id="hospital-search" aria-label="병원명·동네·시설 검색" placeholder="병원명·동네·시설 검색" value="'+e(state.query)+'"><button class="btn" data-action="search-apply">검색</button></div>'
@@ -6850,7 +6954,7 @@ if(m.type==='details'&&h){let s=hs(h.id);const first=['hours','intro','photos','
  <section id="zeno-detail-photos" class="zeno-detail-panel" data-detail-panel="photos" role="tabpanel" ${first!=='photos'?'hidden':''}>${zenoHospitalPhotos(h)}</section>
  <section id="zeno-detail-notices" class="zeno-detail-panel" data-detail-panel="notices" role="tabpanel" ${first!=='notices'?'hidden':''}><h3>공지사항</h3>${s.emergency?'<p class="zeno-emergency-note">응급은 전화로 문의해 주세요.</p>':''}${s.notice?`<div class="banner">${e(s.notice)}<br><small>병원 입력</small></div>`:'<div class="banner">등록된 공지사항이 없습니다.</div>'}</section>
  <section id="zeno-detail-hours" class="zeno-detail-panel" data-detail-panel="hours" role="tabpanel" ${first!=='hours'?'hidden':''}>${zenoProvidedHours(h)}${zenoWeeklyHours(h)}</section>
- <section id="zeno-detail-services" class="zeno-detail-panel" data-detail-panel="services" role="tabpanel" ${first!=='services'?'hidden':''}>${zenoProvidedClinicalProfile(h)}${zenoInternalEvidenceBlock(h)}${zenoClinicalFallbackMarkup(h,s.services)}</section><div class="zeno-detail-actions"><a class="btn secondary" href="https://map.naver.com/p/search/${encodeURIComponent(h.name+' '+h.address)}" target="_blank" rel="noopener noreferrer">길찾기</a>${h.phone?`<a class="btn zeno-detail-call" href="tel:${e(h.phone)}">전화하기</a>`:''}${h.linked?`<button type="button" class="btn secondary" data-action="book" data-id="${e(h.id)}">예약 요청</button>`:''}</div>`;wide=true}
+ <section id="zeno-detail-services" class="zeno-detail-panel" data-detail-panel="services" role="tabpanel" ${first!=='services'?'hidden':''}>${zenoProvidedClinicalProfile(h)}${zenoInternalEvidenceBlock(h)}${zenoClinicalFallbackMarkup(h,s.services)}${zenoCareDetail(h)}</section><div class="zeno-detail-actions"><a class="btn secondary" href="https://map.naver.com/p/search/${encodeURIComponent(h.name+' '+h.address)}" target="_blank" rel="noopener noreferrer">길찾기</a>${h.phone?`<a class="btn zeno-detail-call" href="tel:${e(h.phone)}">전화하기</a>`:''}${h.linked?`<button type="button" class="btn secondary" data-action="book" data-id="${e(h.id)}">예약 요청</button>`:''}</div>`;wide=true}
 if(m.type==='book'&&h){const flow=zenoBookingFlow(h);title=flow.title;body=flow.body;}
 if(m.type==='pet-settings'){
  const pet=state.pets.find(p=>p.id===m.id),mem=zenoMemorialGet();

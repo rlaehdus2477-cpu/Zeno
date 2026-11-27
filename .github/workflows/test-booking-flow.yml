@@ -13,6 +13,7 @@ on:
       - "tests/vetqa-flow.mjs"
       - "tests/pass-flow.mjs"
       - "tests/pass-nutrition-unit.mjs"
+      - "tests/inpatient-care-flow.mjs"
       - ".github/workflows/test-booking-flow.yml"
   workflow_dispatch:
 
@@ -39,6 +40,10 @@ jobs:
           NO_PROXY: "127.0.0.1,localhost"
       - name: ZENO PASS flow tests (local D1 only)
         run: node tests/pass-flow.mjs
+        env:
+          NO_PROXY: "127.0.0.1,localhost"
+      - name: Inpatient and night care tests (local D1 only)
+        run: node tests/inpatient-care-flow.mjs
         env:
           NO_PROXY: "127.0.0.1,localhost"
       - name: ZENO PASS nutrition calculation tests
