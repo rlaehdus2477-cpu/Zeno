@@ -306,3 +306,12 @@ CREATE TABLE IF NOT EXISTS hospital_care_profiles (
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS hospital_care_extensions (
+ hospital_id TEXT PRIMARY KEY, profile_json TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS hospital_visit_intakes (
+ id TEXT PRIMARY KEY, hospital_id TEXT NOT NULL, owner_id TEXT NOT NULL,
+ intake_json TEXT NOT NULL, consent_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_hospital_visit_intakes ON hospital_visit_intakes(hospital_id, consent_at);

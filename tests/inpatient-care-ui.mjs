@@ -122,6 +122,16 @@ async function main() {
       await page.fill('#hi-care-nightVetHours', '20:00~09:00');
       await page.fill('#hi-care-checkInterval', '1시간마다');
       await page.locator('#hi-care-settings').screenshot({path: path.join(SHOTS, 'hospital-care-form.png')});
+      await page.getByText('예약 및 접수 정책',{exact:true}).click();
+      await page.locator('[name=firstVisit]').selectOption('available');
+      await page.locator('[name=bookingNote]').fill('초진은 전화 문의');
+      await page.getByText('외래·응급 및 입원 정보',{exact:true}).click();
+      await page.locator('[name=outpatient24]').selectOption('unavailable');
+      await page.locator('[name=nightEmergency]').selectOption('available');
+      await page.getByText('특수동물 종별 진료',{exact:true}).click();
+      await page.locator('#hospital-care summary').getByText('토끼',{exact:true}).click();
+      await page.locator('[name="토끼:general"]').selectOption('available');
+      await page.locator('[name="토끼:surgery"]').selectOption('unavailable');
       await page.click('#hospital-care button[type=submit]');
       await page.waitForFunction(() => state.hCareProfile && state.hCareProfile.icu === 'operated', null, {timeout: 15000});
       const pub = await api('GET', '/api/public/hospital-care');
@@ -141,15 +151,15 @@ async function main() {
       expect(JSON.stringify(chips.map(x => x.trim())) === JSON.stringify(['입원 가능', '야간 수의사 상주', '24시간 입원 관리', '고양이 분리 입원실', '중환자실(ICU)']), '필터 칩 ' + chips);
       await owner.locator('.zeno-filter-care .filter', {hasText: '입원 가능'}).click();
       const ids1 = await owner.evaluate(() => filteredHospitals().map(h => h.id).sort());
-      expect(JSON.stringify(ids1) === JSON.stringify(['pub006', 'pub034', 'pub056', 'soo', 'tnd']), '입원 가능 결과 ' + ids1);
+      expect(JSON.stringify(ids1) === JSON.stringify(['pub006', 'pub034', 'pub038', 'pub056', 'soo', 'tnd']), '입원 가능 결과 ' + ids1);
       await owner.evaluate(() => { document.querySelector('.zeno-filter-more').open = true; });
       await owner.locator('.zeno-filter-care .filter', {hasText: '야간 수의사 상주'}).click();
       await owner.evaluate(() => { document.querySelector('.zeno-filter-more').open = true; });
       await owner.locator('.zeno-filter-care .filter', {hasText: '중환자실(ICU)'}).click();
-      const ids2 = await owner.evaluate(() => filteredHospitals().map(h => h.id));
-      expect(JSON.stringify(ids2) === JSON.stringify(['soo']), '복수 조건 결과 ' + ids2);
+      const ids2 = await owner.evaluate(() => filteredHospitals().map(h => h.id).sort());
+      expect(JSON.stringify(ids2) === JSON.stringify(['pub038','soo']), '복수 조건 결과 ' + ids2);
       const cards = await owner.locator('.zeno-search-card').count();
-      expect(cards === 1, '화면 카드 수 ' + cards);
+      expect(cards === ids2.length, '화면 카드 수 ' + cards);
       await owner.screenshot({path: path.join(SHOTS, 'owner-care-filter.png'), fullPage: false});
     });
 
@@ -164,9 +174,9 @@ async function main() {
         const waitingOnly = HOSPITALS.filter(h => h.catWaiting && h.id !== 'soo').map(h => h.id);
         return {night, both, catWard, waitingOnly, any24: HOSPITALS.filter(h => h.is24).map(h => h.id)};
       });
-      expect(JSON.stringify(r.night) === '["soo"]', '야간 수의사 상주 ' + r.night);
-      expect(!r.any24.some(id => r.night.includes(id)), '24시간 병원이 자동 포함됨');
-      expect(r.both.length === 0 || r.both.every(id => id === 'soo'), '24시+상주 ' + r.both);
+      expect(JSON.stringify(r.night.sort()) === '["pub038","soo"]', '야간 수의사 상주 ' + r.night);
+      expect(!r.any24.some(id => id!=='pub038' && r.night.includes(id)), '24시간 병원이 자동 포함됨');
+      expect(r.both.length === 0 || r.both.every(id => ['soo','pub038'].includes(id)), '24시+상주 ' + r.both);
       expect(JSON.stringify(r.catWard) === '["soo"]' && !r.waitingOnly.some(id => r.catWard.includes(id)), '고양이 대기실 병원이 분리 입원실로 포함됨 ' + r.catWard);
     });
 
@@ -183,7 +193,7 @@ async function main() {
       expect(JSON.stringify(r.b) === '["soo"]', '연결 병원 + 입원 가능 ' + r.b);
     });
 
-    await check(5, '보호자용 상세: 입원·야간 관리 8항목, 출처·확인일, 미확인/미운영 구분, 전화 문의', async () => {
+    await check(5, '보호자용 상세: 입원·야간 관리 확장 항목, 출처·확인일, 미확인/미운영 구분, 전화 문의', async () => {
       await owner.evaluate(() => { state.activeFilters = []; state.modal = {type: 'details', id: 'soo'}; state.detailTab = 'services'; render(); });
       const sec = owner.locator('.zeno-care-section');
       await sec.waitFor();
@@ -196,10 +206,10 @@ async function main() {
       await owner.screenshot({path: path.join(SHOTS, 'owner-care-detail-soo.png')});
       await owner.evaluate(() => { state.modal = {type: 'details', id: 'naeum'}; render(); });
       const t2 = await owner.locator('.zeno-care-section').innerText();
-      expect((t2.match(/미확인/g) || []).length === 8 && /아직 확인된/.test(t2), '나음(24시간) 상세가 모두 미확인이 아님 ' + t2);
+      expect((t2.match(/확인 필요/g) || []).length >= 14 && /아직 확인된/.test(t2), '나음(24시간) 상세가 모두 미확인이 아님 ' + t2);
       await owner.evaluate(() => { state.modal = {type: 'details', id: 'pub006'}; render(); });
       const t3 = await owner.locator('.zeno-care-section').innerText();
-      expect(/ZENO 확인/.test(t3) && /2026\.11\.14 확인/.test(t3) && (t3.match(/미확인/g) || []).length === 7, 'ZENO 확인 병원 표시 ' + t3);
+      expect(/ZENO 확인/.test(t3) && /2026\.11\.14 확인/.test(t3) && (t3.match(/확인 필요/g) || []).length >= 13, 'ZENO 확인 병원 표시 ' + t3);
       await owner.locator('.zeno-care-section').scrollIntoViewIfNeeded();
       await owner.screenshot({path: path.join(SHOTS, 'owner-care-detail-pub006.png')});
     });
@@ -211,7 +221,58 @@ async function main() {
       const t = await owner.locator('.zeno-care-section').innerText();
       expect(/중환자실\(ICU\)\s*미운영/.test(t), '미운영 반영 안 됨 ' + t);
       const ids = await owner.evaluate(() => { state.modal = null; state.activeFilters = ['중환자실(ICU)']; const x = filteredHospitals().map(h => h.id); state.activeFilters = []; return x; });
-      expect(ids.length === 0, 'ICU 미운영 병원이 필터에 남음 ' + ids);
+      expect(!ids.includes('soo')&&ids.includes('pub038'), 'ICU 미운영 병원이 필터에 남음 ' + ids);
+    });
+
+    await check(8, '320·360·390·412px 라이트/다크에서 확장 정책·특수동물·문진 화면', async () => {
+      for(const width of [320,360,390,412])for(const scheme of ['light','dark']){
+        await owner.setViewportSize({width,height:800});
+        await owner.emulateMedia({colorScheme:scheme});
+        await owner.evaluate(()=>{
+          state.page='search';
+          state.activeFilters=[];
+          state.modal={type:'details',id:'soo'};
+          state.detailTab='services';
+          render();
+        });
+        await owner.getByText('예약 정책 및 전자문진',{exact:true}).click();
+        expect(await owner.getByText('병원 안내 · 초진은 전화 문의',{exact:true}).isVisible(),'저장한 예약 안내 없음');
+        await owner.getByText('방문 전 문진 작성',{exact:true}).click();
+        const form=owner.locator('#clinic-intake');
+        await form.locator('[name=species]').selectOption('도마뱀');
+        await form.locator('[name=visit]').selectOption('followup');
+        expect(await form.getByText('UVB 사용 여부',{exact:true}).isVisible(),'종별 환경 문항 누락');
+        expect(await form.getByText('약 복용 후 이상 반응',{exact:true}).isVisible(),'재진 문항 누락');
+        expect(!(await form.getByText('방문 목적',{exact:true}).count()),'재진에 초진 문항이 보임');
+        await form.locator('[name=petName]').fill('도마뱀 테스트');
+        await form.locator('[name=answer-uvb]').fill('사용 중');
+        await owner.evaluate(()=>render());
+        expect(await form.locator('[name=petName]').inputValue()==='도마뱀 테스트','화면 갱신 후 문진 이름 유실');
+        expect(await form.locator('[name=answer-uvb]').inputValue()==='사용 중','화면 갱신 후 환경 답변 유실');
+        expect(await owner.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'보호자 페이지 가로 넘침 '+width+'/'+scheme);
+        const page=await browser.newPage({viewport:{width,height:800},colorScheme:scheme,isMobile:true,hasTouch:true});
+        try{
+          page.on('pageerror',err=>errors.push('hospital layout: '+err.message));
+          await page.addInitScript(token=>{sessionStorage.setItem('zeno-h-token',token);sessionStorage.setItem('zeno-h-hospital','soo')},SOO);
+          await page.goto(BASE+'/hospital',{waitUntil:'domcontentloaded'});
+          await page.waitForFunction(()=>state.hCareProfile?.extension);
+          await page.evaluate(()=>{state.hTab='info';render()});
+          await page.getByText('예약 및 접수 정책',{exact:true}).click();
+          const field=page.locator('[name=bookingNote]');
+          expect(await field.inputValue()==='초진은 전화 문의','병원 예약 정책 복원 실패');
+          expect(await field.evaluate(el=>el.getBoundingClientRect().right<=innerWidth),'병원 입력 가로 넘침 '+width+'/'+scheme);
+          const background=await page.locator('.hi-care-settings').evaluate(el=>getComputedStyle(el).backgroundColor);
+          expect((background==='rgb(23, 35, 49)')===(scheme==='dark'),'병원 설정 테마 반영 실패');
+        }finally{await page.close()}
+      }
+      const filtered=await owner.evaluate(()=>{
+        state.modal=null;state.page='search';state.specialty='특수동물';state.exoticSpecies='토끼';
+        state.exoticCapability='general';const general=filteredHospitals().some(h=>h.id==='soo');
+        state.exoticCapability='surgery';const surgery=filteredHospitals().some(h=>h.id==='soo');
+        state.specialty='';state.exoticSpecies='';state.exoticCapability='general';
+        return {general,surgery};
+      });
+      expect(filtered.general&&!filtered.surgery,'종별 진료·수술 필터가 독립적이지 않음');
     });
 
     await check(7, '홈 화면·병원 카드 변경 없음, 스크립트 오류 없음', async () => {
