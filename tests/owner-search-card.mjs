@@ -70,9 +70,11 @@ function expectedLinks(h){
  const out=[];
  if(m.includes('naver')&&naverUsable(h))out.push({label:'네이버 예약',href:naverUsable(h)});
  if(m.includes('official')&&websiteUsable(h))out.push({label:'홈페이지 예약',href:websiteUsable(h)});
+ // main 4ee9f41·f8ead1b: 공식 카카오 채널(pf.kakao.com)이 확인된 병원은 '카카오 예약' 링크를 보여 줌 (owner.html zenoExternalBookingAction과 같은 규칙)
+ if(m.includes('kakao')){try{const k=new URL(h.reservationUrl||'');if(k.protocol==='https:'&&k.hostname==='pf.kakao.com'&&!k.username&&!k.password)out.push({label:'카카오 예약',href:k.href});}catch{}}
  const tel=validPhone(h.phone)?'tel:'+String(h.phone).replace(/[^0-9]/g,''):'';
  if(m.includes('phone')&&tel)out.push({label:'전화 예약',href:tel});
- const hasAny=m.includes('naver')||m.includes('official')||m.includes('phone')||m.includes('app')||m.includes('walkin')||['optional','walkin'].includes(i.policy);
+ const hasAny=m.includes('naver')||m.includes('official')||m.includes('kakao')||m.includes('phone')||m.includes('app')||m.includes('walkin')||['optional','walkin'].includes(i.policy);
  const policy=['required','recommended','partial'].includes(i.policy);
  if(!hasAny&&!policy&&tel)out.push({label:'예약 여부 전화 문의',href:tel});
  return out;
