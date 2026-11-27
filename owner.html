@@ -4140,7 +4140,7 @@ async function zenoLoadPublicHospitalSettings(){
    - 병원 직접 등록: 제휴 병원이 병원용 앱에서 저장한 값 (/api/public/hospital-care)
    기록이 없는 항목은 '미확인'이며, 미확인 병원은 해당 조건 필터에서 제외됩니다. 모든 보호자에게 무료이며 ZENO PASS와 무관합니다. */
 const ZENO_CARE_ZENO_CHECKED={
- pub038:{fields:{nightVet:'resident',nightStaff:'resident'},checkedAt:'2026-11-27',evidence:'병원 공식 인스타그램 @kamc_1988 진료 및 예약 안내 캡처 (게시일 미확인): 24시간 수의사 및 동물보건사 상주. 입원 관리 방식은 별도 확인 필요'},
+ pub038:{fields:{inpatient:'available',nightVet:'resident',nightStaff:'resident',care24:'available',icu:'operated'},checkedAt:'2026-11-27',evidence:'병원 공식 인스타그램 @kamc_1988 소개 및 진료·예약 안내 캡처: 24시간 수의사·동물보건사 상주, 중환자케어센터(24시간 집중입원관리) 운영'},
  pub016:{fields:{nightSurgery:'available'},checkedAt:'2026-11-27',evidence:'병원 공식 인스타그램 @daom24_amc 야간진료 안내 캡처 (게시일 미확인): 야간 응급진료 원장 직접 진료, 주간까지 주치의 변경 없이 연속 진료, 야간 응급수술 가능. 현재 운영 여부 전화 확인 필요'},
  pub006:{fields:{inpatient:'available'},checkedAt:'2026-11-14',evidence:'네이버 플레이스 진료 및 서비스 · 부가서비스 입원'},
  tnd:{fields:{inpatient:'available'},checkedAt:'2026-11-15',evidence:'네이버 플레이스 병원 소개 · 처치실·입원실 분리 안내'},
