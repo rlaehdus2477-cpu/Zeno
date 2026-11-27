@@ -49,8 +49,10 @@ for (const list of [a,b]) {
   const naeum = get(list,'naeum');
   assert.equal(naeum.is24,true,'Naeum must be categorized as 24-hour hospital');
   for (const day of [...weekdays,'공휴일']) {
-    assert.equal(naeum.weeklySchedule?.[day],'24시간 진료 안내','Naeum must not inherit old general-care hours');
+    assert.equal(naeum.weeklySchedule?.[day],'외래 09:30~24:00 · 00:00~09:30 입원 케어','Naeum outpatient hours (2026-11-27)');
   }
+  assert.equal(naeum.outpatientPause?.start,'00:00','Naeum outpatient pause start');
+  assert.equal(naeum.outpatientPause?.end,'09:30','Naeum outpatient pause end');
   assert.equal(Object.keys(naeum.breakSchedule||{}).length,0,'Naeum must not inherit previous lunch break as global 24h closure');
   assert.equal(Object.keys(naeum.receptionDeadlines||{}).length,0,'Naeum must not inherit previous 23:30 global closing time');
   assert.equal(naeum.hoursVerificationStatus,'hospital-official','Naeum official source classification');
@@ -122,11 +124,13 @@ for (const [label,id,time,expected] of [
  ['Soo intake cutoff','soo','2026-11-19T17:40:00',false],
  ['Soo Wednesday closed','soo','2026-11-18T11:00:00',false],
  ['Soo Saturday cutoff','soo','2026-11-21T14:35:00',false],
- ['Naeum evening 24h','naeum','2026-11-20T17:30:00',true],
- ['Naeum evening clinic','naeum','2026-11-20T18:30:00',true],
- ['Naeum 23:40 24h','naeum','2026-11-20T23:40:00',true],
- ['Naeum after midnight','naeum','2026-11-20T00:15:00',true],
- ['Naeum Sunday night','naeum','2026-11-22T03:20:00',true],
+ ['Naeum evening 24h','naeum','2026-11-27T17:30:00',true],
+ ['Naeum evening clinic','naeum','2026-11-27T18:30:00',true],
+ ['Naeum 23:40 outpatient','naeum','2026-11-27T23:40:00',true],
+ ['Naeum after midnight inpatient care','naeum','2026-11-28T00:15:00',false],
+ ['Naeum Sunday night inpatient care','naeum','2026-11-29T03:20:00',false],
+ ['Naeum before 09:30','naeum','2026-11-28T09:10:00',false],
+ ['Naeum outpatient from 09:30','naeum','2026-11-28T09:40:00',true],
 ]) {
  assert.equal(on(id,time),expected,label+' must not mislead owners about opening or intake');
 }

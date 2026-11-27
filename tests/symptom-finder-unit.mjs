@@ -23,6 +23,7 @@ const ctx = {
   zenoSpecialtyOrigin: h => h.origin[ctx.state.specialty] || '',
   zenoSearchClinicStatus: h => ({kind: h.open ? 'is-open' : 'is-closed', text: h.open ? '진료 중' : '진료 종료'}),
   zeno24HourEmergency: h => !!h.h24, zenoNightSchedule: () => ({within: false}),
+  zenoOutpatientPaused: h => !!h.paused, zenoOutpatientPauseLabel: () => '00:00~09:30 입원환자 케어 · 외래 진료 없음',
   zenoNearbyDistanceKm: h => h.km, zenoCatWaitingTier: h => h.tier, zenoExoticMatches: () => true,
   clinicProfile: () => ({}),
   zenoBookEligible: () => true, zenoMemorialGet: () => null, zenoSymptomPage: null, console,
