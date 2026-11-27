@@ -8324,9 +8324,11 @@ function zpCheckupByHospital(rows,cat){
  const byH=new Map();
  for(const it of rows)for(const x of it.entries){if(!byH.has(x.hid))byH.set(x.hid,[]);byH.get(x.hid).push({it,x})}
  const ids=[...byH.keys()].sort((a,b)=>(hospitalById(a)?.name||a).localeCompare(hospitalById(b)?.name||b,'ko'));
- return '<details class="zp-box zp-fee-category" open><summary>건강검진 <small>병원 '+ids.length+'곳 · 검진 '+rows.length+'개</small></summary>'
+ /* 머리글 검진 수 = 병원별 검진 수의 합(같은 이름의 검진이 여러 병원에 있어도 병원마다 따로 셈) */
+ const total=ids.reduce((n,hid)=>n+byH.get(hid).length,0);
+ return '<details class="zp-box zp-fee-category zp-checkup-group" open data-checkup-total="'+total+'"><summary>건강검진 <small>병원 '+ids.length+'곳 · 검진 '+total+'개</small></summary>'
   +ids.map(hid=>{const h=hospitalById(hid),list=byH.get(hid),src=cat.hospitals.get(hid);
-   return '<details class="zp-fee-entry"><summary>'+e(h?.name||hid)+' <small>검진 '+list.length+'개</small></summary>'
+   return '<details class="zp-fee-entry zp-checkup-hospital" data-hid="'+e(hid)+'" data-count="'+list.length+'"><summary>'+e(h?.name||hid)+' <small>검진 '+list.length+'개</small></summary>'
     +list.map(({it,x})=>'<div class="zp-fee-result">'+zpFeeLine({it:{name:it.key,count:1},item:it,x,why:'',plain:true})+'</div>').join('')
     +(src?.url?'<a class="zp-help" href="'+e(src.url)+'" target="_blank" rel="noopener noreferrer">가격표 원문</a>':'')+'</details>'}).join('')
   +'</details>';

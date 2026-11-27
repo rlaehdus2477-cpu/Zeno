@@ -154,6 +154,52 @@ check('C13', '서버 /api/pass/fee-plan 검증 규칙과 충돌 없음', () => {
 
 const before = (() => { const c = new Map(); for (const v of F) for (const n of new Set(v.prices.map(p => p[0]))) c.set(n, (c.get(n) || 0) + 1); return c; })();
 const beforeShown = [...before.values()].filter(n => n >= 2).length;
+
+// ── 건강검진 병원별 묶음 (PR #270) ──
+function checkupRender(species) {
+  const f = T.zpFees(); f.loaded = true; f.mode = 'checkup'; f.species = species; f.cat = '전체'; f.q = '';
+  const html = T.ZP_VIEWS.fees.render();
+  const parts = html.split('<details class="zp-fee-entry zp-checkup-hospital" ').slice(1);
+  const blocks = parts.map(p => {
+    const m = p.match(/^data-hid="([^"]+)" data-count="(\d+)"><summary>([^<]+) <small>검진 (\d+)개<\/small><\/summary>/);
+    return {hid: m[1], count: +m[2], name: m[3].trim(), shown: +m[4], body: p};
+  });
+  const head = html.match(/건강검진 <small>병원 (\d+)곳 · 검진 (\d+)개<\/small>/);
+  const expected = cat.items.filter(it => it.cat === '건강검진' && (species === '전체' || it.speciesLabel === species || it.speciesLabel === '공통')).flatMap(it => it.entries);
+  return {html, blocks, head, expected};
+}
+for (const sp of ['전체', '강아지', '고양이']) {
+  check('G1-' + sp, '건강검진(' + sp + '): 전체 검진 수 = 병원별 검진 수 합계 = 실제 검진 행 수, 병원 수 일치', () => {
+    const {blocks, head, expected} = checkupRender(sp);
+    ok(head, '머리글 없음');
+    const sum = blocks.reduce((n, b) => n + b.count, 0);
+    eq(+head[2], sum, '머리글 검진 수 vs 병원별 합계');
+    eq(sum, expected.length, '병원별 합계 vs 실제 검진 행');
+    eq(+head[1], blocks.length, '머리글 병원 수');
+    eq(blocks.length, new Set(expected.map(x => x.hid)).size, '검진 있는 병원 수');
+    for (const b of blocks) { eq(b.shown, b.count, b.hid + ' 표시 개수'); eq((b.body.match(/class="zp-fee-result"/g) || []).length, b.count, b.hid + ' 실제 행 수'); }
+  });
+}
+check('G2', '건강검진: 병원은 이름순(가격순 아님), 병원마다 자기 검진만 빠짐없이', () => {
+  const {blocks, expected} = checkupRender('전체');
+  const names = blocks.map(b => b.name);
+  eq(names, [...names].sort((a, b) => a.localeCompare(b, 'ko')), '병원 이름순');
+  for (const b of blocks) eq(b.count, expected.filter(x => x.hid === b.hid).length, b.hid + ' 검진 수');
+});
+check('G3', '건강검진: 가격·포함 검사·원문 링크 표시, 진료비 데이터 보존', () => {
+  const {blocks, expected} = checkupRender('전체');
+  for (const b of blocks) ok(/\d[\d,]*원/.test(b.body) || /미공개/.test(b.body), b.hid + ' 가격 없음');
+  const withIncludes = expected.filter(x => x.pkg && x.includes);
+  ok(withIncludes.length > 0, '포함 검사 있는 검진 없음');
+  for (const x of withIncludes) ok(blocks.find(b => b.hid === x.hid).body.includes('포함 검사 · '), x.hid + ' 포함 검사 표시 없음');
+  for (const b of blocks) { const src = cat.hospitals.get(b.hid); if (src?.url) ok(b.body.includes('가격표 원문'), b.hid + ' 원문 링크 없음'); }
+  eq(cat.stats.feeRowsCovered, cat.stats.feeRows, '진료비 행 보존');
+});
+check('G4', '진료비 비교(calc) 화면은 기존 항목별 표시 유지', () => {
+  const f = T.zpFees(); f.loaded = true; f.mode = 'calc'; f.species = '전체'; f.cat = '전체'; f.q = '';
+  ok(!T.ZP_VIEWS.fees.render().includes('zp-checkup-group'), '계산기 화면에 병원별 묶음이 섞임');
+});
+
 console.log('\n[보고] 수정 전: 진료비 원본 행 ' + cat.stats.feeRows + ' · 고유 항목명 ' + before.size + ' · 비교 가능 ' + beforeShown + ' (기본 노출 ' + Math.min(8, beforeShown) + ') · 비교 병원 ' + F.length + '곳 · 누락 항목명 ' + (before.size - beforeShown) + ' + 건강검진 프로그램 ' + cat.stats.screenRows + '행 미사용');
 console.log('[보고] 수정 후: 비교 항목 ' + cat.items.length + ' · 노출 ' + cat.items.length + ' · 공개 병원 ' + cat.hospitals.size + '곳 · 1개 병원 공개 항목 ' + cat.items.filter(i => i.hospitals.size === 1).length + ' · 누락 ' + (cat.stats.feeRows - cat.stats.feeRowsCovered + cat.stats.missing) + ' · 검진 프로그램 사용 ' + cat.stats.screenRowsUsed + ' / 진료비표 중복 제외 ' + cat.stats.screenRowsDuplicate);
 console.log('[보고] 분류별: ' + T.ZP_FEE_CATS.map(c => c + ' ' + cat.items.filter(i => i.cat === c).length).join(' · '));
