@@ -3669,7 +3669,8 @@ html body #app .zeno-home-v10 :is(.zeno-v10-open-section,.care-launcher,.zh-fina
 html body #app .zeno-home-v10 .zeno-v10-open-card{border:0!important;box-shadow:0 0 0 1px rgba(20,43,64,.06)!important}
 html body #app .zeno-home-v10 .care-shortcuts{gap:4px!important;grid-template-columns:repeat(5,minmax(0,1fr))!important}
 html body #app .zeno-home-v10 .care-shortcuts button span{width:52px!important;height:52px!important;border-radius:14px!important;background:var(--zh-surface)!important;box-shadow:0 0 0 1px rgba(20,43,64,.06)!important}
-html body #app .zeno-home-v10 .care-shortcuts button{font-size:13px!important;gap:6px!important}
+html body #app .zeno-home-v10 .care-shortcuts button{flex-direction:row!important;justify-content:center!important;align-items:center!important;min-height:44px!important;padding:0 2px!important;border-radius:10px!important;background:var(--zh-surface)!important;box-shadow:0 0 0 1px rgba(20,43,64,.06)!important;font-size:14px!important;font-weight:500!important;gap:0!important}
+:is(html.dark,html[data-theme="dark"]) body #app .zeno-home-v10 .care-shortcuts button{box-shadow:none!important}
 html body #app .zeno-home-v10 .zh-care-links{display:flex;justify-content:space-between;align-items:center;margin-top:12px;border-top:1px solid var(--zh-line)}
 html body #app .zeno-home-v10 .zh-care-links button{min-height:48px;padding:0 2px;border:0;background:none;font-size:15px;font-weight:600;color:var(--zh-text);cursor:pointer}
 html body #app .zeno-home-v10 .zh-care-links .zh-final-emergency{color:var(--zh-danger)!important;margin:0!important;padding:0 2px!important;border:0!important;background:none!important;min-height:48px!important}
@@ -5712,7 +5713,7 @@ function home(){
  +zenoHomeOperatingRail()
  
  +'<section class="care-launcher" aria-label="진료 분야로 찾기"><header><h2>진료과목</h2><button data-action="home-care-open" aria-haspopup="dialog" aria-expanded="'+state.homeCarePickerOpen+'">전체 과목 ›</button></header>'
- +'<div class="care-shortcuts">'+[['내과','내과'],['외과','외과'],['치과·구강','치과'],['피부·귀','피부과'],['특수동물','특수동물']].map(([value,label])=>'<button type="button" data-action="specialty" data-value="'+e(value)+'"><span>'+zenoCareIcon(value)+'</span>'+e(label)+'</button>').join('')+'</div>'
+ +'<div class="care-shortcuts">'+[['내과','내과'],['외과','외과'],['치과·구강','치과'],['피부·귀','피부과'],['특수동물','특수동물']].map(([value,label])=>'<button type="button" data-action="specialty" data-value="'+e(value)+'">'+e(label)+'</button>').join('')+'</div>'
  +'<div class="zh-care-links"><button type="button" class="zh-symptom-row" data-nav="symptoms" aria-label="증상으로 병원 찾기 · 증상별 진료 필요도 및 병원 안내">증상으로 병원 찾기 ›</button><button type="button" class="zh-final-emergency" data-nav="emergency" aria-label="응급 진료 · 응급 접수 가능 여부는 전화 확인">응급 진료 ›</button></div></section>'
  +zenoHomePass()
  +'<div id="zeno-home-ads">'+zenoHomeAdCards()+'</div>'
