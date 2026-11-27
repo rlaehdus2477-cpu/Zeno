@@ -152,22 +152,29 @@ check('U7', '사료 목록 무결성: 중복 없음, 특성·연령 값, 공식 
   }
   if (CATALOG.some(p => p.id === 'purina-cat-kitten' && p.lifeStage !== 'young')) throw new Error('키튼 연령 값이 필터와 맞지 않음');
 });
-const chips = html => Object.fromEntries([...html.matchAll(/data-zp="nu-feat" data-value="([^"]+)" aria-pressed="(?:true|false)"(?: disabled)?>[^<]*? (\d+)<\/button>/g)].map(m => [m[1], +m[2]]));
-check('U8', '특성 칩 숫자 = 실제 검색 결과 (강아지·고양이 × 연령 × 형태 × 특성 1~2개)', () => {
+const chips = html => [...html.matchAll(/data-zp="nu-feat" data-value="([^"]+)" aria-pressed="(true|false)">([^<]*)<\/button>/g)].map(m => ({f: m[1], on: m[2] === 'true', label: m[3]}));
+const shown = html => chips(html).map(c => c.f);
+const pressedAge = html => [...html.matchAll(/data-zp="nu-age" data-value="([^"]+)" aria-pressed="true"/g)].map(m => m[1]);
+check('U8', '특성 칩: 숫자 없음, 노령 제외, 결과 0개 특성 숨김, 보이는 특성은 결과 있음', () => {
   const pets = [{id: 'cat1', name: '노아', species: '고양이', age: '5살', weight: '4kg'}, {id: 'dog1', name: '콩이', species: '강아지', age: '5살', weight: '4kg'}];
+  const FILTER = T.ZP_NU_FEATURES.filter(f => f !== '노령');
   let n = 0;
   for (const pet of pets) for (const age of ['auto', 'young', 'adult', 'senior', 'all']) for (const form of ['all', '건식', '습식']) {
-    const base = chips(renderFor(pet, prof({}), {age, form}));
-    for (const f of T.ZP_NU_FEATURES) {
+    const base = renderFor(pet, prof({}), {age, form});
+    const cs = chips(base);
+    if (cs.some(c => c.label !== c.f)) throw new Error('특성 칩에 숫자·추가 문구가 있음: ' + cs.map(c => c.label));
+    if (shown(base).includes('노령')) throw new Error('특성 필터에 노령이 있음');
+    if (/disabled/.test(base.split('data-zp="nu-feat"').slice(1).join(''))) throw new Error('비활성 특성 칩이 남아 있음');
+    for (const f of FILTER) {
       const html = renderFor(pet, prof({}), {age, form, feat: [f]});
       const got = ids(html).length;
-      if (base[f] !== got) throw new Error(`${pet.species} ${age} ${form} ${f}: 칩 ${base[f]} ≠ 결과 ${got}`);
+      if (shown(base).includes(f) !== got > 0) throw new Error(`${pet.species} ${age} ${form} ${f}: 표시 ${shown(base).includes(f)} / 결과 ${got}`);
       if (!html.includes('<span>' + got + '개 · 브랜드 가나다순')) throw new Error('목록 제목 개수 불일치 ' + f);
-      const second = chips(html);
-      for (const g of T.ZP_NU_FEATURES) {
+      if (!shown(html).includes(f)) throw new Error('선택한 특성이 숨겨짐 ' + f);
+      for (const g of FILTER) {
         if (g === f) continue;
         const got2 = ids(renderFor(pet, prof({}), {age, form, feat: [f, g]})).length;
-        if (second[g] !== got2) throw new Error(`${pet.species} ${age} ${form} ${f}+${g}: 칩 ${second[g]} ≠ 결과 ${got2}`);
+        if (shown(html).includes(g) !== got2 > 0) throw new Error(`${pet.species} ${age} ${form} ${f}+${g}: 표시 ${shown(html).includes(g)} / 결과 ${got2}`);
         n++;
       }
       const list = ids(html).map(byId);
@@ -177,28 +184,33 @@ check('U8', '특성 칩 숫자 = 실제 검색 결과 (강아지·고양이 × �
   }
   if (n < 1000) throw new Error('조합 수가 너무 적음 ' + n);
 });
-check('U9', '연령 × 특성 교차: 성묘 기본 필터의 관절·노령 안내, 노령·어린 시기 결과', () => {
+check('U9', '연령 필터: 4개 버튼, 아이 나이로 기본 선택, 안내 카드·긴 문구 없음', () => {
   const cat5 = {id: 'cat1', name: '노아', species: '고양이', age: '5살', weight: '4kg'};
-  const c5 = chips(renderFor(cat5, prof({})));
-  if (!(c5['관절'] > 0)) throw new Error('성묘 관절 0개');
-  if (!(c5['고단백'] > 0) || !(c5['체중 관리'] > 0) || !(c5['헤어볼'] > 0)) throw new Error('성묘 주요 특성 0개');
   const h5 = renderFor(cat5, prof({}));
-  if (!/<span>노령<\/span><b><button[^>]*data-value="senior"[^>]*>노령 \d+개/.test(h5)) throw new Error('성묘 기본 필터에서 노령 사료 안내가 없음');
+  const ages = [...h5.matchAll(/data-zp="nu-age" data-value="([^"]+)" aria-pressed="(?:true|false)">([^<]*)</g)].map(m => m[1] + ':' + m[2]);
+  eq(ages, ['all:전체', 'young:어린 시기', 'adult:성견·성묘', 'senior:노령'], '연령 버튼');
+  eq(pressedAge(h5), ['adult'], '5살 기본 선택');
+  eq(pressedAge(renderFor({...cat5, age: '12살'}, prof({}))), ['senior'], '12살 기본 선택');
+  eq(pressedAge(renderFor({...cat5, age: '4개월'}, prof({}))), ['young'], '4개월 기본 선택');
+  eq(pressedAge(renderFor({...cat5, age: ''}, prof({}))), ['all'], '나이 미입력 기본 선택');
+  eq(pressedAge(renderFor(cat5, prof({}), {age: 'senior'})), ['senior'], '직접 선택 유지');
+  for (const bad of ['나이 기준', 'zp-nu-hint', '다른 연령에 있어요', '권장 연령이 없는', '나이를 입력하지 않아']) if (h5.includes(bad) || renderFor({...cat5, age: ''}, prof({})).includes(bad)) throw new Error('제거한 문구가 남아 있음: ' + bad);
+  const c5 = shown(h5);
+  if (!c5.includes('관절') || !c5.includes('고단백') || !c5.includes('체중 관리') || !c5.includes('헤어볼')) throw new Error('성묘 주요 특성 없음 ' + c5);
   const senior = renderFor({...cat5, age: '12살'}, prof({}));
-  const sc = chips(senior);
-  if (!(sc['노령'] >= 10) || !(sc['관절'] > 0)) throw new Error('노령묘 노령·관절 결과 부족 ' + JSON.stringify(sc));
+  if (!shown(senior).includes('관절') || ids(senior).length < 10) throw new Error('노령묘 결과 부족');
   if (ids(senior).map(byId).some(p => !['senior', 'all'].includes(p.lifeStage))) throw new Error('노령묘 목록에 다른 연령 섞임');
   const kitten = ids(renderFor({...cat5, age: '4개월'}, prof({}))).map(byId);
   if (!kitten.some(p => p.id === 'purina-cat-kitten') || kitten.some(p => !['young', 'all'].includes(p.lifeStage))) throw new Error('어린 고양이 필터 이상');
   const all = ids(renderFor(cat5, prof({}), {age: 'all'})).map(byId);
   if (all.length !== GEN.filter(p => p.species === '고양이').length) throw new Error('전체 연령에서 고양이 일반 사료가 다 안 보임');
   const dog = {id: 'dog1', name: '콩이', species: '강아지', age: '3살', weight: '8kg'};
-  const dc = chips(renderFor(dog, prof({})));
-  if (!(dc['관절'] >= 5) || !(dc['활동량 많음'] >= 1)) throw new Error('성견 관절·활동량 ' + JSON.stringify(dc));
-  const empty = renderFor(cat5, prof({}), {feat: ['노령']});
-  if (!empty.includes('성견·성묘 연령 기준이에요') || !empty.includes('data-value="all">연령 전체로 보기')) throw new Error('빈 결과에서 연령 조건 안내가 없음');
-  const allSenior = ids(renderFor(cat5, prof({}), {age: 'all', feat: ['노령']})).map(byId);
-  if (allSenior.length !== GEN.filter(p => p.species === '고양이' && p.features.includes('노령')).length) throw new Error('전체 연령 노령 수 불일치');
+  const dc = renderFor(dog, prof({}));
+  if (!shown(dc).includes('관절') || !shown(dc).includes('활동량 많음')) throw new Error('성견 관절·활동량 ' + shown(dc));
+  const n = T.zpNu(); n.pets = [cat5, {...dog, age: '12살'}]; n.age = 'young';
+  T.ZP_VIEWS.nutrition.click('nu-pet', {dataset: {value: 'dog1'}});
+  eq(pressedAge(T.ZP_VIEWS.nutrition.render()), ['senior'], '아이 전환 시 그 아이 연령으로 기본 선택');
+  if (!h5.includes('중성화 모름') || /종·나이·체중은 내 아이 화면에서/.test(h5)) throw new Error('반려동물 정보 요약 이상');
 });
 check('U10', '알레르기 부분 원료 안내, 캔당 열량 표기, 처방식 탭 분리 유지', () => {
   const cat = {id: 'cat1', name: '노아', species: '고양이', age: '5살', weight: '4kg'};
