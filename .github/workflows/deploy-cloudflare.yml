@@ -315,6 +315,14 @@ jobs:
               if(!care||typeof care.hospitals!=='object')throw Error('Public hospital care response invalid');
               const careWrite=await fetch(base+'/api/hospital-care',{method:'PUT',headers:{'content-type':'application/json','Cache-Control':'no-cache'},body:'{}',signal:AbortSignal.timeout(20000)});
               if(careWrite.status!==401)throw Error('Hospital care save must require hospital login but returned HTTP '+careWrite.status);
+              // 수동물병원 (2026-11-27 수의사 인터뷰): 제휴 유지, ZENO 신규 온라인 예약은 서버에서 409로 차단
+              const sooRecord=JSON.parse(owner.slice(owner.indexOf('const HOSPITALS=')+'const HOSPITALS='.length,owner.indexOf('];',owner.indexOf('const HOSPITALS='))+1)).find(h=>h.id==='soo');
+              if(!sooRecord?.linked||sooRecord.onlineBookingEnabled!==false||sooRecord.bookingPolicy?.firstVisit!=='walk-in'||sooRecord.bookingPolicy?.followUp!=='phone-only')throw Error('Soo booking policy not published in production owner UI');
+              const sooBooking=await fetch(base+'/api/bookings',{method:'POST',headers:{'content-type':'application/json','Cache-Control':'no-cache'},body:JSON.stringify({hospitalId:'soo'}),signal:AbortSignal.timeout(20000)});
+              const sooBody=await sooBooking.json().catch(()=>({}));
+              if(sooBooking.status!==409||sooBody.code!=='ONLINE_BOOKING_UNAVAILABLE')throw Error('Soo online booking must be blocked with 409 but returned HTTP '+sooBooking.status+' '+JSON.stringify(sooBody));
+              const naeumBooking=await fetch(base+'/api/bookings',{method:'POST',headers:{'content-type':'application/json','Cache-Control':'no-cache'},body:JSON.stringify({hospitalId:'naeum'}),signal:AbortSignal.timeout(20000)});
+              if(naeumBooking.status!==401)throw Error('Other partner booking must still reach owner login check (401) but returned HTTP '+naeumBooking.status);
               const revision=await (await get('/api/ui-version?ui='+nonce)).json();
               if(revision?.owner!==expectedOwnerRevision)throw Error('Owner UI version not deployed: '+JSON.stringify(revision)+' expected '+expectedOwnerRevision);
               if(!owner.includes("const ZENO_OWNER_UI_REVISION='"+expectedOwnerRevision+"'"))throw Error('Owner page revision not synchronized with Worker: '+expectedOwnerRevision);

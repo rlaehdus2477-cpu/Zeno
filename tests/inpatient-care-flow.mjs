@@ -199,11 +199,15 @@ async function main() {
 
   await check(6, '회귀: 기존 예약 흐름과 공개 API 정상', async () => {
     const date = new Date(Date.now() + 9 * 3600e3 + 2 * 86400e3).toISOString().slice(0, 10);
-    const b = await api('POST', '/api/bookings', {token: OWNER, body: {hospitalId: 'soo', petName: '입원냥', species: '고양이', service: '일반 진료', date, time: '10:00', note: '', ownerPhone: '01012345678', visitType: '첫 방문'}});
+    const body = {petName: '입원냥', species: '고양이', service: '일반 진료', date, time: '10:00', note: '', ownerPhone: '01012345678', visitType: '첫 방문'};
+    // 수동물병원은 ZENO 신규 온라인 예약을 받지 않으므로(초진 현장 접수 · 재진 전화 예약) 다른 제휴 병원으로 흐름을 확인합니다.
+    const blocked = await api('POST', '/api/bookings', {token: OWNER, body: {...body, hospitalId: 'soo'}});
+    expect(blocked.status === 409 && blocked.data?.code === 'ONLINE_BOOKING_UNAVAILABLE', '수동물병원 신규 예약 차단 실패 ' + blocked.status);
+    const b = await api('POST', '/api/bookings', {token: OWNER, body: {...body, hospitalId: 'naeum'}});
     expect(b.status === 201, '예약 생성 ' + b.status + JSON.stringify(b.data));
-    const d = await api('GET', '/api/dashboard?hospitalId=soo', {token: SOO});
+    const d = await api('GET', '/api/dashboard?hospitalId=naeum', {token: NAEUM});
     expect((d.data.bookings || []).some(x => x.id === b.data.id), '병원 화면에 예약 없음');
-    const acc = await api('PATCH', '/api/bookings/' + b.data.id, {token: SOO, body: {status: 'accepted'}});
+    const acc = await api('PATCH', '/api/bookings/' + b.data.id, {token: NAEUM, body: {status: 'accepted'}});
     expect(acc.status === 200, '수락 실패');
     for (const p of ['/api/public/hospital-status', '/api/public/hospital-specialties']) {
       const r = await api('GET', p);

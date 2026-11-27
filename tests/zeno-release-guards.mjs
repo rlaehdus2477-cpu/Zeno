@@ -88,9 +88,9 @@ assert.doesNotMatch(home, /const others\s*=|zeno-home-other-heading|data-rail="o
 assert.doesNotMatch(home, /다른 병원.*곳|zeno-home-open-count/, 'do not restore the unwanted counts');
 assert.match(owner, /function zenoBookingFlow\(/, 'booking must remain in owner');
 assert.match(owner, /function zenoProvidedClinicalProfile\(/, 'NAVER care fields must remain visible');
-const renderClinicalProfile = Function('e','zenoRepresentativeSpecialtySection','zenoCareSourceLink',
+const renderClinicalProfile = Function('e','zenoRepresentativeSpecialtySection','zenoCareSourceLink','zenoExoticCareMarkup',
   functionBody(owner,'zenoProvidedClinicalProfile')+'\nreturn zenoProvidedClinicalProfile;'
-)(String, () => '', () => '');
+)(String, () => '', () => '', () => '');
 for (const id of ['soo','pub046']) {
   const clinic = get(a,id);
   const speciesSection = renderClinicalProfile(clinic).match(/<h3>주요 진료 대상<\/h3>([\s\S]*?)<\/section>/)?.[1];
