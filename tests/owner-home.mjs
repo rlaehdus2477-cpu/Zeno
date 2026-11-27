@@ -138,7 +138,7 @@ for(const width of [320,360,390,412]){
 {
  const {context,page}=await openHome({width:360,scheme:'light'});
  const nav=[];
- for(const [sel,expect] of [['.zeno-home-summary-link[data-action="night-shortcut"]','search'],['.zeno-home-summary-link[data-action="around-clock-shortcut"]','search'],['.zh-final-pass header button','pass'],['.zh-final-pass-row[data-value="receipts"]','pass'],['.zh-final-emergency','emergency'],['.zeno-home-utility-row[data-nav="reservation-directory"]','reservation-directory'],['.zh-symptom-row','symptoms']]){
+ for(const [sel,expect] of [['.zeno-home-summary-link[data-action="night-shortcut"]','search'],['.zeno-home-summary-link[data-action="around-clock-shortcut"]','search'],['.zh-pass-start','pass'],['.zh-final-pass-row[data-value="receipts"]','pass'],['.zh-final-emergency','emergency'],['.zeno-home-utility-row[data-nav="reservation-directory"]','reservation-directory'],['.zh-symptom-row','symptoms']]){
   await page.evaluate(()=>{state.page='home';render();window.scrollTo(0,0)});
   const el=page.locator(sel).first();await el.evaluate(x=>x.scrollIntoView({block:'center',behavior:'instant'}));await el.click();
   const st=await page.evaluate(()=>state.page);

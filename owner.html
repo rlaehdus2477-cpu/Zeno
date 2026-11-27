@@ -3686,6 +3686,17 @@ html body #app .zeno-home-v10 .zh-pass-list .zh-final-pass-row>span{grid-column:
 html body #app .zeno-home-v10 .zh-pass-list .zh-final-pass-row>small{grid-column:2;font-size:13px;font-weight:400;color:var(--zh-muted);line-height:1.35}
 html body #app .zeno-home-v10 .zh-pass-list .zh-final-pass-row>b{grid-column:3;grid-row:1/3;font-size:20px;font-weight:400;color:var(--zh-muted)}
 :is(html.dark,html[data-theme="dark"]) body #app .zeno-home-v10 :is(.zeno-v10-open-card,.zh-pass-list,.care-shortcuts button span){box-shadow:none!important}
+html body #app .zeno-home-v10 .zh-pass-list{overflow:hidden;box-shadow:0 0 0 1px #cfe0f7!important}
+html body #app .zeno-home-v10 .zh-pass-top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 -16px;padding:16px;background:#eef5ff;border-bottom:1px solid #d9e7fa}
+html body #app .zeno-home-v10 .zh-pass-kicker{display:block;font-size:12px;font-weight:700;color:#1656b0;letter-spacing:.2px}
+html body #app .zeno-home-v10 .zh-pass-top h2{margin:2px 0 0!important;font-size:20px!important;font-weight:800!important;letter-spacing:-.3px!important;color:#0f2f57!important}
+html body #app .zeno-home-v10 .zh-pass-top p{margin:4px 0 0;font-size:13px;color:#3b5878}
+html body #app .zeno-home-v10 .zh-pass-top p b{font-weight:700;color:#0f2f57}
+html body #app .zeno-home-v10 .zh-pass-start{flex:0 0 auto;min-height:40px;padding:0 16px;border:0;border-radius:10px;background:#1656b0;color:#fff;font-size:14px;font-weight:700;cursor:pointer}
+:is(html.dark,html[data-theme="dark"]) body #app .zeno-home-v10 .zh-pass-top{background:#16304f;border-bottom-color:#24476f}
+:is(html.dark,html[data-theme="dark"]) body #app .zeno-home-v10 .zh-pass-top :is(h2,p,p b){color:#eaf2ff!important}
+:is(html.dark,html[data-theme="dark"]) body #app .zeno-home-v10 .zh-pass-kicker{color:#9cc7ff}
+:is(html.dark,html[data-theme="dark"]) body #app .zeno-home-v10 .zh-pass-list{box-shadow:0 0 0 1px #24476f!important}
 </style>
 </head><body><div id="app" class="app"></div><script>
 'use strict';
@@ -5679,8 +5690,9 @@ const ZENO_HOME_PASS_ICONS={
 function zenoHomePass(){
  const desc={fees:'병원별 공개 진료비 모아 보기',nutrition:'반려동물별 맞춤 사료 정보',rx:'병원별 재고 확인 및 확보 요청',receipts:'여러 병원 영수증을 아이별로 정리'};
  const order=['fees','nutrition','rx','receipts'].map(k=>ZP_FEATURES.find(f=>f.key===k)).filter(Boolean);
- return '<section class="zh-final-pass" aria-label="ZENO PASS"><header><h2>ZENO PASS</h2><button type="button" data-nav="pass">월 1,800원 ›</button></header>'
-  +'<div class="zh-pass-list">'+order.map(f=>'<button type="button" class="zh-final-pass-row" data-zp="view" data-value="'+e(f.key)+'"><i class="zh-pass-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+ZENO_HOME_PASS_ICONS[f.key]+'</svg></i><span>'+e(f.title)+'</span><small>'+e(desc[f.key])+'</small><b aria-hidden="true">›</b></button>').join('')+'</div></section>';
+ const active=!!(state.zp&&state.zp.pass&&state.zp.pass.active);
+ return '<section class="zh-final-pass" aria-label="ZENO PASS 멤버십"><div class="zh-pass-list"><div class="zh-pass-top"><div><span class="zh-pass-kicker">멤버십</span><h2>ZENO PASS</h2><p><b>월 1,800원</b> · 시범 운영 기간 무료</p></div>'
+  +'<button type="button" class="zh-pass-start" data-nav="pass">'+(active?'이용 중':'시작하기')+'</button></div>'+order.map(f=>'<button type="button" class="zh-final-pass-row" data-zp="view" data-value="'+e(f.key)+'"><i class="zh-pass-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+ZENO_HOME_PASS_ICONS[f.key]+'</svg></i><span>'+e(f.title)+'</span><small>'+e(desc[f.key])+'</small><b aria-hidden="true">›</b></button>').join('')+'</div></section>';
 }
 function home(){
  const areas=['청주 전체','청주 상당구','청주 서원구','청주 흥덕구','청주 청원구'];
