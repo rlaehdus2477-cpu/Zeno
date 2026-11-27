@@ -87,6 +87,19 @@ async function startServer() {
   }
   throw new Error('로컬 서버가 시작되지 않았습니다.\n' + log.slice(-3000));
 }
+// 수동물병원은 2026-11-27부터 ZENO 신규 온라인 예약을 받지 않습니다(초진 현장 접수 · 재진 전화 예약).
+// 그 전에 접수된 '기존 예약 기록'의 조회·상태 변경·후기가 계속 동작하는지 확인하려고,
+// 로컬 D1(임시 폴더)에만 기존 예약 행을 직접 넣습니다. 운영 DB에는 접속하지 않습니다.
+function seedExistingBooking(ownerId, hospitalId, petName) {
+  const id = crypto.randomUUID();
+  const t = new Date(Date.now() - 86400e3).toISOString();
+  const q = s => "'" + String(s).replace(/'/g, "''") + "'";
+  const b = bookingBody(hospitalId, petName);
+  const sql = `INSERT INTO bookings(id,owner_id,hospital_id,pet_name,species,date,time,service,note,status,proposed_at,hospital_note,created_at,updated_at) VALUES(${[id, ownerId, hospitalId, petName, b.species, b.date, b.time, b.service, '기존 예약 기록(테스트)', 'pending', '', '', t, t].map(q).join(',')});`
+    + `INSERT INTO booking_details(booking_id,owner_phone,breed,age,weight,visit_type,created_at) VALUES(${[id, b.ownerPhone, '', '', '', b.visitType, t].map(q).join(',')});`;
+  run(WRANGLER, ['d1', 'execute', 'zeno-live-db', '--local', '--persist-to', PERSIST, '--command', sql]);
+  return id;
+}
 function stopServer() {
   if (server?.pid) { try { process.kill(-server.pid, 'SIGTERM'); } catch {} }
   fs.rmSync(PERSIST, {recursive: true, force: true});
@@ -118,10 +131,8 @@ async function main() {
 
   let b1, b2, b3, b4;
 
-  await check(1, '예약 기본 흐름: 보호자 A 예약 → 확인 대기(pending)', async () => {
-    const r = await api('POST', '/api/bookings', {token: A, body: bookingBody('soo', '테스트냥1')});
-    expect(r.status === 201, `예약 생성 응답 ${r.status} ${JSON.stringify(r.data)}`);
-    b1 = r.data.id;
+  await check(1, '기존 예약 기록: 수동물병원 기존 예약이 보호자 화면에 확인 대기(pending)로 유지', async () => {
+    b1 = seedExistingBooking(regA.data.owner.id, 'soo', '테스트냥1');
     const mine = findBooking(await ownerBookings(A), b1);
     expect(mine, 'A의 내 예약에 없음');
     expect(mine.status === 'pending', `상태가 pending이 아님: ${mine.status}`);
@@ -140,9 +151,7 @@ async function main() {
   });
 
   await check(4, '시간 제안: 과거 시각 거절, 미래 시각 제안 → 보호자 확정', async () => {
-    const r = await api('POST', '/api/bookings', {token: A, body: bookingBody('soo', '테스트냥2')});
-    expect(r.status === 201, '예약 생성 실패');
-    b2 = r.data.id;
+    b2 = seedExistingBooking(regA.data.owner.id, 'soo', '테스트냥2');
     const past = await api('PATCH', `/api/bookings/${b2}`, {token: SOO, body: {status: 'suggested', proposedAt: '2020-01-01T10:00'}});
     expect(past.status === 400, `과거 시각 제안이 거절되지 않음 (${past.status})`);
     const future = kstDate(3) + 'T14:00';
@@ -156,8 +165,8 @@ async function main() {
   });
 
   await check(5, '거절·취소 반영: 병원 거절, 보호자 취소가 양쪽에 반영', async () => {
-    b3 = (await api('POST', '/api/bookings', {token: A, body: bookingBody('soo', '테스트냥3')})).data?.id;
-    b4 = (await api('POST', '/api/bookings', {token: A, body: bookingBody('soo', '테스트냥4')})).data?.id;
+    b3 = seedExistingBooking(regA.data.owner.id, 'soo', '테스트냥3');
+    b4 = seedExistingBooking(regA.data.owner.id, 'soo', '테스트냥4');
     expect(b3 && b4, '예약 생성 실패');
     const rej = await api('PATCH', `/api/bookings/${b3}`, {token: SOO, body: {status: 'rejected', hospitalNote: '테스트 거절'}});
     expect(rej.status === 200, `거절 응답 ${rej.status}`);
@@ -194,13 +203,33 @@ async function main() {
     expect(p.status === 401, `나음 토큰으로 수동물병원 예약 변경 → ${p.status} (401이어야 함)`);
   });
 
-  await check(9, '제휴 변경: 티플러스 예약 허용 및 티앤디 등 비제휴 병원 예약 거절', async () => {
+  await check(9, '제휴 변경: 티플러스·나음 예약 허용 및 티앤디 등 비제휴 병원 예약 거절', async () => {
     const tplus = await api('POST', '/api/bookings', {token: A, body: bookingBody('pub045', '테스트냥9')});
     expect(tplus.status === 201, `티플러스 예약 → ${tplus.status}`);
+    const naeum = await api('POST', '/api/bookings', {token: A, body: bookingBody('naeum', '테스트냥10')});
+    expect(naeum.status === 201 && naeum.data?.status === 'pending', `나음 예약 → ${naeum.status}`);
+    const seen = listOrThrow(await api('GET', '/api/dashboard?hospitalId=naeum', {token: NAEUM}), '나음 병원 예약');
+    expect(findBooking(seen, naeum.data.id), '나음 병원 화면에 새 예약 없음');
     for (const id of ['tnd', 'pub015', 'unknown', '']) {
       const r = await api('POST', '/api/bookings', {token: A, body: bookingBody(id, '테스트냥9')});
       expect(r.status === 400, `병원 ID "${id}" 예약 → ${r.status} (400이어야 함)`);
     }
+  });
+
+  await check(13, '수동물병원 신규 온라인 예약 차단: 로그인 여부와 관계없이 409 ONLINE_BOOKING_UNAVAILABLE', async () => {
+    const before = (await sooBookings()).length;
+    for (const token of [A, B, undefined]) {
+      const r = await api('POST', '/api/bookings', {token, body: bookingBody('soo', '차단냥')});
+      expect(r.status === 409, `수동물병원 신규 예약 → ${r.status} (409여야 함)`);
+      expect(r.data?.code === 'ONLINE_BOOKING_UNAVAILABLE', `오류 코드 ${r.data?.code}`);
+      expect(r.data?.error === '수동물병원은 초진 현장 접수, 재진 전화 예약만 가능합니다.', `오류 문구 ${r.data?.error}`);
+      expect(r.data?.bookingPolicy?.firstVisit === 'walk-in' && r.data?.bookingPolicy?.followUp === 'phone-only', '예약 정책 응답 누락');
+    }
+    const after = await sooBookings();
+    expect(after.length === before, `차단 요청 후 수동물병원 예약 수가 변함 (${before} → ${after.length})`);
+    expect(!after.some(b => b.petName === '차단냥'), '차단된 예약이 저장됨');
+    const asHospital = await api('POST', '/api/bookings', {token: SOO, body: bookingBody('soo', '차단냥')});
+    expect(asHospital.status === 409, `병원 토큰으로도 신규 예약 → ${asHospital.status}`);
   });
 
   await check(10, '병원 로그인: 비밀번호가 틀리면 401', async () => {
@@ -263,4 +292,4 @@ finally { stopServer(); }
 const failed = results.filter(r => !r.ok);
 console.log(`\n결과: ${results.length - failed.length}/${results.length} 통과`);
 if (fatal) { console.error('테스트 준비 중 오류:', fatal.message); process.exit(1); }
-if (results.length !== 12 || failed.length) process.exit(1);
+if (results.length !== 13 || failed.length) process.exit(1);

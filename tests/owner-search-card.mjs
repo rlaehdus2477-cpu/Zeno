@@ -30,10 +30,13 @@ const SOURCE=JSON.parse(dataLine.slice('const HOSPITALS='.length).replace(/;\s*$
 const byId=new Map(SOURCE.map(h=>[h.id,h]));
 const httpsUrl=v=>{try{const u=new URL(String(v||''));return u.protocol==='https:'?u.href:''}catch{return ''}};
 const validPhone=p=>/^0[0-9 -]{8,15}$/.test(String(p||'').trim());
+// 제휴(linked)와 ZENO 온라인 예약은 별개: 온라인 예약을 받지 않는 제휴 병원(수동물병원)은 '예약' 버튼 없이 제휴 표시만 유지
+const online=h=>Boolean(h.linked)&&h.onlineBookingEnabled!==false;
+const policyLabels=h=>{const p=h.bookingPolicy||{},out=[];if(p.firstVisit==='walk-in')out.push('초진 현장 접수');if(p.followUp==='phone-only')out.push('재진 전화 예약');return out;};
 function expectedButtons(h){
  const out=['전화'];
  if(h.address)out.push('길찾기');
- if(h.linked)out.push('예약');
+ if(online(h))out.push('예약');
  return out;
 }
 // 네이버 예약 주소로 인정하는 형식(앱 규칙과 별도로 테스트에 고정)
@@ -57,7 +60,7 @@ function naverVerified(h){
 }
 // 병원 상태별 확인 문구 (정확히 0개 또는 1개)
 function expectedPending(h){
- if(h.linked)return null;
+ if(online(h)||policyLabels(h).length)return null;
  const i=h.reservationInfo||{},m=Array.isArray(i.methods)?i.methods:[];
  if(i.evidenceStatus==='reported')return '이용자 제공 · 확인 중';
  if(m.includes('naver')&&(!naverUsable(h)||!naverVerified(h)))return '링크 확인 중';
@@ -65,7 +68,11 @@ function expectedPending(h){
  return null;
 }
 function expectedLinks(h){
- if(h.linked)return [];
+ if(online(h))return [];
+ if(policyLabels(h).length){
+  const tel=validPhone(h.phone)?'tel:'+String(h.phone).replace(/[^0-9]/g,''):'';
+  return policyLabels(h).includes('재진 전화 예약')&&tel?[{label:'재진 전화 예약',href:tel}]:[];
+ }
  const i=h.reservationInfo||{},m=Array.isArray(i.methods)?i.methods:[];
  const out=[];
  if(m.includes('naver')&&naverUsable(h))out.push({label:'네이버 예약',href:naverUsable(h)});
@@ -184,7 +191,7 @@ for(const width of [320,360,390,412]){
    const measure=el=>{const r=el.getBoundingClientRect(),cs=getComputedStyle(el);return {label:el.textContent.trim(),left:r.left,right:r.right,y:r.top,width:r.width,height:Math.round(r.height),lines:lines(el),fits:el.scrollWidth<=el.clientWidth+1,whiteSpace:cs.whiteSpace,font:cs.fontFamily,href:el.getAttribute('href')||'',tag:el.tagName,contrast:ratio(el)};};
    const cards=[...document.querySelectorAll('.zeno-search-card')].map(card=>{
     const cr=card.getBoundingClientRect();
-    return {id:card.querySelector('.directory-main')?.dataset.id,name:card.querySelector('strong').textContent,left:cr.left,right:cr.right,closed:card.classList.contains('list-closed'),
+    return {id:card.querySelector('.directory-main')?.dataset.id,name:card.querySelector('strong').firstChild.textContent.trim(),left:cr.left,right:cr.right,closed:card.classList.contains('list-closed'),
      nameContrast:ratio(card.querySelector('strong')),
      buttons:[...card.querySelectorAll('.zeno-card-actions .zeno-card-action')].map(measure),
      chips:[...card.querySelectorAll('.zeno-list-resv-chip')].map(measure),
@@ -196,6 +203,9 @@ for(const width of [320,360,390,412]){
      actionsTop:card.querySelector('.zeno-card-actions')?.getBoundingClientRect().top??0,
      policy:[...card.querySelectorAll('.zeno-list-resv-policy')].map(measure),
      book:[...card.querySelectorAll('[data-action="book"]')].map(b=>b.dataset.id),
+     partner:[...card.querySelectorAll('.zeno-list-partner')].map(x=>({text:x.textContent.trim(),contrast:ratio(x)})),
+     resvLines:card.querySelector('.zeno-list-resv-chips')?lines(card.querySelector('.zeno-list-resv-chips')):0,
+     height:Math.round(cr.height),
      text:card.textContent};
    });
    return {overflowX:document.documentElement.scrollWidth-innerWidth,cards};
@@ -209,7 +219,15 @@ for(const width of [320,360,390,412]){
    const h=byId.get(c.id);const who=tag+' '+c.name;
    // 병원별 버튼 구성 (전화·길찾기·제휴만 예약)
    assert.deepEqual(c.buttons.map(b=>b.label),expectedButtons(h),who+' 버튼 구성');
-   assert.deepEqual(c.book,h.linked?[h.id]:[],who+' ZENO 예약 버튼');
+   assert.deepEqual(c.book,online(h)?[h.id]:[],who+' ZENO 예약 버튼');
+   if(h.linked&&!online(h)){
+    // 제휴 표시는 유지하고, 예약 정책은 한 줄로만 (카드 높이를 늘리지 않음)
+    assert.deepEqual(c.partner.map(x=>x.text),['제휴'],who+' 제휴 표시');
+    assert.ok(c.partner[0].contrast>=4.5,who+' 제휴 표시 대비 '+c.partner[0].contrast);
+    assert.deepEqual(c.chips.map(x=>x.label),policyLabels(h),who+' 예약 정책 라벨');
+    assert.equal(c.resvLines,1,who+' 예약 정책 줄바꿈');
+    assert.ok(!c.text.includes('ZENO 예약'),who+' ZENO 예약 문구 노출');
+   }else assert.deepEqual(c.partner,[],who+' 제휴 표시 중복');
    const widths=c.buttons.map(b=>b.width);
    const diff=Math.max(...widths)-Math.min(...widths);maxDiff=Math.max(maxDiff,diff);
    assert.ok(diff<=1,who+' 버튼 너비 차이 '+widths.map(w=>w.toFixed(2)).join('/'));
@@ -235,7 +253,7 @@ for(const width of [320,360,390,412]){
     assert.ok(ch.right<=c.right+1,who+' 라벨 '+ch.label+' 카드 밖으로 나감');
     assert.ok(ch.contrast>=4.5,who+' 라벨 '+ch.label+' 대비 '+ch.contrast);
    }
-   if(!h.linked){
+   if(!online(h)){
     assert.ok(c.resvLabel,who+' 예약 줄 없음');
     assert.ok(c.resvLabel.contrast>=4.5,who+" '예약' 글자 대비 "+c.resvLabel.contrast);
    }
@@ -365,10 +383,24 @@ report.push('예약 방법별 병원 320/360/390/412px 라이트·다크: 필터
 // ---- 제휴 3곳: 예약 → 진료 선택 → 예약 정보 → 문진 시작하기 → 항목 선택 (제출하지 않음) ----
 {
  const {context,page}=await openPage({width:360,scheme:'light'});
- const partners=SOURCE.filter(h=>h.linked).map(h=>({id:h.id,name:h.name}));
- assert.deepEqual(partners.map(p=>p.name).sort(),['24시청주나음동물메디컬','수동물병원','티플러스동물메디컬센터'].sort(),'제휴 병원 목록');
+ const linkedNames=SOURCE.filter(h=>h.linked).map(h=>h.name);
+ assert.deepEqual(linkedNames.sort(),['24시청주나음동물메디컬','수동물병원','티플러스동물메디컬센터'].sort(),'제휴 병원 목록');
+ const partners=SOURCE.filter(online).map(h=>({id:h.id,name:h.name}));
+ assert.deepEqual(partners.map(p=>p.name).sort(),['24시청주나음동물메디컬','티플러스동물메디컬센터'].sort(),'ZENO 온라인 예약 병원 목록');
  let posted=0;
  page.on('request',r=>{if(r.method()==='POST'&&/booking|reserv/i.test(r.url()))posted++;});
+ // 수동물병원: 버튼이 없고, 다른 경로(로그인 후 이어하기·증상 찾기 등)로 예약 창을 열려 해도 병원 안내로 바뀜
+ for(const h of SOURCE.filter(x=>x.linked&&!online(x))){
+  await page.evaluate(()=>{state.ownerToken='test-token';state.modal=null;state.page='search';state.query='';render();});
+  assert.equal(await page.locator('[data-action="book"][data-id="'+h.id+'"]').count(),0,h.name+' 화면 어딘가에 예약 버튼 노출');
+  await page.evaluate(id=>openModal('book',id),h.id);
+  assert.deepEqual(await page.evaluate(()=>({type:state.modal?.type,id:state.modal?.id})),{type:'details',id:h.id},h.name+' 예약 창 대신 병원 상세가 열려야 함');
+  const detail=await page.locator('.modal .zeno-detail-quick[aria-label="예약 안내"]').innerText();
+  for(const text of ['초진 현장 접수','재진 전화 예약','당일 예약','예약 환자를 먼저 진료','대기가 생길 수 있어요','현장 확인 정보: 2026.11.27 수의사 직접 인터뷰'])assert.ok(detail.includes(text),h.name+' 상세 예약 안내 누락: '+text);
+  assert.equal(await page.locator('.modal [data-action="book"]').count(),0,h.name+' 상세 화면에 예약 요청 버튼');
+  assert.ok(await page.locator('.modal a[href^="tel:"]').count()>0,h.name+' 상세 전화 연결 없음');
+  await page.evaluate(()=>{try{zenoCloseModal()}catch{state.modal=null;render()}});
+ }
  const shown=async loc=>loc.evaluate(el=>{const r=el.getBoundingClientRect();if(r.width<1||r.height<1)return false;for(let n=el;n;n=n.parentElement){const cs=getComputedStyle(n);if(cs.display==='none'||cs.visibility==='hidden'||Number(cs.opacity)===0)return false}return true});
  for(const p of partners){
   await page.evaluate(()=>{state.ownerToken='test-token';state.modal=null;state.page='search';state.query='';render();});
@@ -402,7 +434,8 @@ report.push('예약 방법별 병원 320/360/390/412px 라이트·다크: 필터
   await page.evaluate(()=>{try{zenoCloseModal()}catch{state.modal=null;render()}});
  }
  assert.equal(posted,0,'테스트 중 예약 요청이 전송됨');
- report.push('제휴 3곳 '+partners.map(p=>p.name).join('·')+': 예약 → 진료 선택 → 예약 정보 → 문진 시작하기 → 항목 선택 (제출 없음)');
+ report.push('수동물병원: 예약 버튼 미노출 · 예약 창 진입 시 병원 상세로 전환 · 초진/재진 안내 · 전화 연결 확인');
+ report.push('온라인 예약 제휴 '+partners.length+'곳 '+partners.map(p=>p.name).join('·')+': 예약 → 진료 선택 → 예약 정보 → 문진 시작하기 → 항목 선택 (제출 없음)');
  await context.close();
 }
 // 진료비 비교: 기본 목록에 실제 공개 금액, 작은 화면 가로 넘침 방지, 이음 상세 이동
