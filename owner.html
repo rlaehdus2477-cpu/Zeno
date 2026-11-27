@@ -5428,6 +5428,7 @@ function zenoListReservation(h,eligible){
  const chips=[];
  if(methods.includes('naver')){const url=zenoNaverBookingUrl(h);chips.push(chip('naver','네이버 예약',url,Boolean(confirmedNaver)&&confirmedNaver===url,true));}
  if(methods.includes('official'))chips.push(chip('website','홈페이지 예약',zenoWebsiteBookingUrl(h),info.officialLinkVerified===true,true));
+ if(methods.includes('kakao')){const action=zenoExternalBookingAction(h);chips.push(chip('naver','카카오 예약',action?.kind==='kakao'?action.url:'',true,true));}
  if(methods.includes('phone'))chips.push(chip('phone','전화 예약',tel,true));
  if(methods.includes('app'))chips.push(chip('phone','병원 자체 앱','',false));
  if(zenoWalkInAllowed(h)||methods.includes('walkin'))chips.push(chip('walkin','예약 없이 방문','',false));
@@ -5470,8 +5471,7 @@ function zenoSearchHospitalCard(h){
  const eligible=zenoBookEligible(h);
  const book=eligible?'<button class="zeno-card-action zeno-card-book zeno-channel-zeno" type="button" data-action="book" data-id="'+e(h.id)+'">예약</button>':'';
  // 네이버·홈페이지 예약은 '예약' 줄의 라벨로 이어지므로 같은 이름의 버튼을 따로 두지 않는다.
- const kakaoAction=zenoExternalBookingAction(h);
- const naverBook=kakaoAction?.kind==='kakao'?zenoBookingActionLink({...kakaoAction,label:'카카오톡'},h,'zeno-card-action zeno-card-book'):'';
+ const naverBook='';
  const route=h.address?'<a class="zeno-card-action zeno-card-call zeno-card-route" href="'+e(zenoNaverPhotoUrl(h))+'" target="_blank" rel="noopener noreferrer" aria-label="'+e(h.name)+' 길찾기 (네이버 지도)">'+zenoHomeSmallIcon('pin')+'길찾기</a>':'';
  const region=String(h.region||'').replace(/\s*·\s*/g,' ');
  // Details, published fees, hours and directions remain available by tapping the hospital row.
