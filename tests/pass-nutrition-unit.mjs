@@ -26,7 +26,10 @@ const ctx = {
 };
 vm.createContext(ctx);
 vm.runInContext(catalogSrc + ';globalThis.CATALOG=ZP_FEED_CATALOG.map(p=>({...p,checked:p.checked||ZP_FEED_SOURCE_CHECKED,source:p.source||"제조사 공식 제품 페이지"}));', ctx);
-vm.runInContext(moduleSrc + ';globalThis.T={zpFeedFor,zpNuCost,zpNu,zpState,zpPetStage,zpParseYears,zpParseKg,ZP_VIEWS};', ctx);
+vm.runInContext(moduleSrc + ';globalThis.T={zpFeedFor,zpNuCost,zpNu,zpState,zpPetStage,zpParseYears,zpParseKg,ZP_VIEWS,ZP_NU_FEATURES};', ctx);
+const rawCtx = {}; vm.createContext(rawCtx);
+vm.runInContext(catalogSrc.replace(/ZP_FEED_CATALOG\.push\([\s\S]*$/, '') + ';globalThis.RAW=[...ZP_FEED_GENERAL,...ZP_FEED_GENERAL_2];', rawCtx);
+ctx.RAW = rawCtx.RAW;
 const {T, CATALOG} = ctx;
 const byId = id => { const p = CATALOG.find(x => x.id === id); if (!p) throw new Error('제품 없음: ' + id); return p; };
 
@@ -114,6 +117,100 @@ check('U6', '반려동물 전환: 아이를 바꾸면 종·정보가 바뀌고 �
   const html = T.ZP_VIEWS.nutrition.render();
   if (!html.includes('콩이의 정보')) throw new Error('전환한 아이 정보가 안 보임');
   if (ids(html).map(byId).some(p => p.species !== '강아지')) throw new Error('강아지로 바꿨는데 고양이 사료가 보임');
+});
+const GEN = CATALOG.filter(p => p.kind === '일반식');
+const STAGES = ['young', 'adult', 'senior', 'all', 'unknown'];
+check('U7', '사료 목록 무결성: 중복 없음, 특성·연령 값, 공식 링크, 판매가 없음, 고단백 기준', () => {
+  const ids = T => T.map(p => p.id);
+  const raw = ctx.RAW;
+  const dupId = ids(raw).filter((x, i, a) => a.indexOf(x) !== i);
+  if (dupId.length) throw new Error('중복 id: ' + dupId);
+  const keys = raw.map(p => [p.brand, p.name, p.species, p.form].join('|'));
+  const dupKey = keys.filter((x, i, a) => a.indexOf(x) !== i);
+  if (dupKey.length) throw new Error('중복 제품: ' + dupKey);
+  const urls = raw.filter(p => !/^https:\/\/(www\.purinapetcare|www\.doowonpet)/.test(p.url)).map(p => p.url);
+  const dupUrl = urls.filter((x, i, a) => a.indexOf(x) !== i);
+  if (dupUrl.length) throw new Error('같은 공식 페이지가 두 번 등록됨: ' + dupUrl);
+  const official = /^https:\/\/(www\.royalcanin\.com\/kr\/|www\.hillspet\.co\.kr\/|apac\.acana\.com\/ko-KR\/|apac\.orijenpetfoods\.com\/ko-KR\/|www\.doowonpet\.co\.kr\/orijen\/|healmedix\.com\/|www\.purinapetcare\.co\.kr\/)/;
+  for (const p of CATALOG) {
+    if (!official.test(p.url)) throw new Error('공식 링크 아님: ' + p.id);
+    if (p.price || p.priceKrw) throw new Error('판매가 포함: ' + p.id);
+  }
+  for (const p of GEN) {
+    if (!STAGES.includes(p.lifeStage)) throw new Error('연령 값 이상: ' + p.id + ' ' + p.lifeStage);
+    if (!['건식', '습식'].includes(p.form) || !['강아지', '고양이'].includes(p.species)) throw new Error('형태·종 이상: ' + p.id);
+    if ((p.features || []).some(f => !T.ZP_NU_FEATURES.includes(f))) throw new Error('알 수 없는 특성: ' + p.id);
+    if (p.species === '강아지' && p.features.includes('헤어볼')) throw new Error('강아지 헤어볼: ' + p.id);
+    if (p.conditions.length) throw new Error('일반 사료에 질환 표기: ' + p.id);
+    const a = p.analysis;
+    if (!a || !['asFed', 'dryMatter'].includes(a.basis)) throw new Error('영양 기준 없음: ' + p.id);
+    for (const k of ['protein', 'fat', 'fiber', 'ash', 'moisture']) if (a[k] !== null && !(typeof a[k] === 'number' && a[k] >= 0 && a[k] < 100)) throw new Error('영양값 이상: ' + p.id + ' ' + k);
+    if (p.energy !== null && !(p.energy > 500 && p.energy < 6000)) throw new Error('열량 이상: ' + p.id);
+    const hp = p.form === '건식' && a.basis === 'asFed' && typeof a.protein === 'number' && a.protein >= (p.species === '강아지' ? 30 : 36);
+    if (hp !== p.features.includes('고단백')) throw new Error('고단백 기준 불일치: ' + p.id);
+    if (p.brand === '퓨리나 프로플랜' && Object.values(a).some(v => typeof v === 'number')) throw new Error('확인 안 된 퓨리나 성분이 들어감: ' + p.id);
+  }
+  if (CATALOG.some(p => p.id === 'purina-cat-kitten' && p.lifeStage !== 'young')) throw new Error('키튼 연령 값이 필터와 맞지 않음');
+});
+const chips = html => Object.fromEntries([...html.matchAll(/data-zp="nu-feat" data-value="([^"]+)" aria-pressed="(?:true|false)"(?: disabled)?>[^<]*? (\d+)<\/button>/g)].map(m => [m[1], +m[2]]));
+check('U8', '특성 칩 숫자 = 실제 검색 결과 (강아지·고양이 × 연령 × 형태 × 특성 1~2개)', () => {
+  const pets = [{id: 'cat1', name: '노아', species: '고양이', age: '5살', weight: '4kg'}, {id: 'dog1', name: '콩이', species: '강아지', age: '5살', weight: '4kg'}];
+  let n = 0;
+  for (const pet of pets) for (const age of ['auto', 'young', 'adult', 'senior', 'all']) for (const form of ['all', '건식', '습식']) {
+    const base = chips(renderFor(pet, prof({}), {age, form}));
+    for (const f of T.ZP_NU_FEATURES) {
+      const html = renderFor(pet, prof({}), {age, form, feat: [f]});
+      const got = ids(html).length;
+      if (base[f] !== got) throw new Error(`${pet.species} ${age} ${form} ${f}: 칩 ${base[f]} ≠ 결과 ${got}`);
+      if (!html.includes('<span>' + got + '개 · 브랜드 가나다순')) throw new Error('목록 제목 개수 불일치 ' + f);
+      const second = chips(html);
+      for (const g of T.ZP_NU_FEATURES) {
+        if (g === f) continue;
+        const got2 = ids(renderFor(pet, prof({}), {age, form, feat: [f, g]})).length;
+        if (second[g] !== got2) throw new Error(`${pet.species} ${age} ${form} ${f}+${g}: 칩 ${second[g]} ≠ 결과 ${got2}`);
+        n++;
+      }
+      const list = ids(html).map(byId);
+      if (list.some(p => !p.features.includes(f) || p.kind !== '일반식' || p.species !== pet.species)) throw new Error('특성·종·처방식 필터 이상 ' + f);
+      if (new Set(list.map(p => p.id)).size !== list.length) throw new Error('같은 제품이 두 번 보임');
+    }
+  }
+  if (n < 1000) throw new Error('조합 수가 너무 적음 ' + n);
+});
+check('U9', '연령 × 특성 교차: 성묘 기본 필터의 관절·노령 안내, 노령·어린 시기 결과', () => {
+  const cat5 = {id: 'cat1', name: '노아', species: '고양이', age: '5살', weight: '4kg'};
+  const c5 = chips(renderFor(cat5, prof({})));
+  if (!(c5['관절'] > 0)) throw new Error('성묘 관절 0개');
+  if (!(c5['고단백'] > 0) || !(c5['체중 관리'] > 0) || !(c5['헤어볼'] > 0)) throw new Error('성묘 주요 특성 0개');
+  const h5 = renderFor(cat5, prof({}));
+  if (!/<span>노령<\/span><b><button[^>]*data-value="senior"[^>]*>노령 \d+개/.test(h5)) throw new Error('성묘 기본 필터에서 노령 사료 안내가 없음');
+  const senior = renderFor({...cat5, age: '12살'}, prof({}));
+  const sc = chips(senior);
+  if (!(sc['노령'] >= 10) || !(sc['관절'] > 0)) throw new Error('노령묘 노령·관절 결과 부족 ' + JSON.stringify(sc));
+  if (ids(senior).map(byId).some(p => !['senior', 'all'].includes(p.lifeStage))) throw new Error('노령묘 목록에 다른 연령 섞임');
+  const kitten = ids(renderFor({...cat5, age: '4개월'}, prof({}))).map(byId);
+  if (!kitten.some(p => p.id === 'purina-cat-kitten') || kitten.some(p => !['young', 'all'].includes(p.lifeStage))) throw new Error('어린 고양이 필터 이상');
+  const all = ids(renderFor(cat5, prof({}), {age: 'all'})).map(byId);
+  if (all.length !== GEN.filter(p => p.species === '고양이').length) throw new Error('전체 연령에서 고양이 일반 사료가 다 안 보임');
+  const dog = {id: 'dog1', name: '콩이', species: '강아지', age: '3살', weight: '8kg'};
+  const dc = chips(renderFor(dog, prof({})));
+  if (!(dc['관절'] >= 5) || !(dc['활동량 많음'] >= 1)) throw new Error('성견 관절·활동량 ' + JSON.stringify(dc));
+  const empty = renderFor(cat5, prof({}), {feat: ['노령']});
+  if (!empty.includes('성견·성묘 연령 기준이에요') || !empty.includes('data-value="all">연령 전체로 보기')) throw new Error('빈 결과에서 연령 조건 안내가 없음');
+  const allSenior = ids(renderFor(cat5, prof({}), {age: 'all', feat: ['노령']})).map(byId);
+  if (allSenior.length !== GEN.filter(p => p.species === '고양이' && p.features.includes('노령')).length) throw new Error('전체 연령 노령 수 불일치');
+});
+check('U10', '알레르기 부분 원료 안내, 캔당 열량 표기, 처방식 탭 분리 유지', () => {
+  const cat = {id: 'cat1', name: '노아', species: '고양이', age: '5살', weight: '4kg'};
+  const html = renderFor(cat, prof({allergies: ['양고기']}), {feat: ['관절']});
+  if (!html.includes('앞부분 원료에는 양고기')) throw new Error('부분 원료 알레르기 안내 없음');
+  const hit = renderFor(cat, prof({allergies: ['연어']}), {age: 'all'});
+  if (!html.includes('알레르기 확인') || !hit.includes('표기 원료에 연어 포함')) throw new Error('알레르기 일치 표시 없음');
+  const w = renderFor(cat, prof({}), {feat: ['체중 관리'], form: '습식'});
+  if (!w.includes('62 kcal / 82g 캔')) throw new Error('캔당 열량 미표시');
+  const rx = ids(renderFor(cat, prof({conditions: ['위장관 질환'], vetRecommended: true}), {tab: 'rx'})).map(byId);
+  if (!rx.length || rx.some(p => p.kind !== '처방식')) throw new Error('처방식 탭 이상');
+  if (!renderFor(cat, prof({conditions: ['위장관 질환'], vetRecommended: true}), {tab: 'rx'}).includes('수의사')) throw new Error('처방식 수의사 안내 없음');
 });
 const failed = results.filter(x => !x).length;
 console.log(`\n결과: ${results.length - failed}/${results.length} 통과`);
