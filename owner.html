@@ -3722,6 +3722,20 @@ html body .zeno-search-page .zeno-filter-more .zeno-filter-care{flex:0 0 100%;di
 html.dark .zeno-care-row,html[data-theme="dark"] .zeno-care-row,html.dark .zeno-care-list,html[data-theme="dark"] .zeno-care-list{border-color:#2f3b4a}
 html.dark .zeno-care-row dt,html[data-theme="dark"] .zeno-care-row dt{color:#b0b8c1}
 html.dark .zeno-care-row dd,html[data-theme="dark"] .zeno-care-row dd{color:#e5e8eb}
+</style><style id="zp-nu-profile-layout">
+[data-zp-form="nu-profile"]{display:flex;flex-direction:column;gap:16px}
+[data-zp-form="nu-profile"] .zp-field{gap:8px;min-width:0}
+[data-zp-form="nu-profile"] .zp-field>span,[data-zp-form="nu-profile"] .zp-field>label{font-size:14px}
+[data-zp-form="nu-profile"] .zp-chips.zp-wrap{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:6px;padding:0}
+[data-zp-form="nu-profile"] .zp-radio{position:relative;display:flex;justify-content:center;align-items:center;min-width:0;min-height:44px;padding:0 3px;border-radius:8px;white-space:nowrap;font-size:13px;box-sizing:border-box}
+[data-zp-form="nu-profile"] .zp-radio input{position:absolute;inset:0;width:100%;height:100%;min-height:0;margin:0;padding:0;opacity:0;cursor:pointer}
+[data-zp-form="nu-profile"] .zp-radio:has(input:checked){background:#142e4c;color:white;border-color:#142e4c}
+[data-zp-form="nu-profile"] .zp-radio:focus-within{outline:2px solid #176c9d;outline-offset:2px}
+[data-zp-form="nu-profile"] .zp-nu-conditions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 8px}
+[data-zp-form="nu-profile"] .zp-check{display:flex;flex-direction:row;align-items:center;gap:8px;min-height:44px;margin:0!important;font-size:14px;line-height:1.4}
+[data-zp-form="nu-profile"] .zp-check input{appearance:auto;width:18px;height:18px;min-height:0;flex:0 0 18px;margin:0;padding:0;accent-color:#142e4c}
+[data-zp-form="nu-profile"] .zp-btn-row{margin-top:0}
+[data-zp-form="nu-profile"] .zp-btn:not(.secondary){background:#142e4c;border-color:#142e4c;color:#fff}
 </style></head><body><div id="app" class="app"></div><script>
 'use strict';
 const APP_MODE='owner';
@@ -8514,10 +8528,10 @@ function zpNuCompare(list,pet){
 function zpNuProfileForm(pet,prof){
  const n=zpNu(),radio=(name,opts,cur)=>'<div class="zp-chips zp-wrap">'+opts.map(([v,l])=>'<label class="zp-chip zp-radio"><input type="radio" name="'+name+'" value="'+v+'"'+(cur===v?' checked':'')+'>'+l+'</label>').join('')+'</div>';
  return '<form class="zp-form zp-box" data-zp-form="nu-profile" style="padding:16px">'
-  +'<div class="zp-field"><span>중성화</span>'+radio('neutered',[['yes','했어요'],['no','안 했어요'],['unknown','모름']],prof.neutered||'unknown')+'</div>'
+  +'<div class="zp-field"><span>중성화</span>'+radio('neutered',[['yes','완료'],['no','미완료'],['unknown','모름']],prof.neutered||'unknown')+'</div>'
   +'<div class="zp-field"><span>체형</span>'+radio('bodyCondition',[['thin','마른 편'],['ideal','적정'],['over','과체중'],['unknown','모름']],prof.bodyCondition||'unknown')+'</div>'
   +'<div class="zp-field"><span>활동량</span>'+radio('activity',[['low','적음'],['normal','보통'],['high','많음'],['unknown','모름']],prof.activity||'unknown')+'</div>'
-  +'<div class="zp-field"><span>수의사에게 진단받은 질환 (처방식 확인용)</span>'+n.conditions.map(c=>'<label class="zp-check" style="margin:4px 0"><input type="checkbox" name="conditions" value="'+e(c)+'"'+((prof.conditions||[]).includes(c)?' checked':'')+'><span>'+e(c)+'</span></label>').join('')+'</div>'
+  +'<div class="zp-field"><span>수의사에게 진단받은 질환 (처방식 확인용)</span><div class="zp-nu-conditions">'+n.conditions.map(c=>'<label class="zp-check" style="margin:4px 0"><input type="checkbox" name="conditions" value="'+e(c)+'"'+((prof.conditions||[]).includes(c)?' checked':'')+'><span>'+e(c)+'</span></label>').join('')+'</div></div>'
   +'<label class="zp-check"><input type="checkbox" name="vetRecommended" value="1"'+(prof.vetRecommended?' checked':'')+'><span>수의사가 처방식 급여를 권했어요.</span></label>'
   +'<div class="zp-field"><label>알레르기 성분 (쉼표로 구분)</label><input name="allergies" maxlength="100" placeholder="예: 닭, 밀" value="'+e((prof.allergies||[]).join(', '))+'"></div>'
   +'<div class="zp-field"><label>월 사료 예산 (원, 선택)</label><input name="budgetMonthly" type="number" inputmode="numeric" min="0" max="1000000" value="'+e(prof.budgetMonthly??'')+'"></div>'
