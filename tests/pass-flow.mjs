@@ -200,12 +200,12 @@ async function sectionNutrition() {
     const gen = r.data.catalog.filter(p => p.kind === '일반식'), rx = r.data.catalog.filter(p => p.kind === '처방식');
     expect(gen.length >= 30 && rx.length === 17, '사료 수 이상 ' + gen.length + '/' + rx.length);
     expect(r.data.generalCatalogStatus === 'ready', '일반 사료 상태가 준비 중');
-    const official = /^https:\/\/(www\.royalcanin\.com\/kr\/|www\.hillspet\.co\.kr\/|apac\.acana\.com\/ko-KR\/|apac\.orijenpetfoods\.com\/ko-KR\/|www\.doowonpet\.co\.kr\/orijen\/|healmedix\.com\/)/;
+    const official = /^https:\/\/(www\.royalcanin\.com\/kr\/|www\.hillspet\.co\.kr\/|apac\.acana\.com\/ko-KR\/|apac\.orijenpetfoods\.com\/ko-KR\/|www\.doowonpet\.co\.kr\/orijen\/|healmedix\.com\/|www\.purinapetcare\.co\.kr\/)/;
     expect(r.data.catalog.every(p => official.test(p.url) && p.checked && p.source), '공식 출처·확인일 없는 제품 있음');
     expect(gen.every(p => p.analysis && ['asFed', 'dryMatter'].includes(p.analysis.basis) && ['건식', '습식'].includes(p.form) && ['강아지', '고양이'].includes(p.species)), '일반 사료 필드 누락');
     expect(gen.every(p => !p.price && !p.priceKrw), '판매가가 들어 있음');
     const brands = Object.fromEntries(r.data.brands.map(b => [b.brand, b.status]));
-    expect(brands['퓨리나 프로플랜'] === 'unverified' && !gen.some(p => p.brand === '퓨리나 프로플랜'), '미확인 브랜드 제품이 등록됨');
+    expect(brands['퓨리나 프로플랜'] === 'ready' && gen.filter(p => p.brand === '퓨리나 프로플랜').length === 6, '미확인 브랜드 제품이 등록됨');
     expect(rx.filter(p => p.brand === '닥터 힐메딕스').length === 11 && rx.filter(p => p.brand === '닥터 힐메딕스').every(p => p.conditions.length && p.analysis && p.feeding), '닥터 힐메딕스 처방식 이상');
     expect(gen.filter(p => p.species === '고양이').length >= 10 && gen.filter(p => p.species === '강아지').length >= 20, '종별 제품 수 이상');
   });
