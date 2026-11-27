@@ -851,6 +851,11 @@ ZP_FEED_CATALOG.push(...ZP_FEED_GENERAL,...ZP_FEED_GENERAL_2);
 /* 중복 등록 방지: 같은 id 또는 같은 브랜드·제품명·종·형태는 처음 등록한 것(기존 자료)만 남깁니다. */
 {const ids=new Set(),keys=new Set();for(let i=0;i<ZP_FEED_CATALOG.length;i++){const p=ZP_FEED_CATALOG[i],k=[p.brand,p.name,p.species,p.form,p.kind].join('|');if(ids.has(p.id)||keys.has(k)){ZP_FEED_CATALOG.splice(i--,1);continue}ids.add(p.id);keys.add(k)}}
 for(const p of ZP_FEED_CATALOG)zpNormalizeFeed(p);
+/* 사료 제품 사진: 저장소 images/feeds/<제품 id>.webp 에 올린 사진만 연결합니다.
+   사진이 없는 제품은 카드에 사진 칸을 만들지 않습니다. 형식: '제품 id':{source:'사진 출처'} */
+const ZP_FEED_PHOTO_BASE='https://raw.githubusercontent.com/rlaehdus2477-cpu/Zeno/main/images/feeds/';
+const ZP_FEED_PHOTOS={};
+for(const p of ZP_FEED_CATALOG){const ph=ZP_FEED_PHOTOS[p.id];if(ph)p.photo={url:ZP_FEED_PHOTO_BASE+encodeURIComponent(p.id)+'.webp',source:ph.source||''}}
 const ZP_FEED_BY_ID=new Map(ZP_FEED_CATALOG.map(p=>[p.id,p]));
 /* ===== PASS 01 · 제휴병원 처방식 재고 확인 =====
    병원이 직접 입력한 재고 상태(있음/적음/문의 필요/품절)와 마지막 확인 시각만 보여 줍니다.

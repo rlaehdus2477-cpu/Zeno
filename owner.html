@@ -7819,6 +7819,9 @@ setInterval(()=>{if(document.hidden||state.ownerToken||!state.serverReady)return
 .zp-nu .zp-filter>.zp-chips.zp-wrap{flex-wrap:wrap;overflow:visible}
 .zp-nu .zp-filter .zp-chip{min-height:32px;padding:0 10px}
 .zp-nu .zp-btn{border-radius:8px}
+.zp-nu-head{display:flex;gap:12px;align-items:flex-start}
+.zp-nu-head-text{flex:1 1 auto;min-width:0}
+.zp-nu-photo{flex:0 0 64px;width:64px;height:64px;object-fit:contain;background:#fff;border:1px solid #edf1f5;border-radius:8px}
 .zp-radio{display:inline-flex;align-items:center;gap:4px}
 .zp-radio input{margin:0}
 .zp-stock{margin-top:8px;border-top:1px solid #edf1f5}
@@ -8569,9 +8572,10 @@ function zpNuStock(p){
 function zpNuProduct(p,pet,prof,stage){
  const n=zpNu(),kg=zpParseKg(pet.weight),feed=zpFeedFor(p,kg,prof,stage),open=n.open===p.id;
  const ci=p.feeding?zpFeedCol(p.feeding,prof,stage):0;
- return '<div class="zp-item"><div class="zp-item-top"><strong>'+e(p.brand+' '+p.name)+'</strong><span class="zp-tag '+(p.kind==='처방식'?'warn':'mute')+'">'+e(p.kind==='처방식'?'처방식':p.form)+'</span></div>'
+ const photo=p.photo?.url?'<img class="zp-nu-photo" src="'+e(p.photo.url)+'" alt="'+e(p.brand+' '+p.name)+'" loading="lazy" decoding="async" width="64" height="64" onerror="this.remove()">':'';
+ return '<div class="zp-item"><div class="zp-nu-head">'+photo+'<div class="zp-nu-head-text"><div class="zp-item-top"><strong>'+e(p.brand+' '+p.name)+'</strong><span class="zp-tag '+(p.kind==='처방식'?'warn':'mute')+'">'+e(p.kind==='처방식'?'처방식':p.form)+'</span></div>'
   +'<small>'+e([p.kind==='처방식'?p.form:null,p.ageText||ZP_NU_STAGE[p.lifeStage],p.kind==='처방식'?'관리 목적(제조사 표기): '+p.conditions.join(', '):null].filter(Boolean).join(' · '))+'</small>'
-  +(p.features?.length?'<div class="zp-feats">'+p.features.map(f=>'<span>'+e(f)+'</span>').join('')+'</div>':'')
+  +(p.features?.length?'<div class="zp-feats">'+p.features.map(f=>'<span>'+e(f)+'</span>').join('')+'</div>':'')+'</div></div>'
   +(p.analysis?zpNuGrid(p):'')
   +'<div style="margin-top:6px"><div class="zp-kv"><span>급여량</span><b>'+e(feed.text)+'</b></div>'+zpNuCostLine(p,pet.id,feed,prof.budgetMonthly)+'</div>'
   +(p.kind==='처방식'?zpAllergyLine(p,prof.allergies||[])+zpNuStock(p):zpAllergyLine(p,prof.allergies||[]))

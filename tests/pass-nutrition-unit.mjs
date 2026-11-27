@@ -224,6 +224,25 @@ check('U10', '알레르기 부분 원료 안내, 캔당 열량 표기, 처방식
   if (!rx.length || rx.some(p => p.kind !== '처방식')) throw new Error('처방식 탭 이상');
   if (!renderFor(cat, prof({conditions: ['위장관 질환'], vetRecommended: true}), {tab: 'rx'}).includes('수의사')) throw new Error('처방식 수의사 안내 없음');
 });
+check('U11', '사료 사진: 등록된 제품만 사진 칸 표시, 사진 파일·제품 id 일치', () => {
+  const photos = vm.runInContext('ZP_FEED_PHOTOS', ctx);
+  for (const id of Object.keys(photos)) {
+    if (!CATALOG.some(p => p.id === id)) throw new Error('없는 제품 사진: ' + id);
+    if (!fs.existsSync(path.join(ROOT, 'images/feeds', id + '.webp'))) throw new Error('사진 파일 없음: images/feeds/' + id + '.webp');
+  }
+  const cat = {id: 'cat1', name: '노아', species: '고양이', age: '5살', weight: '4kg'};
+  const target = byId('rc-cat-indoor-27'), saved = target.photo;
+  try {
+    target.photo = undefined;
+    const plain = renderFor(cat, prof({}), {age: 'all'});
+    const withPhotos = Object.keys(photos).length;
+    if ((plain.match(/class="zp-nu-photo"/g) || []).length !== CATALOG.filter(p => p.photo && p.kind === '일반식' && p.species === '고양이').length) throw new Error('사진 없는 제품에 사진 칸이 생김');
+    target.photo = {url: 'https://raw.githubusercontent.com/rlaehdus2477-cpu/Zeno/main/images/feeds/rc-cat-indoor-27.webp', source: '테스트'};
+    const html = renderFor(cat, prof({}), {age: 'all'});
+    if (!html.includes('<img class="zp-nu-photo" src="https://raw.githubusercontent.com/rlaehdus2477-cpu/Zeno/main/images/feeds/rc-cat-indoor-27.webp" alt="로얄캐닌 인도어" loading="lazy"')) throw new Error('사진 표시 안 됨');
+    void withPhotos;
+  } finally { target.photo = saved; }
+});
 const failed = results.filter(x => !x).length;
 console.log(`\n결과: ${results.length - failed}/${results.length} 통과`);
 process.exit(failed ? 1 : 0);
