@@ -84,7 +84,7 @@ check('C6', '동물종 구분과 필터', () => {
   eq(item('강아지 수컷 중성화').speciesLabel, '강아지', '강아지');
   eq(item('고양이 수컷 중성화').speciesLabel, '고양이', '고양이');
   eq(item('수컷 중성화 · 동물종 미표기').speciesLabel, '공통', '미표기');
-  const f = T.zpFees(); f.loaded = true; f.items = []; f.cat = '전체';
+  const f = T.zpFees(); f.loaded = true; f.mode = 'calc'; f.items = []; f.cat = '전체';
   T.zpState().passLoaded = true; T.zpState().pass = {active: true};
   f.species = '고양이'; const cat1 = T.ZP_VIEWS.fees.render();
   ok(!cat1.includes('data-value="강아지 수컷 중성화"') && cat1.includes('data-value="고양이 수컷 중성화"') && cat1.includes('data-value="수컷 중성화 · 동물종 미표기"'), '고양이 필터');
@@ -118,7 +118,7 @@ check('C9', '미공개는 추정하지 않음', () => {
   eq([t.missing, t.sMin, t.sMax], [1, 170000, 170000], '센트럴 초진 미공개');
 });
 check('C10', '화면: 모든 항목 노출(8개 제한·더 보기 없음), 공개 병원 수 표시, 가격순 정렬 없음', () => {
-  const f = T.zpFees(); f.loaded = true; f.species = '전체'; f.cat = '전체'; f.q = '';
+  const f = T.zpFees(); f.loaded = true; f.mode = 'calc'; f.species = '전체'; f.cat = '전체'; f.q = '';
   f.items = [{name: '초진 진찰료', count: 1}, {name: 'MRI 검사 · 뇌 촬영', count: 1}];
   const html = T.ZP_VIEWS.fees.render();
   const picks = [...html.matchAll(/class="zp-fee-pick"[^>]*data-value="([^"]+)"[^>]*?(hidden)?>/g)];
@@ -135,7 +135,7 @@ check('C11', '검색: 항목명·병원명·동의어', () => {
   const s = k => item(k).search;
   ok(s('엑스레이 · 1장당').includes('xray'), '엑스레이 동의어');
   ok(s('슬개골 탈구 3기(양측)').includes('나래동물의료센터'), '병원명 검색');
-  const f = T.zpFees(); f.q = '슬개골';
+  const f = T.zpFees(); f.mode = 'calc'; f.q = '슬개골';
   const html = T.ZP_VIEWS.fees.render();
   const shown = [...html.matchAll(/class="zp-fee-pick"[^>]*data-value="([^"]+)"[^>]*?(hidden)?>/g)].filter(m => !m[2]).map(m => m[1]);
   ok(shown.length >= 8 && shown.every(k => k.includes('슬개골')), '검색 결과 ' + shown.join(','));
