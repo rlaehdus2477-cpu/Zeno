@@ -195,6 +195,9 @@ check('G3', '건강검진: 가격·포함 검사·원문 링크 표시, 진료�
   for (const b of blocks) { const src = cat.hospitals.get(b.hid); if (src?.url) ok(b.body.includes('가격표 원문'), b.hid + ' 원문 링크 없음'); }
   eq(cat.stats.feeRowsCovered, cat.stats.feeRows, '진료비 행 보존');
 });
+check('G5', '건강검진 묶음에서 검진 이름·가격 줄이 CSS로 숨겨지지 않음', () => {
+  ok(owner.includes('.zp-checkup-hospital .zp-fee-result>.zp-fee-line>.zp-kv{display:flex}'), '검진 이름·가격 줄 숨김');
+});
 check('G4', '진료비 비교(calc) 화면은 기존 항목별 표시 유지', () => {
   const f = T.zpFees(); f.loaded = true; f.mode = 'calc'; f.species = '전체'; f.cat = '전체'; f.q = '';
   ok(!T.ZP_VIEWS.fees.render().includes('zp-checkup-group'), '계산기 화면에 병원별 묶음이 섞임');
