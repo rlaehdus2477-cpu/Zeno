@@ -7612,6 +7612,50 @@ setInterval(()=>{if(document.hidden||state.ownerToken||!state.serverReady)return
 .zp-feed tr.on td{background:#eef6ff;font-weight:600}
 .zp-feed td,.zp-feed th{padding:6px 8px;font-size:12px}
 .zp-detail{margin-top:4px}
+/* PASS 02 진료비 통합 비교 (2026-11-27): 칩 대신 목록형, 얇은 구분선 */
+.zp-fee-search input{width:100%;box-sizing:border-box;min-height:44px;padding:10px 12px;border:1px solid #d6e2ee;border-radius:10px;background:#fff;color:#142e4c;font-size:16px;font-family:inherit}
+.zp-fee-search input:focus{outline:2px solid #1689fa;outline-offset:-1px;border-color:#1689fa}
+.zp-seg{display:flex;margin:8px 0 0;padding:2px;background:#f1f4f7;border-radius:10px}
+.zp-seg button{flex:1;min-height:36px;border:0;border-radius:8px;background:none;color:#4f6880;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit}
+.zp-seg button[aria-pressed="true"]{background:#fff;color:#142e4c;box-shadow:0 1px 2px rgba(20,46,76,.12)}
+.zp-fee-tabs{display:flex;gap:16px;overflow-x:auto;margin:8px 0 0;border-bottom:1px solid #e5ebf1;scrollbar-width:none}
+.zp-fee-tabs::-webkit-scrollbar{display:none}
+.zp-fee-tabs button{flex:0 0 auto;min-height:40px;padding:0;border:0;border-bottom:2px solid transparent;margin-bottom:-1px;background:none;color:#6b7f94;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap;font-family:inherit}
+.zp-fee-tabs button small{font-size:12px;font-weight:500;color:#9ca9b7}
+.zp-fee-tabs button[aria-selected="true"]{color:#142e4c;border-bottom-color:#142e4c}
+.zp-fee-list{margin-top:8px;overflow:hidden}
+.zp-fee-group h3{margin:0;padding:10px 16px 6px;font-size:13px;font-weight:700;color:#4f6880;background:#f8fafc;border-bottom:1px solid #edf1f5}
+.zp-fee-group+.zp-fee-group h3{border-top:1px solid #edf1f5}
+.zp-fee-pick{display:flex;align-items:center;gap:10px;width:100%;min-height:52px;padding:8px 16px;border:0;border-bottom:1px solid #edf1f5;background:#fff;color:#142e4c;text-align:left;cursor:pointer;font-family:inherit}
+.zp-fee-group .zp-fee-pick:last-child{border-bottom:0}
+.zp-fee-pick[hidden],.zp-fee-group[hidden],[data-fee-empty][hidden]{display:none}
+.zp-fee-pick-text{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.zp-fee-pick-text strong{font-size:15px;font-weight:500;line-height:1.4;word-break:keep-all}
+.zp-fee-pick-text small{font-size:12px;color:#6b7f94;line-height:1.4;word-break:keep-all}
+.zp-fee-pick-count{flex:0 0 auto;font-size:12px;color:#6b7f94;white-space:nowrap}
+.zp-fee-check{flex:0 0 20px;width:20px;height:20px;border:1.5px solid #c5d3e0;border-radius:6px;box-sizing:border-box}
+.zp-fee-pick[aria-pressed="true"] .zp-fee-check{background:#1689fa;border-color:#1689fa;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 12 5 5 9-10'/%3E%3C/svg%3E");background-size:14px;background-position:center;background-repeat:no-repeat}
+.zp-fee-pick[aria-pressed="true"] .zp-fee-pick-text strong{font-weight:600}
+.zp-fee-chosen{padding:0 16px}
+.zp-fee-chosen-row{display:flex;align-items:center;gap:8px;min-height:52px;padding:6px 0;border-bottom:1px solid #edf1f5}
+.zp-fee-chosen-row:last-child{border-bottom:0}
+.zp-fee-chosen-name{flex:1;min-width:0;display:flex;flex-direction:column}
+.zp-fee-chosen-name b{font-size:14px;font-weight:600;line-height:1.4;word-break:keep-all}
+.zp-fee-chosen-name small{font-size:12px;color:#6b7f94;line-height:1.4}
+.zp-fee-remove{flex:0 0 auto;min-height:36px;padding:0 4px;border:0;background:none;color:#6b7f94;font-size:13px;cursor:pointer;font-family:inherit}
+.zp-fee-lines{margin-top:8px}
+.zp-fee-line{border-bottom:1px solid #edf1f5}
+.zp-fee-line .zp-kv{border-bottom:0;padding-bottom:2px}
+.zp-fee-line .zp-kv em{font-style:normal;font-size:12px;color:#8a96a3}
+.zp-fee-line.is-excluded .zp-kv b{color:#9ca9b7;text-decoration:line-through}
+.zp-item .zp-fee-meta,.zp-fee-meta{font-size:12px!important;line-height:1.5;color:#6b7f94;margin:0 0 4px!important}
+.zp-item .zp-fee-cond{font-size:12px!important;line-height:1.5;color:#4f6880;margin:0 0 6px!important;word-break:keep-all}
+.zp-fee-flag{font-weight:600;color:#9a5b00}
+.zp-fee-flag.mute{color:#5d6b78}
+.zp-fee-line .zp-fee-note summary{padding:0 0 6px}
+.zp-fee-nopub{margin-top:8px}
+.zp-fee-nopub summary{font-size:13px;color:#4f6880;cursor:pointer;padding:6px 0}
+.zp-fee-nopub p{font-size:13px;line-height:1.6;color:#6b7f94}
 </style><script id="zeno-pass-module">
 /* ===== ZENO PASS · 보호자 화면 (2026-11-26) =====
    PASS 권한은 서버(/api/pass)에서 확인한 값만 사용합니다. 화면에서 임의로 열지 않습니다. */
@@ -7834,71 +7878,336 @@ ZP_VIEWS.rx={
   r.busy=false;await zpRxLoad();
  }
 };
-/* PASS 02 · 공개 진료비 통합 비교 (보호자). 순위·최저가 정렬 없음, 미공개는 미공개로 표시 */
-function zpFees(){const z=zpState();if(!z.fees)z.fees={loaded:false,error:'',items:[],saving:false,dirty:false};return z.fees}
-function zpFeeItemNames(){
- const count=new Map();
- for(const v of ZENO_PUBLIC_FEES)for(const p of new Set(v.prices.map(p=>p[0])))count.set(p,(count.get(p)||0)+1);
- return [...count.entries()].filter(([,n])=>n>=2).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0],'ko')).map(([n])=>n);
+/* PASS 02 · 공개 진료비 통합 비교 (보호자) — 2026-11-27 전면 개편
+   - 자료: ZENO_PUBLIC_FEES 전체 + ZENO_HEALTH_SCREENINGS(이미 ZENO_PUBLIC_FEES에 같은 패키지가 있는 병원은 중복 제외). 원본 데이터는 바꾸지 않고 비교용 목록만 만듭니다.
+   - 1개 병원만 공개한 항목도 모두 보여 줍니다. 항목 수 제한·접기 없음.
+   - 같은 이름이라도 기준(항목당/패널, 1장/여러 장, 부위, 단위)이 다르면 서로 다른 비교 항목으로 나눕니다.
+   - 가격순 정렬·병원 순위 없음. 미공개 가격은 추정하지 않고 미공개로 표시합니다.
+   - 상위(범위) 항목과 세부 항목, 상위 검진과 포함된 하위 검진을 함께 고르면 합계에서 한쪽만 셉니다. */
+const ZP_FEE_CATS=['기본 진료·상담·입원','예방접종','예방약·구충제','혈액검사','영상검사','기타 검사','중성화 수술','정형외과 수술','치과 진료·수술','건강검진','피부질환 치료','기타 치료·처치'];
+/* 같은 항목명이라도 병원마다 가격 기준이 다른 경우: 원문 항목명 → {병원 id: 기준} ('*'는 모든 병원) */
+const ZP_FEE_BASIS={
+ '혈액화학검사':{pub038:'항목당',pub009:'패널 1회',pub039:'패널 1회',pub006:'패널 1회',pub016:'검사 기준 확인 필요',naeum:'검사 기준 확인 필요'},
+ '엑스레이':{pub038:'1장당',pub039:'1장당',pub016:'1장당',pub009:'1~3장 장수별',naeum:'1회·1부위',pub013:'촬영 기준 미표기',pub006:'촬영 기준 미표기'},
+ '초음파 검사':{pub038:'복부 1회',pub009:'복부 1회',pub016:'복부 1회',pub006:'복부 1회',pub039:'1장당 표기',naeum:'부위 미표기'},
+ 'CT 검사':{pub038:'1개 부위',pub016:'전신·마취 포함'},
+ 'MRI 검사':{pub038:'뇌 촬영'},
+ '상담료':{pub038:'10분당',pub009:'10분당',pub016:'10분당',naeum:'30분당',pub013:'단위 미표기',pub006:'단위 미표기'},
+ '입원료':{pub013:'1일 여부 미표기'},
+ '고양이 입원료':{pub009:'1일',pub013:'1일 여부 미표기'},
+ '소형견 입원료(10kg 이하)':{'*':'1일 여부 미표기'},'중형견 입원료(10~20kg)':{'*':'1일 여부 미표기'},'대형견 입원료(20kg 이상)':{'*':'1일 여부 미표기'},
+ '심장사상충 예방(제품별)':{pub038:'레볼루션 기준',pub039:'여러 제품 범위'},
+ '심장사상충 예방(강아지)':{'*':'제품 미표기'},'외부기생충 예방(강아지)':{'*':'제품 미표기'},
+ '광범위 구충(강아지 먹는약)':{pub038:'넥스가드 기준',pub016:'제품 미표기'},
+ '수컷 중성화':{'*':'동물종 미표기'},'암컷 중성화':{'*':'동물종 미표기'},
+ '슬개골 탈구 수술':{pub028:'2~4기 전체 범위',pub054:'단계 미표기'},
+ '알레르기 검사':{pub028:'120종·177종 범위'}
+};
+/* 같은 검사를 다른 이름으로 공개한 경우만 합칩니다. 원문 항목명은 병원별 '조건 보기'에 그대로 남깁니다. */
+const ZP_FEE_RENAME={'상담료(10분당)':['상담료','10분당'],'광견병 예방접종':['광견병 백신','']};
+/* 한 줄에 두 백신을 '각 백신 1회 접종비'로 공개한 경우 */
+const ZP_FEE_SPLIT={'코로나 장염·켄넬코프 백신':['코로나 백신(개)','켄넬코프 백신']};
+/* [병원, 합계에서 뺄 항목, 함께 고르면 빼는 조건 항목, 이유] */
+const ZP_FEE_OVERLAP=[
+ ['pub009',['입원비(1일)'],['고양이 입원료','ICU 입원료'],'part'],
+ ['pub013',['입원료'],['소형견 입원료(10kg 이하)','중형견 입원료(10~20kg)','대형견 입원료(20kg 이상)','고양이 입원료'],'part'],
+ ['pub028',['슬개골 탈구 수술'],['슬개골 탈구 2기(편측)','슬개골 탈구 2기(양측)','슬개골 탈구 3기(편측)','슬개골 탈구 3기(양측)','슬개골 탈구 4기(편측)','슬개골 탈구 4기(양측)'],'part'],
+ ['pub028',['알레르기 검사'],['알레르기 검사 120종','알레르기 검사 177종'],'part'],
+ ['pub039',['심장사상충 예방(제품별)'],['넥스가드 스펙트라','애드보킷(개)','애드보킷(고양이)','하트가드','하트세이버','심파리카 트리오'],'part'],
+ ['naeum',['초진 진찰료','재진 진찰료'],['평일 주간 진찰료','일요일 진찰료','응급·야간 진찰료'],'time'],
+ ['pub007',['강아지 A 기본 건강검진'],['강아지 B1 CT 검진','강아지 B2 내시경 검진','강아지 C 종합 정밀검진'],'pkg'],
+ ['pub007',['강아지 B1 CT 검진','강아지 B2 내시경 검진'],['강아지 C 종합 정밀검진'],'pkg'],
+ ['pub007',['고양이 A 기본 건강검진'],['고양이 B1 CT 검진','고양이 B2 내시경 검진','고양이 C 종합 정밀검진'],'pkg'],
+ ['pub007',['고양이 B1 CT 검진','고양이 B2 내시경 검진'],['고양이 C 종합 정밀검진'],'pkg'],
+ ['pub013',['건강검진 A'],['건강검진 B','건강검진 C'],'pkg'],
+ ['pub013',['건강검진 B'],['건강검진 C'],'pkg'],
+ ['pub054',['건강검진 베이직'],['건강검진 골드','건강검진 스페셜','건강검진 프리미엄'],'pkg'],
+ ['pub054',['건강검진 골드'],['건강검진 스페셜','건강검진 프리미엄'],'pkg'],
+ ['pub054',['건강검진 스페셜'],['건강검진 프리미엄'],'pkg'],
+ ['pub006',['강아지 상현달'],['강아지 보름달'],'pkg'],
+ ['pub006',['고양이 상현달'],['고양이 보름달'],'pkg']
+];
+/* 목록 맨 앞에 둘 기본 항목 (가격과 무관한 표시 순서) */
+const ZP_FEE_FIRST=['초진 진찰료','재진 진찰료','입원비(1일)'];
+const ZP_FEE_OVERLAP_REASON={part:'세부 항목과 겹쳐 합계에서 뺐어요',time:'시간대별 진찰료와 겹쳐 합계에서 뺐어요',pkg:'함께 고른 상위 검진에 포함돼 합계에서 뺐어요'};
+/* 예전 설정(2개 병원 이상 항목명)이 기준별로 나뉜 경우 같은 기준 항목으로 옮깁니다. 기준이 여러 개로 갈리는 항목은 옮기지 않습니다. */
+const ZP_FEE_LEGACY={'혈액화학검사':'혈액화학검사 · 패널 1회','엑스레이':'엑스레이 · 1장당','초음파 검사':'초음파 검사 · 복부 1회','상담료':'상담료 · 10분당','수컷 중성화':'수컷 중성화 · 동물종 미표기','암컷 중성화':'암컷 중성화 · 동물종 미표기'};
+function zpFeeSpecies(raw,note){
+ const s=String(raw||'');
+ if(/고양이|캣|레볼루션 플러스|백혈병/.test(s))return '고양이';
+ if(/강아지|^개 |\(개\)|소형견|중형견|대형견|켄넬코프|코로나|인플루엔자|하트가드|하트세이버|넥스가드 스펙트라|크레델리오|심파리카|사이토포인트|아포퀠/.test(s))return '강아지';
+ const n=String(note||'');
+ if(/^강아지 ·/.test(n))return '강아지';
+ if(/^고양이 ·/.test(n))return '고양이';
+ return '공통';
+}
+function zpFeeCategory(raw){
+ const s=String(raw||'');
+ if(/진단서|증명서/.test(s))return '기본 진료·상담·입원';
+ if(/건강검진|검진/.test(s))return '건강검진';
+ if(/중성화/.test(s))return '중성화 수술';
+ if(/스케일링|치과|발치|치석/.test(s))return '치과 진료·수술';
+ if(/슬개골|십자인대|대퇴골두|FHNO|정형/.test(s))return '정형외과 수술';
+ if(/사이토포인트|아포퀠|피부/.test(s))return '피부질환 치료';
+ if(/백신|예방접종/.test(s))return '예방접종';
+ if(/CBC|혈액|전해질|항체검사|BNP|키트검사/.test(s))return '혈액검사';
+ if(/엑스레이|초음파|CT|MRI|영상/.test(s))return '영상검사';
+ if(/검사/.test(s))return '기타 검사';
+ if(/구충|예방|기생충|하트가드|넥스가드|크레델리오|레볼루션|애드보킷|프론트라인|브라벡토|드론탈|하트세이버|심파리카|셀라멕틴/.test(s))return '예방약·구충제';
+ if(/진찰|상담|입원|ICU/.test(s))return '기본 진료·상담·입원';
+ return '기타 치료·처치';
+}
+function zpFeePromo(text){
+ const s=String(text||'');
+ if(/과거 행사/.test(s))return '과거 행사가 · 현재 적용 미확인';
+ if(/정상가|행사가|프로모션|이벤트|행사/.test(s))return '행사가';
+ if(/할인/.test(s))return '할인가';
+ return '';
+}
+function zpFeeRegular(text){
+ const all=[...String(text||'').matchAll(/(?:정상가|기존 게시가)\s*([\d,]+)\s*(만)?\s*원?/g)];
+ if(all.length!==1)return '';
+ const m=all[0],n=Number(m[1].replace(/,/g,''))*(m[2]?10000:1);
+ return Number.isFinite(n)&&n>0?n:'';
+}
+function zpFeeVariants(text){
+ const m=String(text||'').match(/베이직\(주사마취\)\s*([\d,]+)원\s*\/\s*스탠다드\(호흡마취\)\s*([\d,]+)원/);
+ return m?[['주사마취',Number(m[1].replace(/,/g,''))],['호흡마취',Number(m[2].replace(/,/g,''))]]:null;
+}
+/* 비교 목록 (처음 열 때 한 번 계산). 원본 배열이 바뀌면 다시 계산합니다. */
+let zpFeeCatalogCache=null;
+function zpFeeCatalog(){
+ const fees=typeof ZENO_PUBLIC_FEES!=='undefined'?ZENO_PUBLIC_FEES:[];
+ const screens=typeof ZENO_HEALTH_SCREENINGS!=='undefined'?ZENO_HEALTH_SCREENINGS:[];
+ if(zpFeeCatalogCache&&zpFeeCatalogCache.src===fees&&zpFeeCatalogCache.hs===screens)return zpFeeCatalogCache;
+ const entries=[],skipped=[],hospitals=new Map();
+ const hname=id=>(typeof hospitalById==='function'&&hospitalById(id)?.name)||'';
+ const addHospital=(id,meta)=>{if(!hospitals.has(id))hospitals.set(id,{id,name:hname(id),source:meta.source||'',url:meta.url||'',checked:meta.checked||''})};
+ for(const v of fees){
+  if(!hname(v.id)){for(const p of v.prices)skipped.push({hid:v.id,raw:p[0],why:'병원 정보 없음'});continue}
+  addHospital(v.id,v);
+  for(const p of v.prices){
+   const raw=String(p[0]),note=String(p[3]||'');
+   const targets=ZP_FEE_SPLIT[raw]||[raw];
+   for(const t of targets){
+    const ren=ZP_FEE_RENAME[t],label=ren?ren[0]:t;
+    const bm=ZP_FEE_BASIS[t];
+    const basis=ren?ren[1]:(bm?(bm[v.id]||bm['*']||''):'');
+    const cat=zpFeeCategory(label);
+    const pkg=cat==='건강검진'||/패키지/.test(label);
+    entries.push({hid:v.id,raw,label,basis,cat,pkg,species:zpFeeSpecies(label,note),min:Number(p[1]),max:Number(p[2]),note,
+     includes:'',promo:zpFeePromo(note+' '+(v.source||'')),regular:zpFeeRegular(note),variants:zpFeeVariants(note),
+     url:'',checked:'',from:targets.length>1?'split':'fees'});
+   }
+  }
+ }
+ /* 건강검진 프로그램: ZENO_PUBLIC_FEES에 같은 병원 검진 패키지가 이미 있으면 중복이므로 제외 */
+ const feePkgHospitals=new Set(entries.filter(x=>x.cat==='건강검진').map(x=>x.hid));
+ for(const g of screens){
+  for(const p of g.programs){
+   const sp=g.species==='공통'?'공통':g.species;
+   const raw=(sp==='공통'?'':sp+' ')+p[0];
+   if(!hname(g.id)){skipped.push({hid:g.id,raw,why:'병원 정보 없음'});continue}
+   if(feePkgHospitals.has(g.id)){skipped.push({hid:g.id,raw,why:'진료비표와 같은 검진 패키지',price:Number(p[1])});continue}
+   addHospital(g.id,{source:'병원 공개 건강검진 안내',url:g.url,checked:g.checked});
+   const text=String(p[2]||''),weight=String(g.weight||'');
+   entries.push({hid:g.id,raw,label:raw,basis:g.group||'건강검진 프로그램',cat:'건강검진',pkg:true,species:sp,min:Number(p[1]),max:Number(p[1]),
+    note:[text,weight].filter(Boolean).join(' · '),includes:text,promo:zpFeePromo(raw+' '+(g.group||'')+' '+text+' '+weight),regular:zpFeeRegular(text),variants:null,
+    url:g.url||'',checked:g.checked||'',from:'screening'});
+  }
+ }
+ /* 항목 만들기: 검진 패키지는 병원마다 구성이 달라 병원별 항목, 나머지는 이름+기준이 같을 때만 같은 항목 */
+ const items=new Map();
+ for(const x of entries){
+  const hn=hospitals.get(x.hid)?.name||x.hid;
+  x.key=x.pkg?(x.label+' · '+hn):(x.label+(x.basis?' · '+x.basis:''));
+  let it=items.get(x.key);
+  if(!it){it={key:x.key,label:x.label,basis:x.pkg?(x.from==='screening'?x.basis:''):x.basis,cat:x.cat,pkg:x.pkg,species:new Set(),entries:[],hospitals:new Set(),raws:new Set()};items.set(x.key,it)}
+  it.entries.push(x);it.hospitals.add(x.hid);it.species.add(x.species);it.raws.add(x.raw);
+ }
+ for(const it of items.values()){
+  it.speciesLabel=it.species.size===1?[...it.species][0]:'공통';
+  it.hospitalNames=[...it.hospitals].map(id=>hospitals.get(id)?.name||id);
+  const extra=[];
+  if(/엑스레이/.test(it.label))extra.push('xray x-ray 방사선 엑스선');
+  if(it.cat==='혈액검사')extra.push('피검사 혈액');
+  if(/중성화/.test(it.label))extra.push('중성화수술 수술');
+  if(/스케일링/.test(it.label))extra.push('치석 치아');
+  if(/CT|MRI/.test(it.label))extra.push('씨티 엠알아이');
+  it.search=zpFeeNorm([it.label,it.basis,it.cat,...it.raws,...it.hospitalNames,...extra].join(' '));
+ }
+ const list=[...items.values()];
+ const baseOf=it=>it.pkg?it.hospitalNames[0]+' '+it.label:it.label;
+ const groupSize=new Map();
+ for(const it of list){const b=it.pkg?it.hospitalNames[0]:it.label;groupSize.set(b,Math.max(groupSize.get(b)||0,it.hospitals.size))}
+ list.sort((a,b)=>{
+  const ca=ZP_FEE_CATS.indexOf(a.cat),cb=ZP_FEE_CATS.indexOf(b.cat);if(ca!==cb)return ca-cb;
+  const ga=a.pkg?a.hospitalNames[0]:a.label,gb=b.pkg?b.hospitalNames[0]:b.label;
+  const pa=ZP_FEE_FIRST.indexOf(ga),pb=ZP_FEE_FIRST.indexOf(gb);
+  if(ga!==gb)return ((pa<0?99:pa)-(pb<0?99:pb))||(groupSize.get(gb)-groupSize.get(ga))||ga.localeCompare(gb,'ko',{numeric:true});
+  return (b.hospitals.size-a.hospitals.size)||baseOf(a).localeCompare(baseOf(b),'ko',{numeric:true});
+ });
+ /* 겹침 규칙을 병원별 항목 키로 바꿔 둡니다 */
+ const keyOf=(hid,raw)=>entries.find(x=>x.hid===hid&&x.raw===raw)?.key;
+ const overlaps=[];
+ for(const [hid,drop,when,why] of ZP_FEE_OVERLAP){
+  const d=drop.map(r=>keyOf(hid,r)).filter(Boolean),w=when.map(r=>keyOf(hid,r)).filter(Boolean);
+  if(d.length&&w.length)overlaps.push({hid,drop:d,when:w,why});
+ }
+ const rawRows=fees.reduce((a,v)=>a+v.prices.length,0),hsRows=screens.reduce((a,g)=>a+g.programs.length,0);
+ const coveredFees=new Set(entries.filter(x=>x.from!=='screening').map(x=>x.hid+'|'+x.raw));
+ zpFeeCatalogCache={src:fees,hs:screens,entries,items:list,byKey:new Map(list.map(it=>[it.key,it])),hospitals,overlaps,skipped,
+  stats:{feeRows:rawRows,screenRows:hsRows,feeRowsCovered:coveredFees.size,screenRowsUsed:entries.filter(x=>x.from==='screening').length,
+   screenRowsDuplicate:skipped.filter(s=>s.why==='진료비표와 같은 검진 패키지').length,missing:skipped.filter(s=>s.why!=='진료비표와 같은 검진 패키지').length}};
+ return zpFeeCatalogCache;
+}
+function zpFeeNorm(s){return String(s||'').toLowerCase().replace(/\s+/g,'')}
+function zpFeeItemNames(){return zpFeeCatalog().items.map(it=>it.key)}
+function zpFees(){const z=zpState();if(!z.fees)z.fees={loaded:false,error:'',items:[],saving:false,dirty:false,q:'',species:'전체',cat:'전체'};return z.fees}
+function zpFeeMigrate(items){
+ const cat=zpFeeCatalog(),out=[],seen=new Set();let changed=false;
+ for(const i of items||[]){
+  let name=String(i?.name||'');
+  if(!cat.byKey.has(name)&&ZP_FEE_LEGACY[name]&&cat.byKey.has(ZP_FEE_LEGACY[name])){name=ZP_FEE_LEGACY[name];changed=true}
+  if(!cat.byKey.has(name)||seen.has(name)){changed=true;continue}
+  seen.add(name);out.push({name,count:Math.max(1,Math.min(52,Math.round(Number(i.count)||1)))});
+ }
+ return {items:out.slice(0,12),changed:changed||out.length>12};
 }
 async function zpFeesLoad(){
  const f=zpFees();
  if(!state.ownerToken){f.loaded=true;return}
  if(!zpState().passLoaded)await zpLoadPass(false);
+ let changed=false;
  if(zpActive()){
-  try{const r=await api('GET','/api/pass/fee-plan');f.items=(r.plan?.items||[]).filter(i=>zpFeeItemNames().includes(i.name));if(!f.items.length)f.items=[{name:'초진 진찰료',count:1}].filter(i=>zpFeeItemNames().includes(i.name));f.error=''}
-  catch(err){f.error=err.message}
+  try{
+   const r=await api('GET','/api/pass/fee-plan');
+   const m=zpFeeMigrate(r.plan?.items||[]);f.items=m.items;changed=m.changed&&(r.plan?.items||[]).length>0;
+   if(!f.items.length)f.items=[{name:'초진 진찰료',count:1}].filter(i=>zpFeeCatalog().byKey.has(i.name));
+   f.error='';
+  }catch(err){f.error=err.message}
  }
- f.loaded=true;f.dirty=false;
+ f.loaded=true;f.dirty=changed;
  if(state.page==='pass'&&zpState().view==='fees')render();
 }
 function zpFeeRange(min,max){return min===max?zpWon(min):Number(min).toLocaleString('ko-KR')+'~'+zpWon(max)}
-function zpFeeHospitalBlock(v,items){
- const h=hospitalById(v.id);if(!h)return '';
- let sMin=0,sMax=0,yMin=0,yMax=0,missing=0;
- const lines=items.map(it=>{
-  const p=v.prices.find(x=>x[0]===it.name);
-  if(!p){missing++;return '<div class="zp-kv"><span>'+e(it.name)+' · 연 '+it.count+'회</span><b class="zp-muted">미공개</b></div>'}
-  sMin+=p[1];sMax+=p[2];yMin+=p[1]*it.count;yMax+=p[2]*it.count;
-  return '<div class="zp-kv"><span>'+e(it.name)+' · 연 '+it.count+'회</span><b>'+zpFeeRange(p[1],p[2])+'</b></div>'+(p[3]?'<details class="zp-fee-note"><summary>조건 보기</summary><p>'+e(p[3])+'</p></details>':'');
- }).join('');
- const any=items.length-missing>0;
- const total=any?'<div class="zp-kv zp-total"><span>1회씩 합계'+(missing?' (공개 항목만)':'')+'</span><b>'+zpFeeRange(sMin,sMax)+'</b></div><div class="zp-kv zp-total"><span>연간 예상'+(missing?' (공개 항목만)':'')+'</span><b>'+zpFeeRange(yMin,yMax)+'</b></div>':'<div class="zp-kv"><span>합계</span><b class="zp-muted">계산할 공개 가격 없음</b></div>';
- return '<div class="zp-item"><div class="zp-item-top"><strong>'+e(h.name)+'</strong><span class="zp-tag '+(h.linked?'ok':'mute')+'">'+(h.linked?'제휴':'비제휴')+'</span></div>'
-  +'<small>'+e((v.source||'병원 공개 가격표')+(v.checked?' · 제노 확인 '+v.checked:''))+'</small>'
-  +'<div style="margin-top:8px">'+lines+total+'</div>'
-  +(missing?'<small>미공개 '+missing+'개 항목은 병원에 직접 확인해 주세요.</small>':'')
-  +(v.url?'<a class="zp-help" href="'+e(v.url)+'" target="_blank" rel="noopener noreferrer">병원 가격표 원문</a>':'')+'</div>';
+function zpFeeOpenLabel(n){return n===1?'1개 병원 공개':n+'곳 공개'}
+/* 병원 한 곳의 선택 항목 합산. 겹치는 상위·하위 항목은 한쪽만 셉니다. 미공개는 0으로 치지 않고 따로 셉니다. */
+function zpFeeHospitalTotals(hid,items){
+ const cat=zpFeeCatalog(),chosen=new Set(items.map(i=>i.name));
+ const dropped=new Map();
+ for(const o of cat.overlaps){if(o.hid!==hid||!o.when.some(k=>chosen.has(k)))continue;for(const k of o.drop)if(chosen.has(k))dropped.set(k,o.why)}
+ let sMin=0,sMax=0,yMin=0,yMax=0,missing=0,promo=false;const lines=[];
+ for(const it of items){
+  const item=cat.byKey.get(it.name),x=item?.entries.find(en=>en.hid===hid);
+  if(!x){missing++;lines.push({it,item,x:null});continue}
+  const why=dropped.get(it.name)||'';
+  if(!why){sMin+=x.min;sMax+=x.max;yMin+=x.min*it.count;yMax+=x.max*it.count;if(x.promo)promo=true}
+  lines.push({it,item,x,why});
+ }
+ return {sMin,sMax,yMin,yMax,missing,promo,lines,counted:lines.filter(l=>l.x&&!l.why).length};
 }
-function zpFeeChips(list,chosen){return '<div class="zp-chips zp-wrap" role="group" aria-label="비교 항목">'+list.map(n=>'<button type="button" class="zp-chip" data-zp="fee-item" data-value="'+e(n)+'" aria-pressed="'+chosen.has(n)+'">'+e(n)+'</button>').join('')+'</div>'}
+function zpFeeLine(l){
+ const {it,item,x,why}=l,name=e(item?item.label:it.name)+(item&&item.basis&&!item.pkg?' <em>'+e(item.basis)+'</em>':'');
+ if(!x)return '<div class="zp-fee-line"><div class="zp-kv"><span>'+name+' · 연 '+it.count+'회</span><b class="zp-muted">미공개</b></div></div>';
+ const meta=[];
+ if(item.hospitals.size===1)meta.push('1개 병원 공개');
+ if(x.promo)meta.push('<span class="zp-fee-flag">'+e(x.promo)+'</span>'+(x.regular?' 정상가 '+zpWon(x.regular):''));
+ if(x.variants)meta.push(x.variants.map(v=>e(v[0])+' '+zpWon(v[1])).join(' / '));
+ if(why)meta.push('<span class="zp-fee-flag mute">'+e(ZP_FEE_OVERLAP_REASON[why])+'</span>');
+ const lead=x.pkg?(x.includes||x.note):x.note.split(' · ').slice(0,2).join(' · ');
+ const full=x.note+(x.raw!==item.label?' · 병원 표기: '+x.raw:'');
+ return '<div class="zp-fee-line'+(why?' is-excluded':'')+'"><div class="zp-kv"><span>'+name+' · 연 '+it.count+'회</span><b>'+zpFeeRange(x.min,x.max)+'</b></div>'
+  +(meta.length?'<p class="zp-fee-meta">'+meta.join(' · ')+'</p>':'')
+  +(lead?'<p class="zp-fee-cond">'+(x.pkg?'포함 검사 · ':'')+e(lead)+'</p>':'')
+  +(full&&full!==lead?'<details class="zp-fee-note"><summary>조건 보기</summary><p>'+e(full)+'</p></details>':'')
+  +(x.url&&x.url!==zpFeeCatalog().hospitals.get(x.hid)?.url?'<a class="zp-help" href="'+e(x.url)+'" target="_blank" rel="noopener noreferrer">이 검진 원문'+(x.checked?' · 확인 '+e(x.checked):'')+'</a>':'')
+  +'</div>';
+}
+function zpFeeHospitalBlock(hid,items){
+ const cat=zpFeeCatalog(),meta=cat.hospitals.get(hid),h=hospitalById(hid);if(!h||!meta)return '';
+ const t=zpFeeHospitalTotals(hid,items),only=t.missing?' (공개 항목만)':'';
+ const total=t.counted?'<div class="zp-kv zp-total"><span>1회 합산'+only+'</span><b>'+zpFeeRange(t.sMin,t.sMax)+'</b></div><div class="zp-kv zp-total"><span>연간 예상'+only+'</span><b>'+zpFeeRange(t.yMin,t.yMax)+'</b></div>'
+  +(t.promo?'<p class="zp-fee-meta">행사가가 포함된 합산이에요. 행사 종료 시 달라질 수 있어요.</p>':''):'<div class="zp-kv"><span>합계</span><b class="zp-muted">계산할 공개 가격 없음</b></div>';
+ return '<div class="zp-item"><div class="zp-item-top"><strong>'+e(h.name)+'</strong><span class="zp-tag '+(h.linked?'ok':'mute')+'">'+(h.linked?'제휴':'비제휴')+'</span></div>'
+  +'<small>'+e((meta.source||'병원 공개 가격표')+(meta.checked?' · 제노 확인 '+meta.checked:''))+'</small>'
+  +'<div class="zp-fee-lines">'+t.lines.filter(l=>l.x).map(zpFeeLine).join('')+total+'</div>'
+  +(t.missing?'<small class="zp-fee-missing">미공개 '+t.missing+'개 · '+t.lines.filter(l=>!l.x).map(l=>e(l.item?(l.item.pkg?l.item.label:l.item.key):l.it.name)).join(', ')+' · 병원에 직접 확인해 주세요.</small>':'')
+  +(meta.url?'<a class="zp-help" href="'+e(meta.url)+'" target="_blank" rel="noopener noreferrer">병원 가격표 원문</a>':'')+'</div>';
+}
+function zpFeeVisible(it,f){
+ if(f.species!=='전체'&&!(it.speciesLabel===f.species||it.speciesLabel==='공통'))return false;
+ if(f.cat!=='전체'&&it.cat!==f.cat)return false;
+ return true;
+}
+function zpFeePicker(f,chosen){
+ const cat=zpFeeCatalog(),q=zpFeeNorm(f.q);
+ const base=cat.items.filter(it=>zpFeeVisible(it,{...f,cat:'전체'}));
+ const counts=new Map();for(const it of base)counts.set(it.cat,(counts.get(it.cat)||0)+1);
+ const cats=ZP_FEE_CATS.filter(c=>counts.get(c));
+ if(f.cat!=='전체'&&!cats.includes(f.cat))f.cat='전체';
+ const shown=base.filter(it=>f.cat==='전체'||it.cat===f.cat);
+ const seg='<div class="zp-seg" role="group" aria-label="동물 종류">'+['전체','강아지','고양이'].map(s=>'<button type="button" data-zp="fee-sp" data-value="'+s+'" aria-pressed="'+(f.species===s)+'">'+s+'</button>').join('')+'</div>';
+ const tabs='<div class="zp-fee-tabs" role="tablist" aria-label="진료비 분류">'+['전체',...cats].map(c=>'<button type="button" role="tab" data-zp="fee-cat" data-value="'+e(c)+'" aria-selected="'+(f.cat===c)+'">'+e(c)+' <small>'+(c==='전체'?base.length:counts.get(c))+'</small></button>').join('')+'</div>';
+ const groups=ZP_FEE_CATS.filter(c=>shown.some(it=>it.cat===c)).map(c=>{
+  const rows=shown.filter(it=>it.cat===c).map(it=>{
+   const sub=[it.pkg?it.hospitalNames[0]:it.basis,it.hospitals.size===1&&!it.pkg?it.hospitalNames[0]:'',it.speciesLabel!=='공통'&&!/강아지|고양이|개|소형견|중형견|대형견|캣/.test(it.label)?it.speciesLabel:''].filter(Boolean).join(' · ');
+   const hide=q&&!it.search.includes(q);
+   return '<button type="button" class="zp-fee-pick" data-zp="fee-item" data-value="'+e(it.key)+'" data-fee-s="'+e(it.search)+'" aria-pressed="'+chosen.has(it.key)+'"'+(hide?' hidden':'')+'><span class="zp-fee-pick-text"><strong>'+e(it.label)+'</strong>'+(sub?'<small>'+e(sub)+'</small>':'')+'</span><span class="zp-fee-pick-count">'+zpFeeOpenLabel(it.hospitals.size)+'</span><span class="zp-fee-check" aria-hidden="true"></span></button>';
+  });
+  const any=!q||shown.some(it=>it.cat===c&&it.search.includes(q));
+  return '<div class="zp-fee-group" data-fee-group'+(any?'':' hidden')+'><h3>'+e(c)+'</h3>'+rows.join('')+'</div>';
+ }).join('');
+ const none=!shown.length||(q&&!shown.some(it=>it.search.includes(q)));
+ return '<div class="zp-fee-search"><input type="search" data-zp-fee-q value="'+e(f.q)+'" placeholder="진료비 항목 검색 (예: 슬개골, 엑스레이)" aria-label="진료비 항목 검색" autocomplete="off"></div>'
+  +seg+tabs+'<div class="zp-box zp-fee-list">'+groups+'<p class="zp-empty" data-fee-empty'+(none?'':' hidden')+'>조건에 맞는 항목이 없어요.</p></div>';
+}
+function zpFeeApplySearch(root,q){
+ const n=zpFeeNorm(q);let any=false;
+ root.querySelectorAll('[data-fee-group]').forEach(g=>{let vis=false;g.querySelectorAll('.zp-fee-pick').forEach(b=>{const show=!n||String(b.dataset.feeS||'').includes(n);b.hidden=!show;if(show)vis=true});g.hidden=!vis;if(vis)any=true});
+ const empty=root.querySelector('[data-fee-empty]');if(empty)empty.hidden=any;
+}
+document.addEventListener('input',ev=>{
+ const el=ev.target;if(!el?.matches?.('[data-zp-fee-q]')||APP_MODE!=='owner')return;
+ zpFees().q=el.value;const root=el.closest('.zp-page');if(root)zpFeeApplySearch(root,el.value);
+});
 ZP_VIEWS.fees={
  load:zpFeesLoad,
  render(){
   const f=zpFees();
-  let body=zpBack()+'<h1 class="zp-title">공개 진료비 통합 비교</h1><p class="zp-lead">병원이 공개한 가격만 같은 항목끼리 나란히 보여 줘요. 가격 순위는 만들지 않고, 공개되지 않은 가격은 미공개로 표시해요.</p>';
+  let body=zpBack()+'<h1 class="zp-title">공개 진료비 통합 비교</h1><p class="zp-lead">병원이 공개한 가격만 같은 기준끼리 나란히 보여 줘요. 가격 순위는 만들지 않고, 공개되지 않은 가격은 미공개로 표시해요.</p>';
   const gate=zpGate('공개 진료비 통합 비교');
   if(gate)return body+gate+'<p class="zp-disclaimer">병원별 공개 진료비는 PASS 없이 병원 상세와 진료비 화면에서 볼 수 있어요.</p>';
   if(!f.loaded)return body+'<p class="zp-muted" role="status">비교 설정을 불러오고 있어요.</p>';
   if(f.error)body+='<p class="zp-error">'+e(f.error)+'</p>';
-  const names=zpFeeItemNames(),chosen=new Map(f.items.map(i=>[i.name,i.count]));
-  body+='<section class="zp-section"><div class="zp-section-head"><h2>비교할 항목</h2><span>'+f.items.length+'개 선택</span></div>'+zpFeeChips(names.slice(0,8),chosen)+(names.length>8?'<details class="zp-more"'+(names.slice(8).some(n=>chosen.has(n))?' open':'')+'><summary>항목 더 보기 ('+(names.length-8)+')</summary>'+zpFeeChips(names.slice(8),chosen)+'</details>':'');
-  if(f.items.length)body+='<div class="zp-box" style="padding:4px 16px">'+f.items.map(i=>'<div class="zp-kv"><span>'+e(i.name)+'</span><label class="zp-count">연 <input type="number" inputmode="numeric" min="1" max="52" value="'+i.count+'" data-zp-count="'+e(i.name)+'" aria-label="'+e(i.name)+' 연간 횟수"> 회</label></div>').join('')+'</div>'
-   +'<div class="zp-btn-row inline"><button type="button" class="zp-btn small secondary" data-zp="fee-save"'+(f.saving||!f.dirty?' disabled':'')+'>'+(f.dirty?'이 설정 저장':'저장됨')+'</button></div>';
+  const cat=zpFeeCatalog(),chosen=new Set(f.items.map(i=>i.name));
+  body+='<section class="zp-section"><div class="zp-section-head"><h2>선택한 항목</h2><span>'+f.items.length+' / 12</span></div>';
+  if(f.items.length)body+='<div class="zp-box zp-fee-chosen">'+f.items.map(i=>{const it=cat.byKey.get(i.name);return '<div class="zp-fee-chosen-row"><span class="zp-fee-chosen-name"><b>'+e(it?.label||i.name)+'</b><small>'+e([it?.pkg?it.hospitalNames[0]:it?.basis,it?zpFeeOpenLabel(it.hospitals.size):''].filter(Boolean).join(' · '))+'</small></span><label class="zp-count">연 <input type="number" inputmode="numeric" min="1" max="52" value="'+i.count+'" data-zp-count="'+e(i.name)+'" aria-label="'+e(it?.label||i.name)+' 연간 횟수"> 회</label><button type="button" class="zp-fee-remove" data-zp="fee-item" data-value="'+e(i.name)+'" aria-label="'+e(it?.label||i.name)+' 빼기">빼기</button></div>'}).join('')+'</div>'
+   +'<div class="zp-btn-row inline"><button type="button" class="zp-btn small secondary" data-zp="fee-save"'+(f.saving||!f.dirty?' disabled':'')+'>'+(f.dirty?'이 설정 저장':'저장됨')+'</button><button type="button" class="zp-btn small secondary" data-zp="fee-jump">병원별 비교 보기</button></div>';
+  else body+='<div class="zp-box"><p class="zp-empty">아래 목록에서 비교할 항목을 골라 주세요.</p></div>';
   body+='</section>';
-  if(!f.items.length)return body+'<div class="zp-box zp-section"><p class="zp-empty">비교할 항목을 하나 이상 골라 주세요.</p></div>';
-  const list=ZENO_PUBLIC_FEES.filter(v=>hospitalById(v.id)).slice().sort((a,b)=>hospitalById(a.id).name.localeCompare(hospitalById(b.id).name,'ko'));
-  body+='<section class="zp-section"><div class="zp-section-head"><h2>병원별 비교</h2><span>'+list.length+'곳 · 이름순</span></div><div class="zp-box">'+list.map(v=>zpFeeHospitalBlock(v,f.items)).join('')+'</div></section>';
-  return body+'<p class="zp-disclaimer">연간 예상 비용은 공개 가격 × 입력한 횟수로 계산한 값이에요. 동물 종류·체중·검사 범위·진료 시간에 따라 실제 비용은 달라지고, 진찰료·약값·처치비가 따로 붙을 수 있어요. 공개 가격표가 확인되지 않은 병원은 목록에 없어요.</p>';
+  body+='<section class="zp-section"><div class="zp-section-head"><h2>항목 고르기</h2><span>'+cat.items.length+'개 항목 · '+cat.hospitals.size+'곳 공개</span></div>'+zpFeePicker(f,chosen)+'</section>';
+  if(f.items.length){
+   const ids=[...cat.hospitals.keys()].filter(id=>hospitalById(id)).sort((a,b)=>hospitalById(a).name.localeCompare(hospitalById(b).name,'ko'));
+   const withPrice=ids.filter(id=>f.items.some(i=>cat.byKey.get(i.name)?.hospitals.has(id)));
+   const without=ids.filter(id=>!withPrice.includes(id));
+   body+='<section class="zp-section" id="zp-fee-compare"><div class="zp-section-head"><h2>병원별 비교</h2><span>'+withPrice.length+'곳 · 이름순</span></div><div class="zp-box">'+withPrice.map(id=>zpFeeHospitalBlock(id,f.items)).join('')+'</div>'
+    +(without.length?'<details class="zp-fee-nopub"><summary>선택한 항목의 공개 가격이 없는 병원 '+without.length+'곳</summary><p>'+without.map(id=>e(hospitalById(id).name)).join(' · ')+'</p></details>':'')+'</section>';
+  }
+  return body+'<p class="zp-disclaimer">연간 예상 비용은 공개 가격 × 입력한 횟수예요. 동물 종류·체중·마취 방식·수술 범위·검사 구성에 따라 실제 비용은 달라지고, 진찰료·약값·처치비가 따로 붙을 수 있어요. 기준이 다른 가격(항목당과 패널, 1장과 여러 장 등)은 서로 다른 항목으로 나눴어요.</p>';
  },
  async click(a,el){
   const f=zpFees();
-  if(a==='fee-item'){const n=el.dataset.value,i=f.items.findIndex(x=>x.name===n);if(i>=0)f.items.splice(i,1);else if(f.items.length<12)f.items.push({name:n,count:1});else{toast('12개까지 고를 수 있어요.');return}f.dirty=true;render();return}
+  if(a==='fee-item'){const n=el.dataset.value,i=f.items.findIndex(x=>x.name===n);if(i>=0)f.items.splice(i,1);else if(f.items.length<12)f.items.push({name:n,count:1});else{toast('12개까지 고를 수 있어요.');return}f.dirty=true;const y=window.scrollY;render();window.scrollTo({top:y,behavior:'instant'});return}
+  if(a==='fee-sp'){f.species=el.dataset.value||'전체';const y=window.scrollY;render();window.scrollTo({top:y,behavior:'instant'});return}
+  if(a==='fee-cat'){f.cat=el.dataset.value||'전체';const y=window.scrollY;render();window.scrollTo({top:y,behavior:'instant'});return}
+  if(a==='fee-jump'){document.getElementById('zp-fee-compare')?.scrollIntoView({behavior:'smooth',block:'start'});return}
   if(a==='fee-save'){f.saving=true;render();try{await api('PUT','/api/pass/fee-plan',{items:f.items});f.dirty=false;toast('비교 설정을 저장했어요.')}catch(err){toast(err.message)}f.saving=false;render()}
  },
  change(el){
   const n=el.dataset.zpCount;if(!n)return;
   const f=zpFees(),it=f.items.find(x=>x.name===n);if(!it)return;
-  const v=Math.max(1,Math.min(52,Math.round(Number(el.value)||1)));it.count=v;f.dirty=true;render();
+  const v=Math.max(1,Math.min(52,Math.round(Number(el.value)||1)));it.count=v;f.dirty=true;const y=window.scrollY;render();window.scrollTo({top:y,behavior:'instant'});
  }
 };
 /* PASS 03 · 반려동물별 맞춤 영양 관리 (보호자). 제조사 공식 자료와 보호자가 입력한 가격·급여량만 계산합니다.
