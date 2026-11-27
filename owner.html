@@ -3646,7 +3646,7 @@ html body #app .zeno-home-v10 .care-shortcuts{gap:6px!important;grid-template-co
 html body #app .zeno-home-v10 .care-shortcuts button{display:flex;align-items:center;justify-content:center;min-height:40px!important;padding:4px 2px!important;border:1px solid var(--zh-line);border-radius:6px;font-size:12px;word-break:keep-all}
 .zh-final-link{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;padding:12px 14px;margin:10px 0;border:1px solid var(--zh-line);border-radius:8px;background:var(--zh-surface);color:var(--zh-text);text-align:left}
 .zh-final-link strong,.zh-final-link small{display:block}.zh-final-link small{font-size:12px;margin-top:4px;font-weight:400;opacity:1}
-.zh-final-emergency{background:#fff1f1;color:#a52b2b;border-color:#f0dada}
+.zh-final-emergency{background:var(--zh-danger-soft);color:var(--zh-danger);border-color:var(--zh-danger-soft)}
 .zh-final-pass{border:1px solid var(--zh-line);border-radius:8px;background:var(--zh-surface);color:var(--zh-text);padding:12px 14px;margin:12px 0}
 .zh-final-pass header{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}.zh-final-pass h2{font-size:18px;margin:0}.zh-final-pass header button{font-size:12px;border:0;background:none;color:inherit}
 .zh-final-pass-row{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;min-height:44px;padding:8px 0;border:0;border-top:1px solid var(--zh-line);background:none;color:inherit;text-align:left;font-size:14px;font-weight:600;word-break:keep-all}
@@ -5506,10 +5506,10 @@ function zenoHomeSummary(){
 }
 /* Only explicitly recorded emergency statuses from linked hospitals appear here. */
 function zenoHomeEmergencyStatusNote(h){
- if(!h.linked)return '<small>응급 접수 전화 확인</small>';
+ if(!h.linked)return '';
  const record=hs(h.id);
  const labels={available:'응급 문의 가능',busy:'응급 혼잡',unavailable:'응급 수용 어려움'};
- if(!record?.updatedAt||!Object.prototype.hasOwnProperty.call(labels,record.emergencyStatus))return '<small>응급 접수 전화 확인</small>';
+ if(!record?.updatedAt||!Object.prototype.hasOwnProperty.call(labels,record.emergencyStatus))return '';
  return '<small>'+e('병원 입력 · '+labels[record.emergencyStatus]+' · '+dateTime(record.updatedAt))+'</small>';
 }
 
@@ -5617,7 +5617,7 @@ function zenoHomeOperatingRail(){
   return '<button type="button" class="zeno-v10-open-card" data-action="details" data-id="'+e(h.id)+'"><span class="zeno-v10-mini-photo">'+(img||zenoCareIcon('일반 진료'))+'</span><span class="zeno-home-rail-copy"><strong>'+zenoRailName(h.name)+'</strong><small>'+e(String(h.region||'').split('·').pop().trim())+'</small><span class="zeno-v10-hospital-badges"><span class="zeno-v10-badge is-open">'+e(String(badge).replace(/\s*\(?등록시간 기준\)?/g,'').replace(/\s*·\s*$/,''))+'</span></span>'+zenoHomeEmergencyStatusNote(h)+'</span></button>';
  }).join('');
  const more='<button type="button" class="zeno-v10-open-more" data-action="show-all-hospitals" aria-label="전체 병원 목록으로 이동"><strong>더 많은 병원 찾기</strong><small>운영시간 미확인 병원도 살펴보기</small><span aria-hidden="true">전체 병원 ›</span></button>';
- return '<section class="zeno-v10-open-section"><div class="care-list-heading"><h2>지금 진료 중인 병원</h2><button data-action="show-all-hospitals">전체 병원 ›</button></div><p class="zeno-open-note">운영시간 기준 · 실제 접수는 전화 확인</p>'
+ return '<section class="zeno-v10-open-section"><div class="care-list-heading"><h2>지금 진료 중인 병원</h2><button data-action="show-all-hospitals">전체 병원 ›</button></div><p class="zeno-open-note">운영시간 기준 진료 중 표시예요 · 응급 접수 가능 여부는 전화로 확인해 주세요</p>'
   +(open.length?'<div class="zeno-v10-open-rail" tabindex="0" role="region" aria-label="운영시간 기준 병원 가로 스크롤 목록">'+cards+more+'</div>':'<p class="zeno-v10-empty">현재 시간에 해당하는 등록 진료시간을 찾지 못했어요.</p>')+'</section>';
 }
 
