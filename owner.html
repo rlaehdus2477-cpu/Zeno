@@ -3663,6 +3663,28 @@ html body #app .zeno-home-v10 .zh-final-pass-row>span:last-child{font-size:20px;
 .zh-final-pass{border:1px solid var(--zh-line);border-radius:8px;background:var(--zh-surface);color:var(--zh-text);padding:12px 14px;margin:12px 0}
 .zh-final-pass header{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}.zh-final-pass h2{font-size:18px;margin:0}.zh-final-pass header button{font-size:12px;border:0;background:none;color:inherit}
 .zh-final-pass-row{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;min-height:44px;padding:8px 0;border:0;border-top:1px solid var(--zh-line);background:none;color:inherit;text-align:left;font-size:14px;font-weight:600;word-break:keep-all}
+/* 2026-11-27 홈 시안: 상자는 흰 카드·회색 채움 2가지, 테두리 대신 여백, 선 아이콘 한 가지, 글자 3단계(18/15/13) */
+html body #app .zeno-home-v10 .zeno-v10-intro{margin:4px 0 12px!important}
+html body #app .zeno-home-v10 :is(.zeno-v10-open-section,.care-launcher,.zh-final-pass,.zeno-home-utilities,.zeno-home-services)>:is(header,.care-list-heading) h2,html body #app .zeno-home-v10 :is(.zeno-home-utilities,.zeno-home-services)>h2{font-size:18px!important;font-weight:700!important;letter-spacing:-.3px!important}
+html body #app .zeno-home-v10 .zeno-v10-open-card{border:0!important;box-shadow:0 0 0 1px rgba(20,43,64,.06)!important}
+html body #app .zeno-home-v10 .care-shortcuts{gap:4px!important;grid-template-columns:repeat(5,minmax(0,1fr))!important}
+html body #app .zeno-home-v10 .care-shortcuts button span{width:52px!important;height:52px!important;border-radius:14px!important;background:var(--zh-surface)!important;box-shadow:0 0 0 1px rgba(20,43,64,.06)!important}
+html body #app .zeno-home-v10 .care-shortcuts button{font-size:13px!important;gap:6px!important}
+html body #app .zeno-home-v10 .zh-care-links{display:flex;justify-content:space-between;align-items:center;margin-top:12px;border-top:1px solid var(--zh-line)}
+html body #app .zeno-home-v10 .zh-care-links button{min-height:48px;padding:0 2px;border:0;background:none;font-size:15px;font-weight:600;color:var(--zh-text);cursor:pointer}
+html body #app .zeno-home-v10 .zh-care-links .zh-final-emergency{color:var(--zh-danger)!important;margin:0!important;padding:0 2px!important;border:0!important;background:none!important;min-height:48px!important}
+html body #app .zeno-home-v10 .zh-final-pass{margin:24px 0 0!important;padding:0!important;border:0!important;background:none!important}
+html body #app .zeno-home-v10 .zh-final-pass header{display:flex;align-items:center;justify-content:space-between;margin:0 0 8px!important}
+html body #app .zeno-home-v10 .zh-final-pass header button{font-size:14px!important;font-weight:600!important;color:var(--zh-text)!important;padding:6px 0!important;border:0;background:none}
+html body #app .zeno-home-v10 .zh-pass-list{background:var(--zh-surface);border-radius:12px;box-shadow:0 0 0 1px rgba(20,43,64,.06);padding:0 16px}
+html body #app .zeno-home-v10 .zh-pass-list .zh-final-pass-row{display:grid!important;grid-template-columns:28px 1fr auto;grid-template-rows:min-content min-content;align-content:center;column-gap:12px;row-gap:2px;min-height:62px!important;padding:8px 0!important;border:0!important;border-bottom:1px solid var(--zh-line)!important;background:none!important;text-align:left;color:var(--zh-text)}
+html body #app .zeno-home-v10 .zh-pass-list .zh-final-pass-row:last-child{border-bottom:0!important}
+html body #app .zeno-home-v10 .zh-pass-icon{grid-column:1;grid-row:1/3;display:grid;place-items:center;color:var(--zh-text)}
+html body #app .zeno-home-v10 .zh-pass-icon svg{width:22px;height:22px}
+html body #app .zeno-home-v10 .zh-pass-list .zh-final-pass-row>span{grid-column:2;font-size:15px!important;font-weight:600!important;line-height:1.35}
+html body #app .zeno-home-v10 .zh-pass-list .zh-final-pass-row>small{grid-column:2;font-size:13px;font-weight:400;color:var(--zh-muted);line-height:1.35}
+html body #app .zeno-home-v10 .zh-pass-list .zh-final-pass-row>b{grid-column:3;grid-row:1/3;font-size:20px;font-weight:400;color:var(--zh-muted)}
+:is(html.dark,html[data-theme="dark"]) body #app .zeno-home-v10 :is(.zeno-v10-open-card,.zh-pass-list,.care-shortcuts button span){box-shadow:none!important}
 </style>
 </head><body><div id="app" class="app"></div><script>
 'use strict';
@@ -5631,7 +5653,7 @@ function zenoHomeOperatingRail(){
   return '<button type="button" class="zeno-v10-open-card" data-action="details" data-id="'+e(h.id)+'"><span class="zeno-v10-mini-photo">'+(img||zenoCareIcon('일반 진료'))+'</span><span class="zeno-home-rail-copy"><strong>'+zenoRailName(h.name)+'</strong><small>'+e(String(h.region||'').split('·').pop().trim())+'</small><span class="zeno-v10-hospital-badges"><span class="zeno-v10-badge is-open">'+e(String(badge).replace(/\s*\(?등록시간 기준\)?/g,'').replace(/\s*·\s*$/,''))+'</span></span>'+zenoHomeEmergencyStatusNote(h)+'</span></button>';
  }).join('');
  const more='<button type="button" class="zeno-v10-open-more" data-action="show-all-hospitals" aria-label="전체 병원 목록으로 이동"><strong>더 많은 병원 찾기</strong><small>운영시간 미확인 병원도 살펴보기</small><span aria-hidden="true">전체 병원 ›</span></button>';
- return '<section class="zeno-v10-open-section"><div class="care-list-heading"><h2>지금 진료 중인 병원</h2><button data-action="show-all-hospitals">전체 병원 ›</button></div><p class="zeno-open-note">운영시간 기준 진료 중 표시예요 · 응급 접수 가능 여부는 전화로 확인해 주세요</p>'
+ return '<section class="zeno-v10-open-section"><div class="care-list-heading"><h2>지금 진료 중인 병원</h2><button data-action="show-all-hospitals">전체 병원 ›</button></div><p class="zeno-open-note">운영시간 기준 진료 중 · 응급 접수는 전화 확인</p>'
   +(open.length?'<div class="zeno-v10-open-rail" tabindex="0" role="region" aria-label="운영시간 기준 병원 가로 스크롤 목록">'+cards+more+'</div>':'<p class="zeno-v10-empty">현재 시간에 해당하는 등록 진료시간을 찾지 못했어요.</p>')+'</section>';
 }
 
@@ -5646,6 +5668,19 @@ const ZP_FEATURES=[
  {key:'nutrition',no:'03',title:'반려동물별 맞춤 영양 관리',desc:'제조사 공식 자료 기준 사료 탐색과 급여 비용 비교'},
  {key:'receipts',no:'04',title:'반려동물별 영수증·의료비 관리',desc:'영수증 사진 등록, 아이별 의료비 분류와 통계'}
 ];
+/* 2026-11-27 홈 PASS: 가격과 기능 4개(아이콘·한 줄 설명). 기능 이름은 PASS 화면(ZP_FEATURES)과 같게 */
+const ZENO_HOME_PASS_ICONS={
+ fees:'<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/>',
+ nutrition:'<path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/>',
+ rx:'<path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/>',
+ receipts:'<path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/>'
+};
+function zenoHomePass(){
+ const desc={fees:'병원별 공개 진료비 모아 보기',nutrition:'반려동물별 맞춤 사료 정보',rx:'병원별 재고 확인 및 확보 요청',receipts:'여러 병원 영수증을 아이별로 정리'};
+ const order=['fees','nutrition','rx','receipts'].map(k=>ZP_FEATURES.find(f=>f.key===k)).filter(Boolean);
+ return '<section class="zh-final-pass" aria-label="ZENO PASS"><header><h2>ZENO PASS</h2><button type="button" data-nav="pass">월 1,800원 ›</button></header>'
+  +'<div class="zh-pass-list">'+order.map(f=>'<button type="button" class="zh-final-pass-row" data-zp="view" data-value="'+e(f.key)+'"><i class="zh-pass-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+ZENO_HOME_PASS_ICONS[f.key]+'</svg></i><span>'+e(f.title)+'</span><small>'+e(desc[f.key])+'</small><b aria-hidden="true">›</b></button>').join('')+'</div></section>';
+}
 function home(){
  const areas=['청주 전체','청주 상당구','청주 서원구','청주 흥덕구','청주 청원구'];
  const medicalFields=['일반 진료','내과','외과','치과·구강','안과','피부·귀','비뇨기','정형외과','심장·호흡기'];
@@ -5671,15 +5706,15 @@ function home(){
  +'<div class="zeno-v10-region-wrap"><button type="button" class="zeno-v10-region-button" data-action="home-area-toggle" aria-haspopup="listbox" aria-expanded="'+state.homeAreaOpen+'" '+(state.homeAreaOpen?'aria-controls="zeno-v10-area-menu"':'')+'>'
  +'<span>'+e(state.homeArea)+'</span>'+zenoHomeSmallIcon('chevron')+'</button>'+areaMenu+'</div></div>'
  +'</header>'
- +zenoHomeSummary()
- +zenoHomeOperatingRail()
  +'<section class="zeno-v10-intro"><form id="home-search-form" class="zeno-v10-search" role="search"><label class="sr-only" for="home-hospital-search">증상, 병원명, 진료과목 검색</label>'
  +zenoNavIcon('search')+'<input id="home-hospital-search" name="homeQuery" type="search" autocomplete="off" placeholder="증상, 병원명, 진료과목 검색" value="'+e(state.query)+'"></form></section>'
-
+ +zenoHomeSummary()
+ +zenoHomeOperatingRail()
+ 
  +'<section class="care-launcher" aria-label="진료 분야로 찾기"><header><h2>진료과목</h2><button data-action="home-care-open" aria-haspopup="dialog" aria-expanded="'+state.homeCarePickerOpen+'">전체 과목 ›</button></header>'
- +'<div class="care-shortcuts">'+[['내과','내과'],['외과','외과'],['정형외과','정형외과'],['치과·구강','치과'],['안과','안과'],['피부·귀','피부과'],['비뇨기','비뇨기과'],['건강검진·접종','건강검진'],['중성화수술','중성화'],['특수동물','특수동물']].map(([value,label])=>'<button type="button" data-action="specialty" data-value="'+e(value)+'"><span>'+zenoCareIcon(value)+'</span>'+e(label)+'</button>').join('')+'</div>'
- +'<div class="zeno-home-utility-list zh-care-list">'+'<button type="button" class="zeno-home-utility-row zh-symptom-row" data-nav="symptoms"><span class="zeno-home-utility-icon">'+zenoHomeSmallIcon('help')+'</span><span class="zeno-home-utility-copy"><strong>증상으로 병원 찾기</strong><small>증상별 진료 필요도 및 병원 안내</small></span><span class="zeno-home-utility-chevron" aria-hidden="true">›</span></button>'+'<button type="button" class="zeno-home-utility-row zh-final-emergency" data-nav="emergency"><span class="zeno-home-utility-icon">'+zenoHomeSmallIcon('alert')+'</span><span class="zeno-home-utility-copy"><strong>응급 진료</strong><small>응급 접수 가능 여부는 전화 확인</small></span><span class="zeno-home-utility-chevron" aria-hidden="true">›</span></button>'+'</div></section>'
- +'<section class="zh-final-pass"><header><h2>ZENO PASS</h2><button type="button" data-nav="pass">시범 운영 중 ›</button></header>'+ZP_FEATURES.map(f=>'<button type="button" class="zh-final-pass-row" data-zp="view" data-value="'+e(f.key)+'"><span>'+e(f.title)+'</span><span aria-hidden="true">›</span></button>').join('')+'</section>'
+ +'<div class="care-shortcuts">'+[['내과','내과'],['외과','외과'],['치과·구강','치과'],['피부·귀','피부과'],['특수동물','특수동물']].map(([value,label])=>'<button type="button" data-action="specialty" data-value="'+e(value)+'"><span>'+zenoCareIcon(value)+'</span>'+e(label)+'</button>').join('')+'</div>'
+ +'<div class="zh-care-links"><button type="button" class="zh-symptom-row" data-nav="symptoms" aria-label="증상으로 병원 찾기 · 증상별 진료 필요도 및 병원 안내">증상으로 병원 찾기 ›</button><button type="button" class="zh-final-emergency" data-nav="emergency" aria-label="응급 진료 · 응급 접수 가능 여부는 전화 확인">응급 진료 ›</button></div></section>'
+ +zenoHomePass()
  +'<div id="zeno-home-ads">'+zenoHomeAdCards()+'</div>'
  +'<section class="zeno-home-utilities" aria-label="조건별 병원 찾기"><h2>조건별 병원 찾기</h2><div class="zeno-home-utility-list"><button type="button" class="zeno-home-utility-row" data-nav="reservation-directory"><span class="zeno-home-utility-icon">'+zenoNavIcon('bookings')+'</span><span class="zeno-home-utility-copy"><strong>예약·접수 안내</strong><small>전화·네이버·홈페이지·방문 접수</small></span><span class="zeno-home-utility-chevron" aria-hidden="true">›</span></button>'
  +'<button type="button" class="zeno-home-utility-row" data-action="night-shortcut"><span class="zeno-home-utility-icon">'+zenoHomeSmallIcon('moon')+'</span><span class="zeno-home-utility-copy"><strong>야간 진료</strong><small>밤 시간 진료가 안내된 병원</small></span><span class="zeno-home-utility-chevron" aria-hidden="true">›</span></button>'
