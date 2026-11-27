@@ -244,6 +244,11 @@ async function main() {
         expect(await form.getByText('UVB 사용 여부',{exact:true}).isVisible(),'종별 환경 문항 누락');
         expect(await form.getByText('약 복용 후 이상 반응',{exact:true}).isVisible(),'재진 문항 누락');
         expect(!(await form.getByText('방문 목적',{exact:true}).count()),'재진에 초진 문항이 보임');
+        await form.locator('[name=petName]').fill('도마뱀 테스트');
+        await form.locator('[name=answer-uvb]').fill('사용 중');
+        await owner.evaluate(()=>render());
+        expect(await form.locator('[name=petName]').inputValue()==='도마뱀 테스트','화면 갱신 후 문진 이름 유실');
+        expect(await form.locator('[name=answer-uvb]').inputValue()==='사용 중','화면 갱신 후 환경 답변 유실');
         expect(await owner.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'보호자 페이지 가로 넘침 '+width+'/'+scheme);
         const page=await browser.newPage({viewport:{width,height:800},colorScheme:scheme,isMobile:true,hasTouch:true});
         try{
