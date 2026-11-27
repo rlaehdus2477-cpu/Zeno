@@ -1624,3 +1624,5 @@ return fail('해당 기능을 찾을 수 없습니다.',404)
 export default{async fetch(request,env){try{return await handler(request,env)}catch(err){if(!(err instanceof HttpError))console.error('ZENO ERROR',err);return fail(err instanceof HttpError?err.message:'서버 오류가 발생했습니다. D1 테이블과 서버 설정을 확인하세요.',err instanceof HttpError?err.status:500)}}};
 
 // Revalidate nutrition catalog after official-source test update.
+
+// Revalidate nutrition UI fixture alignment.
